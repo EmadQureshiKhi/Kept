@@ -1,0 +1,357 @@
+/**
+ * The command dispatcher (design §13.1, §13.2.3, §14.2).
+ *
+ * {@link main} is the whole CLI as a function: argv in, exit code out, all I/O
+ * through an injected {@link CliIo}. Nothing here reads `process` directly, which
+ * is what lets the argv contract and the exit-code policy be asserted with no
+ * child process and no temporary directory anywhere — `index.ts` is the only file
+ * that touches the real process, and it is four lines long.
+ *
+ * The exit-code policy, in one place:
+ *
+ * - **{@link EXIT_USAGE} (2)** when and only when mutually exclusive flags were
+ *   given. §13.2.3 names the pair — `--plan` with `--apply` — and §14.1's last row
+ *   makes it the single non-zero exit in the product.
+ * - **{@link EXIT_OK} (0)** for everything else. A degraded build, a missing
+ *   `kane-cli`, a `cover` that refused for want of a `.context/` store, an unknown
+ *   flag, a command that has not been implemented yet: all zero. Kane's outcomes
+ *   are data (R2.10, R2.12), and a hook whose exit code flickers with the health
+ *   of an external binary is a hook somebody disables.
+ *
+ * The commands §13.1 lists but this stage does not implement report that plainly
+ * and exit 0. That is not a stub pretending to work — `--json` says
+ * `"implemented": false` and the text output names the task that lands it — and it
+ * is strictly better than an unrecognised-command error, because `kept verify` is
+ * a real command whose behaviour is specified and simply not built yet.
+ */
+
+import { resolve } from 'node:path';
+
+import type { CollectingDiagnosticSink, Diagnostic } from '@kept/core';
+import { KaneInvoker, createDiagnosticSink } from '@kept/core';
+import { nodeStateFileSystem, type StateFileSystem } from '@kept/core';
+
+import type { ParsedArgv } from './args.js';
+import { EXIT_OK, EXIT_USAGE, parseArgv } from './args.js';
+import type { KeptConfig } from './config.js';
+import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
+import { runBuild } from './commands/build.js';
+import { runSnapshot } from './commands/snapshot.js';
+import { KEPT_VERSION } from './version.js';
+
+/** Everything {@link main} needs from the outside world. */
+export interface CliIo {
+  write(text: string): void;
+  writeError(text: string): void;
+  /** Working directory `--repo` is resolved against. */
+  readonly cwd: string;
+  /** Mutable environment, so `KANE_TESTRUN_MEMBER_DEBUG` can be set (R4.12). */
+  readonly env: Record<string, string | undefined>;
+  /** State and snapshot reads and writes. Defaults to `node:fs`. */
+  readonly fileSystem?: StateFileSystem | undefined;
+  /** Fixed instant, so a test can assert the snapshot's `generatedAt`. */
+  readonly now?: (() => Date) | undefined;
+  /**
+   * The Kane process boundary. Defaults to a real {@link KaneInvoker}, which is
+   * what makes `kept build` actually issue `cover --json --mode agent` (§13.1).
+   * A test passes one with an injected `spawn`, or omits it deliberately to
+   * exercise the R2.12 "no Kane at all" path.
+   */
+  readonly invoker?: KaneInvoker | undefined;
+  /** False to run `kept build` with no Kane boundary at all (R2.12). */
+  readonly kane?: boolean | undefined;
+}
+
+/** The commands this stage implements. The rest report honestly and exit 0. */
+export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze(['build', 'snapshot']);
+
+/** Which task lands each unimplemented command, so the message can say so. */
+const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
+  verify: 'task 11.11',
+  reconcile: 'task 12.7',
+  evolve: 'task 12.10',
+  amend: 'task 14.5',
+  handoff: 'task 12.11',
+  doctor: 'task 16.2',
+  watch: 'task 16.4',
+});
+
+/**
+ * Run the CLI.
+ *
+ * Returns an exit code; never calls `process.exit`, never throws for a state of
+ * the world. A thrown exception from here would be a programming error, and
+ * `index.ts` reports it as one.
+ */
+export async function main(argv: readonly string[], io: CliIo): Promise<number> {
+  const parsed = parseArgv(argv);
+
+  // ── The single usage error (§13.2.3). Nothing has run; nothing is written. ──
+  if (parsed.usageErrors.length > 0) {
+    io.writeError(
+      [
+        ...parsed.usageErrors.map((message) => `kept: ${message}`),
+        '',
+        USAGE,
+        '',
+      ].join('\n'),
+    );
+    return EXIT_USAGE;
+  }
+
+  if (parsed.help) {
+    io.write(`${USAGE}\n`);
+    return EXIT_OK;
+  }
+
+  const sink: CollectingDiagnosticSink = createDiagnosticSink(
+    io.now === undefined ? {} : { clock: io.now },
+  );
+  for (const note of parsed.notes) {
+    sink.report({ code: `argv-${note.code}`, severity: 'warn', message: note.message });
+  }
+
+  const repoRoot = resolve(io.cwd, parsed.options.repo);
+  const fileSystem = io.fileSystem ?? nodeStateFileSystem();
+  const loaded = loadConfig({ repoRoot, fileSystem, diagnostics: sink });
+  const config = applyOverrides(
+    loaded.config,
+    { router: parsed.options.router, memberDebug: parsed.options.memberDebug },
+    sink,
+  );
+  // R4.12: the variable is set for the invocation, and only ever set — Kane reads
+  // its presence, so there is no `=0` spelling that turns member capture off.
+  for (const [key, value] of Object.entries(memberDebugEnv(config))) io.env[key] = value;
+
+  const at = (io.now?.() ?? new Date()).toISOString();
+
+  switch (parsed.command) {
+    case 'build':
+      return await dispatchBuild(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'snapshot':
+      return dispatchSnapshot(parsed, { repoRoot, fileSystem, sink, at, io });
+    default:
+      return reportPending(parsed, { repoRoot, config, sink, io });
+  }
+}
+
+/** Shared dispatch context, so the command arms read as one shape. */
+interface Dispatch {
+  readonly repoRoot: string;
+  readonly fileSystem: StateFileSystem;
+  readonly sink: CollectingDiagnosticSink;
+  readonly at: string;
+  readonly io: CliIo;
+}
+
+async function dispatchBuild(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  // A real invoker unless the caller supplied one or opted out. Its absence is a
+  // supported state of the world (R2.12) but never the default: §13.1 has
+  // `kept build` issue `cover --json --mode agent`, and a build that quietly never
+  // tried would report `kane-not-found` for a Kane that is installed and working.
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const result = await runBuild({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'build',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          statePath: result.statePath,
+          promises: result.state.graph.promises.length,
+          edges: result.state.graph.edges.length,
+          degraded: result.degraded,
+          degradedReasons: result.degradedReasons,
+          freshness: result.state.freshness,
+          freshnessMoved: result.freshnessMoved,
+          freshnessRefusals: result.freshnessRefusals,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept build`,
+        `  repository   ${context.repoRoot}`,
+        `  state        ${result.statePath}`,
+        `  promises     ${result.state.graph.promises.length}`,
+        `  edges        ${result.state.graph.edges.length}`,
+        `  degraded     ${String(result.degraded)}${
+          result.degradedReasons.length > 0 ? ` (${result.degradedReasons.join(', ')})` : ''
+        }`,
+        `  freshness    ${
+          result.state.freshness.terminalEventAt ?? 'never verified'
+        }${result.freshnessMoved ? ' (advanced by this run)' : ''}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // Degradation is a fact about the world, not a failure of KEPT (R2.10, R2.12).
+  return EXIT_OK;
+}
+
+function dispatchSnapshot(parsed: ParsedArgv, context: Dispatch): number {
+  const result = runSnapshot({
+    repoRoot: context.repoRoot,
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    generatedAt: context.at,
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'snapshot',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          path: result.path,
+          written: result.written,
+          valid: result.valid,
+          error: result.error,
+          bytes: result.bytes,
+          metrics: result.snapshot.metrics,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept snapshot`,
+        `  file         ${result.path}`,
+        `  status       ${
+          result.valid
+            ? result.written
+              ? `written, ${result.bytes} bytes`
+              : 'unchanged, already byte-identical'
+            : 'not written — the snapshot failed its own schema check'
+        }`,
+        `  promises     ${result.snapshot.metrics.totalPromises}`,
+        `  designed     ${formatCoverage(result.snapshot.metrics.designedCoverage)}`,
+        `  proven       ${formatCoverage(result.snapshot.metrics.provenCoverage)}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // Not written is reported, never signalled: §14.2 keeps the exit code a
+  // statement about whether KEPT worked, and the Ledger build is where a missing
+  // or invalid snapshot fails loudly (§14.1).
+  return EXIT_OK;
+}
+
+function reportPending(
+  parsed: ParsedArgv,
+  context: {
+    readonly repoRoot: string;
+    readonly config: KeptConfig;
+    readonly sink: CollectingDiagnosticSink;
+    readonly io: CliIo;
+  },
+): number {
+  const command = parsed.command ?? '(none)';
+  const task = PENDING_TASKS[command] ?? 'a later task';
+  const message =
+    `kept ${command} is specified in design §13.1 and lands in ${task}; nothing was run and ` +
+    `nothing was written`;
+  context.sink.report({ code: 'command-not-implemented', severity: 'warn', message });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command,
+          implemented: false,
+          repoRoot: context.repoRoot,
+          router: context.config.verdictRouter,
+          message,
+          diagnostics: context.sink.entries,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(`${message}\n`);
+  }
+  // Exit 0: the CLI worked, and it told the truth about what it did not do.
+  return EXIT_OK;
+}
+
+/** A ratio as a whole-number percentage, or `n/a` for the honest null (R9.3). */
+function formatCoverage(value: number | null): string {
+  return value === null ? 'n/a' : `${Math.round(value * 100)}%`;
+}
+
+/**
+ * Diagnostics go to stderr so stdout stays a clean `--json` payload, and are
+ * suppressed under `--json` because the payload already carries them.
+ */
+function writeDiagnostics(
+  io: CliIo,
+  diagnostics: readonly Diagnostic[],
+  json: boolean,
+): void {
+  if (json || diagnostics.length === 0) return;
+  const shown = diagnostics.filter((entry) => entry.severity !== 'info');
+  if (shown.length === 0) return;
+  io.writeError(
+    `${shown
+      .map((entry) => `  ${entry.severity} ${entry.code}: ${entry.message}`)
+      .join('\n')}\n`,
+  );
+}
+
+/** The usage text. Mirrors the §13.1 table; no generator, so it cannot lie by omission. */
+export const USAGE = [
+  `kept ${KEPT_VERSION} — a living ledger of the promises a codebase makes.`,
+  '',
+  'Usage: kept <command> [options]',
+  '',
+  'Commands:',
+  '  build                      run both promise providers and write .kept/state.json',
+  '  snapshot                   write apps/ledger/data/ledger.snapshot.json',
+  '  verify --changed <p…>      re-verify the blast radius of changed files',
+  '  verify --all               re-verify every designed test',
+  '  reconcile --changed <p…>   stage documentation reconciliation (--plan)',
+  '  reconcile apply [plan]     walk a stored plan (human-only, never a hook)',
+  '  evolve <testPath>          propose a test-drift repair',
+  '  amend propose|list|show|accept|reject   documentation amendments',
+  '  handoff [--run <id>]       print the agent handoff for a run',
+  '  doctor                     report the environment, including kane-cli',
+  '  watch                      tail NDJSON and listen for loopback accepts',
+  '',
+  'Common options:',
+  '  --repo <root>              repository root (default: the working directory)',
+  '  --json                     machine-readable stdout',
+  '  --router <name>            resultCode740 | failureYamlTriage, for one invocation',
+  '  --member-debug             set KANE_TESTRUN_MEMBER_DEBUG=1 and capture [member] lines',
+  '  -h, --help                 this text',
+  '',
+  'Every command exits 0. The one exception is mutually exclusive flags',
+  '(--plan with --apply), which exits 2 before anything runs.',
+  '',
+  `Commands implemented in this build: ${IMPLEMENTED_COMMANDS.join(', ')}.`,
+].join('\n');
