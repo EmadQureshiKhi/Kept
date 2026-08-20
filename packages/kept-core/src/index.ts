@@ -1091,3 +1091,64 @@ export {
   serialiseHandoff,
   writeHandoff,
 } from './handoff/handoff.js';
+
+// The `.kept/sources.json` read-through cache (12.3) — design §13.2.2, R5.2.
+// The third `.kept/` artefact, beside `plan.json` and `state.json` and gitignored
+// for the same reason: regenerable single-writer working state, disposable at the
+// cost of one extra `context list`. It slots into the `sources` seam
+// `resolveSourceId` already exposes, so a hit invokes **nothing at all** and
+// answers `via: 'cache'` — the member that already leads `SourceResolutionVia`,
+// which is why a whole rung arrives here without changing a type. The rung that
+// originally answered is stored on the entry as a `LadderRung`, a type that
+// cannot spell `cache`, so a cached record can never claim the cache as its own
+// provenance. An entry is honoured only when **both** conditions of §13.2.2 hold:
+// it is younger than `maxAgeMs` (ten minutes) *and* the cited file's mtime is not
+// newer than its `resolvedAt`. Either alone is too weak — age alone would hand
+// `--source-id` a resolution taken before the very edit that fired the hook, and
+// the mtime alone would never notice a store that moved under a file nobody
+// touched — and an unreadable mtime is a miss rather than a pass, because not
+// knowing is not the same as knowing it is fine. `listingSignature` is a hash of
+// the **projected** listing (id, both path spellings, digest, retirement; sorted
+// by id so wire reordering is not churn, and `raw` excluded so an `ingested_at`
+// stamp moving is not either), which is what lets a refresh keep every recorded
+// resolution when the store did not change and drop all of them when it did. The
+// rule that matters most is the one `plan.ts` set: a refresh that fails — no
+// store, no binary, our own timeout, a stream that never reached `done` — writes
+// nothing, deletes nothing, and **the previous entry is still honoured**. That is
+// a considered trade rather than a shortcut: the worst case is one process where
+// Kane's own checks refuse a moved id with nothing mutated (§13.2.4), against a
+// save that silently does nothing, which is the exact failure §13.2 exists to
+// make impossible. A *successful* refresh that fails to resolve deletes the
+// recorded entry instead, so a later hiccup cannot honour a resolution this
+// listing just disproved. The filesystem seam is `StateFileSystem`, reused rather
+// than redeclared; mtimes come through their own tiny seam because neither
+// `state.ts` nor `handoff.ts` has any use for one.
+export type {
+  CachedSourceResolution,
+  ResolveSourceIdCachedRequest,
+  SourceCacheEntry,
+  SourceCacheStaleReason,
+  SourceCacheStaleness,
+  SourceCacheStalenessRequest,
+  SourceMtimeReader,
+  SourcesCache,
+} from './context/cache.js';
+export {
+  LISTING_SIGNATURE_PREFIX,
+  SOURCES_CACHE_FILE_RELATIVE_PATH,
+  SOURCES_CACHE_MAX_AGE_MS,
+  SOURCES_CACHE_SCHEMA_VERSION,
+  SOURCE_CACHE_DIAGNOSTIC_CODES,
+  SOURCE_CACHE_DIAGNOSTIC_CODE_VALUES,
+  inMemorySourceCacheFileSystem,
+  isSourceCacheEntry,
+  isSourcesCache,
+  nodeSourceMtimeReader,
+  readSourcesCache,
+  resolveSourceIdCached,
+  serialiseSourcesCache,
+  sourceCacheStaleness,
+  sourcesCachePath,
+  sourcesListingSignature,
+  writeSourcesCache,
+} from './context/cache.js';
