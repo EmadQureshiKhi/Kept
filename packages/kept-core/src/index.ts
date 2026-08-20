@@ -1184,3 +1184,68 @@ export {
   FORK_GUARD_RUNGS,
   forkGuard,
 } from './context/forkGuard.js';
+
+// Review cards (14.1) — the held-change artefact of design §8.1 and §8.2, and the
+// reason `kept reconcile` creates none itself. Kane's `--plan` already holds:
+// the head move lands and every other change is **staged** into Kane's own stored
+// plan, which is exactly R5.7's "hold every change, apply none automatically". So
+// this module mirrors `ReconcileDoc.staged` — the `review_card` events the stream
+// carried — into `.kept/review-cards/<id>.json` rather than reimplementing holding
+// on top of Kane, and there is no apply path here at all: not guarded, not flagged,
+// none. The branch a card carries is *read off* `BRANCH_FENCES` rather than passed
+// in, so every card this module can produce has autonomy `hold` and artefact
+// `review-card` by construction, and its status is `open` — the vocabulary of §8.2
+// has no "applied". `kind` is a separate question and both are kept: `kind` records
+// which command staged the change (`reconcile` or `test-drift`), `branch` records
+// what class of repair it is, and for both commands that is a held change to the
+// designed-test corpus. Ids are content-derived, so a hook that fires on every save
+// re-mirrors the same items into the same cards instead of accumulating duplicates,
+// and an existing card is left exactly as it was — its status may already have been
+// dismissed by a human. `ReviewCard` is field-for-field `SnapshotReviewCard`, so
+// `kept snapshot`'s projection is `toSnapshotReviewCard` and nothing else; the raw
+// staged event stays on the reconcile result and in the run's handoff. Every write
+// goes through `keptWritePath`, the `.kept/` fence, which is what makes "no file
+// outside `.kept/` is written" a property of the code rather than of one run.
+export type {
+  ProposedChange,
+  RepairDirectoryReader,
+  ReviewCard,
+  ReviewCardContext,
+  ReviewCardDraft,
+  ReviewCardKind,
+  ReviewCardStatus,
+  WriteReviewCardRequest,
+  WriteReviewCardResult,
+} from './repair/reviewCard.js';
+export {
+  KEPT_DIRECTORY_NAME,
+  REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
+  REVIEW_CARD_BRANCH,
+  REVIEW_CARD_BRANCHES,
+  REVIEW_CARD_DIAGNOSTIC_CODES,
+  REVIEW_CARD_DIAGNOSTIC_CODE_VALUES,
+  REVIEW_CARD_ID_HASH_LENGTH,
+  REVIEW_CARD_ID_PREFIX,
+  REVIEW_CARD_OPEN_STATUS,
+  buildReviewCard,
+  inMemoryRepairFileSystem,
+  isKeptWritePath,
+  isProposedChange,
+  isReviewCard,
+  isReviewCardId,
+  keptWritePath,
+  listReviewCards,
+  nodeRepairDirectoryReader,
+  parseReviewCard,
+  readReviewCard,
+  repairDirectoryOf,
+  reviewCardFromStagedItem,
+  reviewCardId,
+  reviewCardPath,
+  reviewCardsDirectory,
+  reviewCardsFromStagedItems,
+  serialiseReviewCard,
+  testDriftReviewCard,
+  toSnapshotReviewCard,
+  writeReviewCard,
+} from './repair/reviewCard.js';
