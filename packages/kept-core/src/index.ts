@@ -22,3 +22,21 @@ export type {
   CollectingDiagnosticSink,
 } from './diagnostics.js';
 export { DIAGNOSTIC_SEVERITIES, createDiagnosticSink, isDiagnostic } from './diagnostics.js';
+
+// Kane three-contract layer (2.1) — the four family-dependent facts, encoded
+// once. `contractFor` is the only way to obtain a `FamilyContract`, which is
+// what makes parsing without a declared family a type error (design §4.2).
+export type {
+  CommandFamily,
+  Exit3Meaning,
+  EvidenceLocation,
+  FamilyContract,
+  NdjsonEnabler,
+  TerminalType,
+} from './kane/family.js';
+export {
+  COMMAND_FAMILIES,
+  contractFor,
+  familyForArgv,
+  isCommandFamily,
+} from './kane/family.js';
