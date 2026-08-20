@@ -1,0 +1,117 @@
+/**
+ * KEPT Ledger design tokens — design §10.4.1.
+ *
+ * The whole visual system lives here. A deep desaturated *ink* base with a faint
+ * warm mineral cast (hue 30–39°, saturation under 16%) so the page reads as dark
+ * paper under a warm lamp rather than a dark screen. Verdict hues are drawn from
+ * oxidised material — patina, ochre, clay, stone-sage — and are the only
+ * chromatic channel in the product.
+ *
+ * Forbidden, and asserted by the forbidden-palette scan (§10.4.4): neon; the
+ * pure-channel `00FF` hue family; the purple-to-blue startup gradient;
+ * glassmorphism blur; rainbow or multi-hue scales; emoji as UI; saturation above
+ * 70% anywhere; a coloured or glowing shadow. Those are named in words rather
+ * than written as values, because the scan reads comments too — and a comment
+ * quoting a forbidden hex is where a forbidden hex comes from.
+ *
+ * `lib/tokens.ts` mirrors every declaration below as a typed literal so tests
+ * compute contrast against the same values the browser resolves. The parity test
+ * fails in both directions, so a palette edit here cannot drift away from the
+ * test's input — edit both or neither.
+ */
+
+:root {
+  /* ── ink surfaces: one hue family, warm, 4-step ramp ─────────────── */
+  --ink-000: #14120F;   /* page                                            */
+  --ink-050: #1B1815;   /* sunken: panel base, rail trough, code wells     */
+  --ink-100: #221E1A;   /* raised: nodes, cards, chips                     */
+  --ink-150: #2A251F;   /* raised-2: hover, active row, selected node fill  */
+  --hairline:        #302A24;   /* 1px structural rules      — 1.32:1, non-text */
+  --hairline-strong: #3A332B;   /* section divisions          — 1.50:1, non-text */
+
+  /* ── light: one implied source, top-left, 15° off vertical ───────── */
+  --light-edge:        rgba(246, 238, 226, 0.075);  /* 1px top edge, raised   */
+  --light-edge-strong: rgba(246, 238, 226, 0.115);  /* 1px top edge, raised-2 */
+  --light-wash:        rgba(246, 238, 226, 0.028);  /* large-plane gradient   */
+  --occlude:           rgba(6, 5, 4, 0.55);         /* shadow ink, warm-black */
+
+  /* ── text ────────────────────────────────────────────────────────── */
+  --text-000: #F2EDE4;  /* body, headings, claim text                       */
+  --text-100: #B6ADA0;  /* secondary body, panel supporting copy            */
+  --text-200: #9A9184;  /* labels, citations, gutters                       */
+
+  /* ── verdicts: oxidised material, the only chromatic channel ─────── */
+  --verdict-proven:     #6FB894;  /* patina           */
+  --verdict-stale:      #D9A64A;  /* ochre            */
+  --verdict-red:        #D97A66;  /* clay / iron oxide */
+  --verdict-undesigned: #9A9184;  /* stone-sage, deliberately unsaturated (R10.3) */
+
+  /* verdict washes: verdict hue at low alpha. Rails, node left-edges and
+     tag borders ONLY — never behind body text, so no wash enters the
+     contrast matrix. */
+  --wash-proven:     rgba(111, 184, 148, 0.10);
+  --wash-stale:      rgba(217, 166, 74, 0.10);
+  --wash-red:        rgba(217, 122, 102, 0.12);
+  --wash-undesigned: rgba(154, 145, 132, 0.08);
+
+  /* structural accent: focus rings only, never a state signal */
+  --focus: #7FA6BC;   /* muted mineral blue */
+
+  /* ── elevation ramp: light behaviour, not uniform box-shadow ─────── */
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 var(--light-edge) inset,
+            0 1px 2px -1px var(--occlude),
+            0 2px 6px -3px var(--occlude);
+  --elev-2: 0 1px 0 0 var(--light-edge-strong) inset,
+            0 2px 4px -2px var(--occlude),
+            0 8px 20px -8px var(--occlude);
+  --elev-3: 0 1px 0 0 var(--light-edge-strong) inset,
+            0 4px 10px -4px var(--occlude),
+            0 24px 48px -20px var(--occlude);
+
+  /* ── type scale (16px root) ──────────────────────────────────────── */
+  --fs-micro: 0.6875rem;  /* 11px  ids, tags                    */
+  --fs-xs:    0.75rem;    /* 12px  citations                    */
+  --fs-sm:    0.8125rem;  /* 13px  labels                       */
+  --fs-base:  0.875rem;   /* 14px  body                         */
+  --fs-md:    1rem;       /* 16px  panel headings               */
+  --fs-lg:    1.25rem;    /* 20px  section headings             */
+  --fs-xl:    1.75rem;    /* 28px  page title                   */
+  --fs-metric: 2.5rem;    /* 40px  coverage figures             */
+
+  --lh-tight: 1.2;
+  --lh-body: 1.55;
+  --lh-mono: 1.45;
+  --tr-tight: -0.011em;   /* display sizes only */
+  --tr-mono: 0.002em;     /* mono at small sizes, opens the counters */
+
+  /* ── spacing: 4-based, no other values permitted ─────────────────── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  --r-chip: 2px;
+  --r-card: 6px;
+  --r-panel: 10px;
+
+  /* ── motion tokens: see §10.6 ────────────────────────────────────── */
+  --dur-micro: 90ms;      /* focus ring, tag tint             */
+  --dur-fast: 160ms;      /* selection outline, hover surface */
+  --dur-base: 240ms;      /* panel, verdict colour            */
+  --dur-slow: 420ms;      /* verdict flip, edge draw          */
+  --dur-figure: 760ms;    /* metric count-up                  */
+  --stagger-node: 24ms;   /* per-node entrance offset         */
+
+  --ease-out: cubic-bezier(.16, .84, .28, 1);       /* settle: the default    */
+  --ease-in-out: cubic-bezier(.50, .00, .20, 1);    /* move between two rests */
+  --ease-emphasis: cubic-bezier(.20, .90, .10, 1);  /* verdict flip           */
+
+  /* ── type families — system stacks, zero downloads ───────────────── */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}

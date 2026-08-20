@@ -18,7 +18,8 @@
     "build:snapshot": "node bin/kept build && node bin/kept snapshot",
     "test": "vitest --run",
     "typecheck:fixture": "tsc -p apps/fixture",
-    "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && vitest --run"
+    "typecheck:ledger": "tsc -p apps/ledger",
+    "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && npm run typecheck:ledger && vitest --run"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.3",

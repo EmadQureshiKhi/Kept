@@ -27,8 +27,24 @@
    * deep import here because a project reference redirects it to the built
    * declaration, so that rule is upheld by review and, later, by the
    * source-scan tests, not by this file.
+   *
+   * The Ledger's non-browser half joins the same job for the same reason. A Next
+   * application is `noEmit`, so `apps/ledger` cannot be a project reference
+   * either (TS6310 again), and `apps/ledger/tsconfig.json` is deliberately not
+   * listed above. Naming its `lib/` and `test/` trees here instead means a type
+   * error in the design tokens or in a source scan fails a plain `tsc -b`, and
+   * therefore `npm run check`, from the first commit — and it checks them under
+   * this project's `lib: ["ES2022"]` with no DOM, which is the stronger claim:
+   * the token mirror and the scans have no business touching the DOM. The
+   * browser-facing half — `app/**`, `components/**` and their JSX — is checked by
+   * `tsc -p apps/ledger --noEmit`, which is where `jsx` and the DOM libs live.
    */
-  "include": ["vitest.config.ts", "packages/*/test/**/*.ts"],
+  "include": [
+    "vitest.config.ts",
+    "packages/*/test/**/*.ts",
+    "apps/ledger/lib/**/*.ts",
+    "apps/ledger/test/**/*.ts"
+  ],
   "references": [
     { "path": "packages/kept-core" },
     { "path": "packages/kept-cli" }

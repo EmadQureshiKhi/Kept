@@ -1,0 +1,44 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /**
+     * A Next application is a non-emitting project, and TypeScript refuses to
+     * make one a `tsc -b` project reference: "a referenced project may not
+     * disable emit" (TS6310). So this config is deliberately *not* referenced
+     * from the solution root, and it is not what `npm run check` runs.
+     *
+     * Two consumers instead, which between them cover the app twice over:
+     *
+     *   1. `tsc -b` from the root, whose `include` names `apps/ledger/lib/**` and
+     *      `apps/ledger/test/**`. That is the check wired into `npm run check`,
+     *      and it runs under the repository's no-DOM `lib` — which is a feature:
+     *      `lib/tokens.ts` and the source scans have no business touching the
+     *      DOM, and this is what proves they do not.
+     *   2. `tsc -p apps/ledger --noEmit`, for the browser-facing half. It adds
+     *      `jsx` and the DOM libs that a React component needs and that the root
+     *      deliberately withholds, and writes nothing: no `dist`, no build info,
+     *      no artefact for `.gitignore` to chase.
+     *
+     * The overrides below are exactly the difference between a Node library and a
+     * browser app: `composite`/`declaration` off because nothing references this
+     * project, `noEmit` on, `jsx` for React 19's automatic runtime, and the DOM
+     * libs. Everything strict in `tsconfig.base.json` — `verbatimModuleSyntax`,
+     * `isolatedModules`, `noUncheckedIndexedAccess` — is inherited untouched.
+     *
+     * Module resolution stays `NodeNext` to match the root, so a relative import
+     * carries its `.js` extension in both programs and neither disagrees with the
+     * other about a specifier. Vite resolves those specifiers to the `.ts` source
+     * when Vitest runs the suites.
+     */
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "incremental": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["lib/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "app/**/*.tsx", "components/**/*.tsx"],
+  "exclude": ["node_modules", ".next", "out"]
+}
