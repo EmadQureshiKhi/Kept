@@ -88,3 +88,35 @@ export {
   nodeEvidenceFileSystem,
   resolveEvidenceDir,
 } from './kane/evidence.js';
+
+// The Kane process boundary (2.20) — the one place a Kane process is started.
+// `applyNdjsonEnabler` is the per-family argv contract (`--agent` / nothing /
+// `--mode agent`, design §4.7 steps 2–4, R3.4, R3.5) and is exported separately
+// so it can be asserted with no process anywhere (tasks 2.21 and 12.13). stdin
+// is always `ignore`, which is what makes `ask_user` self-disable — and the
+// reason any `context ingest` KEPT performs lands only and never extracts
+// (§4.9.1). Nothing Kane does throws: absence, refusal, crash and timeout are
+// all returned as data (R2.12, R11.8).
+export type {
+  BinaryResolver,
+  ChildProcessLike,
+  InvocationResult,
+  InvocationSpec,
+  KaneInvokerOptions,
+  ReadableLike,
+  SpawnLike,
+  SpawnOptionsLike,
+} from './kane/invoker.js';
+export {
+  AGENT_FLAG,
+  KANE_BINARY_ENV_VAR,
+  KANE_BINARY_NAME,
+  KILL_GRACE_MS,
+  KaneInvoker,
+  NDJSON_ENABLER_ARGV,
+  STDERR_TAIL_LINES,
+  applyNdjsonEnabler,
+  clearKaneBinaryCache,
+  findKaneBinary,
+  resolvedKaneBinary,
+} from './kane/invoker.js';
