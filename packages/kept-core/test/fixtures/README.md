@@ -37,6 +37,7 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
 | `assurance-cover-refused.ndjson` | **CAPTURED** | The verified no-context-store refusal envelope of design §5.3.1, byte-identical to the recorded stdout of a real `cover --mode agent` run in a directory with no `.context/` store. Two lines, verbatim, never paraphrased. A refusal is a **complete** stream, not a crashed one. | 2.16 (regression) |
 | `assurance-cover-done.ndjson` | SYNTHETIC | The success path of the Ledger's data source: one `coverage` payload event carrying the `--json` document, then `done` with status `complete` and event `exit_code` 0. | 2.13, 5.3 enrichment, stage 5 |
 | `assurance-paused.ndjson` | SYNTHETIC | A paused, resumable `maintain reconcile`: `done` with status `paused` and event `exit_code` **3**. For the Assurance family exit 3 means paused and resumable — **never** a failure. Misreading it is the one mistake that corrupts ledger state. | 2.13, stage 5/8 (R5.4) |
+| `context-list-sources.ndjson` | SYNTHETIC | The source listing `resolveSourceId` resolves against (§13.2.2): one progress line, one payload event carrying seven entries, then `done` with status `complete`. Shaped so every rung of the four-rung match ladder and every failure rung is reachable from committed bytes. | 12.1, 12.2, 12.5 |
 
 ### Notes a consumer needs
 
@@ -106,3 +107,74 @@ loader) and task 11.4 (`failureYamlTriage`).
   behaved correctly, every selector resolved, and the assertion still failed.
   That residue is the documentation's problem, which is exactly why the
   assertion class routes to `docs-lie`.
+
+## `context-list-sources.ndjson` — the seven entries, and why each is shaped that way
+
+The listing is what makes `kane-cli maintain reconcile --source-id <id>` possible
+at all: `--from` and `--source-id` are **both** mandatory, and the id can only be
+built from the `ok: true` arm of `SourceResolution`, so an unresolved source is a
+structural no-op rather than a spawn that exits 2 (§13.2, §13.2.2). This file is
+therefore the input to the branch that would otherwise have been silently dead.
+
+Two things about it are **unobserved assumptions**, and the projection is built so
+that neither can matter: the payload event's `type` (`sources`) and the `verb`
+string (`context list`). The store's internal schema is not pinned by observation,
+so `projectSourceListing` keys off **neither** — it walks every event of the stream
+for any array of objects, exactly as the `coverage` payload is walked (§5.3). If a
+release renames the event or wraps the array one level deeper, this fixture stops
+being representative but the projection keeps working.
+
+| # | id | Shape | Reachable outcome |
+|---|---|---|---|
+| 1 | `src_7f31c0a4` | `source_id` + `path` + `digest` + `retired: false`, plus a `title` | rung 1 `exact-path` |
+| 2 | `src_1b9d5e22` | `id` + `sha256` + `status: "active"`, **no path field at all**, plus a `use_case` | rung 3 `digest` |
+| 3 | `src_c4a80f13` | `sourceId` + `file` + `content_hash` + `status: "retired"` | `reason: 'retired'` |
+| 4 | `src_44e1ba07` | `source_path` + `hash`, live | fork guard / `ambiguous` |
+| 5 | `src_9c2d7f58` | `path` + `digest`, live, **same file as 4** | fork guard / `ambiguous` |
+| 6 | `src_2f6c1d90` | `path` recorded unnormalised: `apps/fixture/./docs/../app/settings/page.tsx` | rung 2 `abs-path` |
+| 7 | `src_5e8b03df` | `uri` naming `docs/adr/currency.md` — a file since moved to `apps/fixture/docs/` | rung 4 `unique-basename` |
+
+- **All four path spellings appear once each** — `path`, `file`, `source_path`,
+  `uri` — and all four digest spellings across entries 1–5: `digest`, `sha256`,
+  `content_hash`, `hash`. Two entries carry the digest with a `sha256:` prefix and
+  two carry the bare hex, because the same value in a different spelling is still
+  the same value; that is normalisation, not fuzzy matching.
+- **Entries 4 and 5 are the fork-guard case** (§13.2.4 #7): one file has been
+  ingested twice and now backs two live sources with the same path *and* the same
+  digest. Moving a head would fork the graph, so resolution answers `ambiguous`
+  and 12.6 reports `reconcile-source-forked` naming **both** ids. Note the two ids
+  differ only in their opening characters — nothing may key off ordinal position,
+  so neither "the first one" nor "the lower id" is an answer.
+- **Entry 6 is the `abs-path` rung, and it needs no hard-coded repository root.**
+  Path normalisation is deliberately the same as `normaliseCoveragePath`: POSIX
+  separators, trimmed, no leading `./`, no trailing `/` — and it does **not**
+  collapse `..`. So entry 6 fails rung 1 on string equality and matches rung 2
+  once both sides are resolved against `repoRoot`. That is what rung 2 is *for*:
+  an entry the store recorded in a spelling that is equivalent but not identical.
+- **Entry 7 is the `unique-basename` rung and the tightest one.** `currency.md` is
+  unique across the listing, so a query for `apps/fixture/docs/currency.md` lands
+  on it and nothing else. `page.tsx`, by contrast, is the basename of entries 4, 5
+  and 6, so any query that reached rung 4 with that basename is `ambiguous` —
+  which is the correct answer and not a shortcoming of the fixture.
+- **Titles and use-case names are present on purpose.** Entries 1, 4 and 7 carry a
+  `title` and entries 2 and 5 a `use_case`, none of which the ladder may ever
+  consult. They are here so a "helpful" fallback that reads them can be caught by
+  a test rather than by a reviewer.
+- **The digests hash documented byte strings, not the committed files.** A digest
+  recorded at ingest is a fact about the bytes at that moment, and pinning it to a
+  file this repository keeps editing would make the fixture rot. Tests feed the
+  bytes below through the injected `SourceFileSystem`, so the rung is exercised
+  with a real `node:crypto` hash and no disk:
+
+  | entry | bytes | sha256 |
+  |---|---|---|
+  | 1 | `# Fixture storefront\n` | `c7dc998f…4dce213d` |
+  | 2 | `# Checkout use case\n` | `aa4a6be8…91443bc7` |
+  | 3 | `# Pricing\n` | `bed15d0e…24d4673e` |
+  | 4, 5 | `export default function ShopPage() {}\n` | `c91d53d5…ac50d4d4` |
+
+- **The leading progress line is not decoration.** `{step, status, remark}`
+  objects are how Kane 0.8.4 reports progress, and it carries a `status` key —
+  the same key family the projection reads a lifecycle marker from. It is here so
+  that a projection which walked object *keys* rather than arrays of objects would
+  fail visibly on committed bytes.
