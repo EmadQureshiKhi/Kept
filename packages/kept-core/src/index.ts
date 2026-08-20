@@ -256,3 +256,69 @@ export {
   ZERO_PROMISE_METRICS,
   computeMetrics,
 } from './model/metrics.js';
+
+// The ledger snapshot schema (3.13) — the CLI↔UI seam (design §9.1, R8.8).
+// `apps/ledger/data/ledger.snapshot.json` is committed, which is the whole judge
+// story: the deployed Ledger needs no Kane, no Chrome, no credentials and no
+// network (§9.3, R13.4). So this schema is the authority on that file, not the
+// model's cheap structural guards, and it is deliberately strict — an unknown
+// key is an error rather than being silently stripped, because an unknown key
+// means the file was not written by `kept snapshot`. Every "absent" field is
+// `.nullable()` and never `.optional()`, which in zod still *requires the key*:
+// that is what catches a record whose `designedTest` was dropped by
+// `JSON.stringify` (which drops `undefined` and keeps `null`). Five cross-field
+// rules run on every parse, each naming its offending path (R8.8): count
+// agreement against `promises`, coverage nullability (null iff zero promises,
+// and `provenCoverage` also null while degraded), evidence-reference
+// resolution, edge-endpoint resolution, and freshness type/family consistency
+// read from the contract table of §4.1. Vocabularies are imported, never
+// restated, so the snapshot can never become a second authority on the eight
+// exit meanings or the seven artefact kinds.
+export type {
+  LedgerSnapshot,
+  LedgerSnapshotShape,
+  SnapshotAmendment,
+  SnapshotArtifact,
+  SnapshotDiagnostic,
+  SnapshotDocument,
+  SnapshotEdge,
+  SnapshotEvidence,
+  SnapshotFreshness,
+  SnapshotMetrics,
+  SnapshotPromise,
+  SnapshotReviewCard,
+  SnapshotRun,
+  SnapshotRunMember,
+  SnapshotVerdictObject,
+} from './model/snapshot.js';
+export {
+  AMENDMENT_STATUSES,
+  EVIDENCE_KINDS,
+  LedgerSnapshotSchema,
+  MAX_SNAPSHOT_RUNS,
+  REVIEW_CARD_KINDS,
+  REVIEW_CARD_STATUSES,
+  SNAPSHOT_SCHEMA_VERSION,
+  SnapshotAmendmentSchema,
+  SnapshotArtifactSchema,
+  SnapshotCitationSchema,
+  SnapshotDesignedTestSchema,
+  SnapshotDiagnosticSchema,
+  SnapshotDocumentSchema,
+  SnapshotEdgeSchema,
+  SnapshotEvidenceSchema,
+  SnapshotFreshnessSchema,
+  SnapshotGeneratorSchema,
+  SnapshotMetricsSchema,
+  SnapshotPromiseSchema,
+  SnapshotProposedChangeSchema,
+  SnapshotRepairSchema,
+  SnapshotReviewCardSchema,
+  SnapshotRunMemberSchema,
+  SnapshotRunSchema,
+  SnapshotVerdictObjectSchema,
+  SnapshotVerdictSourceSchema,
+  TERMINAL_EVENT_TYPES,
+  evidencePackIdFromRef,
+  isLedgerSnapshot,
+} from './model/snapshot.js';
