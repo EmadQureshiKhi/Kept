@@ -1,0 +1,551 @@
+/*
+ * Kepler Coffee — hand-written CSS, no framework.
+ *
+ * Tailwind is in the repository's dependency budget but its v4 PostCSS bridge
+ * (`@tailwindcss/postcss`) is not installed, and the budget is closed, so this
+ * app styles itself. It is a separate product from the KEPT Ledger and shares
+ * none of its tokens: warm paper, espresso ink, one green accent.
+ */
+
+:root {
+  --paper: #fbf7f1;
+  --card: #ffffff;
+  --ink: #241a15;
+  --ink-soft: #6b5b52;
+  --line: #e6dbcf;
+  --accent: #2f6b4f;
+  --accent-ink: #ffffff;
+  --danger: #a3341f;
+  --radius: 10px;
+  --measure: 68rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.1rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+/* ---------- shell ---------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+.brand {
+  font-weight: 650;
+  font-size: 1.05rem;
+  text-decoration: none;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-mark {
+  color: var(--accent);
+}
+
+.site-header nav ul {
+  display: flex;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-header nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.site-header nav a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.badge {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  min-width: 1.35rem;
+  text-align: center;
+  padding: 0 0.4rem;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.lede {
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  max-width: 42rem;
+}
+
+/* ---------- home ---------- */
+
+.hero {
+  padding: 1rem 0 2.5rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2.5rem;
+}
+
+.hero h1 {
+  font-size: 2.8rem;
+  max-width: 30rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+/* ---------- buttons ---------- */
+
+.button,
+button.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--radius);
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  font-weight: 550;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button.secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--danger);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- cards ---------- */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coffee-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+}
+
+.coffee-card h2,
+.coffee-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.coffee-card a {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.coffee-card a:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+/* ---------- filters ---------- */
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: 0;
+}
+
+.filters legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- product ---------- */
+
+.product {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (max-width: 48rem) {
+  .product {
+    grid-template-columns: 1fr;
+  }
+}
+
+.product-aside {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.product-price {
+  font-size: 1.6rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.notes {
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+/* ---------- tables ---------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stepper button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stepper output {
+  min-width: 1.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals {
+  margin-top: 1.5rem;
+  margin-left: auto;
+  max-width: 20rem;
+}
+
+.totals dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 1.25rem;
+}
+
+.totals dt {
+  color: var(--ink-soft);
+}
+
+.totals dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.totals dt.grand,
+.totals dd.grand {
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+/* ---------- forms ---------- */
+
+.form {
+  max-width: 30rem;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-weight: 550;
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.form-error {
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  background: #fdf1ee;
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.form-error ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.radio-row:last-child {
+  border-bottom: 0;
+}
+
+.radio-row label {
+  font-weight: 500;
+}
+
+/* ---------- misc ---------- */
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.loading {
+  color: var(--ink-soft);
+}
+
+.status {
+  color: var(--accent);
+  font-weight: 550;
+  min-height: 1.55rem;
+}
+
+.empty {
+  color: var(--ink-soft);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.plain-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.plain-fieldset legend h2 {
+  margin: 0 0 0.25rem;
+}

@@ -1,0 +1,60 @@
+{
+  /**
+   * Kepler Coffee is a Next app, so this project diverges from
+   * `tsconfig.base.json` and for a reason in each case:
+   *
+   *   - `jsx: react-jsx`, `module: esnext`, `moduleResolution: bundler`, and a
+   *     `lib` including the DOM — Next's bundler, not tsc, does the emit, and app
+   *     code resolves extensionless relative specifiers the way a bundler does
+   *     rather than the way NodeNext does.
+   *   - `composite: false` / `noEmit: true` / no `declaration` — nothing here is
+   *     consumed as a library. This is a leaf.
+   *   - everything under `strict`, including `noUncheckedIndexedAccess`, is
+   *     inherited unchanged.
+   *
+   * Because a referenced project may not disable emit (TS6310), this project is
+   * *not* a `references` entry of the solution root. It is checked by its own
+   * `tsc -p apps/fixture`, wired into the root `check` script, so a type error
+   * here still fails `npm run check`.
+   *
+   * Every value below is the one `next build` writes for itself, spelled out so a
+   * build has nothing left to rewrite. `tests/` is excluded because it holds
+   * Kane's Markdown test definitions, not TypeScript.
+   */
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true,
+
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "incremental": true,
+    "plugins": [{ "name": "next" }]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "tests"]
+}
