@@ -43,3 +43,39 @@ build/
 
 # iCloud exclusion marker
 .nosync
+
+# =====================================================================
+# KEPT working state  —  one committed file, everything else disposable
+# =====================================================================
+
+# `.kept/` is regenerable single-writer working state: state.json, plan.json,
+# sources.json, handoff.json plus handoff/, review-cards/ and amendments/.
+# Deleting it costs one `kept build`, and committing it would make two branches
+# fight over the same non-mergeable files (design §13.2.2).
+#
+# Written as `.kept/*`, not `.kept/`, deliberately: git never descends into an
+# excluded directory, so `.kept/` followed by a negation would silently ignore
+# the negation. Excluding the *entries* keeps the one exception below working.
+.kept/*
+
+# config.json is committed configuration, not state. It carries the
+# `verdictRouter` selection (design §6.4) — the single string the verdict spike
+# can change, fenced by the router-isolation scan — plus memberDebug and the
+# two timeouts. It has to be reviewable in history.
+!.kept/config.json
+
+# =====================================================================
+# Force-added artefacts  —  what makes replay and evidence free for judges
+# =====================================================================
+
+# Kane recordings: committed so replay costs no authoring credits (R13.6).
+# Nothing above ignores them; these negations state the intent explicitly so a
+# later broad rule cannot swallow a recording without the diff showing it.
+!output-*/
+!helper-output-*/
+
+# Curated evidence packs: `kept snapshot` copies the referenced packs here and
+# rewrites their publicPath values (design §15.3). The Ledger links straight at
+# these files with zero Kane invocations, so they are committed (R13.4, R13.5).
+!apps/ledger/public/evidence/
+!apps/ledger/data/ledger.snapshot.json

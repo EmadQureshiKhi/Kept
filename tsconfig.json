@@ -9,5 +9,8 @@
     "types": ["node"]
   },
   "include": ["vitest.config.ts"],
-  "references": []
+  "references": [
+    { "path": "packages/kept-core" },
+    { "path": "packages/kept-cli" }
+  ]
 }

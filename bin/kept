@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+
+/**
+ * `bin/kept` — the launcher the root scripts call (`npm run loop`,
+ * `npm run build:snapshot`) and the path design §13.1 names:
+ *
+ *     bin/kept  →  packages/kept-cli/dist/index.js
+ *
+ * ES module syntax on purpose. The file has no extension, so Node resolves its
+ * module type from the nearest package.json, and the workspaces root declares
+ * `"type": "module"` — a `require` here fails outright on Node 20.19.
+ *
+ * It must behave sanely before `dist/` exists. A fresh clone runs
+ * `npm install`, not `tsc`, so the first `node bin/kept …` is very likely to
+ * happen against an unbuilt tree. That case prints the build command, not a
+ * module-resolution stack trace.
+ */
+
+import { existsSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+const entry = join(repoRoot, 'packages', 'kept-cli', 'dist', 'index.js');
+
+if (!existsSync(entry)) {
+  process.stderr.write(
+    [
+      'kept: the CLI has not been built yet.',
+      `  expected: ${relative(repoRoot, entry)}`,
+      '  build it: npx tsc -b',
+      '',
+    ].join('\n'),
+  );
+  process.exit(1);
+}
+
+try {
+  await import(pathToFileURL(entry).href);
+} catch (err) {
+  const detail = err instanceof Error ? (err.stack ?? err.message) : String(err);
+  process.stderr.write(
+    [
+      'kept: the built CLI failed to load.',
+      `  entry: ${relative(repoRoot, entry)}`,
+      '  a stale build is the usual cause — rebuild with: npx tsc -b',
+      '',
+      detail,
+      '',
+    ].join('\n'),
+  );
+  process.exit(1);
+}

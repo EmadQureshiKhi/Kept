@@ -1,0 +1,8 @@
+{
+  "verdictRouter": "resultCode740",
+  "memberDebug": false,
+  "timeouts": {
+    "hookMs": 300000,
+    "enrichmentMs": 60000
+  }
+}

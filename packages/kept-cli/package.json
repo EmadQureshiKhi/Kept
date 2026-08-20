@@ -1,0 +1,22 @@
+{
+  "name": "@kept/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "KEPT CLI — build, verify, reconcile, evolve, amend, snapshot, handoff, doctor.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "kept": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@kept/core": "0.0.0"
+  }
+}
