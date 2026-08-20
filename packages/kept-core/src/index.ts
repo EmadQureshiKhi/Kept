@@ -257,6 +257,37 @@ export {
   computeMetrics,
 } from './model/metrics.js';
 
+// The family-gated NDJSON parser (2.9) — the only exported parse entry point,
+// and it takes a `FamilyContract` first (design §4.2). Since `contractFor()` is
+// the only way to obtain one, a parse call cannot exist without a family named
+// at the call site, which is what stops a stream being read against the wrong
+// terminal event: Kane 0.8.4 ends `ExecutionRun` with `run_end`,
+// `ExecutionTestrun` with `testrun_done` and `Assurance` with `done`, and a
+// parser bound to the first reports nothing — silently — on the other two.
+// `terminal` exists **only** on the `complete` arm of `ParsedStream`, so reading
+// a verdict off a crashed stream is a compile error rather than an `undefined`
+// that reads as a pass; the `crashed` arm carries `expectedTerminal` plus an
+// outcome-unknown diagnostic naming the family and the type it waited for
+// (R3.6). A `cover` refusal is therefore **complete** with `status: 'refused'`,
+// not crashed (§5.3.1). Classification is `step`-key first (R3.8), the last
+// terminal-type event wins, unrecognised types are retained rather than dropped
+// (R3.9), non-`{` prefix lines are skipped silently (R3.23) and a malformed line
+// is diagnosed with its one-based number while parsing continues (R3.24).
+export type {
+  CompleteStream,
+  CrashedStream,
+  ParseStreamOptions,
+  ParsedStream,
+  ParsedStreamShared,
+} from './kane/ndjson.js';
+export {
+  NDJSON_CRASHED_DIAGNOSTIC_CODE,
+  NDJSON_PARSE_DIAGNOSTIC_CODE,
+  NDJSON_SNIPPET_LENGTH,
+  PROGRESS_KEY,
+  parseStream,
+} from './kane/ndjson.js';
+
 // The ledger snapshot schema (3.13) — the CLI↔UI seam (design §9.1, R8.8).
 // `apps/ledger/data/ledger.snapshot.json` is committed, which is the whole judge
 // story: the deployed Ledger needs no Kane, no Chrome, no credentials and no
