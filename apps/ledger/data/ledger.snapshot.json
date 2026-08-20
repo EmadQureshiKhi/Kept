@@ -1,0 +1,308 @@
+{
+  "amendments": [],
+  "degraded": true,
+  "degradedReasons": [
+    "assurance-status:refused"
+  ],
+  "diagnostics": [
+    {
+      "at": "2026-08-20T16:17:09.800Z",
+      "code": "enrichment-assurance-status",
+      "file": null,
+      "line": null,
+      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: no context store here (run `kane-cli context ingest <files>` first)",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-20T16:17:09.802Z",
+      "code": "merge-degraded",
+      "file": null,
+      "line": null,
+      "message": "The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
+      "severity": "warn"
+    }
+  ],
+  "documents": [
+    {
+      "claimCount": 8,
+      "file": "apps/fixture/README.md",
+      "id": "d_2aafe9714a4b"
+    }
+  ],
+  "edges": [
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_177308118beb"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_365815f2bcca"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_45ccecba7aa5"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_6ca9700b8471"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_8d965c2fae07"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_a972e6fcb195"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_c5468bf7ed77"
+    },
+    {
+      "from": "d_2aafe9714a4b",
+      "kind": "cites",
+      "to": "p_eb071a709ed0"
+    },
+    {
+      "from": "p_177308118beb",
+      "kind": "designed",
+      "to": "t_913ea73727cf"
+    },
+    {
+      "from": "p_365815f2bcca",
+      "kind": "designed",
+      "to": "t_38e883f0c185"
+    },
+    {
+      "from": "p_45ccecba7aa5",
+      "kind": "designed",
+      "to": "t_27eaa1da5bc3"
+    },
+    {
+      "from": "p_6ca9700b8471",
+      "kind": "designed",
+      "to": "t_0dcde42904fe"
+    },
+    {
+      "from": "p_8d965c2fae07",
+      "kind": "designed",
+      "to": "t_d5ba34908214"
+    },
+    {
+      "from": "p_a972e6fcb195",
+      "kind": "designed",
+      "to": "t_35b862f35478"
+    },
+    {
+      "from": "p_c5468bf7ed77",
+      "kind": "designed",
+      "to": "t_ecedc7a469aa"
+    },
+    {
+      "from": "p_eb071a709ed0",
+      "kind": "designed",
+      "to": "t_50f823f3d211"
+    }
+  ],
+  "evidence": [],
+  "freshness": {
+    "commandFamily": null,
+    "terminalEventAt": null,
+    "terminalEventType": null
+  },
+  "generatedAt": "2026-08-20T16:17:09.885Z",
+  "generator": {
+    "kaneCli": null,
+    "kept": "0.0.0"
+  },
+  "metrics": {
+    "designedCount": 8,
+    "designedCoverage": 1,
+    "provenCount": 0,
+    "provenCoverage": null,
+    "redCount": 0,
+    "staleCount": 8,
+    "totalPromises": 8,
+    "undesignedCount": 0
+  },
+  "promises": [
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 19,
+        "text": "- The Settings screen keeps the selected currency after a full page reload."
+      },
+      "claim": "The Settings screen keeps the selected currency after a full page reload.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/settings_currency_test.md",
+        "testId": "T-6"
+      },
+      "evidencePackId": null,
+      "id": "p_177308118beb",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 18,
+        "text": "- The Orders screen lists every completed order and still lists them after a full page reload."
+      },
+      "claim": "The Orders screen lists every completed order and still lists them after a full page reload.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/orders_persist_test.md",
+        "testId": "T-5"
+      },
+      "evidencePackId": null,
+      "id": "p_365815f2bcca",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 20,
+        "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+      },
+      "claim": "The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/cart_discount_test.md",
+        "testId": "T-7"
+      },
+      "evidencePackId": null,
+      "id": "p_45ccecba7aa5",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 14,
+        "text": "- The Shop screen lists exactly six coffees and filters them by roast level without a page reload."
+      },
+      "claim": "The Shop screen lists exactly six coffees and filters them by roast level without a page reload.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/shop_filter_test.md",
+        "testId": "T-1"
+      },
+      "evidencePackId": null,
+      "id": "p_6ca9700b8471",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 16,
+        "text": "- The Cart screen shows a running subtotal that updates immediately when a quantity changes."
+      },
+      "claim": "The Cart screen shows a running subtotal that updates immediately when a quantity changes.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/cart_subtotal_test.md",
+        "testId": "T-3"
+      },
+      "evidencePackId": null,
+      "id": "p_8d965c2fae07",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 15,
+        "text": "- The Product screen shows the price in the currency selected on the Settings screen."
+      },
+      "claim": "The Product screen shows the price in the currency selected on the Settings screen.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/product_currency_test.md",
+        "testId": "T-8"
+      },
+      "evidencePackId": null,
+      "id": "p_a972e6fcb195",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 13,
+        "text": "- The Home screen links to the Shop screen from its primary call to action."
+      },
+      "claim": "The Home screen links to the Shop screen from its primary call to action.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/home_cta_test.md",
+        "testId": "T-2"
+      },
+      "evidencePackId": null,
+      "id": "p_c5468bf7ed77",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    },
+    {
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 17,
+        "text": "- The Checkout screen refuses to submit while the email field is empty and names the offending field."
+      },
+      "claim": "The Checkout screen refuses to submit while the email field is empty and names the offending field.",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/checkout_validation_test.md",
+        "testId": "T-4"
+      },
+      "evidencePackId": null,
+      "id": "p_eb071a709ed0",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
+    }
+  ],
+  "reviewCards": [],
+  "runs": [],
+  "schemaVersion": 1
+}
