@@ -798,3 +798,57 @@ export {
   memberStatusToVerdict,
   reportMemberStatus,
 } from './verdict/memberStatus.js';
+
+// The testrun plan cache (11.8) — design §7.2, R4.4. `testrun_plan.members[]` is
+// the only authority for the mapping from a `*_test.md` path to an
+// assurance-graph identifier, so this module's whole job is to obtain the real
+// ids and keep them somewhere cheap: `.kept/plan.json`, gitignored because it is
+// regenerable single-writer working state like `state.json`. The refresh is
+// `kane-cli testrun run --dry-run` under the `ExecutionTestrun` family, whose
+// NDJSON enabler is **piped stdout and not a flag** — `--agent` does not exist on
+// `testrun run`, Kane rejects it, and nothing runs — so `PLAN_REFRESH_ARGV`
+// carries no enabler, the invoker appends none, and `applyNdjsonEnabler` asserts
+// none arrived. For this family a process exit of 2 means *preflight rejected*
+// rather than generic failure, which is why the gate reads the stream and not the
+// exit code. Only `testrun_plan` is consumed, and yet `testrun_done` is still
+// required: a truncated `--dry-run` is a crashed stream whose plan may be missing
+// members Kane had not enumerated, and under-enumerating silently shrinks the
+// blast radius until `kept verify` is a no-op that reports success. When the gate
+// refuses — no invoker, no binary, a crashed stream, a completed stream with no
+// plan event — **the previous cache is left exactly as it was**, unwritten and
+// undeleted, so a transient Kane hiccup cannot turn a working verify path into a
+// no-op. Staleness has three triggers (§7.2): missing or malformed, older than
+// `maxAgeMs` (ten minutes), or older than any `*_test.md` — the last read from the
+// repository-root `tests/` tree, because editing a test document changes what Kane
+// would run and a ten-minute window would hand `--from-context` a pre-edit set.
+// `PlanMember.testId` is `string | null` and never blank, so "Kane has no id for
+// this document" has exactly one representation.
+export type {
+  PlanFileSystem,
+  PlanMember,
+  PlanStaleReason,
+  PlanStaleness,
+  PlanStalenessRequest,
+  ReadPlanRequest,
+  TestDocumentStamp,
+  TestrunPlan,
+} from './radius/plan.js';
+export {
+  MAX_TEST_DOCUMENT_DEPTH,
+  PLAN_DIAGNOSTIC_CODES,
+  PLAN_DIAGNOSTIC_CODE_VALUES,
+  PLAN_FAMILY,
+  PLAN_FILE_RELATIVE_PATH,
+  PLAN_MAX_AGE_MS,
+  PLAN_REFRESH_ARGV,
+  PLAN_REFRESH_TIMEOUT_MS,
+  TEST_DOCUMENT_ROOT,
+  inMemoryPlanFileSystem,
+  isTestrunPlan,
+  newestTestDocument,
+  nodePlanFileSystem,
+  normalisePlanEvent,
+  planStaleness,
+  readPlan,
+  serialisePlan,
+} from './radius/plan.js';
