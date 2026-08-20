@@ -692,3 +692,32 @@ export {
   enrichmentTargetsFromPromises,
   normaliseAssuranceStatus,
 } from './providers/enrichment.js';
+
+// The canonical provider merge (3.8) — design §5.4, R1.7, R2.1, R5.5. Six rules,
+// each of them a rule about who is allowed to say what. The admission gate runs
+// over **baseline** candidates first, so baseline is the sole citation authority
+// and an outage cannot move a citation. On an id collision (R1.7) baseline keeps
+// `citation` and `claim` in every case, `designedTest` and `verdict` come from
+// enrichment when it supplied them, `providers` is the union and diagnostics are
+// concatenated. Axis overlays are then applied, and only keys that are *present*
+// are written — a missing key means "leave whatever baseline had", never "clear
+// it", so a coverage payload that omitted a test cannot silently un-design it.
+// Any promise still without a designed test is `undesigned` (R5.5), and because
+// that rule runs after the union it outranks an enrichment verdict for a promise
+// enrichment also un-designed. `degraded` is `!enrichment.ok` and nothing else,
+// which is what makes `computeMetrics` withhold `provenCoverage` rather than
+// report zero (R2.11). Canonical order needs no code here: `createPromiseGraph`
+// already sorts promises by id and edges by `(kind, from, to)` and collapses
+// duplicate edges, so building through it *is* the requirement — restating the
+// comparators would be a second authority on the order the committed snapshot's
+// byte stability depends on. An enrichment candidate matching no baseline promise
+// is dropped and reported rather than admitted, which follows from the citation
+// rule rather than being an extra policy. Omitting `enrichment` is *not* the
+// R2.12 path: "Kane is absent" is an enrichment result carrying `kane-not-found`,
+// because that is a fact about a run the ledger has to show.
+export type { MergeRequest, MergeResult } from './providers/merge.js';
+export {
+  MERGE_DIAGNOSTIC_CODES,
+  MERGE_DIAGNOSTIC_CODE_VALUES,
+  mergeGraph,
+} from './providers/merge.js';
