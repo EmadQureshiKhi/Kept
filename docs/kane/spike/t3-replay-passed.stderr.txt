@@ -1,0 +1,1 @@
+evidence: view locally with `kane-cli evidence serve /Users/nokitha/.testmuai/kaneai/sessions/bd19b0e3-1dec-4e47-9c09-14c2f9534696/evidence/2e0827ca-e1e1-42ae-9434-cf60e4382124.evidence`
