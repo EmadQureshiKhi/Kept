@@ -1,0 +1,2 @@
+{"type":"review_card","v":1,"verb":"reconcile","id":"rc_01M0EF9YB3","kind":"claim_changed","path":"apps/fixture/README.md","line":16,"summary":"the subtotal claim text changed; its designed test needs a decision before reconciliation continues"}
+{"type":"done","v":1,"verb":"reconcile","status":"paused","exit_code":3,"message":"paused: 1 review card awaits a decision","resume":"kane-cli maintain reconcile --mode agent"}

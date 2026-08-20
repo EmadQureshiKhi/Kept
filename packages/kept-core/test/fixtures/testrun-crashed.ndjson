@@ -1,0 +1,5 @@
+{"type":"testrun_plan","valid":true,"members":[{"path":"tests/shop_filter_test.md","test_id":"T-1","tags":["shop","smoke"],"failure":null},{"path":"tests/cart_subtotal_test.md","test_id":"T-3","tags":["cart","subtotal"],"failure":null}],"parallel":1,"on_failure":"continue","bug_detection":"continue"}
+{"type":"testrun_start","total":2,"parallel":1}
+{"type":"testrun_member_start","path":"tests/shop_filter_test.md","test_id":"T-1","index":1}
+{"type":"testrun_member_end","path":"tests/shop_filter_test.md","test_id":"T-1","status":"passed","duration":17.6,"result_code":100,"reason_code":"success.complete","credits_consumed":0,"error_message":null}
+{"type":"testrun_member_start","path":"tests/cart_subtotal_test.md","test_id":"T-3","index":2}

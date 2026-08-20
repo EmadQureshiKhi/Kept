@@ -1,0 +1,25 @@
+# SYNTHETIC fixture, hand-authored. Not a real Kane pack — see README.md.
+# Triage class: docs-lie, via the top-level `classification` field plus a code
+# inside the seven-hundred band. This is the never-true discount claim of the
+# fixture app: the app behaved correctly, the selector resolved, and the
+# assertion still failed — which makes it the documentation's problem.
+schema: 1
+run_id: run-0
+test: tests/cart_discount_test.md
+test_id: T-7
+step: 5
+result_code: "742"
+reason_code: failure.assertion
+classification: assertion
+severity: low
+confidence: 0.95
+one_liner: expected a ten percent discount at subtotal 62.00, observed the undiscounted total
+observed: "62.00"
+expected: "55.80"
+notes: the cart rendered normally, every selector resolved, and no console error was recorded
+artifacts:
+  annotated: annotated.png
+  screenshots:
+    - step-4.png
+    - step-5.png
+  har: network.har

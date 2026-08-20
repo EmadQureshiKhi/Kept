@@ -1,0 +1,24 @@
+# SYNTHETIC fixture, hand-authored. Not a real Kane pack — see README.md.
+# Triage class: test-drift, via the top-level `category` field.
+# The code here sits inside the seven-hundred band on purpose: a selector signal
+# has to outrank the numeric band, so this fixture is the discriminator for that
+# ordering rather than an accident.
+schema: 1
+run_id: run-0
+test: tests/shop_filter_test.md
+test_id: T-1
+step: 3
+result_code: 715
+reason_code: failure.selector
+category: selector_not_found
+severity: medium
+confidence: 0.72
+one_liner: the Shoes category filter chip could not be located
+observed: null
+expected: the Shoes filter chip is visible and clickable
+notes: the page rendered and returned two hundred; the chip markup changed shape
+artifacts:
+  annotated: annotated.png
+  screenshots:
+    - step-3.png
+  log: run.log

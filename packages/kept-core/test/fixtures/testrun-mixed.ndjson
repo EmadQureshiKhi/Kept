@@ -1,0 +1,14 @@
+{"type":"testrun_plan","valid":true,"members":[{"path":"tests/shop_filter_test.md","test_id":"T-1","tags":["shop","smoke"],"failure":null},{"path":"tests/cart_subtotal_test.md","test_id":"T-3","tags":["cart","subtotal"],"failure":null},{"path":"tests/checkout_validation_test.md","test_id":"T-4","tags":["checkout"],"failure":null},{"path":"tests/orders_persist_test.md","test_id":"T-5","tags":["orders"],"failure":null}],"parallel":1,"on_failure":"continue","bug_detection":"continue"}
+{"type":"testrun_start","total":4,"parallel":1}
+{"type":"testrun_member_start","path":"tests/shop_filter_test.md","test_id":"T-1","index":1}
+{"type":"testrun_member_end","path":"tests/shop_filter_test.md","test_id":"T-1","status":"passed","duration":18.2,"result_code":100,"reason_code":"success.complete","credits_consumed":0,"error_message":null}
+{"type":"testrun_member_start","path":"tests/cart_subtotal_test.md","test_id":"T-3","index":2}
+{"type":"testrun_member_end","path":"tests/cart_subtotal_test.md","test_id":"T-3","status":"failed","duration":24.7,"result_code":740,"reason_code":"failure.product_bug","credits_consumed":0,"error_message":"expected subtotal '48.00', observed '24.00'"}
+{"type":"testrun_member_start","path":"tests/checkout_validation_test.md","test_id":"T-4","index":3}
+{"type":"testrun_member_end","path":"tests/checkout_validation_test.md","test_id":"T-4","status":"broken","duration":9.4,"result_code":"801","reason_code":"error.browser_exited","credits_consumed":0,"error_message":"chrome exited before the first step completed"}
+{"type":"testrun_member_start","path":"tests/orders_persist_test.md","test_id":"T-5","index":4}
+{"type":"testrun_member_end","path":"tests/orders_persist_test.md","test_id":"T-5","status":"interrupted","duration":3.1,"result_code":null,"reason_code":"interrupted.signal","credits_consumed":0,"error_message":"member interrupted before any assertion ran"}
+{"type":"testrun_investigations_wait","pending":1,"waited":6.8}
+{"type":"testrun_evidence_ingest","pack":".testmuai/evidence/ev_20260820T184011Z","files":14}
+{"type":"testrun_summary","totals":{"tests":4,"passed":1,"failed":1,"broken":1,"skipped":1},"duration":62.2,"credits_consumed":0}
+{"type":"testrun_done","status":"failed","totals":{"tests":4,"passed":1,"failed":1,"broken":1,"skipped":1},"exit_code":1,"duration":62.2,"credits_consumed":0,"pack":".testmuai/evidence/ev_20260820T184011Z"}

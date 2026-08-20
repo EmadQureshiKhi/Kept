@@ -1,0 +1,24 @@
+# SYNTHETIC fixture, hand-authored. Not a real Kane pack — see README.md.
+# Triage class: code-break, via the nested `triage.category` field.
+schema: 1
+run_id: run-0
+test: tests/cart_subtotal_test.md
+test_id: T-3
+step: 4
+result_code: "740"
+reason_code: failure.product_bug
+triage:
+  category: product_bug
+  severity: high
+  confidence: 0.9
+  one_liner: subtotal did not change after quantity increment
+observed: "24.00"
+expected: "48.00"
+notes: the quantity control responded and the row re-rendered; only the subtotal was stale
+artifacts:
+  annotated: annotated.png
+  screenshots:
+    - step-3.png
+    - step-4.png
+  console: console.ndjson
+  log: run.log

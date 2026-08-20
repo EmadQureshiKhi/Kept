@@ -1,0 +1,10 @@
+# SYNTHETIC fixture, hand-authored. DELIBERATELY INVALID YAML — see README.md.
+# The loader must return null for this file and the router must default to
+# docs-lie. Do not "fix" the syntax below; the broken syntax is the fixture.
+schema: 1
+triage:
+  category: "product_bug
+  severity: [high, unclosed
+	confidence: 0.9
+ - stray sequence item at a bad indent
+observed: "24.00

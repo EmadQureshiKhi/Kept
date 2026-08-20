@@ -1,0 +1,2 @@
+{"type":"error","v":1,"verb":"cover","message":"error: no context store here (run `kane-cli context ingest <files>` first)"}
+{"type":"done","v":1,"verb":"cover","status":"refused","exit_code":2}
