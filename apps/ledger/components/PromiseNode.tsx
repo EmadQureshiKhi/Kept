@@ -29,16 +29,27 @@
  * The verdict wash on the 3px left edge is authored in `promise-node.css`, in rules
  * that carry no `color`, so no wash ever sits behind text (§10.4.3). `VerdictTag`
  * supplies the word and the hue, composed through its documented `className`.
+ *
+ * **The one thing motion adds here is a hook call.** M5 (§10.6.3, task 17.4) marks a
+ * verdict *changing*, and the only place that change is observable is the component
+ * that re-renders with the new one — the DOM by then shows the destination, so the
+ * origin exists nowhere else. `useVerdictFlip` keeps it, animates the tag and this
+ * node's left edge through the `play()` gate, and hands the inline declarations back
+ * to the stylesheet when it lands. Nothing about this markup changes, on purpose:
+ * with motion off the flip never runs and every verdict is still a word beside its
+ * hue.
  */
 
 'use client';
 
 import clsx from 'clsx';
 import type { SnapshotPromise } from '@kept/core';
+import { useRef } from 'react';
 
 import { citationLabel } from '../lib/citation.js';
 
 import { VerdictTag } from './VerdictTag.js';
+import { useVerdictFlip } from './VerdictFlip.js';
 
 import '../styles/promise-node.css';
 
@@ -64,6 +75,13 @@ export function PromiseNode({
   registerElement,
   className,
 }: PromiseNodeProps) {
+  /* Two readers of one element: the graph's keyboard model, which is handed it
+     through `registerElement`, and the verdict flip, which needs it during an effect
+     rather than during a render. A callback ref feeds both, so the node is still
+     registered exactly when it mounts and unregistered exactly when it unmounts. */
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  useVerdictFlip(nodeRef, promise.verdict);
+
   return (
     <div
       className={clsx('promise-node', 'surface-raised', className)}
@@ -71,11 +89,10 @@ export function PromiseNode({
       data-selected={selected ? 'true' : 'false'}
       data-verdict={promise.verdict}
       onClick={onSelect === undefined ? undefined : () => onSelect(promise.id)}
-      ref={
-        registerElement === undefined
-          ? undefined
-          : (element: HTMLDivElement | null) => registerElement(promise.id, element)
-      }
+      ref={(element: HTMLDivElement | null) => {
+        nodeRef.current = element;
+        registerElement?.(promise.id, element);
+      }}
       role="button"
       tabIndex={-1}
     >

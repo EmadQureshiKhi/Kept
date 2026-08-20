@@ -58,10 +58,13 @@
  *     the emptiest kind of green.
  */
 
+import type { Verdict } from '@kept/core';
 import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import LedgerPage from '../app/page.js';
+import { playVerdictFlip } from '../components/VerdictFlip.js';
+import { VERDICT_RANK } from '../components/VerdictTag.js';
 import {
   REDUCED_MOTION_QUERY,
   durationMs,
@@ -239,13 +242,37 @@ interface Orchestration {
 }
 
 /**
- * Every orchestration this comparison drives. Empty until M5 (task 17.4) lands.
+ * Every orchestration this comparison drives.
  *
  * The tripwire at the end of this file asserts that this list names exactly the
- * shipped modules importing `lib/motion.js`, so the first flourish cannot be
- * committed while the page comparison still inspects a page where nothing moves.
+ * shipped modules importing `lib/motion.js`, so a flourish cannot be committed while
+ * the page comparison still inspects a page where nothing moves.
+ *
+ * **M5 is driven at a verdict it cannot reach today, on purpose.** The committed
+ * snapshot is `degraded: true` with all eight promises `stale`, so no promise on this
+ * page has a *previous* verdict — verdict movement arrives with stage 15. Driving the
+ * flip with `from` set to some other verdict and `to` set to the one the page
+ * actually states is exactly the update `PromiseGraph` will pass down when a snapshot
+ * moves: the DOM already shows the destination, and the animation travels from where
+ * the promise used to be. That makes the comparison below a real one — a page whose
+ * tags have been through a 420 ms cross-fade and pulse, against a page under reduced
+ * motion that never moved.
  */
-const ORCHESTRATIONS: readonly Orchestration[] = [];
+const ORCHESTRATIONS: readonly Orchestration[] = [
+  {
+    site: 'apps/ledger/components/VerdictFlip.tsx',
+    drive: async (container) => {
+      const node = container.querySelector<HTMLElement>('[data-promise-node]');
+      expect(node, 'no promise node to flip, so M5 was not driven at all').not.toBeNull();
+      if (node === null) return;
+      const current = (node.getAttribute('data-verdict') ?? '') as Verdict;
+      const previous = VERDICT_RANK.find((verdict) => verdict !== current);
+      expect(previous, 'every verdict is the current one, which cannot be').toBeDefined();
+      if (previous === undefined) return;
+      await playVerdictFlip(node, previous, current);
+    },
+  },
+];
 
 const GATE = 'apps/ledger/lib/motion.tsx';
 const TEST_DIRECTORY = 'apps/ledger/test/';
@@ -566,13 +593,17 @@ describe('the first orchestration cannot land without joining this comparison', 
     ).toEqual(ORCHESTRATIONS.map((orchestration) => orchestration.site));
   });
 
-  it('says plainly that no orchestration exists yet', () => {
+  it('says plainly that the page comparison now has something to catch', () => {
+    /* The inverted form of the assertion this test carried at the gate commit, when
+       it read `no orchestration exists yet` and pinned the count to zero. A flourish
+       has landed, so the page-level comparison is no longer the vacuous half of this
+       file and the count is asserted from below as well as against the scan. */
     expect(
       ORCHESTRATIONS.length,
-      'This is the honest state of stage 17 at the gate commit: lib/motion.tsx exists, ' +
-        'M5 (17.4) and M4 (17.5) do not, so the page-level comparison has nothing to ' +
-        'catch yet and the machinery tests above are what make this file worth running. ' +
-        'The assertion inverts the moment a flourish is registered.',
-    ).toBe(GATE_CONSUMERS.length);
+      'The registry is empty again. The comparison of / above would then be two ' +
+        'renders that were never going to differ, agreeing — so this file would pass ' +
+        'while saying nothing about §10.6.4.',
+    ).toBeGreaterThan(0);
+    expect(ORCHESTRATIONS.length).toBe(GATE_CONSUMERS.length);
   });
 });
