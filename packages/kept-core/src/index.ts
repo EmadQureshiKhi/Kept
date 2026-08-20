@@ -453,6 +453,68 @@ export {
   splitLines,
 } from './model/admission.js';
 
+// The single verdict write guard, and the working-state store behind it (3.16) —
+// design §4.8, §14.1 step 6, R2.10, R3.7, R5.3, R5.4, R11.8–R11.11. The ledger's
+// whole claim is that it never overstates what it has proved, and that claim
+// reduces to one predicate stated once: a verdict may move **only** when the
+// stream reached its family's terminal event **and** the process exit meant
+// success or failure. Both halves, always. Neither is restated here —
+// `mayWriteVerdicts` reads the exit-code half from
+// `WRITE_PERMITTING_EXIT_MEANINGS` through `permitsVerdictWrite` (kane/exit.ts),
+// so this module names no exit meaning at all and a ninth `ExitMeaning` member
+// cannot join the writable side by being added; the stream half is the `kind`
+// discriminant of `ParsedStream`, and because the guard is declared as a type
+// predicate, `stream.terminal` becomes reachable *only* on the branch the guard
+// authorised. `applyRun` is the only exported way to move a verdict: it calls the
+// guard first and, on refusal, returns the prior state **by reference** — so a
+// crashed stream, our own timeout kill, an Assurance pause (exit 3, resumable and
+// the single most damaging thing to misread), a force-interrupt, a preflight
+// rejection with nothing run at all and a missing binary preserve prior verdicts
+// *and* the freshness triple by construction, not by an `if` at each call site.
+// The three freshness fields move together or not at all, with the terminal event
+// type read from `contractFor()` so it can never disagree with the family that
+// produced it (§9.1 rule 5). Refusals are recorded as diagnostics and never
+// thrown, and deliberately never folded into the state — appending one would mean
+// the state had changed. Everything returned is deep-frozen and untouched records
+// are carried across by reference, so an out-of-radius promise *is* its prior
+// self (R4.15) and a downstream mutation is a `TypeError` rather than silent
+// ledger corruption; `Object.freeze` is the right tool precisely because a frozen
+// plain object is still plain, so `canonicaliseSnapshot` accepts it.
+export type {
+  ApplyRunRequest,
+  ApplyRunResult,
+  KeptState,
+  KeptStateInput,
+  ProvenRunOutcome,
+  RunOutcome,
+  StateFileSystem,
+  StateFreshness,
+  StateStore,
+  StateStoreOptions,
+  VerdictWrite,
+  WriteRefusalReason,
+} from './state.js';
+export {
+  EMPTY_FRESHNESS,
+  STATE_DIAGNOSTIC_CODES,
+  STATE_DIAGNOSTIC_CODE_VALUES,
+  STATE_FILE_RELATIVE_PATH,
+  STATE_SCHEMA_VERSION,
+  WRITE_REFUSAL_REASONS,
+  applyRun,
+  createKeptState,
+  createStateStore,
+  deepFreeze,
+  inMemoryStateFileSystem,
+  isKeptState,
+  isStateFreshness,
+  mayWriteVerdicts,
+  nodeStateFileSystem,
+  outcomeFromInvocation,
+  serialiseState,
+  writeRefusals,
+} from './state.js';
+
 // The one promise-provider interface (3.5) — design §5.1, R2.1. Both providers
 // implement `PromiseAdapter` and nothing else, so the graph builder knows nothing
 // about `*_test.md` files or about `kane-cli cover`. The load-bearing detail is
