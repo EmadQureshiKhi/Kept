@@ -63,3 +63,28 @@ export {
   isExitMeaning,
   permitsVerdictWrite,
 } from './kane/exit.js';
+
+// Evidence-pack resolution (2.17) — the location is derived from the command
+// family and never from a terminal event, because no terminal event carries an
+// evidence path and `run_dir` is legacy and no longer created (design §4.6, A12,
+// R3.19). Every path returned is absolute.
+export type {
+  ArtifactKind,
+  EvidenceArtifact,
+  EvidenceDirEntry,
+  EvidenceDirRequest,
+  EvidenceFileSystem,
+  EvidenceListing,
+  EvidencePack,
+  EvidenceStat,
+  ListArtifactsRequest,
+} from './kane/evidence.js';
+export {
+  ARTIFACT_KINDS,
+  EVIDENCE_DIR_NAME,
+  TESTMUAI_DIR_NAME,
+  classifyArtifact,
+  listArtifacts,
+  nodeEvidenceFileSystem,
+  resolveEvidenceDir,
+} from './kane/evidence.js';
