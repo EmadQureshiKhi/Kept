@@ -36,6 +36,7 @@ import { EXIT_OK, EXIT_USAGE, parseArgv, readList } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
 import { runBuild } from './commands/build.js';
+import { runReconcile } from './commands/reconcile.js';
 import { runSnapshot } from './commands/snapshot.js';
 import { runVerify } from './commands/verify.js';
 import { KEPT_VERSION } from './version.js';
@@ -68,11 +69,11 @@ export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze([
   'build',
   'snapshot',
   'verify',
+  'reconcile',
 ]);
 
 /** Which task lands each unimplemented command, so the message can say so. */
 const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
-  reconcile: 'task 12.7',
   evolve: 'task 12.10',
   amend: 'task 14.5',
   handoff: 'task 12.11',
@@ -136,6 +137,8 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
       return dispatchSnapshot(parsed, { repoRoot, fileSystem, sink, at, io });
     case 'verify':
       return await dispatchVerify(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'reconcile':
+      return await dispatchReconcile(parsed, { repoRoot, config, fileSystem, sink, at, io });
     default:
       return reportPending(parsed, { repoRoot, config, sink, io });
   }
@@ -312,6 +315,120 @@ async function dispatchVerify(
   }
   writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
   // Every outcome Kane can produce is data, so this is always zero (R2.10).
+  return EXIT_OK;
+}
+
+/**
+ * `kept reconcile --changed <p…>` (design §13.2, §14.1).
+ *
+ * What the docs hook fires: `--plan`, always, one invocation per changed doc,
+ * each with its own resolved `--source-id`. The human-only `reconcile apply` form
+ * is task 12.7's.
+ *
+ * Every outcome exits 0 — Kane's refusal, its pause, its own exit 2 and its
+ * absence are all data (R2.10, §14.2). The one non-zero exit in the product,
+ * `--plan` with `--apply`, is rejected by the parser before dispatch is reached.
+ */
+async function dispatchReconcile(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const result = await runReconcile({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    changed: readList(parsed.flags, 'changed'),
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'reconcile',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          documents: result.docs.map((doc) => ({
+            file: doc.file,
+            sourceId: doc.sourceId,
+            via: doc.via,
+            refusal:
+              doc.refusal === null
+                ? null
+                : { check: doc.refusal.check, code: doc.refusal.code, reason: doc.refusal.reason },
+            argv: doc.argv,
+            invoked: doc.invoked,
+            exitCode: doc.exitCode,
+            exitMeaning: doc.exitMeaning,
+            terminalSeen: doc.terminalSeen,
+            status: doc.status,
+            paused: doc.paused,
+            headMoved: doc.headMoved,
+            staged: doc.staged.length,
+            message: doc.message,
+            runId: doc.runId,
+            handoffPath: doc.handoff.paths.newest,
+          })),
+          outOfScope: result.outOfScope,
+          invocations: result.invocations,
+          rebuilt: result.rebuilt,
+          reviewCards: result.reviewCards,
+          statePath: result.statePath,
+          promises: result.state.graph.promises.length,
+          undesigned: result.state.graph.promises.filter(
+            (promise) => promise.verdict === 'undesigned',
+          ).length,
+          degraded: result.state.graph.degraded,
+          freshness: result.state.freshness,
+          snapshot: { path: result.snapshot.path, written: result.snapshot.written },
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept reconcile --changed`,
+        `  repository   ${context.repoRoot}`,
+        `  documents    ${
+          result.docs.length === 0
+            ? 'none inside the docs hook pattern set — nothing was invoked'
+            : result.docs.map((doc) => doc.file).join(', ')
+        }`,
+        ...result.docs.map(
+          (doc) =>
+            `  ${doc.file}\n` +
+            `    source     ${doc.sourceId ?? 'unresolved'}${
+              doc.via === null ? '' : ` (via ${doc.via})`
+            }\n` +
+            `    command    ${doc.invoked ? doc.argv.join(' ') : 'none'}\n` +
+            `    outcome    ${
+              doc.invoked
+                ? `${doc.status ?? 'unknown'}${doc.paused ? ', resumable' : ''}`
+                : `refused: ${doc.refusal?.code ?? 'unknown'}`
+            }`,
+        ),
+        `  graph        ${
+          result.rebuilt
+            ? `rebuilt, ${result.state.graph.promises.length} promise(s)`
+            : 'unchanged — no accepted terminal event'
+        }`,
+        `  review cards none created; every change is held (R5.7)`,
+        `  handoff      ${result.handoffs[result.handoffs.length - 1]?.paths.newest ?? 'none'}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // Every refusal is a refusal of Kane's, not a failure of KEPT (§14.1, R2.10).
   return EXIT_OK;
 }
 

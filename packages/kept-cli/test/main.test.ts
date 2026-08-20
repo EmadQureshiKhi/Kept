@@ -67,7 +67,7 @@ describe('help and usage', () => {
   });
 
   it('names which commands this build implements', () => {
-    expect([...IMPLEMENTED_COMMANDS]).toEqual(['build', 'snapshot', 'verify']);
+    expect([...IMPLEMENTED_COMMANDS]).toEqual(['build', 'snapshot', 'verify', 'reconcile']);
     for (const command of IMPLEMENTED_COMMANDS) expect(USAGE).toContain(command);
   });
 
