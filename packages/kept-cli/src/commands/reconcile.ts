@@ -1,6 +1,6 @@
 /**
- * `kept reconcile --changed <p…>` — the corrected docs branch (design §13.2,
- * §13.2.1–§13.2.4, §14.1, R5.1–R5.8, R2.10).
+ * `kept reconcile --changed <p…>` and `kept reconcile apply [planPath]` — the
+ * corrected docs branch (design §13.2, §13.2.1–§13.2.4, §14.1, R5.1–R5.8, R2.10).
  *
  * ## The correction this file exists to carry
  *
@@ -86,10 +86,8 @@
  * than in this repository, and it lands even under `--plan`, so it is recorded in
  * the run diagnostics and a reviewer is never surprised by it.
  *
- * `--apply` is never issued by a hook, and nothing in this file can compose it:
- * {@link reconcilePlanArgv} names `--plan`, and there is no second argv builder
- * here at all. `kept reconcile apply [planPath]` is a deliberate human command
- * and lands in task 12.7.
+ * `--apply` is never issued by a hook. `kept reconcile apply [planPath]` is a
+ * deliberate human command, absent from both hook prompts.
  *
  * **`--plan` together with `--apply` is the single case in the whole product
  * where `kept` itself exits non-zero.** It is a usage error, rejected by KEPT's
@@ -97,7 +95,9 @@
  * §14.1's last row). Every other outcome this file can produce — a refusal, a
  * pause, a crashed stream, a missing binary, Kane's own exit 2 — exits **0**,
  * because the CLI's exit code reports whether KEPT worked and never whether the
- * product passed (§14.2).
+ * product passed (§14.2). {@link reconcileUsageErrors} is where the rejection is
+ * decided for this command, and it reads the same
+ * `MUTUALLY_EXCLUSIVE_FLAGS` table the parser does rather than restating the rule.
  *
  * ## What this file deliberately does not do
  *
@@ -132,6 +132,7 @@ import type {
   KaneInvoker,
   KeptState,
   ParsedStream,
+  RunOutcome,
   SourceMtimeReader,
   SourceResolution,
   SourceResolutionReason,
@@ -157,6 +158,8 @@ import {
   writeHandoff,
 } from '@kept/core';
 
+import type { ParsedArgv } from '../args.js';
+import { MUTUALLY_EXCLUSIVE_FLAGS } from '../args.js';
 import type { KeptConfig } from '../config.js';
 
 import type { BuildResult } from './build.js';
@@ -339,6 +342,49 @@ export function reconcileArgv(
 ): readonly string[] | null {
   if (!resolution.ok) return null;
   return reconcilePlanArgv(from, resolution.source.sourceId);
+}
+
+/**
+ * The human-only apply invocation (§13.2.3). Bare walks the latest stored plan
+ * behind Kane's approval prompt; a path selects one.
+ *
+ * `--plan` is structurally absent: this function names `--apply` and nothing
+ * else, so there is no code path in `kept` that can emit both flags.
+ */
+export function reconcileApplyArgv(planPath: string | null): readonly string[] {
+  return Object.freeze(
+    planPath === null || planPath.length === 0
+      ? [...RECONCILE_ARGV_HEAD, APPLY_FLAG]
+      : [...RECONCILE_ARGV_HEAD, APPLY_FLAG, planPath],
+  );
+}
+
+/**
+ * The usage errors `kept reconcile` rejects before anything runs (§13.2.3).
+ *
+ * The parser's own table already catches `--plan --apply`, and `main` returns
+ * exit 2 for it before dispatch. This adds the one spelling the table cannot see:
+ * `kept reconcile apply` is the **subcommand** form of `--apply`, so
+ * `kept reconcile apply --plan` would compose both flags onto Kane's argv while
+ * carrying only one of them in `flags`. The rule is not restated — the effective
+ * flag set is built and `MUTUALLY_EXCLUSIVE_FLAGS` is read over it, so a second
+ * pair added to that table is a row here too and not a new code path.
+ */
+export function reconcileUsageErrors(parsed: ParsedArgv): readonly string[] {
+  const effective = new Set<string>(parsed.flags.keys());
+  if (parsed.subcommand === 'apply') effective.add('apply');
+
+  const errors: string[] = [...parsed.usageErrors];
+  for (const [left, right] of MUTUALLY_EXCLUSIVE_FLAGS) {
+    if (!effective.has(left) || !effective.has(right)) continue;
+    const already = errors.some((message) => message.includes(`--${left} and --${right}`));
+    if (already) continue;
+    errors.push(
+      `--${left} and --${right} are mutually exclusive: one stages changes and the other ` +
+        `walks what was staged, so no invocation can mean both`,
+    );
+  }
+  return Object.freeze(errors);
 }
 
 // ---------------------------------------------------------------------------
@@ -1050,6 +1096,194 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
     build,
     reviewCards: null,
     handoffs: Object.freeze(handoffs),
+    snapshot,
+    diagnostics: sink.entries,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// `kept reconcile apply [planPath]` — human-only (§13.2.3)
+// ---------------------------------------------------------------------------
+
+/** {@link runReconcileApply}'s input. */
+export interface ReconcileApplyRequest {
+  readonly repoRoot: string;
+  readonly config: KeptConfig;
+  /** The plan to walk. Null or absent walks the latest, behind Kane's prompt. */
+  readonly planPath?: string | null | undefined;
+  readonly invoker?: KaneInvoker | undefined;
+  readonly fileSystem?: StateFileSystem | undefined;
+  readonly diagnostics?: CollectingDiagnosticSink | undefined;
+  readonly at?: string | undefined;
+}
+
+/** What {@link runReconcileApply} did. */
+export interface ReconcileApplyResult {
+  readonly planPath: string | null;
+  /** argv actually issued, `--mode agent` included. Empty when nothing ran. */
+  readonly argv: readonly string[];
+  readonly invoked: boolean;
+  readonly exitCode: number | null;
+  readonly exitMeaning: ExitMeaning | null;
+  readonly terminalSeen: boolean;
+  readonly status: string | null;
+  readonly accepted: boolean;
+  readonly paused: boolean;
+  readonly message: string | null;
+  /** Items the walked plan reported. Task 14.1 mirrors them into review cards. */
+  readonly staged: readonly Record<string, unknown>[];
+  readonly runId: string;
+  readonly handoff: WriteHandoffResult;
+  readonly snapshot: SnapshotResult;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+/**
+ * Walk a stored plan (§13.2.3). **Human-only**: no hook invokes this, both hook
+ * prompts forbid it by name, and `kept reconcile --changed` cannot reach it.
+ *
+ * `--apply` bare walks the latest stored plan behind Kane's own approval prompt;
+ * a path selects one. `--plan` is never composed alongside it — see
+ * {@link reconcileApplyArgv} and {@link reconcileUsageErrors} — so the invalid
+ * combination never reaches Kane, and rejecting it is the one case `kept` itself
+ * exits non-zero.
+ *
+ * The graph is **not** rebuilt here. An apply is a human walking a plan behind an
+ * approval prompt, and `kept build` is one command away; rebuilding automatically
+ * would spend a `cover` run on a decision the human has not finished making.
+ */
+export async function runReconcileApply(
+  request: ReconcileApplyRequest,
+): Promise<ReconcileApplyResult> {
+  const sink = request.diagnostics ?? createDiagnosticSink();
+  const at = request.at ?? new Date().toISOString();
+  const planPath = request.planPath ?? null;
+  const declared = reconcileApplyArgv(planPath);
+  const runId = `${SYNTHETIC_RUN_ID_PREFIX}apply:${at}`;
+
+  sink.report({
+    code: RECONCILE_DIAGNOSTIC_CODES.applyStarted,
+    severity: 'info',
+    message:
+      `kept reconcile apply${planPath === null ? '' : ` ${planPath}`}: a human-only walk of ` +
+      `${planPath === null ? 'the latest stored plan' : planPath} behind Kane's approval ` +
+      `prompt. No hook invokes this command.`,
+  });
+
+  const invocation: InvocationResult<typeof RECONCILE_FAMILY> | null =
+    request.invoker === undefined
+      ? null
+      : await request.invoker.invoke({
+          family: RECONCILE_FAMILY,
+          argv: declared,
+          cwd: request.repoRoot,
+          timeoutMs: request.config.timeouts.hookMs,
+        });
+
+  if (invocation === null) {
+    sink.report({
+      code: RECONCILE_DIAGNOSTIC_CODES.kaneUnavailable,
+      severity: 'warn',
+      message:
+        `there is no Kane boundary to walk the stored plan with, so nothing was invoked and ` +
+        `nothing was applied (R2.12).`,
+    });
+  }
+
+  const stream =
+    invocation === null
+      ? null
+      : parseStream(contractFor(RECONCILE_FAMILY), invocation.stdoutLines, { sink });
+  const terminal = stream !== null && stream.kind === 'complete' ? stream.terminal : null;
+  const status = terminal === null ? null : normaliseAssuranceStatus(terminal.status);
+  const accepted = status === ACCEPTED_ASSURANCE_STATUS;
+  const paused = status === 'paused';
+  const message = kaneMessage(stream, terminal);
+  const staged = stagedItems(stream);
+
+  if (stream !== null && stream.kind === 'crashed') {
+    sink.report({
+      code: RECONCILE_DIAGNOSTIC_CODES.outcomeUnknown,
+      severity: 'warn',
+      message:
+        `the apply stream ended without its '${stream.expectedTerminal}' event, so the outcome ` +
+        `is unknown and every verdict stands.`,
+    });
+  } else if (paused) {
+    sink.report({
+      code: RECONCILE_DIAGNOSTIC_CODES.paused,
+      severity: 'warn',
+      message:
+        `the plan walk is paused and resumable (exit ${invocation?.exitCode ?? 'unknown'}), so ` +
+        `nothing changed.${message === null ? '' : ` Kane reported: ${message}`}`,
+    });
+  } else if (stream !== null && !accepted) {
+    sink.report({
+      code: RECONCILE_DIAGNOSTIC_CODES.refused,
+      severity: 'warn',
+      message:
+        `the plan walk finished with status '${status ?? 'unknown'}' (exit ` +
+        `${invocation?.exitCode ?? 'unknown'}), so nothing was applied.` +
+        `${message === null ? '' : ` Kane reported: ${message}`}`,
+    });
+  }
+
+  const resolvedRunId = readString(terminal, 'run_id') ?? runId;
+  // Passed as an explicit `null` rather than omitted, so the family this handoff
+  // is generic over is inferred from the outcome instead of widening to every
+  // family — a handoff typed over all three would let an `ExecutionRun` terminal
+  // be read off an Assurance stream.
+  const outcome: RunOutcome<typeof RECONCILE_FAMILY> | null =
+    invocation === null || stream === null
+      ? null
+      : { runId: resolvedRunId, exitMeaning: invocation.exitMeaning, stream };
+
+  const handoff = writeHandoff({
+    repoRoot: request.repoRoot,
+    runId: resolvedRunId,
+    at,
+    run: outcome,
+    exitCode: invocation?.exitCode ?? null,
+    // `hook: null` is the whole point: a human ran this (§11.2).
+    trigger: { hook: null, event: null, paths: planPath === null ? [] : [planPath] },
+    command: {
+      family: RECONCILE_FAMILY,
+      argv: invocation?.effectiveArgv ?? [],
+      invoked: invocation !== null,
+    },
+    diagnostics: sink.entries,
+    ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+  });
+
+  const snapshot = runSnapshot({
+    repoRoot: request.repoRoot,
+    generatedAt: at,
+    diagnostics: sink,
+    ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+  });
+
+  sink.report({
+    code: RECONCILE_DIAGNOSTIC_CODES.completed,
+    severity: 'info',
+    message:
+      `kept reconcile apply: ${invocation === null ? 'no' : 'one'} invocation, status ` +
+      `'${status ?? 'none'}', ${staged.length} item(s) reported, no verdict written`,
+  });
+
+  return {
+    planPath,
+    argv: invocation?.effectiveArgv ?? Object.freeze([]),
+    invoked: invocation !== null,
+    exitCode: invocation?.exitCode ?? null,
+    exitMeaning: invocation?.exitMeaning ?? null,
+    terminalSeen: terminal !== null,
+    status,
+    accepted,
+    paused,
+    message,
+    staged,
+    runId: resolvedRunId,
+    handoff,
     snapshot,
     diagnostics: sink.entries,
   };

@@ -36,7 +36,11 @@ import { EXIT_OK, EXIT_USAGE, parseArgv, readList } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
 import { runBuild } from './commands/build.js';
-import { runReconcile } from './commands/reconcile.js';
+import {
+  reconcileUsageErrors,
+  runReconcile,
+  runReconcileApply,
+} from './commands/reconcile.js';
 import { runSnapshot } from './commands/snapshot.js';
 import { runVerify } from './commands/verify.js';
 import { KEPT_VERSION } from './version.js';
@@ -319,23 +323,98 @@ async function dispatchVerify(
 }
 
 /**
- * `kept reconcile --changed <p…>` (design §13.2, §14.1).
+ * `kept reconcile --changed <p…>` and `kept reconcile apply [planPath]`
+ * (design §13.2, §14.1).
  *
- * What the docs hook fires: `--plan`, always, one invocation per changed doc,
- * each with its own resolved `--source-id`. The human-only `reconcile apply` form
- * is task 12.7's.
+ * Two commands behind one word, and they are not variants of each other. The
+ * `--changed` form is what the docs hook fires: `--plan`, always, one invocation
+ * per changed doc, each with its own resolved `--source-id`. The `apply` form is
+ * human-only, absent from both hook prompts, and walks a stored plan behind
+ * Kane's approval prompt.
  *
- * Every outcome exits 0 — Kane's refusal, its pause, its own exit 2 and its
- * absence are all data (R2.10, §14.2). The one non-zero exit in the product,
- * `--plan` with `--apply`, is rejected by the parser before dispatch is reached.
+ * This arm carries the **one non-zero exit in the product**. `--plan` together
+ * with `--apply` is a usage error rejected before any spawn, and
+ * `reconcileUsageErrors` catches the spelling the parser's flag table cannot see —
+ * `kept reconcile apply --plan`, where `apply` arrived as a subcommand word.
+ * Everything else exits 0: Kane's refusal, its pause, its exit 2 and its absence
+ * are all data (R2.10, §14.2).
  */
 async function dispatchReconcile(
   parsed: ParsedArgv,
   context: Dispatch & { readonly config: KeptConfig },
 ): Promise<number> {
+  const usageErrors = reconcileUsageErrors(parsed);
+  if (usageErrors.length > 0) {
+    context.io.writeError(
+      [...usageErrors.map((message) => `kept: ${message}`), '', USAGE, ''].join('\n'),
+    );
+    return EXIT_USAGE;
+  }
+
   const invoker =
     context.io.invoker ??
     (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  if (parsed.subcommand === 'apply') {
+    const planPath = parsed.positionals[0] ?? null;
+    const result = await runReconcileApply({
+      repoRoot: context.repoRoot,
+      config: context.config,
+      planPath,
+      fileSystem: context.fileSystem,
+      diagnostics: context.sink,
+      at: context.at,
+      ...(invoker === undefined ? {} : { invoker }),
+    });
+
+    if (parsed.options.json) {
+      context.io.write(
+        `${JSON.stringify(
+          {
+            command: 'reconcile apply',
+            implemented: true,
+            repoRoot: context.repoRoot,
+            planPath: result.planPath,
+            argv: result.argv,
+            invoked: result.invoked,
+            exitCode: result.exitCode,
+            exitMeaning: result.exitMeaning,
+            terminalSeen: result.terminalSeen,
+            status: result.status,
+            paused: result.paused,
+            message: result.message,
+            staged: result.staged.length,
+            handoffPath: result.handoff.paths.newest,
+            nextAction: result.handoff.handoff.nextAction,
+            snapshot: { path: result.snapshot.path, written: result.snapshot.written },
+            diagnostics: result.diagnostics,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      context.io.write(
+        [
+          `kept reconcile apply${result.planPath === null ? '' : ` ${result.planPath}`}`,
+          `  repository   ${context.repoRoot}`,
+          `  command      ${result.invoked ? result.argv.join(' ') : 'none'}`,
+          `  outcome      ${
+            result.invoked
+              ? `${result.status ?? 'unknown'}${
+                  result.terminalSeen ? '' : ' — no terminal event, outcome unknown'
+                }`
+              : 'no Kane process was started'
+          }`,
+          `  staged       ${result.staged.length} item(s) reported, none applied`,
+          `  handoff      ${result.handoff.paths.newest}`,
+          '',
+        ].join('\n'),
+      );
+    }
+    writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+    return EXIT_OK;
+  }
 
   const result = await runReconcile({
     repoRoot: context.repoRoot,
