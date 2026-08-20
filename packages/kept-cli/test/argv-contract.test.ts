@@ -27,6 +27,8 @@ import { describe, expect, it } from 'vitest';
 import { EXIT_OK } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
 import { IMPLEMENTED_COMMANDS, main } from '../src/main.js';
+import type { EvolveHelpObservation } from '../src/commands/evolve.js';
+import { clearEvolveHelpProbeCache, parseEvolveHelp } from '../src/commands/evolve.js';
 import { runReconcile } from '../src/commands/reconcile.js';
 import { runVerify } from '../src/commands/verify.js';
 
@@ -56,10 +58,10 @@ import { runVerify } from '../src/commands/verify.js';
  *
  * ## Live rows and pending rows
  *
- * Four commands exist today and are asserted directly: `kept build`, the plan
- * refresh, `kept verify` in both scopes, and `kept reconcile --changed`. Two do
- * not exist yet — `kept evolve` is task 14.2 and `kept doctor` is task 21.2 — and
- * for those a skipped test that quietly passes would be worse than no test, since
+ * Five commands exist today and are asserted directly: `kept build`, the plan
+ * refresh, `kept verify` in both scopes, `kept reconcile --changed`, and — since
+ * task 14.2 — `kept evolve`. One does not exist yet: `kept doctor` is task 21.2,
+ * and for it a skipped test that quietly passes would be worse than no test, since
  * the row it is meant to protect would land unprotected.
  *
  * So each pending row is guarded two ways. {@link PENDING_ARGV} pins the argv
@@ -67,7 +69,26 @@ import { runVerify } from '../src/commands/verify.js';
  * implemented and spawns nothing at all. The moment either one lands, that
  * assertion fails loudly and its author is sent here to replace it with the real
  * process-boundary check beside the pinned argv. The `it.skip` body carries the
- * assertion to promote, so promoting it is a deletion and a rename.
+ * assertion to promote, so promoting it is a deletion and a rename. `kept evolve`
+ * went through exactly that: its two pending guards are gone and the block below
+ * asserts the effective argv instead.
+ *
+ * ## `kept evolve` needs a second seam injected, and that is the point
+ *
+ * §13.1's row is `maintain evolve <ref> --mode agent`, and the installed 0.8.4
+ * **does not carry `--mode` on that verb** — `maintain evolve --help` lists only
+ * `--from-stale`, `--because` and `-h`, and a real invocation answers
+ * `error: unknown option '--mode'`. So `kept evolve` probes `--help` once per
+ * process and skips the invocation when the flag is absent (design §4.9, §14.1),
+ * which means the argv this file exists to pin is only *reachable* when the probe
+ * reports the flag present.
+ *
+ * That is asserted honestly rather than papered over. {@link SUPPORTS_MODE} is a
+ * probe reporting an option table that carries `--mode`, so the block below proves
+ * the argv KEPT composes for a Kane that accepts it; `test/evolve.test.ts` drives
+ * the degradation from the *verbatim* option table the installed binary printed.
+ * Between them, both halves of the row are covered and neither depends on the
+ * other being wrong.
  */
 const REPO = fileURLToPath(new URL('../../..', import.meta.url)).replace(/\/+$/, '');
 const AT = '2026-08-20T18:41:02.118Z';
@@ -113,19 +134,49 @@ function listingFor(entries: readonly (readonly [string, string])[]): readonly s
 // ---------------------------------------------------------------------------
 
 /**
- * The argv of the two commands §13.1 specifies and this build does not have.
+ * The argv of the one command §13.1 specifies and this build does not have.
  *
- * `<ref>` and the plan path are placeholders: what is pinned is the **shape** —
- * the verb, the flag order, and the `--mode agent` enabler the invoker appends for
- * the Assurance family (§4.7). `kept doctor` is the one row with no family at all,
- * so it takes no enabler; `--version` is the whole argv.
+ * `kept doctor` is the one row with no family at all, so it takes no enabler;
+ * `--version` is the whole argv. `kept evolve` left this table when task 14.2
+ * landed — its row is now asserted at the process boundary further down, which is
+ * strictly stronger than a pinned literal.
  */
 const PENDING_ARGV = Object.freeze({
-  /** Task 14.2. Assurance, so the invoker appends `--mode agent`. */
-  evolve: Object.freeze(['maintain', 'evolve', '<ref>', '--mode', 'agent']),
   /** Task 21.2. No family, no enabler, a 10 s budget (§13.1). */
   doctor: Object.freeze(['--version']),
 });
+
+/**
+ * The evolve reference §13.1 spells `<testPath>`, and the promise that cites it.
+ *
+ * A real path from {@link PRIOR} rather than a placeholder, because `kept evolve`
+ * attributes the drift to the promise whose designed test the ref names — an
+ * unattributed ref creates no review card, and an argv test that also happened to
+ * be exercising the unattributed arm would be proving two things at once.
+ */
+const EVOLVE_REF = 'tests/cart_subtotal_test.md';
+
+/**
+ * A `--help` probe reporting an option table that carries `--mode`.
+ *
+ * The installed 0.8.4 does not; see this file's header. Injected here so the argv
+ * of §13.1 is reachable and can be asserted at the process boundary, and spelled
+ * as help *text* rather than as a hand-built observation so the parse KEPT ships is
+ * the thing under test.
+ */
+const SUPPORTS_MODE = async (): Promise<EvolveHelpObservation> =>
+  parseEvolveHelp(
+    [
+      'Usage: kane-cli maintain evolve [options] [ref]',
+      '',
+      'Options:',
+      '  --from-stale        Evolve every use-case with stale designed entities',
+      '  --because <reason>  Re-design a FRESH target anyway',
+      '  --mode <mode>       interactive | agent | ci | override',
+      '  -h, --help          display help for command',
+    ].join('\n'),
+    0,
+  );
 
 // ---------------------------------------------------------------------------
 // The recording stub: one seam, answering by verb
@@ -506,18 +557,16 @@ describe('kept reconcile --changed → maintain reconcile --from … --source-id
 });
 
 // ---------------------------------------------------------------------------
-// The two rows that do not exist yet (tasks 14.2 and 21.2)
+// kept evolve — promoted from the pending table by task 14.2 (§13.1, R7.2)
 // ---------------------------------------------------------------------------
 
-describe('kept evolve → maintain evolve <ref> --mode agent (task 14.2, pending)', () => {
-  it('is not implemented yet, and spawns nothing — this fails the moment it lands', async () => {
-    // Two live guards, and both are meant to break. When 14.2 wires the command,
-    // `IMPLEMENTED_COMMANDS` grows and the recorded spawn appears, so whoever
-    // lands it is sent here to promote the skipped assertion below.
-    expect(IMPLEMENTED_COMMANDS).not.toContain('evolve');
+describe('kept evolve → maintain evolve <ref> --mode agent', () => {
+  it('is implemented, and issues exactly that argv when Kane accepts the flag', async () => {
+    clearEvolveHelpProbeCache();
+    expect(IMPLEMENTED_COMMANDS).toContain('evolve');
 
     const kane = recorder();
-    const exitCode = await main(['evolve', 'tests/cart_subtotal_test.md'], {
+    const exitCode = await main(['evolve', EVOLVE_REF], {
       write: () => undefined,
       writeError: () => undefined,
       cwd: REPO,
@@ -525,19 +574,31 @@ describe('kept evolve → maintain evolve <ref> --mode agent (task 14.2, pending
       fileSystem: files(),
       now: () => new Date(AT),
       invoker: kane.invoker,
+      evolveHelpProbe: SUPPORTS_MODE,
     });
 
     expect(exitCode).toBe(EXIT_OK);
-    expect(kane.spawns).toEqual([]);
+    const spawned = spawnsOf(kane.spawns, 'maintain');
+    expect(spawned).toHaveLength(1);
+    expect(spawned[0]).toEqual(['maintain', 'evolve', EVOLVE_REF, '--mode', 'agent']);
+
+    // Stated again as independent facts, so a future argv that happens to differ
+    // still fails on the clause it broke.
+    expect(spawned[0]?.[1]).toBe('evolve');
+    expect((spawned[0] ?? []).slice(-2)).toEqual(['--mode', 'agent']);
+    // `--agent` is `ExecutionRun`'s enabler. On this family it is simply wrong.
+    expect(spawned[0]).not.toContain('--agent');
+    // The probe is not a Kane *invocation*: it never reaches the invoker seam, so
+    // it can carry no enabler — which is the whole reason it is its own seam.
+    expect(kane.spawns.some((argv) => argv.includes('--help'))).toBe(false);
   });
 
-  it('pins the argv §13.1 requires, so the shape cannot drift while unimplemented', () => {
-    expect([...PENDING_ARGV.evolve]).toEqual(['maintain', 'evolve', '<ref>', '--mode', 'agent']);
-  });
-
-  it.skip('promote when 14.2 lands: issues maintain evolve <ref> --mode agent', async () => {
+  it('composes the ref verbatim, in the position §13.1 gives it', async () => {
+    clearEvolveHelpProbeCache();
     const kane = recorder();
-    await main(['evolve', 'tests/cart_subtotal_test.md'], {
+    // A use-case reference rather than a path: Kane's `[ref]` accepts a test, a
+    // scenario, an AC or a use-case, and KEPT narrows none of them.
+    await main(['evolve', 'UC-4'], {
       write: () => undefined,
       writeError: () => undefined,
       cwd: REPO,
@@ -545,12 +606,42 @@ describe('kept evolve → maintain evolve <ref> --mode agent (task 14.2, pending
       fileSystem: files(),
       now: () => new Date(AT),
       invoker: kane.invoker,
+      evolveHelpProbe: SUPPORTS_MODE,
     });
-    const spawned = spawnsOf(kane.spawns, 'maintain');
-    expect(spawned).toHaveLength(1);
-    expect(spawned[0]?.[1]).toBe('evolve');
-    expect((spawned[0] ?? []).slice(-2)).toEqual(['--mode', 'agent']);
-    expect(spawned[0]).not.toContain('--agent');
+    expect(spawnsOf(kane.spawns, 'maintain')).toEqual([
+      ['maintain', 'evolve', 'UC-4', '--mode', 'agent'],
+    ]);
+  });
+
+  it('spawns nothing at all when the option table carries no --mode', async () => {
+    clearEvolveHelpProbeCache();
+    const kane = recorder();
+    const exitCode = await main(['evolve', EVOLVE_REF], {
+      write: () => undefined,
+      writeError: () => undefined,
+      cwd: REPO,
+      env: {},
+      fileSystem: files(),
+      now: () => new Date(AT),
+      invoker: kane.invoker,
+      // The option table the installed 0.8.4 actually prints — see evolve.test.ts.
+      evolveHelpProbe: async () =>
+        parseEvolveHelp(
+          [
+            'Usage: kane-cli maintain evolve [options] [ref]',
+            'Options:',
+            '  --from-stale        Evolve every use-case with stale designed entities',
+            '  --because <reason>  Re-design a FRESH target anyway',
+            '  -h, --help          display help for command',
+          ].join('\n'),
+          0,
+        ),
+    });
+
+    // The assertion the degradation reduces to: not a bad argv, no argv — and
+    // therefore no process and no credits.
+    expect(exitCode).toBe(EXIT_OK);
+    expect(kane.spawns).toEqual([]);
   });
 });
 

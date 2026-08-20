@@ -36,6 +36,8 @@ import { EXIT_OK, EXIT_USAGE, parseArgv, readList } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
 import { runBuild } from './commands/build.js';
+import type { EvolveHelpProbe } from './commands/evolve.js';
+import { runEvolve } from './commands/evolve.js';
 import {
   reconcileUsageErrors,
   runReconcile,
@@ -66,6 +68,16 @@ export interface CliIo {
   readonly invoker?: KaneInvoker | undefined;
   /** False to run `kept build` with no Kane boundary at all (R2.12). */
   readonly kane?: boolean | undefined;
+  /**
+   * `kept evolve`'s one-time `maintain evolve --help` probe (§4.9).
+   *
+   * Its own seam rather than a use of {@link KaneInvoker}, because the invoker
+   * appends the Assurance enabler from the contract (§4.7) — so asking it to run
+   * `--help` would append the very `--mode agent` the probe exists to look for.
+   * Defaults to the real `spawnSync` probe; a test injects one and starts no
+   * process.
+   */
+  readonly evolveHelpProbe?: EvolveHelpProbe | undefined;
 }
 
 /** The commands this stage implements. The rest report honestly and exit 0. */
@@ -74,11 +86,11 @@ export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze([
   'snapshot',
   'verify',
   'reconcile',
+  'evolve',
 ]);
 
 /** Which task lands each unimplemented command, so the message can say so. */
 const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
-  evolve: 'task 12.10',
   amend: 'task 14.5',
   handoff: 'task 12.11',
   doctor: 'task 16.2',
@@ -143,6 +155,8 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
       return await dispatchVerify(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'reconcile':
       return await dispatchReconcile(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'evolve':
+      return await dispatchEvolve(parsed, { repoRoot, config, fileSystem, sink, at, io });
     default:
       return reportPending(parsed, { repoRoot, config, sink, io });
   }
@@ -508,6 +522,125 @@ async function dispatchReconcile(
   }
   writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
   // Every refusal is a refusal of Kane's, not a failure of KEPT (§14.1, R2.10).
+  return EXIT_OK;
+}
+
+/**
+ * `kept evolve <testPath>` — the held `test-drift` branch (design §8.1, §13.1, R7.2).
+ *
+ * The ref arrives as the word after the command, which `parseArgv` reports as
+ * `subcommand` rather than as `positionals[0]` — that is the parser's shape for every
+ * command, and `kept reconcile apply` uses the same field for the same reason. Both
+ * are read so a future variadic spelling does not silently lose the ref.
+ *
+ * Exit code zero for every outcome, including the flag-mismatch degradation that is
+ * the *live* path on the installed 0.8.4: `maintain evolve` there carries no `--mode`
+ * option, so the invocation is skipped and the drift is held as a review card. That
+ * is Kane's surface being what it is, not KEPT failing (R2.10, §14.2).
+ */
+async function dispatchEvolve(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+  const ref = parsed.subcommand ?? parsed.positionals[0] ?? null;
+
+  const result = await runEvolve({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    ref,
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+    ...(context.io.evolveHelpProbe === undefined
+      ? {}
+      : { helpProbe: context.io.evolveHelpProbe }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'evolve',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          ref: result.ref,
+          promiseId: result.promiseId,
+          probe:
+            result.probe === null
+              ? null
+              : {
+                  ran: result.probe.ran,
+                  exitCode: result.probe.exitCode,
+                  flags: result.probe.flags,
+                  supportsModeAgent: result.probe.supportsModeAgent,
+                  failure: result.probe.failure,
+                },
+          flagSupported: result.flagSupported,
+          degradedByFlagProbe: result.degradedByFlagProbe,
+          argv: result.argv,
+          invoked: result.invoked,
+          exitCode: result.exitCode,
+          exitMeaning: result.exitMeaning,
+          terminalSeen: result.terminalSeen,
+          status: result.status,
+          paused: result.paused,
+          message: result.message,
+          staged: result.staged.length,
+          reviewCards: result.reviewCards.map((card) => ({
+            id: card.id,
+            kind: card.kind,
+            branch: card.branch,
+            promiseId: card.promiseId,
+            status: card.status,
+            proposedChanges: card.proposedChanges.length,
+          })),
+          cardPaths: result.cardPaths,
+          runId: result.runId,
+          handoffPath: result.handoff.paths.newest,
+          nextAction: result.handoff.handoff.nextAction,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept evolve${result.ref === null ? '' : ` ${result.ref}`}`,
+        `  repository   ${context.repoRoot}`,
+        `  promise      ${result.promiseId ?? 'unattributed — no designed test matches this ref'}`,
+        `  flag probe   ${
+          result.probe === null
+            ? 'not run — no reference was given'
+            : result.probe.ran
+              ? `${result.probe.flags.join(', ') || 'no long flags'} → --mode ${
+                  result.flagSupported ? 'supported' : 'absent, so nothing was invoked'
+                }`
+              : `unreadable (${result.probe.failure ?? 'no reason reported'})`
+        }`,
+        `  command      ${result.invoked ? result.argv.join(' ') : 'none'}`,
+        `  outcome      ${
+          result.invoked
+            ? `${result.status ?? 'unknown'}${result.paused ? ', resumable' : ''}`
+            : 'no Kane process was started'
+        }`,
+        `  review cards ${
+          result.reviewCards.length === 0
+            ? 'none created'
+            : `${result.reviewCards.map((card) => card.id).join(', ')} — held, never applied`
+        }`,
+        `  handoff      ${result.handoff.paths.newest}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // A flag Kane does not have is a fact about Kane, not a failure of KEPT (§14.2).
   return EXIT_OK;
 }
 
