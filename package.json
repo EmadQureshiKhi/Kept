@@ -17,7 +17,8 @@
     "loop": "node bin/kept verify --all --member-debug",
     "build:snapshot": "node bin/kept build && node bin/kept snapshot",
     "test": "vitest --run",
-    "check": "node scripts/check-readonly.mjs && tsc -b && vitest --run"
+    "typecheck:fixture": "tsc -p apps/fixture",
+    "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && vitest --run"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.3",

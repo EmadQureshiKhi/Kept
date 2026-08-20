@@ -8,6 +8,11 @@ import { defineConfig } from 'vitest/config';
  *   kept-core — node environment, parser/model/provider/verdict units and properties
  *   kept-cli  — node environment, argv assertions and command wiring
  *   ledger    — jsdom environment, React component and reduced-motion parity tests
+ *   fixture   — node environment, Kepler Coffee's cart/currency/storage arithmetic
+ *
+ * The fixture project covers `apps/fixture/test/**` only. `apps/fixture/tests/**`
+ * is Kane's Markdown test suite, not a Vitest one, and is deliberately not
+ * matched here.
  *
  * `passWithNoTests` is a root-level option in Vitest 4 and is kept on while the
  * package skeletons land (tasks 1.2 onward), so `npm test` is green on an empty
@@ -38,6 +43,13 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           include: ['apps/ledger/test/**/*.test.{ts,tsx}'],
+        },
+      },
+      {
+        test: {
+          name: 'fixture',
+          environment: 'node',
+          include: ['apps/fixture/test/**/*.test.ts'],
         },
       },
     ],
