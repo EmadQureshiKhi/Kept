@@ -120,3 +120,73 @@ export {
   findKaneBinary,
   resolvedKaneBinary,
 } from './kane/invoker.js';
+
+// Identifier derivation (3.1) — the stability rule (design §3.2, R1.2). A
+// promise id is keyed on the citation file plus the normalised claim and on
+// nothing else: never the line number, never the ordering of claims in the file.
+// That is what lets a promise keep its verdict, evidence and history when
+// somebody inserts a paragraph above it. Unseeded SHA-256 from `node:crypto`, so
+// the same claim derives the same id in a different process a year later.
+export {
+  ID_HASH_LENGTH,
+  NODE_ID_PREFIXES,
+  designedTestId,
+  documentId,
+  evidenceId,
+  isDesignedTestId,
+  isDocumentId,
+  isEvidenceId,
+  isNodeId,
+  isPromiseId,
+  normaliseClaim,
+  promiseId,
+  sha256Hex,
+  toPosix,
+} from './model/ids.js';
+
+// The promise model (3.1) — one of the two data contracts of the system
+// (design §3.1, R1.1, R1.6). Structural, not branded, because §9.1 requires
+// `parse(serialise(x))` to deep-equal `x` and a phantom brand would type a
+// parsed record as carrying a property it does not have. Absent fields are
+// explicit `null` and never `undefined`, because `JSON.stringify` drops an
+// `undefined` key and would silently change the snapshot's shape; the factories
+// write the nulls and the guards refuse a record that lost the key.
+export type {
+  Citation,
+  DesignedTest,
+  GraphEdge,
+  GraphEdgeKind,
+  PromiseGraph,
+  PromiseGraphInput,
+  PromiseRecord,
+  PromiseRecordInput,
+  ProviderName,
+  RepairAnnotation,
+  RepairBranch,
+  RepairStrategy,
+  Verdict,
+  VerdictSource,
+} from './model/promise.js';
+export {
+  GRAPH_EDGE_KINDS,
+  PROVIDER_NAMES,
+  REPAIR_BRANCHES,
+  REPAIR_STRATEGIES,
+  VERDICTS,
+  compareGraphEdges,
+  comparePromiseRecords,
+  createPromiseGraph,
+  createPromiseRecord,
+  isCitation,
+  isDesignedTest,
+  isGraphEdge,
+  isGraphEdgeKind,
+  isPromiseGraph,
+  isPromiseRecord,
+  isProviderName,
+  isRepairAnnotation,
+  isRepairBranch,
+  isRepairStrategy,
+  isVerdict,
+  isVerdictSource,
+} from './model/promise.js';
