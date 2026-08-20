@@ -384,7 +384,13 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
       <div>
         <p className="promise-graph__caption">{GRAPH_CAPTION}</p>
         <div className="promise-graph__canvas">
-          {nodes.length === 0 ? (
+          {/* Gated on the *promise* lane rather than on the node count, and Property 23
+              found the difference: a schema-valid snapshot may carry an evidence pack
+              that no promise references, and the pack alone was enough to draw a canvas
+              holding one stray chip and no subject. This is a graph *of promises*, so
+              zero promises is the empty state (§10.10) whatever else happens to be in
+              the file — which is also what the sentence below already said. */}
+          {promises.length === 0 ? (
             <p className="promise-graph__empty">{GRAPH_EMPTY}</p>
           ) : (
             <ReactFlow
