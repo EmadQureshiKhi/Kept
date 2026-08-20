@@ -1,0 +1,37 @@
+/**
+ * The freshness tile's three tones — design §10.10, §10.4.2, R9.6, R9.7.
+ *
+ * Colour only. Every box metric, every size and the baseline the value sits on come
+ * from `.metric-figure__word` in `styles/metric-rail.css`, which is where the rail's
+ * rhythm is written once; a second box rule here is exactly the drift that stylesheet
+ * was split to prevent. So these three rules change one property.
+ *
+ * Each selector names both classes deliberately. The two-class specificity means the
+ * tone wins over `.metric-figure__word`'s `--text-100` no matter which stylesheet the
+ * bundler emits first — a tone that depended on import order would be a colour bug
+ * waiting for an unrelated refactor.
+ *
+ * `--verdict-stale` on a non-verdict element is permitted here and only here:
+ * design §10.4.2 lists "freshness > 24 h" as a use of the ochre, and R9.7 requires
+ * it. The words beside it always say how old the run is, so the colour is a second
+ * channel rather than the only one — which is what Property 22's presentation clause
+ * checks. The boundary itself is `> 24h`, and it lives in `lib/relativeTime.ts`; this
+ * file only paints the answer.
+ */
+
+/* Within 24 hours: secondary body, the same weight as the `%` beside it. Stated
+   rather than inherited so all three tones read in one place. */
+.metric-figure__word.freshness-value--current {
+  color: var(--text-100);
+}
+
+/* Over 24 hours: the ochre verdict token (R9.7). */
+.metric-figure__word.freshness-value--stale {
+  color: var(--verdict-stale);
+}
+
+/* Never verified: the label tone, because this is an absence rather than a value
+   (§10.10). 4.89:1 on `--ink-150` at its worst, so it stays body-legible. */
+.metric-figure__word.freshness-value--unverified {
+  color: var(--text-200);
+}

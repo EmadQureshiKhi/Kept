@@ -1,0 +1,98 @@
+/**
+ * The verdict tag — design §10.4.1 (tags at `--fs-micro`), §10.4.3 (a tag border
+ * may carry a `--wash-*` at 1px and nothing else), §10.6.3 (verdict colour over
+ * `--dur-base`), §10.7 (mono is texture, and tracked open below `--fs-sm`),
+ * R10.2, R10.3, R10.5.
+ *
+ * Geometry, type and colour only. No depth: a tag inherits the elevation of
+ * whatever carries it — a node at `.surface-raised`, a panel at
+ * `.surface-raised-2` — and depth is authored in `surfaces.css` alone (§10.5).
+ * No token is declared here; `tokens.css` is the only declaration site.
+ *
+ * The file is in three blocks, and the boundary between the last two is the point
+ * of the whole component:
+ *
+ *   1. the box and the word — everything that is the same for all four verdicts;
+ *   2. the **edge**, one rule per verdict, carrying a `--wash-*` border colour and
+ *      nothing else;
+ *   3. the **hue**, one rule per verdict, carrying the word's `color` and nothing
+ *      else.
+ *
+ * Blocks 2 and 3 cannot merge, because they select different elements: the wash is
+ * on the box, the hue is on the word inside it. That is what makes "a verdict wash
+ * never sits behind text" (§10.4.3) a structural fact rather than a convention —
+ * and it is the exclusion Property 22's contrast clause rests on, since a wash that
+ * never shares a rule with text contributes no foreground/background pair.
+ *
+ * `word` is a single lower-case token, so it is set in `--font-mono` alongside the
+ * member statuses and result codes it reads like, at `--fs-micro` with `--tr-mono`
+ * to open the counters at 11px (§10.7). Prose is never mono, and a verdict is not
+ * prose.
+ */
+
+/* ── the box: geometry and the edge's width, with no hue of its own ─────────── */
+
+.verdict-tag {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  padding: 0 var(--s-1);
+  border: 1px solid transparent;
+  border-radius: var(--r-chip);
+}
+
+/* ── the word: the label R10.5 requires, always present, never a decoration ─── */
+
+/* No `color` here on purpose. The four hue rules below are exhaustive over
+   `Verdict` — the component's `Record<Verdict, TokenName>` will not compile
+   otherwise — so a tag always resolves one of them. Declaring a fallback hue
+   would only hide the day that stops being true; without one, a tag missing its
+   verdict inherits body text and still reads its word, which is the failure mode
+   worth having. */
+.verdict-tag__word {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  transition: color var(--dur-base) var(--ease-out);
+}
+
+/* ── the edge: a 1px wash, on the box, in rules that carry no text ──────────── */
+
+.verdict-tag[data-verdict='proven'] {
+  border-color: var(--wash-proven);
+}
+
+.verdict-tag[data-verdict='stale'] {
+  border-color: var(--wash-stale);
+}
+
+.verdict-tag[data-verdict='red'] {
+  border-color: var(--wash-red);
+}
+
+.verdict-tag[data-verdict='undesigned'] {
+  border-color: var(--wash-undesigned);
+}
+
+/* ── the hue: the verdict token, on the word, in rules that carry no wash ───── */
+
+/* Each ratio is measured in design §10.4.2 against all four ink surfaces; the
+   lowest of them, `--verdict-undesigned` on `--ink-150`, is 4.89:1 and clears the
+   4.5:1 body floor R10.6 sets. `undesigned` is the unsaturated stone-sage because
+   it marks an absence, not a warning (R10.3). */
+.verdict-tag[data-verdict='proven'] .verdict-tag__word {
+  color: var(--verdict-proven);
+}
+
+.verdict-tag[data-verdict='stale'] .verdict-tag__word {
+  color: var(--verdict-stale);
+}
+
+.verdict-tag[data-verdict='red'] .verdict-tag__word {
+  color: var(--verdict-red);
+}
+
+.verdict-tag[data-verdict='undesigned'] .verdict-tag__word {
+  color: var(--verdict-undesigned);
+}
