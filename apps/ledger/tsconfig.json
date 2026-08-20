@@ -25,6 +25,13 @@
      * libs. Everything strict in `tsconfig.base.json` — `verbatimModuleSyntax`,
      * `isolatedModules`, `noUncheckedIndexedAccess` — is inherited untouched.
      *
+     * The `include` list names the `app` tree's plain `.ts` files as well as its
+     * `.tsx` ones, because a route handler carries no JSX and is therefore not a
+     * `.tsx` file: without that entry `app/badge.svg/route.ts` would be checked by
+     * neither program — the root project names only the `lib` and `test` trees —
+     * and an unchecked route handler is the one file in the application whose
+     * exported signature is a public contract (R9.4).
+     *
      * Module resolution stays `NodeNext` to match the root, so a relative import
      * carries its `.js` extension in both programs and neither disagrees with the
      * other about a specifier. Vite resolves those specifiers to the `.ts` source
@@ -39,6 +46,13 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["lib/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "app/**/*.tsx", "components/**/*.tsx"],
+  "include": [
+    "lib/**/*.ts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.tsx"
+  ],
   "exclude": ["node_modules", ".next", "out"]
 }
