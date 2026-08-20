@@ -61,6 +61,15 @@
  * One grid: `minmax(0, 1fr)` for the canvas, 240px for the list, 440px for the panel
  * when it is open. The canvas is the column that yields, so between 1280 and 1920 the
  * page has nothing to overflow — asserted in `test/promise-graph-density.test.ts`.
+ *
+ * ## Motion (§10.6.1, task 17.5)
+ *
+ * The canvas holds a ref, and `useGraphEntrance` plays the staggered entrance over the
+ * promise nodes inside it once per session. Nothing else changes: the coordinates are
+ * still the layout's, the entrance animates `opacity` and a 6px `translateY` from
+ * those coordinates, and it releases both when it lands — so this tree renders
+ * identically with motion on, with motion off, and on the second visit of a session
+ * when the flourish does not run at all.
  */
 
 'use client';
@@ -97,6 +106,7 @@ import {
   selectionFromSearch,
 } from '../lib/graphNav.js';
 
+import { useGraphEntrance } from './GraphEntrance.js';
 import { LaneNode } from './LaneNode.js';
 import { PromiseList } from './PromiseList.js';
 import { PromiseNode } from './PromiseNode.js';
@@ -229,6 +239,10 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
   const [selectedId, setSelectedId] = useState<string | null>(
     resolveSelection(order, initialSelectedId ?? null),
   );
+
+  /** The canvas, for the entrance of §10.6.1 — the only reason this ref exists. */
+  const canvas = useRef<HTMLDivElement | null>(null);
+  useGraphEntrance(canvas, promises.length);
 
   /** Live node elements, so the keyboard model has something to focus. */
   const elements = useRef(new Map<string, HTMLElement>());
@@ -383,7 +397,7 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     >
       <div>
         <p className="promise-graph__caption">{GRAPH_CAPTION}</p>
-        <div className="promise-graph__canvas">
+        <div className="promise-graph__canvas" ref={canvas}>
           {/* Gated on the *promise* lane rather than on the node count, and Property 23
               found the difference: a schema-valid snapshot may carry an evidence pack
               that no promise references, and the pack alone was enough to draw a canvas

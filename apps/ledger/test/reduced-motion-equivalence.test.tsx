@@ -63,6 +63,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import LedgerPage from '../app/page.js';
+import { playGraphEntrance } from '../components/GraphEntrance.js';
 import { playVerdictFlip } from '../components/VerdictFlip.js';
 import { VERDICT_RANK } from '../components/VerdictTag.js';
 import {
@@ -259,6 +260,23 @@ interface Orchestration {
  * motion that never moved.
  */
 const ORCHESTRATIONS: readonly Orchestration[] = [
+  {
+    /**
+     * M4 — the graph entrance (§10.6.1). Driven explicitly rather than left to the
+     * mount effect, because the effect is gated on a `sessionStorage` flag that one of
+     * the renders above has already spent: a comparison that depended on which test
+     * ran first would be exactly the vacuous green this registry exists to prevent.
+     * The orchestration itself is unaware of the flag, so calling it here animates the
+     * real nodes of the real page, in lane order, through `play()`.
+     */
+    site: 'apps/ledger/components/GraphEntrance.tsx',
+    drive: async (container) => {
+      const nodes = container.querySelectorAll('[data-promise-node]');
+      expect(nodes.length, 'no promise node to enter, so M4 was not driven at all')
+        .toBeGreaterThan(0);
+      await playGraphEntrance(container);
+    },
+  },
   {
     site: 'apps/ledger/components/VerdictFlip.tsx',
     drive: async (container) => {
