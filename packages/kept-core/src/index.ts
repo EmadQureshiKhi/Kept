@@ -40,3 +40,8 @@ export {
   familyForArgv,
   isCommandFamily,
 } from './kane/family.js';
+
+// Coercing accessors (2.2) — the only site in the repo that reads and compares
+// `result_code`, because Kane types it inconsistently within a single event
+// (design §4.4). Enforced by test/no-raw-result-code.test.ts.
+export { CREDITS_FIELDS, RESULT_CODE_FIELD, credits, resultCode } from './kane/coerce.js';
