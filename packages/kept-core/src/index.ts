@@ -45,3 +45,21 @@ export {
 // `result_code`, because Kane types it inconsistently within a single event
 // (design §4.4). Enforced by test/no-raw-result-code.test.ts.
 export { CREDITS_FIELDS, RESULT_CODE_FIELD, credits, resultCode } from './kane/coerce.js';
+
+// Per-family exit-code interpretation (2.6) — total over every integer and
+// `null`, and the reason an Assurance pause can never read as a failure
+// (design §4.5, A14). `WRITE_PERMITTING_EXIT_MEANINGS` is the exit-code half of
+// the single verdict write guard (design §4.8).
+export type { ExitMeaning } from './kane/exit.js';
+export {
+  EXIT_FORCE_INTERRUPTED,
+  EXIT_KANE_NOT_FOUND,
+  EXIT_MEANINGS,
+  EXIT_PAUSED_OR_TIMEOUT,
+  EXIT_PREFLIGHT_REJECTED,
+  EXIT_SUCCESS,
+  WRITE_PERMITTING_EXIT_MEANINGS,
+  exitMeaning,
+  isExitMeaning,
+  permitsVerdictWrite,
+} from './kane/exit.js';
