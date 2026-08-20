@@ -322,3 +322,22 @@ export {
   evidencePackIdFromRef,
   isLedgerSnapshot,
 } from './model/snapshot.js';
+
+// Canonical snapshot serialisation (3.14) — the bytes of the committed file
+// (design §9.2, R1.8). `parseSnapshot(serialiseSnapshot(x))` deep-equals
+// `canonicaliseSnapshot(x)`, which is `x` itself for anything the CLI builds,
+// and re-serialising is byte-identical. That is what keeps the committed
+// snapshot's git diff readable line-by-line when the commit history is part of
+// what a reviewer reads. The stringifier is hand-rolled rather than
+// `JSON.stringify(v, null, 2)` because that function reorders integer-like keys,
+// turns a stray `Date` into a perfectly plausible string, and silently *drops* a
+// key whose value is `undefined`; here each of those throws a `TypeError` naming
+// the path. `parseSnapshot` is the one place in the model where throwing is
+// right — a malformed snapshot is a broken build artefact, not a state of the
+// world, and R8.8 wants the Ledger build to fail naming the field.
+export {
+  SnapshotParseError,
+  canonicaliseSnapshot,
+  parseSnapshot,
+  serialiseSnapshot,
+} from './model/canonical.js';
