@@ -238,3 +238,21 @@ export {
   isKnownEventType,
   isVerdictObject,
 } from './kane/events.js';
+
+// Coverage metrics (3.11) — the snapshot's `metrics` block (design §9.1, R5.8,
+// R9.1, R9.2, R9.3, R2.11). Two honesty rules live in this module. A graph with
+// no promises answers `ZERO_PROMISE_METRICS` **by identity**, so both ratios are
+// an explicit `null` and no division is performed on a zero total — `0/0` would
+// reach the metric rail as a coverage figure, and "no promises yet" is not
+// "nothing is proven". And a degraded graph withholds `provenCoverage` entirely,
+// because when the enrichment axis was discarded KEPT does not know what is
+// proven and a number would claim knowledge it lacks; the Ledger turns that null
+// into the `baseline data only` chip. `designedCount` is counted from a non-null
+// designed-test reference, never from the verdict, because a designed promise
+// whose test failed is `red` and still designed.
+export type { CoverageMetrics } from './model/metrics.js';
+export {
+  VERDICT_COUNT_FIELDS,
+  ZERO_PROMISE_METRICS,
+  computeMetrics,
+} from './model/metrics.js';
