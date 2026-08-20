@@ -1,0 +1,127 @@
+/**
+ * Optical alignment of the metric rail — design §10.7 ("Optical alignment on the
+ * metric rail"), §10.10, R9.3, R10.1.
+ *
+ * This file is geometry only. It authors no depth and no fill: a tile picks
+ * `.surface-raised` from `styles/surfaces.css` (§10.5) and every colour and length
+ * below resolves through a token from `styles/tokens.css`. Nothing here declares a
+ * token of its own, so token parity keeps its single declaration site.
+ *
+ * The rail carries four tiles and, when the snapshot is degraded, a chip standing
+ * in for one of them. Three problems, and the one mechanism that solves all three:
+ *
+ * 1. **The digits, not the glyph run, align.** A figure is two runs — the digits at
+ *    `--fs-metric` and the `%` at `--fs-lg`. Left to itself the `%` contributes its
+ *    own trailing side bearing to the figure's advance box, so the box a tile lays
+ *    out is wider than the ink a reader sees, and the four tiles line up their
+ *    boxes while their digits drift. The `-0.06em` right margin on the `%` takes
+ *    that bearing back out, measured at the `%`'s own size, so a tile's figure box
+ *    begins and ends on ink and the digit runs agree across all four tiles.
+ *
+ * 2. **A smaller run must not move the baseline.** `n/a` is set at `--fs-lg`, a
+ *    half the size of the digits it replaces, and `baseline data only` likewise.
+ *    So the figure row is *inline flow with a strut*, not a flex box: it sets
+ *    `font-size: var(--fs-metric)` and `line-height: var(--lh-tight)` on itself,
+ *    which puts a 48px line box and a fixed baseline in the row whether or not any
+ *    child is that tall. Every child then declares `vertical-align: baseline` and
+ *    sits on that strut. A flex row with `align-items: baseline` would align the
+ *    children to each other and let the row's height follow the tallest of them —
+ *    which is exactly the rhythm change R9.3 forbids, arriving as a side effect.
+ *
+ * 3. **The chip takes the tile's exact footprint.** So the box metrics are written
+ *    once, in a rule that names the tile and the chip together. They cannot drift
+ *    apart, because there is nothing to drift.
+ *
+ * The 4px grid: every length below is `0` or a `--s-*` token, and the two line
+ * heights resolve to 48px and 16px. The single exception is the `-0.06em` above,
+ * which is optical rather than structural and is deliberately sub-grid — the
+ * alignment test asserts it is the only one.
+ */
+
+/* ── the rail ───────────────────────────────────────────────────────────────── */
+
+.metric-rail {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-8);
+  padding: 0;
+  list-style: none;
+}
+
+/* One footprint, two occupants: the tile, and the chip that replaces it when the
+   snapshot is degraded (§10.10). Written once so a degraded rail is the same rail. */
+.metric-tile,
+.metric-rail__chip {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+}
+
+/* ── the figure row: one strut, one baseline ────────────────────────────────── */
+
+.metric-figure {
+  display: block;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-metric);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* The digits. Tabular and lining, restated here rather than inherited, because
+   this is the run the count-up of §10.6.2 rewrites on every frame and a
+   proportional digit would reflow the row mid-count. */
+.metric-figure__digits {
+  display: inline;
+  vertical-align: baseline;
+  font-size: var(--fs-metric);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The three runs that sit at `--fs-lg` on the digits' baseline: the unit, the
+   literal `n/a` that replaces a figure no division may produce (R9.3), and the
+   chip's word. Same size, same baseline, so the rail's rhythm is the same in all
+   three states. The unit recedes to `--text-100` so the number carries the tile. */
+.metric-figure__unit,
+.metric-figure__na,
+.metric-figure__word {
+  display: inline;
+  vertical-align: baseline;
+  font-size: var(--fs-lg);
+  color: var(--text-100);
+}
+
+/* Optical, not structural: takes back the `%`'s trailing side bearing at the
+   `%`'s own size, so the figure's box ends on ink. The one sub-grid length here. */
+.metric-figure__unit {
+  margin-right: -0.06em;
+}
+
+/* `n/a` stands in for numerals, so it keeps the numerals' family. */
+.metric-figure__na {
+  font-family: var(--font-mono);
+}
+
+/* The chip's word is prose, so it is `--font-ui` and untracked (§10.7). */
+.metric-figure__word {
+  font-family: var(--font-ui);
+  letter-spacing: normal;
+}
+
+/* ── the label, on the grid the digits sit on ───────────────────────────────── */
+
+.metric-tile__label {
+  display: block;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  letter-spacing: normal;
+  color: var(--text-200);
+}
