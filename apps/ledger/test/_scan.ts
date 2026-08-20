@@ -70,7 +70,47 @@ export const REPO_ROOT = findRepoRoot();
 /** Everything the Ledger owns. The palette rules apply to all of it. */
 export const LEDGER_ROOT = 'apps/ledger';
 
-const SKIP_DIRECTORIES = new Set(['node_modules', 'dist', '.git', '.next', 'out', 'coverage']);
+/**
+ * Directories whose **name alone** identifies them as build output or vendored code,
+ * wherever they appear.
+ *
+ * Note what is no longer here: `coverage`. It was listed as a tool-output name, and
+ * then `apps/ledger/app/coverage/` became a real route (task 9.8) — so the contrast,
+ * parity, forbidden-palette, typography and motion scans were all silently declining
+ * to read a shipped page. Five enforcement tests with a blind spot over a route is
+ * worse than any of the violations they hunt, because it presents as green.
+ * `scripts/check-readonly.mjs` reached the same conclusion from the other side and
+ * left `coverage` out of its own list for the same reason.
+ */
+const SKIP_DIRECTORY_NAMES = new Set(['node_modules', 'dist', '.git', '.next', 'out']);
+
+/**
+ * Tool-output directories whose *name* is ambiguous, identified by their **path**.
+ *
+ * A coverage reporter configured to write inside the scan root would land here, and
+ * that directory genuinely is output and genuinely should be skipped — the mistake
+ * above was matching on the name, which a route is free to share. Repo-relative and
+ * forward-slashed, matching {@link ScannedFile.path}.
+ */
+export const SKIP_DIRECTORY_PATHS: ReadonlySet<string> = new Set(['apps/ledger/coverage']);
+
+/** Repo-relative, forward-slashed, the one spelling every path in this module uses. */
+function repoRelative(absolute: string): string {
+  return relative(REPO_ROOT, absolute).split('\\').join('/');
+}
+
+/**
+ * `true` when the tree walk must not descend into this directory.
+ *
+ * Exported so the decision itself can be asserted rather than inferred from what the
+ * walk happened to return: `test/scan-coverage-route.test.ts` proves both halves — that
+ * `apps/ledger/app/coverage` is read and that `apps/ledger/coverage` is not.
+ */
+export function isSkippedDirectory(absolutePath: string): boolean {
+  const path = repoRelative(absolutePath);
+  const name = path.slice(path.lastIndexOf('/') + 1);
+  return SKIP_DIRECTORY_NAMES.has(name) || SKIP_DIRECTORY_PATHS.has(path);
+}
 
 export interface ScannedFile {
   /** Repo-relative, forward-slashed. */
@@ -88,7 +128,7 @@ function collect(absoluteRoot: string, extensions: readonly string[]): string[] 
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       const child = resolve(current, entry.name);
       if (entry.isDirectory()) {
-        if (!SKIP_DIRECTORIES.has(entry.name)) stack.push(child);
+        if (!isSkippedDirectory(child)) stack.push(child);
       } else if (entry.isFile() && extensions.some((ext) => entry.name.endsWith(ext))) {
         found.push(child);
       }
