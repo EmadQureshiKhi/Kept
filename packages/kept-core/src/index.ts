@@ -1251,3 +1251,112 @@ export {
   toSnapshotReviewCard,
   writeReviewCard,
 } from './repair/reviewCard.js';
+
+// The surgical write (14.4) — how one line becomes another, at the level of bytes
+// (design §8.4). Terminators are kept **per line** rather than sniffed per file,
+// which is the difference between an amendment that changes one line and one that
+// silently rewrites a mixed-ending document end to end. Three facts fall out of
+// that: `joinDocument(splitDocument(text))` is `text` for every string, replacing
+// one line's text leaves every other byte identical including each other line's
+// terminator, and trailing-newline state is preserved because it is not a separate
+// fact — the last line's terminator is the empty string when the file did not end
+// in a newline. A CRLF file stays CRLF and a file with no final newline does not
+// gain one. Line numbering is the citation admission gate's, asserted against
+// `splitLines` over generated documents rather than trusted to two hand-written
+// splitters staying in step, and a lone carriage return is content rather than a
+// terminator. A replacement carrying a line terminator is **refused** rather than
+// accommodated: inserting one would turn one line into two and shift every citation
+// below it. `applyLineEdit` is the one function in `src/repair/` that writes outside
+// `.kept/` and it is reachable from exactly one caller — `acceptAmendment`, past the
+// interlock — which is what makes "a proposal writes no documentation byte" a
+// property of the code rather than of one execution. The rename is its own one-line
+// seam for the same reason `SourceMtimeReader` and `ReconcileFileProbe` are theirs.
+export type {
+  ApplyLineEditRefusal,
+  ApplyLineEditResult,
+  AtomicRenamer,
+  DocumentLine,
+  DocumentModel,
+  LineEditFileSystem,
+  LineEditRefusal,
+  LineEditResult,
+  LineEnding,
+} from './repair/lineEdit.js';
+export {
+  BYTE_ORDER_MARK,
+  LINE_ENDINGS,
+  TEMP_FILE_SUFFIX,
+  applyLineEdit,
+  documentLineCount,
+  dominantLineEnding,
+  hasTrailingNewline,
+  joinDocument,
+  nodeAtomicRenamer,
+  replaceLine,
+  splitDocument,
+  tempPathFor,
+} from './repair/lineEdit.js';
+
+// Docs amendments (14.4) — the third repair branch, and the differentiator (design
+// §8.3, §8.4, R7.3, R7.4, R7.6). `propose()` writes **one** file under
+// `.kept/amendments/` carrying the current text, the proposed replacement, the
+// interlock, the rationale, the evidence reference and the artefacts; it touches no
+// documentation byte on any path, including its failure paths, because every write
+// here goes through the `.kept/` fence. The id is `am_` plus eight hex of the promise
+// id and the proposed text, so re-proposing the same replacement is the same
+// amendment and a hook firing on every save accumulates nothing — and an existing
+// record is left exactly as it was, createdAt and status included, because a human
+// may already have decided about it. `accept()` re-reads the file and re-hashes the
+// cited line: on a mismatch the status becomes `stale`, a diagnostic says the cited
+// line changed since the proposal, **no documentation byte is written** and the
+// process exits zero, because a document that moved under a proposal is a state of
+// the world and not a failure of KEPT. On a match exactly one array element is
+// replaced, the result is written to `<file>.kept-tmp` and renamed atomically over
+// the original. `reject()` sets one field of one file and touches nothing else.
+//
+// Two things worth reading before consuming this. First, the hash is taken over
+// `normaliseClaim(text)`: §8.3's annotation says "sha256 of currentText" and §8.4
+// step 3 spells `sha256(normaliseClaim(lines[line-1]))`, those differ for any line
+// with a bullet or indentation, and §8.4 wins — it is the executable step, and it
+// makes the interlock go stale exactly when `promiseId` would have moved, since that
+// id is keyed on the same normalised claim. Second, and following from it: an
+// accepted amendment does not repair a promise, it **retires** one and creates
+// another. `p_old` leaves the graph and the successor `amendedPromiseId` enters it
+// with no verdict, because carrying the old verdict across would assert that Kane
+// proved a sentence it never saw. `AcceptResult.successorPromiseId` names it, and
+// `rebuildRequired` is the obligation `kept amend accept` discharges by calling
+// `runBuild` and `runSnapshot` — those live in `@kept/cli`, so core reports the
+// obligation rather than reaching for a dependency it must not have.
+export type {
+  AcceptAmendmentRequest,
+  AcceptOutcome,
+  AcceptResult,
+  AmendmentStatus,
+  DocsAmendment,
+  ProposeAmendmentRequest,
+  ProposeRefusal,
+  ProposeResult,
+  RejectResult,
+} from './repair/docsAmendment.js';
+export {
+  AMENDMENTS_DIRECTORY_RELATIVE_PATH,
+  AMENDMENT_DIAGNOSTIC_CODES,
+  AMENDMENT_DIAGNOSTIC_CODE_VALUES,
+  AMENDMENT_ID_HASH_LENGTH,
+  AMENDMENT_ID_PREFIX,
+  acceptAmendment,
+  amendedPromiseId,
+  amendmentId,
+  amendmentInterlockHash,
+  amendmentPath,
+  amendmentsDirectory,
+  isAmendmentId,
+  isDocsAmendment,
+  listAmendments,
+  parseDocsAmendment,
+  proposeAmendment,
+  readAmendment,
+  rejectAmendment,
+  serialiseAmendment,
+  toSnapshotAmendment,
+} from './repair/docsAmendment.js';
