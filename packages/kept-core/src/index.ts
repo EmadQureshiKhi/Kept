@@ -852,6 +852,67 @@ export {
   sourceDigest,
 } from './context/sources.js';
 
+// The store's source listing, and the door in front of the ladder (12.2) —
+// design §13.2.2, R5.2. One invocation, `context list --type source --json`,
+// Assurance family, terminal `done`, 60 s budget; the `--mode agent` enabler is
+// appended by the invoker from the contract table and never written here, so the
+// effective argv is a fact this module reports rather than a string it composes.
+// The payload is projected exactly as tolerantly as the coverage payload (§5.3):
+// walk for **any array of objects** and accept an entry carrying an id under any
+// of `source_id | id | sourceId`, optionally a path (`path | file | uri |
+// source_path`), a digest (`digest | sha256 | hash | content_hash`) and a
+// lifecycle marker (`retired | status`), keeping the unprojected entry in `raw`
+// for diagnostics. Hard-coding `sources` as the array's key would over-fit one
+// capture, and an extra envelope level would then project nothing — which reads
+// as an empty store and answers every save with the wrong remedy. Tolerance
+// stops in two places: an entry with no id is refused and its location reported,
+// because an id is the one field `--source-id` is built from and deriving one
+// from a filename is what §13.2.2 forbids outright; and an **empty** array is an
+// empty store (`ok`, no sources, so the ladder answers `no-match` and names the
+// `context ingest` remedy) while a payload with no array of objects anywhere is
+// `listing-unreadable` — failing to read a store is not the same fact as reading
+// an empty one. Three failure reasons, each from its own observation: a
+// **complete** stream whose `done.status` is `refused` is `no-store`, which is
+// the live path in this repository today and is a refusal rather than a crash
+// (§5.3.1), so Kane's own remedy is quoted verbatim instead of being thrown away;
+// a stream that never reached `done` is `crashed-stream`; everything else that
+// left us without a listing — no invoker, no binary, our own timeout kill, a
+// pause, an inconsistent envelope — is `listing-unreadable`. `resolveSourceId`
+// composes the listing with the ladder and is the only door to a `--source-id`:
+// every failure arrives as the `ok: false` arm carrying a reason and a
+// diagnostic, so an unresolved source is not *expressible* as a spawn. Its
+// `sources` seam is where 12.3's `.kept/sources.json` read-through cache slots
+// in, ahead of any process, using the `cache` member the `via` union already
+// carries. Nothing throws for anything Kane, the payload or the disk does.
+export type {
+  ListStoreSourcesRequest,
+  ProjectSourceListingOptions,
+  ResolveSourceIdRequest,
+  SourceByteReader,
+  SourceListing,
+  SourceListingFailureReason,
+  SourceListingProjection,
+} from './context/listing.js';
+export {
+  LIVE_LIFECYCLE_VALUES,
+  MAX_SOURCE_ENTRIES,
+  MAX_SOURCE_WALK_DEPTH,
+  RETIRED_LIFECYCLE_VALUES,
+  SOURCE_DIGEST_KEYS,
+  SOURCE_ID_KEYS,
+  SOURCE_LIFECYCLE_KEYS,
+  SOURCE_LISTING_ARGV,
+  SOURCE_LISTING_DIAGNOSTIC_CODES,
+  SOURCE_LISTING_DIAGNOSTIC_CODE_VALUES,
+  SOURCE_LISTING_FAMILY,
+  SOURCE_LISTING_TIMEOUT_MS,
+  SOURCE_PATH_KEYS,
+  listStoreSources,
+  nodeSourceByteReader,
+  projectSourceListing,
+  resolveSourceId,
+} from './context/listing.js';
+
 // The testrun plan cache (11.8) — design §7.2, R4.4. `testrun_plan.members[]` is
 // the only authority for the mapping from a `*_test.md` path to an
 // assurance-graph identifier, so this module's whole job is to obtain the real
