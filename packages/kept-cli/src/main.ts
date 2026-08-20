@@ -32,11 +32,12 @@ import { KaneInvoker, createDiagnosticSink } from '@kept/core';
 import { nodeStateFileSystem, type StateFileSystem } from '@kept/core';
 
 import type { ParsedArgv } from './args.js';
-import { EXIT_OK, EXIT_USAGE, parseArgv } from './args.js';
+import { EXIT_OK, EXIT_USAGE, parseArgv, readList } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
 import { runBuild } from './commands/build.js';
 import { runSnapshot } from './commands/snapshot.js';
+import { runVerify } from './commands/verify.js';
 import { KEPT_VERSION } from './version.js';
 
 /** Everything {@link main} needs from the outside world. */
@@ -63,11 +64,14 @@ export interface CliIo {
 }
 
 /** The commands this stage implements. The rest report honestly and exit 0. */
-export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze(['build', 'snapshot']);
+export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze([
+  'build',
+  'snapshot',
+  'verify',
+]);
 
 /** Which task lands each unimplemented command, so the message can say so. */
 const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
-  verify: 'task 11.11',
   reconcile: 'task 12.7',
   evolve: 'task 12.10',
   amend: 'task 14.5',
@@ -130,6 +134,8 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
       return await dispatchBuild(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'snapshot':
       return dispatchSnapshot(parsed, { repoRoot, fileSystem, sink, at, io });
+    case 'verify':
+      return await dispatchVerify(parsed, { repoRoot, config, fileSystem, sink, at, io });
     default:
       return reportPending(parsed, { repoRoot, config, sink, io });
   }
@@ -206,6 +212,106 @@ async function dispatchBuild(
   }
   writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
   // Degradation is a fact about the world, not a failure of KEPT (R2.10, R2.12).
+  return EXIT_OK;
+}
+
+/**
+ * `kept verify --changed <p…>` / `kept verify --all` (design §7.4, §13.1).
+ *
+ * The command the code hook fires, and the only one that can move a verdict to
+ * `proven`. Its exit code is still zero for everything Kane can do — a crashed
+ * stream, a preflight rejection, a missing binary — because a hook whose exit code
+ * flickers with the health of an external binary is a hook somebody disables
+ * (§14.2).
+ */
+async function dispatchVerify(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const result = await runVerify({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    all: parsed.flags.has('all'),
+    changed: readList(parsed.flags, 'changed'),
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'verify',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          scope: result.scope,
+          argv: result.argv,
+          invoked: result.invoked,
+          runId: result.runId,
+          exitCode: result.exitCode,
+          exitMeaning: result.exitMeaning,
+          terminalSeen: result.terminalSeen,
+          preflightRejected: result.preflightRejected,
+          wrote: result.wrote,
+          refusals: result.refusals,
+          radius: {
+            testIds: result.radius.testIds,
+            promiseIds: result.radius.promiseIds,
+            unmatchedPaths: result.radius.unmatchedPaths,
+            skippedNoTestId: result.radius.skippedNoTestId,
+          },
+          members: result.members,
+          updatedPromiseIds: result.updatedPromiseIds,
+          credits: result.credits,
+          evidencePackId: result.evidencePackId,
+          statePath: result.statePath,
+          handoffPath: result.handoff.paths.newest,
+          nextAction: result.handoff.handoff.nextAction,
+          snapshot: { path: result.snapshot.path, written: result.snapshot.written },
+          freshness: result.state.freshness,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept verify --${result.scope}`,
+        `  repository   ${context.repoRoot}`,
+        `  radius       ${
+          result.radius.testIds.length === 0
+            ? 'empty — nothing was invoked'
+            : result.radius.testIds.join(', ')
+        }`,
+        `  command      ${result.invoked ? result.argv.join(' ') : 'none'}`,
+        `  outcome      ${
+          result.invoked
+            ? `${result.exitMeaning ?? 'unknown'}, ${
+                result.terminalSeen ? 'testrun_done seen' : 'no terminal event — outcome unknown'
+              }`
+            : 'no Kane process was started'
+        }`,
+        `  verdicts     ${
+          result.wrote
+            ? `${result.updatedPromiseIds.length} written`
+            : `none written${result.refusals.length > 0 ? ` (${result.refusals.join(', ')})` : ''}`
+        }`,
+        `  next action  ${result.handoff.handoff.nextAction.branch ?? 'none'}`,
+        `  handoff      ${result.handoff.paths.newest}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // Every outcome Kane can produce is data, so this is always zero (R2.10).
   return EXIT_OK;
 }
 
