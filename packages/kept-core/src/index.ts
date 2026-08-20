@@ -1152,3 +1152,35 @@ export {
   sourcesListingSignature,
   writeSourcesCache,
 } from './context/cache.js';
+
+// The fork guard — check seven of the fail-fast ladder (design §13.2.4, R5.2).
+// One file ingested twice now backs two live sources, and moving a head would
+// silently fork the assurance graph; Kane refuses, and KEPT detects the same
+// condition from the listing it already read so the refusal costs no process at
+// all. It is **not** the ladder's `ambiguous` and the difference is worth stating:
+// `ambiguous` is what the ladder answers when two live candidates tie at the rung
+// it is standing on, so there is no resolution; the guard runs *after* a
+// resolution succeeded and asks whether some other live entry is backed by the
+// same file. That happens with nothing tied in two ways — first-hit-wins stops at
+// rung one, so a unique path can resolve while a different live entry records the
+// same digest elsewhere; and a `.kept/sources.json` hit bypasses the ladder
+// entirely, so a fork that appeared since the entry was recorded is invisible to
+// it and the guard is the only thing that sees it. The rung sets come from
+// `matchStoreSources` rather than from a second notion of matching, and
+// `unique-basename` is deliberately excluded: §13.2.4 asks whether the path or
+// digest matches, and two documents sharing a filename are two documents. A
+// retired entry is never a conflict, because retiring one is precisely how a human
+// resolves a fork. The result is a discriminated union so the conflicting ids are
+// reachable only on the arm that found some, and the diagnostic
+// `reconcile-source-forked` names **both** — which is the one piece of information
+// the human needs. Like every other row of §14.1 this is a refusal and not a
+// failure: no spawn, no review card, verdicts and freshness untouched, `degraded`
+// still false because no proven data was lost, a handoff with `branch: null`, exit
+// zero. Wiring those six steps to a command is `kept reconcile`'s job (12.6);
+// deciding whether the condition holds is this file's.
+export type { ForkConflict, ForkGuardRequest, ForkGuardResult } from './context/forkGuard.js';
+export {
+  FORK_GUARD_DIAGNOSTIC_CODE,
+  FORK_GUARD_RUNGS,
+  forkGuard,
+} from './context/forkGuard.js';
