@@ -402,3 +402,53 @@ export {
   parseSnapshot,
   serialiseSnapshot,
 } from './model/canonical.js';
+
+// The citation admission gate (3.3) — the single funnel into the graph
+// (design §3.3, R1.3, R1.4, R1.5). A promise cannot enter the graph without a
+// citation that resolves to a real line in a real file, and `admitPromise` is
+// what makes the Ledger's "every promise is cited to a file and line" claim true
+// rather than aspirational: there is exactly one place a candidate becomes a
+// graph-bound `PromiseRecord`, so there is exactly one place to read to know what
+// the graph guarantees. Three rejections, each carrying what a reviewer needs to
+// act: `no-citation` names the supplying provider (R1.5), `line-out-of-range`
+// carries both the requested line and the file's actual line count (R1.4), and
+// `file-missing` covers a file that could not be read — including a path this
+// gate refuses to read, because `toPosix` deliberately does not police absolute
+// or escaping paths and a citation is by definition repository-relative. On
+// admission `citation.text` is overwritten with the verbatim line read from disk
+// (R1.3): a provider may have paraphrased or gone stale, and disk is the
+// authority. Line splitting is `split('\n')`, one-based, untrimmed, and a file
+// ending in `\n` gains no phantom final line — a three-line file has three lines
+// and line 4 is out of range. The only qualification to "no trimming" is the `\r`
+// of a CRLF terminator, which is part of the terminator and would otherwise make
+// the committed snapshot depend on how the tree was checked out (§9.1). Reading
+// happens only through the injected `CitationSource`, which is why the property
+// suite can exercise the same code path over generated documents with no disk
+// anywhere. Adversity is always a `Diagnostic`, never a throw (§14.2).
+export type {
+  Admission,
+  AdmissionAccepted,
+  AdmissionBatch,
+  AdmissionBatchRequest,
+  AdmissionFileMissing,
+  AdmissionLineOutOfRange,
+  AdmissionNoCitation,
+  AdmissionRejected,
+  AdmissionRejectionReason,
+  AdmissionRequest,
+  CitationSource,
+  PromiseCandidate,
+} from './model/admission.js';
+export {
+  ADMISSION_DIAGNOSTIC_CODES,
+  ADMISSION_DIAGNOSTIC_CODE_VALUES,
+  ADMISSION_REJECTION_REASONS,
+  admitPromise,
+  admitPromises,
+  citedLine,
+  inMemoryCitationSource,
+  isCitationPathSafe,
+  lineCount,
+  nodeCitationSource,
+  splitLines,
+} from './model/admission.js';
