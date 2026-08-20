@@ -598,3 +598,97 @@ export {
   nodeBaselineFileSystem,
   readFrontmatter,
 } from './providers/baseline.js';
+
+// Tolerant projection of the Assurance `coverage` payload (3.7) — design §5.3.
+// The parser deliberately exposes the **whole raw `coverage` event**, because the
+// payload's internal schema is not pinned by observation, so this module is where
+// an unpinned wire shape becomes axis overlays. The rule is structural rather than
+// positional: walk the payload for any array of objects and accept an entry that
+// carries a recognisable test identity (`test_id` | `testId` | `id`) and/or a path
+// (`path` | `file` | `test_path` | …), plus optional booleans and enums for the
+// designed and proven axes. The one recorded payload keeps its array at
+// `coverage.tests`; a reader that hard-coded that path would over-fit a single
+// capture, and an extra wrapper level would then project zero entries — which is a
+// degraded build, not a quiet mis-read. Keying is two-step and in this order:
+// `test_id` against a candidate's `designedTest.testId`, else the normalised
+// `path` against `designedTest.path`. A match is a **set**, because one
+// `*_test.md` legitimately verifies every promise that cites it. A target with no
+// designed test matches nothing, and that is right rather than a gap: a coverage
+// entry names a test document, and only baseline knows which claim a document
+// verifies. `coverageVerdict` returns **null** when the entry says nothing about
+// the proven axis, so an unrecognised payload shape can never move a verdict.
+export type {
+  CoverageAxesRequest,
+  CoverageAxesResult,
+  CoverageAxisTarget,
+  CoverageEntry,
+  CoverageMatch,
+  CoverageMatchKind,
+  CoverageProjection,
+} from './providers/coverage.js';
+export {
+  COVERAGE_DESIGNED_KEYS,
+  COVERAGE_PACK_KEYS,
+  COVERAGE_PATH_KEYS,
+  COVERAGE_PROVEN_KEYS,
+  COVERAGE_PROVEN_STATUSES,
+  COVERAGE_RED_STATUSES,
+  COVERAGE_STALE_STATUSES,
+  COVERAGE_STATUS_KEYS,
+  COVERAGE_TEST_ID_KEYS,
+  COVERAGE_UNDESIGNED_STATUSES,
+  MAX_COVERAGE_ENTRIES,
+  MAX_COVERAGE_WALK_DEPTH,
+  buildCoverageAxes,
+  coverageVerdict,
+  normaliseCoveragePath,
+  projectCoverage,
+} from './providers/coverage.js';
+
+// The enrichment promise provider (3.7) — `cover`, gated on the Assurance `done`
+// event (design §5.3, §5.3.1, R2.5–R2.9, R2.12). It contributes exactly one thing,
+// the assurance axes, and deliberately no candidates and no citations at all:
+// §5.4 makes baseline the sole citation authority, and the cheapest way to
+// guarantee a Kane outage can never move a citation is for the outage-prone
+// provider to have none to move — so `candidates` is typed as the empty tuple.
+// The acceptance gate is conjunctive and narrow: `stream.kind === 'complete'`
+// **and** a `done` event **and** `terminal.status === 'complete'` **and** a
+// `coverage` payload that projects at least one entry. Every near-miss looks
+// successful from one angle — a refusal is a *complete* stream (§5.3.1), a pause
+// exits 3 and is resumable, a crashed run may have emitted plenty of progress, an
+// empty payload parses perfectly — and accepting any of them publishes a proven
+// figure the run did not earn. Anything else degrades with its **own** reason from
+// the fixed vocabulary of §5.3, because the Ledger's `/runs` page renders that
+// string to tell a reviewer why they are looking at baseline data only: the
+// verified refusal answers `assurance-status:refused` plus a diagnostic quoting
+// Kane's own remedy ("run `context ingest`"), which a generic failure would have
+// thrown away. argv is `cover --json` and the `--mode agent` enabler is appended
+// by the invoker from the contract table, never restated here. The 60 s budget is
+// **required and never defaulted** in this module: `timeouts.enrichmentMs` lives
+// in `.kept/config.json` and a default here would be a second home for it, which
+// is why the provider is a factory. Nothing throws: absence (R2.12), refusal,
+// pause, crash, timeout and an unreadable payload all arrive as `ok: false`.
+export type {
+  EnrichmentContext,
+  EnrichmentResult,
+  EnrichmentTarget,
+} from './providers/enrichment.js';
+export {
+  ACCEPTED_ASSURANCE_STATUS,
+  ASSURANCE_EXIT_REASON_PREFIX,
+  ASSURANCE_STATUS_REASON_PREFIX,
+  ENRICHMENT_ARGV,
+  ENRICHMENT_DEGRADED_REASONS,
+  ENRICHMENT_DEGRADED_REASON_VALUES,
+  ENRICHMENT_DIAGNOSTIC_CODES,
+  ENRICHMENT_DIAGNOSTIC_CODE_VALUES,
+  ENRICHMENT_FAMILY,
+  ENRICHMENT_PROVIDER_NAME,
+  assuranceExitReason,
+  assuranceStatusReason,
+  collectEnrichment,
+  createEnrichmentProvider,
+  enrichmentTargetsFromCandidates,
+  enrichmentTargetsFromPromises,
+  normaliseAssuranceStatus,
+} from './providers/enrichment.js';
