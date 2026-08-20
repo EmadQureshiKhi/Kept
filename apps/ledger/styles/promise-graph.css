@@ -1,0 +1,213 @@
+/**
+ * The hero — design §10.2 (the component tree), §10.3 (four lanes, panned and
+ * zoomed by React Flow and positioned by nobody else), §10.4.3 (density), §10.8
+ * (the keyboard model and the parallel list), R8.1, R10.7, R10.8.
+ *
+ * The page's one grid: the canvas, the promise list beside it, and the detail panel
+ * as a third column when a promise is selected. A column rather than an overlay,
+ * because an overlay would either cover the graph it is describing or float above it
+ * needing a shadow of its own, and there is exactly one place shadows are authored
+ * (§10.5).
+ *
+ * **No horizontal overflow between 1280 and 1920 (R10.8), by construction rather
+ * than by media query.** The canvas column is `minmax(0, 1fr)`, so it is the column
+ * that yields; the two fixed columns and the two gaps total 712px, which leaves
+ * 520px of canvas inside a 1280px viewport once the shell's padding is taken. No
+ * rule in this file sets a non-zero `min-width`, and the canvas clips its own
+ * viewport, so nothing inside the graph can push the page wider than the window —
+ * asserted in `test/promise-graph-density.test.ts` rather than eyeballed at two
+ * widths.
+ *
+ * **React Flow is styled down to its geometry.** Its `base.css` is the functional
+ * half only — the transform origins and the pane stacking that panning and zooming
+ * need — so no third-party theme reaches the page and the overrides below are about
+ * this palette rather than about undoing another one. Edges are one hairline stroke;
+ * handles exist because an edge needs endpoints to attach to and are painted to
+ * nothing, since a promise is not a thing a reader connects by hand.
+ */
+
+/* ── the grid ───────────────────────────────────────────────────────────────── */
+
+.promise-graph {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* The panel takes a column of its own rather than covering the graph. 240 + 440 +
+   two 16px gaps = 712px of fixed width, which fits inside 1280 with room to spare
+   and simply widens the canvas at 1920. */
+.promise-graph[data-panel='open'] {
+  grid-template-columns: minmax(0, 1fr) 240px 440px;
+}
+
+/* ── the canvas: role="application", and the only pannable thing on the page ─── */
+
+.promise-graph__canvas {
+  position: relative;
+  min-width: 0;
+  height: 620px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+/* `Tab` enters the graph at React Flow's own wrapper, which is the one element in
+   this tree that is `role="application"` — the library hard-codes that attribute
+   after its prop spread, so `PromiseGraph` passes `tabIndex`, `aria-label` and the
+   key handler through to it rather than wrapping it in a second application region
+   (see the note in `PromiseGraph.tsx`). The ring is therefore authored against that
+   class, and it is the same ring `shell.css` gives every other focus stop.
+   `outline-offset` is negative so the ring is drawn inside the canvas's own clip
+   rather than outside its rounded border. */
+.promise-graph__canvas > .react-flow:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* Reading order, in words, above the lanes. The graph's structure is legible
+   without it; this is what makes it legible in the first three seconds. */
+.promise-graph__caption {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+/* ── React Flow, reduced to geometry ────────────────────────────────────────── */
+
+.promise-graph__canvas .react-flow__edge-path {
+  stroke: var(--hairline-strong);
+  stroke-width: 1;
+  fill: none;
+}
+
+/* An edge attaches to a handle, so the handles exist; a promise is not connected by
+   hand, so they are 1px and painted to nothing and take no pointer. */
+.promise-graph__canvas .react-flow__handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  background-color: var(--ink-100);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.promise-graph__canvas .react-flow__attribution {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+}
+
+/* ── the parallel list: always present, never a fallback (§10.8) ────────────── */
+
+/* Namespaced `graph-list` rather than `promise-list` because `coverage.css` already
+   owns that name for the static rows of `/coverage`, and every stylesheet here is
+   global. Two components under one class name is two components restyling each other
+   after a client-side navigation. */
+
+.graph-list {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+  max-height: 620px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.graph-list__caption {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+/* A native button, so it is operable with no pointer, no canvas and no JavaScript
+   of ours in the way. `background-color` is unset rather than transparent-with-a-
+   token: the row's fill is the ink ramp, and only when it is hovered or selected. */
+.graph-list__button {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  gap: var(--s-1);
+  padding: var(--s-2);
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--r-chip);
+  color: var(--text-100);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.graph-list__button:hover {
+  background-color: var(--ink-100);
+}
+
+.graph-list__button[aria-current='true'] {
+  background-color: var(--ink-150);
+}
+
+.graph-list__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* One line of the claim, in prose, so the list reads as a list of promises rather
+   than a list of hashes. The full claim is one keystroke away in the panel. */
+.graph-list__claim {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  color: var(--text-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── the wash edge, again on a border and again in rules that carry no text ──── */
+
+.graph-list__button[data-verdict='proven'] {
+  border-left-color: var(--wash-proven);
+}
+
+.graph-list__button[data-verdict='stale'] {
+  border-left-color: var(--wash-stale);
+}
+
+.graph-list__button[data-verdict='red'] {
+  border-left-color: var(--wash-red);
+}
+
+.graph-list__button[data-verdict='undesigned'] {
+  border-left-color: var(--wash-undesigned);
+}
+
+/* ── the empty graph: a state, not a blank ──────────────────────────────────── */
+
+/* Zero promises is a real answer — a repository that states nothing verifiable — so
+   it is written out rather than left as an empty canvas a reader has to interpret. */
+.promise-graph__empty {
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}

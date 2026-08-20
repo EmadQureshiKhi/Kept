@@ -1,0 +1,180 @@
+/**
+ * The graph's nodes — design §10.3 (the 320×76 footprint), §10.4.3 (a verdict wash
+ * is permitted on a node's 3px left edge), §10.5 (depth is picked, never authored),
+ * §10.7 (mono is texture; a claim clamps to two lines), §10.8, R8.1, R10.2, R10.7.
+ *
+ * Geometry, type and state only. The node's depth arrives from `.surface-raised` in
+ * `surfaces.css`, its colours from `tokens.css`, and its verdict word from
+ * `verdict-tag.css` — this file declares no token, no fill outside the ink ramp and
+ * no shadow of its own.
+ *
+ * **The footprint is fixed at 320×76 and the content is fitted to it, not the other
+ * way round.** A graph whose nodes changed height with their claim would re-flow the
+ * lanes, and the lanes are arithmetic (`lib/layout.ts`, `ROW_H` 92) precisely so two
+ * renders of one snapshot are pixel-identical. So the box is `border-box` at exactly
+ * 320×76, the rows sum to 62 inside 8px/4px vertical padding, and the claim clamps
+ * at two lines with the full text carried in `title` and repeated verbatim in the
+ * panel (§10.7).
+ *
+ * **The verdict is stated three ways, and only one of them is colour.** The word is
+ * in the tag, the hue is on that word, and the 3px left edge carries the low-alpha
+ * `--wash-*` for the same verdict — an edge, never a fill, so no wash ever sits
+ * behind text and the contrast matrix stays finite (§10.4.3). Each wash rule below
+ * therefore declares `border-left-color` and nothing else: a rule that set a wash
+ * and a `color` together is what `test/typography-discipline.test.ts` fails on, and
+ * splitting them means such a rule cannot be written here by accident.
+ *
+ * Two states, both cheap paint on the allowlist of §10.6.4: hover raises the fill by
+ * one step of the ink ramp, and a selected node adds a 2px outline at 1px offset
+ * (§10.6.3, "Selection outline"). No scale, no glow, no shadow — hover changes a
+ * surface, it does not perform.
+ */
+
+/* ── the promise node ───────────────────────────────────────────────────────── */
+
+.promise-node {
+  display: grid;
+  box-sizing: border-box;
+  width: 320px;
+  height: 76px;
+  align-content: space-between;
+  padding: var(--s-2) var(--s-3) var(--s-1);
+  border-left: 3px solid transparent;
+  border-radius: var(--r-card);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  overflow: hidden;
+  color: var(--text-000);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    outline-color var(--dur-fast) var(--ease-out);
+}
+
+.promise-node:hover {
+  background-color: var(--ink-150);
+}
+
+/* The selected node is the panel's subject, so it is marked structurally rather
+   than only by the panel being open. `--hairline-strong` and not `--focus`: the
+   ring belongs to focus alone (§10.4.3), and a node can be selected without being
+   focused — a `?p=` deep link opens exactly that state. */
+.promise-node[data-selected='true'] {
+  background-color: var(--ink-150);
+  outline-color: var(--hairline-strong);
+  outline-offset: 1px;
+}
+
+/* Last, and deliberately: the base rule above declares a transparent outline so the
+   ring has something to transition from, and both it and the selected rule would
+   otherwise outrank `shell.css`'s `:focus-visible` on the cascade — a selected node
+   would then lose its focus ring, which is the one ring §10.8 requires to be
+   visible. Stated here, focus wins on a node in every state it can be in. */
+.promise-node:focus-visible {
+  outline-color: var(--focus);
+  outline-offset: 2px;
+}
+
+/* ── the three rows ─────────────────────────────────────────────────────────── */
+
+.promise-node__head {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* The id: a hash, so mono, tracked open at 11px (§10.7). It is the handle a judge
+   types into `?p=`, which is the reason it is on the node at all. */
+.promise-node__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  white-space: nowrap;
+}
+
+/* The claim is prose, so it is `--font-ui` — mono here would flatten the page's
+   one typographic device (§10.7). Two lines, ellipsised, full text in `title`. */
+.promise-node__claim {
+  display: -webkit-box;
+  margin: 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  color: var(--text-000);
+  text-overflow: ellipsis;
+}
+
+/* `path:line` — an identifier, so mono (§10.7). It is what makes the claim
+   checkable: the file and the line a reader can open for themselves. */
+.promise-node__citation {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── the 3px verdict edge: a wash, on a border, in rules that carry no text ──── */
+
+.promise-node[data-verdict='proven'] {
+  border-left-color: var(--wash-proven);
+}
+
+.promise-node[data-verdict='stale'] {
+  border-left-color: var(--wash-stale);
+}
+
+.promise-node[data-verdict='red'] {
+  border-left-color: var(--wash-red);
+}
+
+.promise-node[data-verdict='undesigned'] {
+  border-left-color: var(--wash-undesigned);
+}
+
+/* ── the other three lanes ──────────────────────────────────────────────────── */
+
+/* Documents, designed tests and evidence packs are context for a promise rather
+   than subjects of their own, so they are compact chips at the same elevation and
+   half the height. Everything they carry is repeated as text in the panel, which is
+   why they are not focus stops in the keyboard model (§10.8). */
+.lane-node {
+  display: grid;
+  box-sizing: border-box;
+  width: 240px;
+  height: 44px;
+  align-content: center;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.lane-node__kind {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  color: var(--text-200);
+}
+
+.lane-node__name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

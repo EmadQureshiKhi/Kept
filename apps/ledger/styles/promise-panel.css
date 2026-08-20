@@ -1,0 +1,205 @@
+/**
+ * The promise panel — design §10.2, §10.5 (a well reads as cut into the card),
+ * §10.6.3 (the panel's slide and fade is the one plain CSS transition here), §10.7,
+ * §10.10 (empty states are specified states), R8.2, R8.3, R10.7.
+ *
+ * 440px at `.surface-raised-2`, which is the elevation §10.5 reserves for the panel
+ * and the amendment cards. It authors no depth and no shadow of its own; it picks
+ * one.
+ *
+ * The panel's job is to make a claim checkable, so its content is ordered by what a
+ * sceptic asks: *what was promised* (the claim, verbatim), *where it is written*
+ * (the citation well, quoting the cited line as it appears on disk), *what would
+ * prove it* (the designed test), *what the last run said* (the verdict and its
+ * source), *what to do about it* (the repair annotation) and *what can be inspected*
+ * (the evidence artefacts). Anything absent is stated as absent rather than omitted:
+ * a promise with no evidence pack says so, in words, because "no artefacts yet" and
+ * "artefacts we are not showing you" must not look the same.
+ *
+ * The citation well is `.surface-well` — the inverted light ramp — so the quoted line
+ * reads as cut into the panel rather than stacked on it. That is the whole visual
+ * argument for the verbatim quote being *source* and not commentary.
+ *
+ * Motion is one container transition on `opacity` and `transform` (§10.6.3), both on
+ * the compositor. The staggered section reveal that sits over it belongs to stage 17
+ * and needs no change here.
+ */
+
+.promise-panel {
+  display: grid;
+  box-sizing: border-box;
+  width: 440px;
+  max-width: 100%;
+  min-width: 0;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-panel);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+/* ── the header: the id, the verdict, and the way out ───────────────────────── */
+
+.promise-panel__head {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.promise-panel__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+}
+
+.promise-panel__close {
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-100);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.promise-panel__close:hover {
+  background-color: var(--ink-150);
+}
+
+/* ── the claim: the subject, so it is the largest prose on the panel ─────────── */
+
+.promise-panel__claim {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+  max-width: 72ch;
+}
+
+/* ── sections ───────────────────────────────────────────────────────────────── */
+
+.promise-panel__section {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.promise-panel__heading {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+/* Prose: rationale, empty states, panel copy. Never mono (§10.7). */
+.promise-panel__prose {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+/* Identifiers: `path:line`, test ids, result and reason codes, ISO instants,
+   member statuses, credit figures. Mono, and tracked open at small sizes. */
+.promise-panel__ident {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+.promise-panel__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+}
+
+.promise-panel__term {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  color: var(--text-200);
+}
+
+.promise-panel__value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+/* ── the citation well: the verbatim line, cut into the panel (§10.5) ────────── */
+
+.promise-panel__well {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-card);
+}
+
+/* The cited line is prose from a document, so it stays `--font-ui` — mono is for the
+   `path:line` above it, which is an identifier (§10.7). It is quoted with no
+   normalisation of any kind: leading space, trailing space and inner runs are the
+   bytes on the line, which is the credibility of the whole product. */
+.promise-panel__quote {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── evidence artefacts ─────────────────────────────────────────────────────── */
+
+.promise-panel__artifacts {
+  display: grid;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promise-panel__artifact {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.promise-panel__artifact:hover {
+  color: var(--text-000);
+}
+
+.promise-panel__artifact-kind {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  color: var(--text-200);
+}
