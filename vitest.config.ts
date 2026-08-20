@@ -82,6 +82,10 @@ export default defineConfig({
           pool: 'forks',
           isolate: false,
           fileParallelism: false,
+          /* Its own group, so serialising this project does not ask Vitest to
+             reconcile one `maxWorkers` against the other three projects' — which
+             it refuses to do, by design, when they share a group order. */
+          sequence: { groupOrder: 1 },
         },
       },
       {
