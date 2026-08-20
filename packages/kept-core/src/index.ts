@@ -852,3 +852,47 @@ export {
   readPlan,
   serialisePlan,
 } from './radius/plan.js';
+
+// The blast radius (11.9) — design §7.1, §7.3, R4.2, R4.3, R4.5. The chain is
+// changed paths → tests whose frontmatter `covers:` globs match one → promises
+// those tests verify → **the `test_id` of each of those tests, read off
+// `testrun_plan.members[]` and nowhere else**. Three structural choices keep that
+// last clause true rather than merely intended: `collectTestCoverage` returns
+// `path` and `covers` only, deliberately discarding the `test_id` the baseline
+// frontmatter reader hands it, so a future refactor cannot start trusting
+// frontmatter ids without widening a return type; `computeBlastRadius` is pure —
+// no filesystem, no invoker, the plan is a parameter — so with `plan: null` it
+// answers zero identifiers rather than guessing, because "Kane has not told us
+// the ids" and "we can infer the ids" are different states and only one is
+// honest; and a member present in the plan **without** an id is excluded, listed
+// in `skippedNoTestId` and diagnosed, never given one by inference from a
+// filename, a path or an ordinal position. An empty radius is the common case on
+// an unrelated edit and it must cost nothing: `shouldInvokeKane` is the single
+// home of R4.5's rule that zero identifiers means zero Kane processes, and one
+// `radius-path-uncovered` diagnostic is recorded per uncovered path so a reviewer
+// sees precisely which edit nothing verifies. Glob matching is `matchesGlob`,
+// about thirty lines over repository-relative POSIX paths supporting literal
+// segments, `*` within a segment and `**` across any number of them — there is no
+// `micromatch`, the runtime budget of §2.2 is closed at nine packages. The grammar
+// deliberately does **not** treat a bare directory as a prefix, so a document that
+// means a subtree writes `.../**`, as the committed corpus does. Design §7.3
+// sketches `computeBlastRadius({ changed, graph, plan })`; `covers` is the fourth
+// input the sketch omits and §7.1's own chain requires, kept as data rather than a
+// filesystem read so the function stays pure.
+export type {
+  BlastRadius,
+  BlastRadiusRequest,
+  CollectTestCoverageRequest,
+  TestCoverage,
+  TestDocumentSource,
+} from './radius/radius.js';
+export {
+  RADIUS_DIAGNOSTIC_CODES,
+  RADIUS_DIAGNOSTIC_CODE_VALUES,
+  collectTestCoverage,
+  computeBlastRadius,
+  matchesAnyGlob,
+  matchesGlob,
+  normaliseChangedPath,
+  shouldInvokeKane,
+} from './radius/radius.js';
