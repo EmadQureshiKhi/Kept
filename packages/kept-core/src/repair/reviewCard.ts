@@ -130,6 +130,8 @@ export const REVIEW_CARD_DIAGNOSTIC_CODES = Object.freeze({
   writeRefused: 'review-card-write-refused',
   /** A staged item named no promise, so no schema-valid card could be built. */
   unattributed: 'review-card-unattributed',
+  /** The stream crashed, paused or refused, so no card was created (R5.3, R5.4). */
+  outcomeUnproven: 'review-card-outcome-unproven',
   /** One proposed change was dropped: its path was not repository-relative. */
   changeDropped: 'review-card-change-dropped',
   /** A card file could not be read. Treated as absent. */
@@ -632,6 +634,73 @@ export function reviewCardsFromStagedItems(
     cards: Object.freeze([...byId.values()].sort((left, right) => compareIds(left.id, right.id))),
     unattributed,
   };
+}
+
+/**
+ * What {@link mirrorReconcileStagedChanges} did.
+ *
+ * `mirrored` is false for every reconciliation whose terminal `done` did not
+ * arrive with an accepting status, and `cards` is empty in that case — see the
+ * function's own note for why that is a requirement rather than caution.
+ */
+export interface MirroredHeldChanges {
+  readonly cards: readonly ReviewCard[];
+  /** Staged items that named no promise, counted rather than lost. */
+  readonly unattributed: number;
+  /** Whether the outcome admitted mirroring at all. */
+  readonly mirrored: boolean;
+}
+
+/**
+ * Mirror one reconciliation's staged items, **gated on the outcome** (R5.3, R5.4).
+ *
+ * The gate is the requirement, not a precaution. R5.3: a reconciliation stream
+ * that ends without its `done` event is a crashed stream, and KEPT "SHALL create
+ * no Review_Card from that stream". R5.4: a `done` reporting `paused` with exit
+ * three leaves everything unchanged. A refusal is a `complete` stream with a
+ * non-accepting status and is the same story. In all three cases the items on the
+ * stream are whatever arrived before the outcome was known, and a card built from
+ * them would tell a reviewer that Kane staged a change it may never have finished
+ * staging.
+ *
+ * `accepted` is supplied rather than re-derived: `kept reconcile` already computes
+ * it from the terminal event through `normaliseAssuranceStatus` and
+ * `ACCEPTED_ASSURANCE_STATUS`, and a second copy of that rule here is exactly how
+ * the two would come to disagree. What this function guarantees is that there is
+ * **no way to reach a card without passing the flag**, which is the half a caller
+ * cannot forget.
+ *
+ * Evolve's degradation path deliberately does not come through here: task 14.2
+ * builds a `test-drift` card from the failure context alone when the flag probe
+ * says `maintain evolve` cannot be invoked, and that card records a failure rather
+ * than a staged change. {@link testDriftReviewCard} is its constructor.
+ */
+export function mirrorReconcileStagedChanges(request: {
+  /** Whether the terminal `done` arrived with an accepting status. */
+  readonly accepted: boolean;
+  /** The `review_card` events the stream carried, verbatim. */
+  readonly staged: readonly Record<string, unknown>[];
+  readonly context: ReviewCardContext;
+  /** How the run ended, for the diagnostic. `crashed`, `paused`, `refused`, … */
+  readonly outcome?: string | null | undefined;
+}): MirroredHeldChanges {
+  if (!request.accepted) {
+    if (request.staged.length > 0) {
+      request.context.diagnostics?.report({
+        code: REVIEW_CARD_DIAGNOSTIC_CODES.outcomeUnproven,
+        severity: 'info',
+        message:
+          `${request.staged.length} staged item${request.staged.length === 1 ? '' : 's'} arrived ` +
+          `before the reconciliation ended ${request.outcome ?? 'without an accepting done event'}` +
+          `, so no review card was created from that stream. What Kane staged is not known to be ` +
+          `what Kane finished staging, and nothing was applied either way.`,
+        file: null,
+      });
+    }
+    return { cards: Object.freeze([]), unattributed: 0, mirrored: false };
+  }
+  const mirrored = reviewCardsFromStagedItems(request.staged, request.context);
+  return { cards: mirrored.cards, unattributed: mirrored.unattributed, mirrored: true };
 }
 
 /**

@@ -1207,6 +1207,7 @@ export {
 // goes through `keptWritePath`, the `.kept/` fence, which is what makes "no file
 // outside `.kept/` is written" a property of the code rather than of one run.
 export type {
+  MirroredHeldChanges,
   ProposedChange,
   RepairDirectoryReader,
   ReviewCard,
@@ -1235,6 +1236,7 @@ export {
   isReviewCardId,
   keptWritePath,
   listReviewCards,
+  mirrorReconcileStagedChanges,
   nodeRepairDirectoryReader,
   parseReviewCard,
   readReviewCard,
