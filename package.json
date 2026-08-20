@@ -1,0 +1,43 @@
+{
+  "name": "kept",
+  "version": "0.0.0",
+  "private": true,
+  "description": "KEPT — a living ledger of the promises a codebase makes, verified by Kane.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.4"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "demo": "node scripts/demo.mjs",
+    "loop": "node bin/kept verify --all --member-debug",
+    "build:snapshot": "node bin/kept build && node bin/kept snapshot",
+    "test": "vitest --run",
+    "check": "node scripts/check-readonly.mjs && tsc -b && vitest --run"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.11.3",
+    "animejs": "4.5.0",
+    "clsx": "^2.1.1",
+    "next": "^16.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "fast-check": "^4.9.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
