@@ -799,6 +799,59 @@ export {
   reportMemberStatus,
 } from './verdict/memberStatus.js';
 
+// Source-id resolution and its four-rung match ladder (12.1) — design §13.2.2,
+// R5.1, R5.2. `kane-cli maintain reconcile` requires **both** `--from` and
+// `--source-id`; the earlier bare invocation would have exited 2 on every save
+// while looking wired up. The correction is structural, not disciplinary:
+// `--source-id` can only be built from the `ok: true` arm of `SourceResolution`,
+// so an unresolved source is not *expressible* as a spawn — no process, no
+// credit, no review card, no verdict movement, `degraded` still false, exit 0
+// (§14.1). The ladder is first-hit-wins over four rungs — repo-relative path
+// equality, absolute-path equality after resolving both sides against
+// `repoRoot`, sha256 of the file's current bytes against the recorded digest,
+// then basename equality with exactly one live candidate — and there is **no
+// fuzzy matching at any rung**: two or more live candidates tying is `ambiguous`
+// rather than a coin flip, and titles, use-case names and ordinal position are
+// never consulted even though the listing carries all three. Normalising
+// `sha256:9e0c…` to `9e0c…` is reading a value, not guessing at one; deciding
+// two different values are close enough is what the ladder refuses. Path
+// normalisation deliberately mirrors `normaliseCoveragePath` and does **not**
+// collapse `..`, because rung 1 is equality over that spelling and rung 2 is
+// equality over the resolved form — folding them would leave a rung that can
+// never report itself. Retirement is judged at the winning rung only, so a
+// retired duplicate does not make a live match ambiguous (a retired source
+// cannot fork a graph) while a match that is *only* retired answers `retired`
+// rather than being handed to Kane. `matchStoreSources` is exported because the
+// fork guard of §13.2.4 #7 asks a different question of the same match sets, and
+// two definitions of "matches" would eventually disagree.
+export type {
+  LadderRung,
+  ResolveFromSourcesRequest,
+  RungMatches,
+  SourceMatchRequest,
+  SourceMatchSet,
+  SourceResolution,
+  SourceResolutionReason,
+  SourceResolutionVia,
+  StoreSource,
+} from './context/sources.js';
+export {
+  DIGEST_ALGORITHM_PREFIX,
+  LADDER_RUNGS,
+  SOURCE_DIAGNOSTIC_CODES,
+  SOURCE_DIAGNOSTIC_CODE_VALUES,
+  SOURCE_REASON_DIAGNOSTIC_CODE,
+  SOURCE_RESOLUTION_REASONS,
+  SOURCE_RESOLUTION_VIA,
+  absoluteSourcePath,
+  matchStoreSources,
+  normaliseDigest,
+  normaliseSourcePath,
+  repoRelativeSourcePath,
+  resolveFromSources,
+  sourceDigest,
+} from './context/sources.js';
+
 // The testrun plan cache (11.8) — design §7.2, R4.4. `testrun_plan.members[]` is
 // the only authority for the mapping from a `*_test.md` path to an
 // assurance-graph identifier, so this module's whole job is to obtain the real
