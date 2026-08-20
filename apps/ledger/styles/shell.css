@@ -1,0 +1,122 @@
+/**
+ * The page shell — design §10.1, §10.4.3 (density), §10.6.4 (the reduced-motion
+ * insurance block), §10.7 (typography), §10.8 (the skip link), R10.1, R10.4,
+ * R10.7.
+ *
+ * Third and last stylesheet, imported after `tokens.css` and `surfaces.css` so
+ * every value here resolves through a token and nothing is invented at the shell
+ * level. It owns four things and deliberately nothing else:
+ *
+ *   1. *The ink page.* `--ink-000` on both `html` and `body`, so an overscroll
+ *      bounce or a rubber-band at the bottom of a short page shows the page
+ *      colour rather than the user agent's white. `color-scheme: dark` hands the
+ *      same news to the scrollbars and to any native control.
+ *   2. *The elevation floor.* The shell sits at `--elev-0`, which is `none` — so
+ *      it is authored by declaring no depth at all. Depth belongs to the three
+ *      surface classes in `surfaces.css` and the forbidden-palette scan (§10.4.4)
+ *      makes any other file that reaches for it a test failure.
+ *   3. *Density.* `max-width: 1680px` on the main column and `min-width` set
+ *      nowhere, so the graph canvas flexes and no horizontal overflow appears
+ *      between 1280 and 1920 (§10.4.3, R10.8). Every length is a `--s-*` step or
+ *      a 1px/2px rule; the 4-based scale has no exceptions.
+ *   4. *The skip link*, first focusable element in the document (§10.8, R10.7),
+ *      parked above the viewport with a `transform` and brought back on focus.
+ *      `transform` because it is compositor-only; a `top` animation is on the
+ *      forbidden list of §10.6.3 and the motion scan would reject it.
+ *
+ * The focus ring is the only motion in this file: `outline-color` over
+ * `--dur-micro`, which is the "Focus ring | ring opacity | --dur-micro | Plain
+ * CSS transition" row of §10.6.3. `--focus` appears here and only here, as a 2px
+ * ring and never as a state signal (§10.4.3).
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  background-color: var(--ink-000);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--ink-000);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+}
+
+/* ── the skip link: first focusable element in the document (§10.8) ────────── */
+
+/* Parked one viewport-safe step above the top edge rather than hidden: it stays
+   in the accessibility tree and in the tab order, which is the entire point of
+   it. Reaching it with `transform` keeps the reveal on the compositor. */
+.skip-link {
+  position: absolute;
+  z-index: 2;
+  top: var(--s-2);
+  left: var(--s-2);
+  transform: translateY(calc(-100% - var(--s-8)));
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-card);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transition: outline-color var(--dur-micro) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ── the focus ring: one token, 2px, everywhere (§10.4.3, R10.7) ───────────── */
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ── the page column ──────────────────────────────────────────────────────── */
+
+/* `min-height`, never `min-width`: the shell fills the viewport vertically and
+   yields horizontally, so a 1280px window has nothing to overflow. */
+.page-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.page-main {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: var(--s-8) var(--s-6) var(--s-16);
+}
+
+/* ── reduced motion: CSS-level insurance, verbatim from §10.6.4 ────────────── */
+
+/* `lib/motion.ts` is the real implementation of the reduced-motion *state* — it
+   applies each orchestration's end state synchronously, so the reduced render and
+   the post-animation render are the same DOM. This block is the insurance under
+   it, and it exists for one case that JavaScript cannot cover: the setting
+   changing mid-session, with a transition already in flight. Without it that
+   transition finishes at its authored duration. With it, every duration is
+   already zero and there is nothing left to finish. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
