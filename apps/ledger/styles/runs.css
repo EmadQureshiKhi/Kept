@@ -1,0 +1,353 @@
+/**
+ * The terminal-event log — design §10.1 (`/runs`), §10.7 (mono as texture,
+ * tabular numerals wherever a number aligns), §14.1 (the vocabulary this page
+ * exists to render), R4.9, R4.11, R5.3.
+ *
+ * Geometry, type and colour only. No token is declared here — `tokens.css` is the
+ * single declaration site — and no depth: the log sits on the page at `--ink-000`
+ * and the two blocks that need to read as recessed pick `.surface-well` from
+ * `surfaces.css` (§10.5). Every length is `0`, `1px` or a `--s-*` step.
+ *
+ * Three decisions worth stating:
+ *
+ * 1. **The log is a table, because it is one.** Six aligned facts per run —
+ *    family, command, status, result code, credits, exit meaning — read down the
+ *    column as much as across the row, and a reader comparing two runs is
+ *    comparing columns. Semantic `<table>` also gives the row header and the
+ *    column association a screen reader needs for free, which a grid of `<div>`s
+ *    would have to reinvent through `aria`.
+ *
+ * 2. **Numbers align or they are not a column.** `.credits-column` and
+ *    `.run-duration` carry `font-variant-numeric: tabular-nums lining-nums`,
+ *    which §10.7 makes non-negotiable: a credits figure with proportional digits
+ *    does not form a column, it forms a ragged edge that reads as noise.
+ *
+ * 3. **The log is achromatic, and that is a decision rather than an omission.**
+ *    Colour is the verdict channel (§10.4.3), and the "Used for" column of
+ *    §10.4.2 spends it on exactly four things: a verdict tag, a graph node label,
+ *    the freshness ochre over twenty-four hours, and a diff deletion. A run's
+ *    outcome is none of them — it is a statement about an invocation, not about a
+ *    promise — so painting `failed` in the red verdict hue would invite a reader
+ *    to see a broken promise where there is a tool that exited non-zero. The
+ *    vocabulary of §14.1 carries the whole signal instead, in the neutral ramp:
+ *    the label at `--text-000`, its reasoning at `--text-200`. `data-tone` stays
+ *    on the element as a machine handle, and it deliberately resolves to no
+ *    colour here; giving it one is a design change and belongs in §10.4.2 first.
+ *
+ * Deliberately absent: a row hover lift, a zebra fill, a status dot standing in
+ * for a word, and any depth on a row. A log is read, not browsed.
+ */
+
+/* ── the page ───────────────────────────────────────────────────────────────── */
+
+.runs-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+}
+
+.runs-page__title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--text-000);
+}
+
+.runs-page__lede {
+  max-width: 72ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.runs-page__section-title {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+/* ── the empty state: a fact, not a shrug (§10.10) ──────────────────────────── */
+
+.runs-empty {
+  padding: var(--s-6);
+  border-radius: var(--r-card);
+}
+
+.runs-empty__headline {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+.runs-empty__detail {
+  max-width: 72ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── the table ──────────────────────────────────────────────────────────────── */
+
+.runs-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.runs-table__head-cell {
+  padding: 0 var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--hairline-strong);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  line-height: var(--s-4);
+  color: var(--text-200);
+  white-space: nowrap;
+}
+
+/* The two numeric columns are right-aligned in the body, so their heading is
+   too — a heading that does not sit over its own column is a heading for the
+   column beside it. */
+.runs-table__head-cell--numeric {
+  text-align: right;
+}
+
+.runs-table__row {
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* A run's detail sits in a row of its own, so the boundary *between* runs has to
+   read as stronger than the divider between a run and its own detail. */
+.runs-table__detail-row {
+  border-bottom: 1px solid var(--hairline-strong);
+}
+
+.runs-table__cell {
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
+  vertical-align: top;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* Ids, commands, codes, statuses and timestamps: the texture mono is for (§10.7). */
+.runs-table__cell--mono,
+.runs-table__code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+/* A command is the longest cell on the row and the one worth reading in full, so
+   it wraps on its own separators rather than being clipped or ellipsised. */
+.runs-table__command {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-000);
+}
+
+/* The two numeric columns of §10.7. Tabular and lining, so they are columns. */
+.credits-column,
+.run-duration {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: right;
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* A withheld figure is a dash, never a zero: nothing was reported, and `0` would
+   be a number the run did not produce. */
+.runs-table__absent {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-200);
+}
+
+/* ── the outcome: a word, and the neutral ramp behind it ────────────────────── */
+
+.run-outcome {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight);
+}
+
+/* The brightest text on the row, because it is the one sentence a reader takes
+   away. No verdict token: see the note at the head of this file. */
+.run-outcome__label {
+  display: block;
+  color: var(--text-000);
+}
+
+.run-outcome__detail {
+  display: block;
+  max-width: 60ch;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+/* Whether the ledger's state was allowed to change — the `Verdicts` column of §14.1,
+   rendered rather than left to be inferred from a colour. */
+.run-outcome__verdicts {
+  display: block;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+/* ── the detail block under a run: members, reasons, diagnostics ────────────── */
+
+.run-detail {
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+}
+
+.run-detail__title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+.run-detail__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-detail__item {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.run-detail__item:last-child {
+  margin-bottom: 0;
+}
+
+/* A member's status is Kane's own word, kept verbatim so `broken` stays
+   distinguishable from `failed` (§10.7 lists member statuses as mono). */
+.run-member__status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+.run-member__path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+}
+
+/* ── diagnostics: the message verbatim, with the producer's own fences kept ─── */
+
+.diagnostic {
+  margin: 0 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-left: 1px solid var(--hairline-strong);
+}
+
+.diagnostic:last-child {
+  margin-bottom: 0;
+}
+
+/* The identity line: code, severity, instant, and the file the diagnostic is
+   about. All four are identifiers, so all four are mono. */
+.diagnostic__title {
+  margin: 0;
+  line-height: var(--lh-mono);
+}
+
+.diagnostic__code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+.diagnostic__severity {
+  margin-left: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+}
+
+.diagnostic__at {
+  margin-left: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+}
+
+.diagnostic__emphasis {
+  display: block;
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+/* The message. Prose in `--font-ui`, and only the runs the producer fenced in
+   backticks set in mono — so a command a reader may need to type is texture and
+   the sentence around it is not (§10.7). Nothing is edited on the way here. */
+.diagnostic__message {
+  max-width: 72ch;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.diagnostic__quoted {
+  padding: 0 var(--s-1);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+.diagnostic__remedy {
+  display: block;
+  margin: var(--s-2) 0 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}

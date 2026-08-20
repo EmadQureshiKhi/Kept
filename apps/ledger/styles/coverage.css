@@ -1,0 +1,163 @@
+/**
+ * The shareable coverage page — design §10.1 (`/coverage`), §10.7, §10.10, R9.8.
+ *
+ * The page a maintainer links to from a README and a judge opens without
+ * credentials: both coverage figures, how fresh they are, and every promise with
+ * its verdict. It reuses `MetricRail` and `VerdictTag` wholesale, so this
+ * stylesheet owns only what those two do not — the page's heading block and the
+ * promise list beneath the rail.
+ *
+ * No token is declared here, no depth is authored here, and every length is `0`,
+ * `1px` or a `--s-*` step.
+ *
+ * The promise list is a `<ul>` rather than a table, and that is a claim about the
+ * content rather than a preference: a promise is a sentence with a citation, not a
+ * row of aligned facts, and the one thing a reader compares across promises is the
+ * verdict — which is a tag at a fixed position, in a fixed column, without needing
+ * a table to put it there. The claim reads as prose in `--font-ui` at 72ch, its
+ * `path:line` citation is mono because it is an identifier, and the two never
+ * swap.
+ */
+
+/* ── the heading block ──────────────────────────────────────────────────────── */
+
+.coverage-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.coverage-page__title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--text-000);
+}
+
+.coverage-page__lede {
+  max-width: 72ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.coverage-page__section-title {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+/* The instant the figures were measured at, and the two counts behind them. A
+   coverage figure without its denominator is a number a reader has to trust. */
+.coverage-page__measured {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+.coverage-page__instant {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+}
+
+/* The degraded sentence: which axis was discarded, and the reason verbatim. The
+   rail already replaces the proven tile with its chip; this says why. */
+.coverage-page__degraded {
+  max-width: 72ch;
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-card);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.coverage-page__reason {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+/* ── the promise list ───────────────────────────────────────────────────────── */
+
+.promise-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promise-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Fixed width, so the tags form a column without a table doing it for them. */
+.promise-list__verdict {
+  flex: 0 0 var(--s-16);
+}
+
+.promise-list__body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.promise-list__claim {
+  max-width: 72ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+}
+
+.promise-list__meta {
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  overflow-wrap: anywhere;
+}
+
+.promise-list__id {
+  color: var(--text-100);
+}
+
+/* A `path:line` citation and a designed-test id, separated so a reader can see
+   which of the two a promise is missing. */
+.promise-list__citation,
+.promise-list__test {
+  color: var(--text-200);
+}
+
+.promise-list__separator {
+  padding: 0 var(--s-1);
+  color: var(--text-200);
+}
+
+.promise-list__empty {
+  margin: 0;
+  padding: var(--s-6);
+  border-radius: var(--r-card);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
