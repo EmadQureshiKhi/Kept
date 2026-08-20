@@ -37,3 +37,6 @@ build/
 # They hold Kane's cached step recordings. Committing them is what lets
 # anyone else replay this suite from cache — free, no LLM cost, no
 # re-authoring. Ignoring them would silently break replay for reviewers.
+
+# Scratch
+.tmp/
