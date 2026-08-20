@@ -1,0 +1,295 @@
+/**
+ * `/amendments` and its cards — design §8.3, §8.5, §10.1, §10.5, §10.7, §10.10, R7.5,
+ * R8.4, R10.7.
+ *
+ * Namespaced `amendments-page__*`, `amendment-card__*` and `accept-control__*`: every
+ * Ledger stylesheet is global, so the prefix is the only scope there is.
+ *
+ * The card sits at `.surface-raised-2`, which §10.5 reserves *by name* for the promise
+ * panel and the amendment cards, and the diff inside it at `.surface-well` — the bytes
+ * cut into the surface that argues about them. Neither elevation is authored here: this
+ * file writes no `box-shadow`, because `surfaces.css` is the only place depth exists and
+ * the forbidden-palette scan holds that line.
+ *
+ * Typography follows §10.7 exactly. Mono is texture: the amendment id, the `path:line`
+ * citation, the ISO instant, the sha256 interlock, the promise ids and the artefact
+ * paths. Prose is `--font-ui`: the lede, the rationale, every empty-state sentence and
+ * the accept control's status line. The interlock is 64 characters of hex, so it wraps
+ * with `overflow-wrap: anywhere` rather than widening the card — truncating it in CSS
+ * would display a shortened interlock, and a shortened interlock is a weaker one.
+ *
+ * ## The accept control looks like a control because it is one
+ *
+ * It is a native `<button>` with a real focus ring, and the command sits beside it in
+ * selectable mono. Both halves matter (§8.5): the button is the affordance, and the
+ * visible command is what a judge reads before running it and what makes the clipboard
+ * being unavailable a non-event rather than a dead end. The only transitions are
+ * `background-color` and `border-color` on hover and focus — both on the closed
+ * allowlist of §10.6 — and there is no hover scale, no shadow bloom and no
+ * `@keyframes` anywhere in this file.
+ */
+
+/* ── the page ──────────────────────────────────────────────────────────────── */
+
+.amendments-page {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+  padding: var(--s-8) var(--s-6);
+  max-width: 1100px;
+}
+
+.amendments-page__title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--text-000);
+}
+
+.amendments-page__lede {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.amendments-page__measured {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+  max-width: 72ch;
+}
+
+/* The instant is an identifier, so it is mono and its digits align (§10.7). */
+.amendments-page__instant {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-100);
+}
+
+/* The empty state is a specified state, not a blank (§10.10). */
+.amendments-page__empty {
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.amendments-page__list {
+  display: grid;
+  gap: var(--s-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* ── one card ──────────────────────────────────────────────────────────────── */
+
+.amendment-card {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-panel);
+}
+
+.amendment-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.amendment-card__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+/* The status is a state word, not a verdict, so it takes no verdict hue: colour is
+   reserved for verdict communication (§10.4.3, R10.2). */
+.amendment-card__status {
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  color: var(--text-100);
+}
+
+.amendment-card__instant {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+}
+
+.amendment-card__section {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.amendment-card__heading {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+.amendment-card__prose {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.amendment-card__ident {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+.amendment-card__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+}
+
+.amendment-card__term {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  color: var(--text-200);
+}
+
+.amendment-card__value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+.amendment-card__link {
+  color: var(--text-000);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.amendment-card__artifacts {
+  display: grid;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.amendment-card__artifact {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.amendment-card__artifact:hover {
+  color: var(--text-000);
+}
+
+.amendment-card__artifact-kind {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  color: var(--text-200);
+}
+
+/* ── the accept control (§8.5, §10.8) ──────────────────────────────────────── */
+
+.accept-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-2) var(--s-3);
+  align-items: center;
+  min-width: 0;
+}
+
+.accept-control__button {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.accept-control__button:hover {
+  background-color: var(--ink-150);
+}
+
+.accept-control__button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The command, revealed inline — the half of §8.5 that makes the clipboard optional. */
+.accept-control__command {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* A live region, so what the copy did is announced rather than only coloured. */
+.accept-control__status {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+  max-width: 72ch;
+}

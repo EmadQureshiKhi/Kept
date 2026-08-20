@@ -1,0 +1,140 @@
+/**
+ * The diff — design §10.9, §10.5 (a well reads as cut into the card), §10.7 (mono is
+ * texture, and diff bodies are one of the places it belongs), §10.4.3 (a verdict wash
+ * is permitted on a 3px left edge and nowhere near text), R7.5, R10.1, R10.5.
+ *
+ * Namespaced `diff-*`, like `graph-list__*` and `promise-node__*` before it, because
+ * every Ledger stylesheet is global — there is no CSS module here and no scoping, so the
+ * prefix *is* the scope. One cross-route class collision has already happened in this
+ * repository between two stylesheets that each thought they owned a short name.
+ *
+ * Four columns, in the order a unified diff is read: the line number in the *before*
+ * text, the line number in the *after* text, the `-`/`+` marker, and the bytes. Both
+ * gutters are always present even when one of them is empty for a row, because a gutter
+ * that appeared and disappeared per row would not be a column — and a column of numbers
+ * is the whole reason `font-variant-numeric: tabular-nums lining-nums` is declared here
+ * rather than left to the browser's defaults (§10.7, non-negotiable).
+ *
+ * ## The wash and the hue are on different elements, and no rule can hold both
+ *
+ * §10.9 asks for two things at once: `--wash-red` / `--wash-proven` on each changed
+ * row's left 3px edge, and the verdict hue on the row's body. Those are separated by
+ * *element* — the wash on `.diff-row`, the hue on `.diff-text` inside it — so the two
+ * facts live in two rules and neither rule can declare the other's property. That is the
+ * same structural split `verdict-tag.css` makes, and it is what keeps the exclusion
+ * Property 22's contrast clause rests on: a wash contributes no foreground/background
+ * pair, because no rule that sets one sets a `color`. `typography-discipline.test.ts`
+ * fails on the merged spelling, so the split cannot quietly be undone.
+ *
+ * The hue itself makes `.diff-text` the **third** consumer of a `--verdict-*` token in
+ * the whole Ledger, after the tag's word and the freshness chip's ochre.
+ * `verdict-presentation.prop.test.ts` allowlists consumers by selector precisely so that
+ * a third one is a decision somebody made on purpose: §10.9 names these two tokens for
+ * this use in the design text, and `lib/tokens.ts` has carried
+ * `--verdict-red on --ink-050` as a measured body pair labelled *diff deletions* since
+ * the palette was written. So the entry added to that allowlist records a decision the
+ * design already made, rather than widening the rule to fit a component.
+ *
+ * Colour is still never the only channel (R10.5): the marker glyph is rendered text and
+ * the row's accessible name says `removed`, `added` or `unchanged`. Strip every
+ * stylesheet and the diff still reads as a diff.
+ *
+ * No `box-shadow` here — depth is picked from `surfaces.css` by adding `.surface-well`
+ * and never authored (§10.5). No `@keyframes`, no transition: a static diff has nothing
+ * to animate, and animating a deletion would dramatise the one thing on the page that
+ * should read as a fact.
+ */
+
+.diff-view {
+  display: grid;
+  min-width: 0;
+  padding: var(--s-2) 0;
+  border-radius: var(--r-card);
+  overflow-x: auto;
+}
+
+.diff-row {
+  display: grid;
+  grid-template-columns: 4ch 4ch 1.5ch minmax(0, 1fr);
+  gap: var(--s-2);
+  align-items: baseline;
+  min-width: 0;
+  padding-right: var(--s-3);
+  padding-left: var(--s-3);
+  /* The edge exists on every row so a changed row does not shift its own text by
+     three pixels; only the colour changes. */
+  border-left: 3px solid transparent;
+}
+
+/* Both gutters. Tabular, lining numerals — §10.7 names the diff gutter explicitly,
+   and proportional digits do not form a column. */
+.diff-gutter {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+  text-align: right;
+}
+
+.diff-marker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  color: var(--text-200);
+  text-align: center;
+  user-select: none;
+}
+
+/* The bytes. Mono, and `pre-wrap` with no trimming anywhere: leading space, trailing
+   space and inner runs are what the file contains, and a diff that tidied them could
+   not be checked against the document it quotes. */
+.diff-text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── the wash: a 3px left edge, in rules that carry no text (§10.4.3) ────────── */
+
+.diff-row[data-diff='del'] {
+  border-left-color: var(--wash-red);
+}
+
+.diff-row[data-diff='add'] {
+  border-left-color: var(--wash-proven);
+}
+
+/* ── the hue: clay deletions and patina additions, in rules that carry no wash ── */
+
+.diff-row[data-diff='del'] .diff-text {
+  color: var(--verdict-red);
+}
+
+.diff-row[data-diff='add'] .diff-text {
+  color: var(--verdict-proven);
+}
+
+.diff-row[data-diff='del'] .diff-marker {
+  color: var(--verdict-red);
+}
+
+.diff-row[data-diff='add'] .diff-marker {
+  color: var(--verdict-proven);
+}
+
+/* An unchanged or unrendered diff states which it is, in prose (§10.10). */
+.diff-view__note {
+  margin: 0;
+  padding: var(--s-1) var(--s-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}

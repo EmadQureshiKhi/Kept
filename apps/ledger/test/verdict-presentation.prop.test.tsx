@@ -85,14 +85,36 @@ const VERDICTS: readonly Verdict[] = Object.freeze(
 /**
  * Selectors permitted to carry a `--verdict-*` token, and the reason each is.
  *
- * The list is short on purpose: colour is the verdict channel (§10.4.3), so a third
- * entry appearing here would be a design decision, not a refactor.
+ * The list is short on purpose: colour is the verdict channel (§10.4.3), so an entry
+ * appearing here is a design decision, not a refactor.
+ *
+ * The third entry was added by task 14.6, and it records a decision the design had
+ * already made rather than widening the rule to fit a component. §10.9 names these two
+ * tokens for this use in so many words — "`--verdict-red` for deletions,
+ * `--verdict-proven` for additions" — and `lib/tokens.ts` has carried
+ * `--verdict-red on --ink-050` as a measured **body** pair labelled *diff deletions*
+ * since the palette was written, which is the well's own fill. So no pair enters the
+ * matrix that was not already measured, and the two floors were already cleared.
+ *
+ * What makes it admissible rather than merely specified is that the diff keeps both
+ * halves of §10.4.3's bargain. The hue is on `.diff-text` and `.diff-marker`; the
+ * `--wash-*` is on `.diff-row`'s 3px left border, in rules that declare no `color` at
+ * all — so a wash still contributes no foreground/background pair and the matrix stays
+ * finite. And colour is still not the only channel: the marker glyph is rendered text
+ * and each row's accessible name says `removed`, `added` or `unchanged`, which is what
+ * the presentation clause below actually asserts.
  */
 const VERDICT_CONSUMERS: readonly { readonly match: string; readonly because: string }[] = [
   { match: '[data-verdict=', because: 'VerdictTag — the hue beside the word (R10.5)' },
   {
     match: '.freshness-value--stale',
     because: 'the freshness chip over 24 hours — the ochre R9.7 requires (§10.4.2)',
+  },
+  {
+    match: '[data-diff=',
+    because:
+      'DiffView — clay deletions and patina additions, named by §10.9 and measured in ' +
+      "lib/tokens.ts as the 'diff deletions' body pair on --ink-050",
   },
 ];
 

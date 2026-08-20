@@ -1,0 +1,229 @@
+/**
+ * `/reviews` and its cards — design §8.1, §8.2, §10.1, §10.5, §10.7, §10.10, R5.7,
+ * R7.2, R7.7.
+ *
+ * Namespaced `reviews-page__*` and `review-card__*`, for the same reason every other
+ * Ledger stylesheet is namespaced: they are all global, so the prefix is the scope.
+ *
+ * The card is `.surface-raised-2` and the diffs inside it are `.surface-well`, matching
+ * `/amendments` exactly — the two repair surfaces are the same *kind* of artefact seen
+ * from two branches, and giving them different depth grammars would suggest a difference
+ * that is not there. Neither elevation is authored here; both are picked from
+ * `surfaces.css` (§10.5).
+ *
+ * There is deliberately **no control class in this file**. §8.1 gives this branch
+ * autonomy `hold`, R5.7 says nothing is ever applied, and R8.4 forbids the Ledger any
+ * mutating surface at all — so the absence of a button here is the requirement being met.
+ * A reviewer's decision on a review card is *what the repair should be*, which is a
+ * conversation and not a click.
+ *
+ * Typography per §10.7: the card id, the ISO instant, the promise id, the branch, the
+ * evidence reference and each changed file's path are identifiers and take
+ * `--font-mono`; the title, the detail, each change's summary and every empty-state
+ * sentence are prose and take `--font-ui`. The title is prose deliberately — it is a
+ * sentence about a claim, and setting it in mono would flatten the one typographic
+ * contrast the page has.
+ *
+ * No `box-shadow`, no `@keyframes`, and the only transition is `color` on a link hover —
+ * on the closed allowlist of §10.6.
+ */
+
+/* ── the page ──────────────────────────────────────────────────────────────── */
+
+.reviews-page {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+  padding: var(--s-8) var(--s-6);
+  max-width: 1100px;
+}
+
+.reviews-page__title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--text-000);
+}
+
+.reviews-page__lede {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.reviews-page__measured {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+  max-width: 72ch;
+}
+
+.reviews-page__instant {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-100);
+}
+
+.reviews-page__empty {
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.reviews-page__list {
+  display: grid;
+  gap: var(--s-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* ── one card ──────────────────────────────────────────────────────────────── */
+
+.review-card {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-panel);
+}
+
+.review-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.review-card__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+}
+
+/* `open` or `dismissed`, and never a verdict — so it carries no verdict hue. */
+.review-card__status {
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  line-height: var(--s-3);
+  color: var(--text-100);
+}
+
+.review-card__instant {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+}
+
+/* Prose, at the largest size on the card: it is the subject (§10.7). */
+.review-card__title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+  max-width: 72ch;
+}
+
+.review-card__section {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.review-card__heading {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-4);
+  color: var(--text-200);
+}
+
+.review-card__prose {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  max-width: 72ch;
+}
+
+.review-card__ident {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+.review-card__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+}
+
+.review-card__term {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  color: var(--text-200);
+}
+
+.review-card__value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-100);
+  overflow-wrap: anywhere;
+}
+
+.review-card__link {
+  color: var(--text-000);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.review-card__changes {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.review-card__change {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
