@@ -1,0 +1,39 @@
+# --- Node / Next ---
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+.vercel
+
+# --- Env & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- macOS ---
+.DS_Store
+
+# =====================================================================
+# Kane CLI  —  these rules are deliberate, do not "tidy" them
+# =====================================================================
+
+# Kane variable files hold credentials. Never commit.
+.testmuai/variables/
+
+# The assurance store is single-writer and NOT git-mergeable: two branches
+# appending records corrupts it on the next read. Share by re-ingesting
+# sources instead. See docs/user-guide/assurance/overview.md upstream.
+.context/
+
+# Sealed evidence packs are large and regenerated per run, so they are
+# ignored by default. We force-add a small number of curated packs for
+# reviewers with `git add -f`, so a judge can open real evidence in the
+# viewer without spending their own credits.
+.testmuai/evidence/
+
+# NOTE: `output-*/` and `helper-output-*/` are intentionally NOT ignored.
+# They hold Kane's cached step recordings. Committing them is what lets
+# anyone else replay this suite from cache — free, no LLM cost, no
+# re-authoring. Ignoring them would silently break replay for reviewers.
