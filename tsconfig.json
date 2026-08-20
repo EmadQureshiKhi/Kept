@@ -8,7 +8,27 @@
     "incremental": true,
     "types": ["node"]
   },
-  "include": ["vitest.config.ts"],
+  /**
+   * The solution root does two jobs. It builds the emitting package projects
+   * through `references`, and it is itself the non-emitting project that
+   * type-checks everything outside a package's `rootDir`: the root Vitest
+   * config and every package test suite.
+   *
+   * Tests are checked here rather than from a per-package `tsconfig.test.json`
+   * because a referenced project may not disable emit (TS6310), so a test
+   * project could only join `tsc -b` by emitting `.js`/`.d.ts` for test files
+   * into a throwaway directory. Checking them from the root instead keeps
+   * `rootDir: src` and `dist/` free of test output, adds no build artefacts,
+   * and still means a plain `tsc -b` — and therefore `npm run check` — fails on
+   * a type error in a test.
+   *
+   * Tests import `@kept/core`, never `packages/kept-core/src/**` — the barrel
+   * is the only consumer entry point (design §2.1). The compiler tolerates a
+   * deep import here because a project reference redirects it to the built
+   * declaration, so that rule is upheld by review and, later, by the
+   * source-scan tests, not by this file.
+   */
+  "include": ["vitest.config.ts", "packages/*/test/**/*.ts"],
   "references": [
     { "path": "packages/kept-core" },
     { "path": "packages/kept-cli" }
