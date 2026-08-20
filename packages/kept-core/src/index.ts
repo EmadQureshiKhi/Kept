@@ -896,3 +896,84 @@ export {
   normaliseChangedPath,
   shouldInvokeKane,
 } from './radius/radius.js';
+
+// The handoff file (12.8) — the closed-loop contract (design §11.2, §11.3, §8.1,
+// §14.1, R7.1, R11.4, R11.7). This is the artefact that makes the loop real
+// rather than claimed: KEPT writes it, the Kiro hook's agent prompt reads it, the
+// agent repairs inside the fence it declares, saving that repair re-fires the
+// hook, and the verdict moves. Two properties carry the whole weight. **It is
+// written for every run** — crashed, paused, timed out, preflight-rejected,
+// kane-not-found, source-unresolved, radius-empty, never-invoked — with
+// `nextAction.branch: null` and a populated `diagnostics` array, because a
+// failure path that wrote nothing would leave the agent reading the *previous*
+// run's instruction and repairing a promise that is no longer red. The invariant
+// is mechanical rather than disciplinary: `buildHandoff` synthesises the reason
+// itself when the caller supplied none, so a null branch with an empty
+// `diagnostics` is not expressible, and `isHandoffFile` re-checks it on the way
+// back in. **And the fence is by branch**, which is what makes §8.1's autonomy
+// table real: on `code-break` `allowedPaths` is the three fixture-source globs
+// and nothing else, while `forbiddenPaths` names the fixture documentation (or
+// the loop could "fix" a red promise by editing the claim — the exact dishonesty
+// this product exists to prevent), the repository-root `tests/**` corpus (or it
+// could weaken the assertion instead of the bug), and `apps/ledger/**` plus
+// `packages/**`, because KEPT's own code is never the repair target. `test-drift`
+// and `docs-lie` fence with an **empty** allowed set, since §8.1 holds the one as
+// a review card and never writes the other silently; the difference between all
+// three is encoded three ways at once — in `allowedPaths`, in `autonomy` and
+// `artefact` which are §8.1's own two columns, and in `command`, the exact
+// invocation §11.1's prompt runs. Nothing here decides whether a verdict moved:
+// `verdictsPermitted` *calls* `mayWriteVerdicts`, and a run the guard refuses can
+// never carry a branch however many repairs a caller passes. No path is composed
+// either — every evidence path comes from an `EvidenceListing` that derived it
+// from the command family (§4.6), so an `evidenceRef` is a real resolved path or
+// null. `citation` is required rather than nullable on a result because a result
+// is built from a `PromiseRecord`, and a record cannot enter the graph without a
+// citation the admission gate resolved (§3.3) — R11.4's "the citation" is
+// guaranteed by the type. The filesystem seam is `StateFileSystem`, reused rather
+// than redeclared, so `inMemoryStateFileSystem` keeps this module's whole suite
+// off disk.
+export type {
+  BuildHandoffRequest,
+  HandoffArtefact,
+  HandoffArtifacts,
+  HandoffAutonomy,
+  HandoffBlastRadius,
+  HandoffCommand,
+  HandoffFence,
+  HandoffFile,
+  HandoffFileSystem,
+  HandoffHook,
+  HandoffNextAction,
+  HandoffOutcome,
+  HandoffPaths,
+  HandoffResult,
+  HandoffResultInput,
+  HandoffTrigger,
+  HandoffVerdictObject,
+  WriteHandoffRequest,
+  WriteHandoffResult,
+} from './handoff/handoff.js';
+export {
+  BRANCH_FENCES,
+  FIXTURE_DOC_GLOBS,
+  FIXTURE_SOURCE_GLOBS,
+  HANDOFF_DIAGNOSTIC_CODES,
+  HANDOFF_DIAGNOSTIC_CODE_VALUES,
+  HANDOFF_DIRECTORY_RELATIVE_PATH,
+  HANDOFF_FILE_RELATIVE_PATH,
+  HANDOFF_HOOKS,
+  HANDOFF_SCHEMA_VERSION,
+  KEPT_LAUNCHER,
+  KEPT_OWN_GLOBS,
+  NEXT_ACTION_BRANCH_PRECEDENCE,
+  TEST_CORPUS_GLOBS,
+  buildHandoff,
+  fenceFor,
+  handoffArchiveFileName,
+  handoffPaths,
+  isHandoffFile,
+  parseHandoff,
+  readNewestHandoff,
+  serialiseHandoff,
+  writeHandoff,
+} from './handoff/handoff.js';
