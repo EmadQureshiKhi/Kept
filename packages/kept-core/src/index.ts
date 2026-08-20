@@ -452,3 +452,87 @@ export {
   nodeCitationSource,
   splitLines,
 } from './model/admission.js';
+
+// The one promise-provider interface (3.5) — design §5.1, R2.1. Both providers
+// implement `PromiseAdapter` and nothing else, so the graph builder knows nothing
+// about `*_test.md` files or about `kane-cli cover`. The load-bearing detail is
+// that **failure is a field, not a throw**: `collect` never rejects, so a
+// provider that could not do its job returns `ok: false` with a `degradedReason`
+// and the build continues on whatever the other one produced (R2.8, R2.10,
+// R2.12). Providers report *candidates*, never records, because the citation
+// admission gate of §3.3 is the single funnel into the graph. `invoker` is
+// optional on the context for one reason: R2.12 makes a run with no Kane at all a
+// supported state, and the baseline provider needs nothing but the filesystem
+// (§5.5) — a required field would force every baseline caller to construct a
+// process boundary it will never use.
+export type {
+  PromiseAdapter,
+  ProviderAxes,
+  ProviderAxisOverlay,
+  ProviderContext,
+  ProviderResult,
+} from './providers/adapter.js';
+export { NO_PROVIDER_AXES } from './providers/adapter.js';
+
+// The baseline promise provider (3.5) — the floor under the whole system
+// (design §5.2, §5.5, R2.2, R2.3, R2.4). One sentence governs it: `collect`
+// resolves `ok: true` for every repository state — a missing root, an unreadable
+// directory, a file named `x_test.md` holding compiled bytes, frontmatter
+// truncated mid-key, a tag citing line zero of a file that does not exist, and a
+// repository with no `*_test.md` files at all. R2.4 states that
+// unconditionally, so `BaselineResult` types `ok` as the literal `true` and
+// `degradedReason` as the literal `null`: a failing baseline scan is not
+// expressible rather than merely unlikely. That is architectural, from assumption
+// A2 — the enrichment axis may be absent, refused, paused, timed out or crashed
+// and the ledger still renders on baseline alone, so if baseline could fail
+// `kept build` could fail and the ledger would have nothing to show. This module
+// never sets `degraded` either; that flag belongs to the enrichment axis alone
+// (§5.4 step 5). Three things stop "never fails" from becoming "silently finds
+// nothing": a repository with no test documents is distinguishable from one where
+// every test document was unreadable (`files` empty plus one `info` diagnostic,
+// versus `skipped` equal to `files` plus one `warn` naming each, R2.3); every skip
+// is named by a diagnostic carrying that path; and a tag whose cited file or line
+// does not resolve still becomes a candidate, so the gate refuses it and says why
+// (R1.4) instead of the claim vanishing. The `**\/*_test.md` walk is hand-rolled
+// with a skip set (`node_modules`, `.git`, `.next`, `dist`, `output-*`,
+// `.testmuai`) and a depth cap — there is no glob dependency, and skipping
+// `output-*` is load-bearing because it holds committed Kane recordings that can
+// themselves contain `*_test.md` files. Frontmatter is read by a bounded
+// twenty-line hand-rolled reader rather than `yaml`, and its `test_id` is a cache:
+// §3.4 makes `testrun_plan.members[].test_id` authoritative and the designed-test
+// node id is keyed on the document path. Cited files are read only through the
+// gate's own `CitationSource`, the same instance used for admission, so the
+// derived claim and the admitted citation text can never disagree.
+export type {
+  BaselineContext,
+  BaselineDirEntry,
+  BaselineFileSystem,
+  BaselineOnlyGraph,
+  BaselineResult,
+  Frontmatter,
+  RejectedTag,
+  VerifiesScan,
+  VerifiesTag,
+} from './providers/baseline.js';
+export {
+  BASELINE_DIAGNOSTIC_CODES,
+  BASELINE_DIAGNOSTIC_CODE_VALUES,
+  BASELINE_PROVIDER_NAME,
+  FRONTMATTER_FENCE,
+  FRONTMATTER_MAX_LINES,
+  MAX_SCAN_DEPTH,
+  SKIPPED_DIRECTORY_NAMES,
+  SKIPPED_DIRECTORY_PREFIXES,
+  TEST_DOCUMENT_SUFFIX,
+  VERIFIES_TAG_SOURCE,
+  baselineProvider,
+  buildBaselineOnlyGraph,
+  collectBaseline,
+  extractVerifiesTags,
+  inMemoryBaselineFileSystem,
+  isSkippedDirectoryName,
+  isTestDocumentName,
+  isUndecodableDocument,
+  nodeBaselineFileSystem,
+  readFrontmatter,
+} from './providers/baseline.js';
