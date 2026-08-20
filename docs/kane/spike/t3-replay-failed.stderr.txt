@@ -1,0 +1,2 @@
+evidence: 1 status_disagrees advisory(ies) — self-explained by triaged failure record(s)
+evidence: view locally with `kane-cli evidence serve /Users/nokitha/.testmuai/kaneai/sessions/c26b158e-cb66-4699-a5ce-9fa8a0f35d8b/evidence/8f53461a-1582-477d-b0d6-7ed9ad0b4310.evidence`

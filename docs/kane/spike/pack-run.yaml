@@ -1,0 +1,22 @@
+evidence: '0.1'
+run_id: 8f53461a-1582-477d-b0d6-7ed9ad0b4310
+status: finalized
+title: T-3 cart subtotal — the verdict spike's probe
+started: '2026-08-20T23:33:22.291Z'
+environment:
+  producer:
+    name: kane-cli
+    version: 0.8.4
+  surfaces:
+    - http://localhost:3100/settings
+  run_kind: replay
+  origin: testmd
+  pid: 60214
+  saved: true
+ended: 2026-08-20T23:34:06.683Z
+totals:
+  tests: 1
+  passed: 0
+  failed: 0
+  broken: 1
+  skipped: 0
