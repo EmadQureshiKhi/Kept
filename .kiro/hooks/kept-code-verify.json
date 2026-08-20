@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "KEPT · verify blast radius",
+  "description": "On fixture source save, re-verify only the promises whose designed tests cover the changed file, then act on the verdict.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "apps/fixture/app/**/*.tsx",
+      "apps/fixture/app/**/*.ts",
+      "apps/fixture/components/**/*.tsx",
+      "apps/fixture/lib/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `node bin/kept verify --changed <the saved file paths>`. Then read `.kept/handoff.json`. If `nextAction.branch` is `code-break`, fix the product code so the cited claim holds again: edit only files matching `nextAction.allowedPaths`, never a path in `nextAction.forbiddenPaths`, and use `results[].citation.text` as the specification — it is always present, so never guess what a promise claims. Save your edit: that re-fires this hook, and the second verification is what closes the loop. If `nextAction.branch` is `test-drift` or `docs-lie`, run the command in `nextAction.command` exactly as written and then stop — `nextAction.autonomy` and `nextAction.artefact` say what it produces, a held review card or a proposed amendment, and a human decides it. Never edit documentation and never edit anything under `tests/`: making a red promise green by weakening its claim or its test is the one repair this loop must never perform. If `command.invoked` is false, or `outcome.terminalSeen` is false, or `outcome.exitMeaning` is `paused-resumable`, `killed-by-timeout` or `preflight-rejected`, report every entry in `diagnostics` and change nothing. The process exit code is never the signal — `kept` exits zero on a crashed stream, a missing binary and an empty blast radius alike, so read the handoff, not the status."
+  }
+}
