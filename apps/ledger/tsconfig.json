@@ -32,6 +32,12 @@
      * and an unchecked route handler is the one file in the application whose
      * exported signature is a public contract (R9.4).
      *
+     * `lib/**\/*.tsx` is listed for the same reason `test/**\/*.tsx` is. A `lib`
+     * module that is *about* the browser — `lib/motion.tsx`, the `animejs` gate of
+     * §10.6.4 — cannot be checked by the root project, whose whole point for this
+     * tree is a no-DOM `lib`. The extension moves it here, where the DOM libs are,
+     * and leaves the root's guarantee over every other `lib` module intact.
+     *
      * Module resolution stays `NodeNext` to match the root, so a relative import
      * carries its `.js` extension in both programs and neither disagrees with the
      * other about a specifier. Vite resolves those specifiers to the `.ts` source
@@ -48,6 +54,7 @@
   },
   "include": [
     "lib/**/*.ts",
+    "lib/**/*.tsx",
     "test/**/*.ts",
     "test/**/*.tsx",
     "app/**/*.ts",
