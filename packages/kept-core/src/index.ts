@@ -257,6 +257,36 @@ export {
   computeMetrics,
 } from './model/metrics.js';
 
+// The `failure.yaml` loader (2.19) — the **fallback** triage source of design
+// §6.3 (R6.7). The primary signal is the inline `verdict` object on the terminal
+// event, which is richer structured triage delivered in the stream itself
+// (§6.2, A6); this module is what the router reads when no such object arrived,
+// and it is why `failureYamlTriage` can ship working regardless of the verdict
+// spike (R6.13). It derives no path of its own: `loadFailureYamlFromEvidence`
+// composes with `listArtifacts`, so the pack location still comes from the
+// command family and never from an event field (§4.6, A12). It routes nothing
+// either — the signal and the coerced code are surfaced unordered, and choosing
+// a branch from them is task 11.4. Absent, unreadable, invalid or
+// unmaterialisable files answer `null` plus a diagnostic quoting the parser's
+// real reason and line; a document that parsed and merely says nothing — empty,
+// a bare scalar, a sequence — answers a record, because those are different
+// facts about a run (§14.2).
+export type {
+  FailureYaml,
+  FailureYamlFileSystem,
+  LoadFailureYamlRequest,
+  LoadFromEvidenceRequest,
+  TriageSignalField,
+} from './kane/failureYaml.js';
+export {
+  FAILURE_YAML_FILENAMES,
+  TRIAGE_SIGNAL_FIELDS,
+  findFailureYamlArtifact,
+  loadFailureYaml,
+  loadFailureYamlFromEvidence,
+  nodeFailureYamlFileSystem,
+} from './kane/failureYaml.js';
+
 // The family-gated NDJSON parser (2.9) — the only exported parse entry point,
 // and it takes a `FamilyContract` first (design §4.2). Since `contractFor()` is
 // the only way to obtain one, a parse call cannot exist without a family named
