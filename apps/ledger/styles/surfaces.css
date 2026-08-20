@@ -1,0 +1,67 @@
+/**
+ * Light, occlusion and elevation — design §10.5.
+ *
+ * One implied light source: above, slightly left, 15° off vertical, warm. Every
+ * depth cue in the Ledger derives from it and nothing is lit ad hoc. The source
+ * is expressed three ways, and only these three:
+ *
+ *   1. *Above*        — a 1px `inset` highlight on the top edge of anything
+ *                       raised, `--light-edge` at elevation 1 and
+ *                       `--light-edge-strong` at 2. The cheapest legible depth
+ *                       cue there is.
+ *   2. *Occluding*    — two stacked shadows per level, a tight contact shadow
+ *                       with negative spread and a wide soft ambient one, both
+ *                       cast straight down in `--occlude`, a warm near-black.
+ *                       Never grey, never coloured, never a glow.
+ *   3. *Off vertical* — the large-plane wash is `linear-gradient(176deg, …)`
+ *                       rather than 180°, so the falloff runs off-axis with the
+ *                       source instead of straight down the page. Amplitude is
+ *                       `--light-wash` at 2.8% — felt, not seen.
+ *
+ * Recessed surfaces invert the ramp rather than inventing a second light: the
+ * occlusion moves inside and to the top, and the highlight moves to the bottom
+ * edge, because a cut reveals its far wall to the same lamp.
+ *
+ * These three classes are the ONLY way a component authors depth. A component
+ * picks an elevation; it never writes a shadow. The forbidden-palette scan
+ * (§10.4.4) makes a `box-shadow` declaration in any other file a test failure,
+ * which is what keeps that true as the component tree grows.
+ *
+ * Elevation ranks by function, not decoration (§10.5):
+ *   --elev-0  page shell                        (set on the shell in app/layout)
+ *   --elev-1  nodes, rail tiles, chips          .surface-raised
+ *   --elev-2  promise panel, amendment cards    .surface-raised-2
+ *   --elev-3  nothing — reserved for a future overlay, declared and unused
+ *
+ * Deliberately absent: a uniform shadow sprayed on every box, any glow including
+ * on hover and on the red verdict, glassmorphism blur, double borders, and a
+ * shadow standing in for a border. The forbidden-palette scan reads comments as
+ * well as declarations, so those are named in words — prose that spells out a
+ * banned value is how the banned value gets copied into code later.
+ */
+
+/* Elevation 1 — nodes, rail tiles, chips. Small planes, so no wash: the top edge
+   and the contact shadow carry it. */
+.surface-raised {
+  background-color: var(--ink-100);
+  box-shadow: var(--elev-1);
+}
+
+/* Elevation 2 — the promise panel and amendment cards. Large enough planes that
+   flat lighting reads as flat, so the off-axis wash is added over the fill. */
+.surface-raised-2 {
+  background-color: var(--ink-150);
+  background-image: linear-gradient(176deg, var(--light-wash), transparent 62%);
+  box-shadow: var(--elev-2);
+}
+
+/* Recessed — the citation well and the diff gutter. Inverted ramp: occlusion
+   inside the top edge, the light edge along the bottom, so the surface reads as
+   cut into its parent rather than stacked on it. */
+.surface-well {
+  background-color: var(--ink-050);
+  box-shadow:
+    0 1px 0 0 var(--occlude) inset,
+    0 2px 5px -2px var(--occlude) inset,
+    0 -1px 0 0 var(--light-edge) inset;
+}
