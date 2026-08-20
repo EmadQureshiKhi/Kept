@@ -721,3 +721,80 @@ export {
   MERGE_DIAGNOSTIC_CODE_VALUES,
   mergeGraph,
 } from './providers/merge.js';
+
+// The verdict router (11.1) — one strategy interface, two implementations, and a
+// single configuration string (design §6.1, §6.4, R6.1, R6.10, R6.14). The
+// interface exists because one empirical question was still open when it was
+// designed (R6.12): whether a failing cached replay carries the confirmed-bug
+// code and an inline `verdict` object at all. The whole three-way repair branch
+// keys off the answer, so rather than guess, the answer was fenced behind an
+// interface — and the fence is what this barrel enforces. **`selectRouter` is the
+// only door.** Neither concrete strategy is exported from here, and nothing
+// outside `src/verdict/` imports one, so the spike's outcome can only ever change
+// one string in `.kept/config.json` (source scan 3 of 6). An unknown value in
+// that string falls back to `resultCode740` **with a diagnostic** and never
+// throws: the file is hand-edited and read once at startup, and taking the ledger
+// down over a typo would be the worse failure.
+// `route` is total by contract — exactly one branch from `code-break`,
+// `test-drift` and `docs-lie` for every input, never null, never two, defaulting
+// to `docs-lie` when no rule matched (R6.9), because `code-break` requires
+// positive evidence of a product fault and `test-drift` requires positive
+// evidence of a test-mechanics fault, so the residue belongs to the
+// documentation — which is also the only branch that writes nothing without a
+// human. `RoutedRepair` is an alias of `RepairAnnotation`, not a lookalike, so the
+// routed answer is stored on a `PromiseRecord` with no translation table to
+// drift. `NormalisedVerdict` is named apart from `kane/events.ts`'s
+// `VerdictObject` on purpose: that one is the **raw wire shape** with every field
+// optional and `confirmed` typed as `boolean | string | number | null`, and
+// `normaliseVerdictObject` is the crossing from it to the settled shape design
+// §6.1 describes. `createFailureContext` is the recommended way to build a
+// context: it normalises the object once, fills both evidence paths from the
+// family-derived listing rather than from any event field (R6.11), and memoises
+// the `failure.yaml` load so the note is read lazily, at most once, and the same
+// context answers the same branch on repeated calls.
+export type {
+  FailureContext,
+  FailureContextRequest,
+  NormalisedVerdict,
+  RoutedRepair,
+  VerdictRouter,
+  VerdictRouterConfig,
+} from './verdict/router.js';
+export {
+  DEFAULT_VERDICT_ROUTER,
+  VERDICT_ROUTER_DIAGNOSTIC_CODES,
+  VERDICT_ROUTER_NAMES,
+  createFailureContext,
+  isVerdictRouterName,
+  normaliseVerdictObject,
+  resolveEvidenceRef,
+  selectRouter,
+} from './verdict/router.js';
+
+// Member status → verdict (11.1) — the seam where Kane's four execution statuses
+// become the ledger's four verdicts (design §6.5, R3.20, R4.8, R4.9). The two
+// vocabularies are not the same four, and the mapping is deliberately lossy in
+// one direction and deliberately lossless in the other: `failed` and `broken`
+// both become `red`, because the ledger has no fifth colour for "asserted and
+// lost" versus "the harness fell over" — and the distinction the verdict throws
+// away is preserved verbatim in the run diagnostics by `reportMemberStatus`, so a
+// reviewer can still tell the two apart afterwards (R4.9). `memberStatusToVerdict`
+// takes a `string` rather than the union because the value arrives from another
+// process: a fifth status from a later Kane release is a state of the world, not
+// a programming error, and it maps to `stale` — the verdict that claims nothing —
+// flagged `known: false` so the caller diagnoses it instead of silently reading
+// it as proof or as failure. `entersVerdictRouter` is the single statement that
+// only `failed` and `broken` reach the router: `interrupted` proved nothing, so
+// there is no failure to triage and manufacturing a repair branch out of that
+// absence is exactly the dishonesty the ledger exists to avoid.
+export type { MemberStatus, MemberStatusMapping, MemberStatusReport } from './verdict/memberStatus.js';
+export {
+  MEMBER_STATUSES,
+  MEMBER_STATUS_DIAGNOSTIC_CODES,
+  MEMBER_STATUS_DIAGNOSTIC_CODE_VALUES,
+  ROUTER_MEMBER_STATUSES,
+  entersVerdictRouter,
+  isMemberStatus,
+  memberStatusToVerdict,
+  reportMemberStatus,
+} from './verdict/memberStatus.js';
