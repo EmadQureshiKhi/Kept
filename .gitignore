@@ -40,3 +40,6 @@ build/
 
 # Scratch
 .tmp/
+
+# iCloud exclusion marker
+.nosync
