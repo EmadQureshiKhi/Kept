@@ -190,3 +190,51 @@ export {
   isVerdict,
   isVerdictSource,
 } from './model/promise.js';
+
+// The Kane event surface (2.8) — every shape the three terminal contracts can
+// put on the wire (design §4.3, §5.3.1, R3.16–R3.22). `TerminalEvent<F>` is
+// indexed by family, so a stream's terminal event cannot be read as another
+// family's. The vocabulary is open by Kane's own documentation:
+// `KNOWN_EVENT_TYPES` is a recognition list, never an allow-list, and every
+// event carries an index signature so an unannounced field survives the trip.
+// Fields a branch could key on (`result_code`, `confirmed`, `confidence`,
+// `exit_code`) are typed as the widest plausible wire union, which is what
+// forces normalisation instead of a raw comparison that fires on one of Kane's
+// two typings and silently never fires on the other. `run_dir` is fenced: the
+// wire key is not declared, only `runDirLegacy`, and no filesystem call may ever
+// take it (§4.6, R3.18). `VerdictObject` here is the **raw wire shape**; the
+// verdict router of stage 11 normalises it into its own settled view.
+export type {
+  AssuranceDoneEvent,
+  AssuranceEnvelope,
+  AssuranceStatus,
+  EventType,
+  KaneErrorEvent,
+  KaneEvent,
+  KaneEventBase,
+  KnownEventType,
+  MemberEndEvent,
+  MemberEndStatus,
+  OtherKaneEvent,
+  PerFlowMetadata,
+  ProgressEvent,
+  RunEndContext,
+  RunEndEvent,
+  TerminalEvent,
+  TestrunDoneEvent,
+  TestrunPlanEvent,
+  TestrunPlanMember,
+  TestrunSummaryEvent,
+  TestrunTotals,
+  VerdictObject,
+  WireEnum,
+} from './kane/events.js';
+export {
+  ASSURANCE_STATUSES,
+  KNOWN_EVENT_TYPES,
+  MEMBER_END_STATUSES,
+  RUN_END_WIRE_FIELDS,
+  VERDICT_OBJECT_FIELDS,
+  isKnownEventType,
+  isVerdictObject,
+} from './kane/events.js';
