@@ -6,12 +6,33 @@ represents, whether it was **captured** from a real `kane-cli` 0.8.4 run or
 **synthetic** (hand-authored to a verified shape), and which task consumes it.
 
 Provenance matters because stage 6 promotes real captured streams over the
-hand-authored ones wherever a real capture exists. **Task 6.4 replaces the files
-marked SYNTHETIC**; the two marked CAPTURED are already real and must not be
-regenerated or edited.
+hand-authored ones wherever a real capture exists.
+
+**Task 6.4 promoted six real streams and two real triage notes in, and replaced
+nothing.** That outcome needs stating plainly, because the task was written
+expecting replacements:
+
+- `run-failed-740.ndjson` was *not* replaced, because **no real capture carries
+  the confirmed-bug code**. The live spike found that a failing cached replay
+  carries no result-code field at all (`docs/kane/verdict-spike.md`). The task's
+  own condition — "where the observation supports it" — is therefore not met, and
+  a fixture that no longer exercised the numeric rung would have deleted test
+  coverage rather than improved it.
+- The three `testrun-*.ndjson` files were *not* replaced, because reality
+  contradicts what four committed suites pin about them — see
+  [where reality disagreed](#where-reality-disagreed-with-the-hand-authored-shapes).
+  Correcting that is a change to `kane/events.ts` and to those suites; a fixture
+  swap is not the place to smuggle in a change to an event contract.
+- The real captures were added alongside instead, under their own names, and
+  `kane-real-capture.test.ts` asserts every one of the disagreements as
+  **observed** behaviour. So the contradiction is now a red test away from being
+  silently re-assumed, and the follow-ups are named in
+  `docs/kane/verdict-spike.md`.
 
 Ground truth for every shape here is `docs/kane/command-surface.md`, the
-empirically verified surface, which overrides all published Kane docs.
+empirically verified surface, which overrides all published Kane docs — corrected
+in turn by `docs/kane/verdict-spike.md`, which is the only document here written
+from streams captured against this repository's own fixture app.
 
 ## The rule that shapes all of these
 
@@ -30,7 +51,7 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
 | File | Provenance | What it represents | Consumed by |
 |---|---|---|---|
 | `run-passed.ndjson` | **CAPTURED** | Byte-for-byte copy of `docs/kane/smoke-run.ndjson` — a real recorded twelve-line `run --agent` stream ending in `run_end`, status `passed`. | 2.12–2.14, 2.15 |
-| `run-failed-740.ndjson` | SYNTHETIC | A failing authored `run`: nine lines ending in `run_end` with status `failed`, the confirmed-bug code carried as the **string** `"740"`, and an inline `verdict` object. | 2.14, 11.3, stage 11 |
+| `run-failed-740.ndjson` | SYNTHETIC | A failing authored `run`: nine lines ending in `run_end` with status `failed`, the confirmed-bug code carried as the **string** `"740"`, and an inline `verdict` object with `confirmed: true`. **Kept deliberately after stage 6**: it is the only fixture that exercises the numeric confirmed-bug rung and the `confirmed: true` arm, and no real capture reaches either — the real failing replay carries no code at all and a `confirmed` that was downgraded to false. | 2.14, 11.3, stage 11 |
 | `testrun-mixed.ndjson` | SYNTHETIC | A four-member suite: `testrun_plan` (`valid: true`, `test_id` per member) → `testrun_start` → four `member_start`/`member_end` pairs covering **all four** statuses → `testrun_investigations_wait` → `testrun_evidence_ingest` → `testrun_summary` → `testrun_done`. | 2.12–2.14, 6.5 mapping, stage 8 |
 | `testrun-preflight-invalid.ndjson` | SYNTHETIC | Preflight rejection: `testrun_plan` with `valid: false` and one member per rejection reason (`missing_meta`, `not_authored`, `org_mismatch`, `project_mismatch`), event `exit_code` 2. Nothing ran, so no member event exists and every total is zero. | 2.13, stage 8 (R4.11) |
 | `testrun-crashed.ndjson` | SYNTHETIC | Five lines, **truncated mid-suite before `testrun_done`** — one member passed, the second only started. Outcome genuinely unknown: never a pass, never a failure. | 2.13 (crash classification) |
@@ -38,6 +59,62 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
 | `assurance-cover-done.ndjson` | SYNTHETIC | The success path of the Ledger's data source: one `coverage` payload event carrying the `--json` document, then `done` with status `complete` and event `exit_code` 0. | 2.13, 5.3 enrichment, stage 5 |
 | `assurance-paused.ndjson` | SYNTHETIC | A paused, resumable `maintain reconcile`: `done` with status `paused` and event `exit_code` **3**. For the Assurance family exit 3 means paused and resumable — **never** a failure. Misreading it is the one mistake that corrupts ledger state. | 2.13, stage 5/8 (R5.4) |
 | `context-list-sources.ndjson` | SYNTHETIC | The source listing `resolveSourceId` resolves against (§13.2.2): one progress line, one payload event carrying seven entries, then `done` with status `complete`. Shaped so every rung of the four-rung match ladder and every failure rung is reachable from committed bytes. | 12.1, 12.2, 12.5 |
+
+### Promoted in task 6.4 — real bytes, verbatim
+
+Captured on 2026-08-20 against `apps/fixture` on port 3100 with `kane-cli` 0.8.4,
+OAuth, `prod`. The subject of all six is the T-3 probe at
+`docs/kane/spike/cart_subtotal_spike_test.md` — a Kane-valid transcription of
+`tests/cart_subtotal_test.md`, which Kane's own parser rejects
+(`docs/kane/verdict-spike.md` explains why). Absolute paths are left as captured:
+these are records, and a fixture edited for tidiness is no longer a record.
+
+| File | Provenance | What it represents | Consumed by |
+|---|---|---|---|
+| `run-testmd-authored.ndjson` | **CAPTURED** | 179 lines of a real `testmd run --agent` **authoring** run: `run_start` / `step_start` / `step_event` / `step_end` / `run_end` **per step**, six times, then `test_md_bundle_sync`, `test_md_summary` and the real terminal `test_md_done`. Every step charges; the six charges sum to 49.205855. | 6.4 (`kane-real-capture.test.ts`), 6.3 (`verdict-spike-capture.test.ts`) |
+| `run-testmd-replay-failed.ndjson` | **CAPTURED** | The spike's subject: the same test replayed from cache against a deliberately broken `subtotal`. The failing step's `run_end` carries **no result-code field** and an inline `verdict` object with `confirmed: false`, `family: application_issue`, `confidence: 0.97` and a `downgrade_reason`. The investigation's charge is on the **verdict object**, not the event. | 6.3, 6.4, stage 11 |
+| `run-testmd-replay-passed.ndjson` | **CAPTURED** | The same test replayed once the break was reverted: six green steps, `replay_decisions: 6`, `author_decisions: 0`, and **no credits field anywhere** — the committed-recording claim (R13.6) as bytes. | 6.3, 6.4 |
+| `testrun-real-passed.ndjson` | **CAPTURED** | Seven lines of a real `testrun run`: `testrun_plan` → `testrun_start` → `testrun_member_start` / `testrun_member_end` → `testrun_evidence_ingest` → `testrun_summary` → `testrun_done`. The first real capture of this family. | 6.4 |
+| `testrun-real-failed.ndjson` | **CAPTURED** | Eight lines: the same suite against the break, with `testrun_member_end.status` `failed` and a real `testrun_investigations_wait` carrying `count: 1`. The member event carries **no verdict object and no code**, which is why both router configurations answer identically on this family. | 6.4, stage 8 |
+| `testrun-real-crashed.ndjson` | **CAPTURED, truncated** | The first five lines of `testrun-real-failed.ndjson` — real bytes, cut where a killed coordinator would stop: the member has ended and the investigation is still running, so the outcome is genuinely unreadable. Nothing was written by hand; the only edit is the cut. | 6.4 |
+
+## Where reality disagreed with the hand-authored shapes
+
+Four contradictions, each asserted as observed behaviour in
+`kane-real-capture.test.ts`. Read this list before trusting any `testrun_*` field
+in the synthetic fixtures above.
+
+1. **`testrun_done` has no `status` and no `totals`.** It carries
+   `{type, execution_id, overall_status}`. The totals live on `testrun_summary`,
+   and its real bucket set is `{tests, passed, failed, broken, skipped, authored}`
+   — an `authored` bucket the register never anticipated, and no `interrupted`
+   key, which settles that open question the only way observation can: there is
+   nowhere for `interrupted` to go but `skipped`.
+   `testrun-mixed.ndjson` puts `status` and `totals` on `testrun_done`, and
+   `kane-ndjson.test.ts`, `radius-plan.test.ts`, `verify.test.ts` and
+   `argv-contract.test.ts` read them there.
+2. **`testrun_plan.members[].test_id` is a UUID.** Kane reported
+   `58f4980c-0110-4f7e-b84a-ed89a963a9c6`, not `T-3`. The plan remains the
+   authority for the path-to-identifier mapping (R4.4) — the identifier is simply
+   not the logical one the corpus uses. Whether declaring `assurance: {id: T-3}`
+   in a test's frontmatter makes the plan report `T-3` is **untested**: the probe
+   omits the key deliberately, because setting it would reach for an assurance
+   graph this repository does not have yet. `--from-context <ids>` takes
+   assurance-graph ids, which is a third namespace again.
+3. **`valid: true` does not mean the member is runnable.** A member whose
+   frontmatter cannot parse still planned as `valid: true`; the parse error
+   surfaced later, on stderr, at authoring time. An *unauthored* member is
+   **authored**, not rejected. So `valid: false` is rarer than
+   `testrun-preflight-invalid.ndjson` assumes, and exit two for that family was
+   not reproducible: a non-existent or non-`_test.md` path is a plain CLI error
+   with no NDJSON and no plan at all. Neither the terminal event of a rejected
+   plan nor its status string was observed — both remain assumptions.
+4. **NDJSON for `testrun run` is enabled by stdin not being a TTY, not by stdout
+   being piped.** With stdout redirected to a file and stdin left alone, the same
+   command printed human-readable text; with `< /dev/null` added, it printed
+   NDJSON — including for `--dry-run`. The `piped-stdout` label in the contract
+   table is therefore misnamed, though the *behaviour* KEPT relies on is correct
+   by accident of `stdio: ['ignore','pipe','pipe']`, which makes stdin not a TTY.
 
 ### Notes a consumer needs
 
@@ -58,14 +135,16 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
   both are accepted, `credits_consumed` preferred. Replay costs nothing, so
   every `testrun` member here reports `0`.
 - **`interrupted` is counted in the `skipped` bucket** of
-  `testrun_summary.totals`, whose observed shape is
-  `{tests, passed, failed, broken, skipped}` with no `interrupted` key. That
-  placement is an assumption, not an observation — confirm it in stage 6.
-- **Two values in `testrun-preflight-invalid.ndjson` are unobserved
-  assumptions**: that a rejected plan still emits a terminal `testrun_done`, and
-  that its status reads `invalid`. The verified surface says only "nothing runs,
-  exit 2". `valid: false` on the plan is the authoritative signal; do not key
-  behaviour off that status string. Confirm both in stage 6.
+  `testrun_summary.totals`. Stage 6 confirmed the real bucket set as
+  `{tests, passed, failed, broken, skipped, authored}` — no `interrupted` key
+  exists, so `skipped` is the only place it can go. The `authored` bucket is new
+  and absent from this fixture.
+- **Two values in `testrun-preflight-invalid.ndjson` are still unobserved
+  assumptions**: that a rejected plan emits a terminal `testrun_done`, and that
+  its status reads `invalid`. Stage 6 could not reach `valid: false` at all — an
+  unparseable member planned as valid and an unauthored one was authored — so
+  neither assumption was tested and neither may be keyed off. `valid: false` on
+  the plan remains the authoritative signal in the design.
 - **`review_card` in `assurance-paused.ndjson` is an invented type name.** The
   event vocabulary is explicitly open ("new event types and fields may appear in
   any release"), so it doubles as a real unknown-type-retention case. The
@@ -81,9 +160,30 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
 
 ## `failure.yaml`
 
-One file per triage class of design §6.3. All four are **SYNTHETIC** — no real
-sealed pack is committed yet — and all four are consumed by task 2.19 (the
+One file per triage class of design §6.3. All four are **SYNTHETIC** — each one
+carries a category in a spelling the loader accepts, which is what makes it a
+usable test of the alias ladder — and all four are consumed by task 2.19 (the
 loader) and task 11.4 (`failureYamlTriage`).
+
+Two **CAPTURED** notes joined them in task 6.4, lifted verbatim out of the sealed
+pack of the real failing `testrun run`. Neither yields a signal, and that is the
+finding:
+
+| File | Provenance | What it represents |
+|---|---|---|
+| `failure-real-triaged.yaml` | **CAPTURED** | The per-failure note, at `tests/<test>/steps/<n>/failure.yaml` inside the pack. Real triage: `root_cause`, `severity: major`, `verification.status: not_verified`, `suggested_fix` — and its category at **`triage.rca.category`**, one level below the `triage.category` alias, so `signal` reads null. `severity` sits directly under `triage` and *is* read; `confidence` sits under `triage.rca` and is not. |
+| `failure-real-index.yaml` | **CAPTURED** | The note at the pack **root**, which is an index rather than a triage record: `generated`, `totals`, and a `failures[]` array pointing at the per-failure notes. It carries none of the four accepted aliases, so it too reads as no signal — and `findFailureYamlArtifact` prefers the pack root, so this is the one a router would actually reach. |
+
+Two further facts about the real packs, neither of which any fixture can carry:
+
+- **A sealed pack is a single `.evidence` zip file, not a directory.**
+  `kane/evidence.ts` lists a pack *directory*, so against a real pack it resolves
+  nothing and `failureYamlTriage` never sees either note above. The pack's table
+  of contents is committed as `docs/kane/spike/pack-listing.txt`.
+- **A `testmd run` pack lands in `<cwd>/.testmuai/evidence/` as well as under
+  `session_dir/evidence/`**, even though only the session path appears on stderr.
+  The `testrun` pack lands in the cwd path only, matching the family's
+  `cwd-testmuai` derivation.
 
 | File | Signal field used | Signal | Expected branch |
 |---|---|---|---|

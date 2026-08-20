@@ -27,6 +27,22 @@
       "status": "passed",
       "valid": true,
       "at": "2026-08-20T23:40:07.490Z"
+    },
+    {
+      "execution_id": "3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3",
+      "run_kind": "replay",
+      "status": "passed",
+      "valid": true,
+      "uploaded": true,
+      "at": "2026-08-20T23:45:21.848Z"
+    },
+    {
+      "execution_id": "ed791716-ed4a-456e-ae7a-46d1e05a70d3",
+      "run_kind": "replay",
+      "status": "failed",
+      "valid": true,
+      "uploaded": true,
+      "at": "2026-08-20T23:48:58.948Z"
     }
   ]
 }

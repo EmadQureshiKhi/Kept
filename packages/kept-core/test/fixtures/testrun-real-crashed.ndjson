@@ -1,0 +1,5 @@
+{"type":"testrun_plan","members":[{"path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6","tags":["cart","subtotal","breakable","verdict-spike"]}],"valid":true,"parallel":1}
+{"type":"testrun_start","execution_id":"ed791716-ed4a-456e-ae7a-46d1e05a70d3","members":["docs/kane/spike/cart_subtotal_spike_test.md"],"parallel":1}
+{"type":"testrun_member_start","path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6"}
+{"type":"testrun_member_end","path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6","status":"failed","duration_s":10}
+{"type":"testrun_investigations_wait","count":1}

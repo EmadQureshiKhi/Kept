@@ -117,7 +117,7 @@ describe('the authoring capture is a complete stream that cost real credits', ()
     const runEnds = parsed.events.filter((event) => event.type === 'run_end');
     const perStep = runEnds.map((event) => credits(event));
     for (const charge of perStep) expect(charge).not.toBeNull();
-    const total = perStep.reduce((sum, charge) => sum + (charge ?? 0), 0);
+    const total = perStep.reduce<number>((sum, charge) => sum + (charge ?? 0), 0);
     expect(total).toBeCloseTo(49.205855, 6);
     for (const event of runEnds) expect(resultCode(event)).toBe(100);
   });

@@ -1,0 +1,7 @@
+{"type":"testrun_plan","members":[{"path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6","tags":["cart","subtotal","breakable","verdict-spike"]}],"valid":true,"parallel":1}
+{"type":"testrun_start","execution_id":"3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3","members":["docs/kane/spike/cart_subtotal_spike_test.md"],"parallel":1}
+{"type":"testrun_member_start","path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6"}
+{"type":"testrun_member_end","path":"/Users/nokitha/Desktop/KEPT/docs/kane/spike/cart_subtotal_spike_test.md","test_id":"58f4980c-0110-4f7e-b84a-ed89a963a9c6","status":"passed","duration_s":10}
+{"type":"testrun_evidence_ingest","status":"ok","evidence_id":"3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3"}
+{"type":"testrun_summary","execution":{"id":"3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3","status":"passed","evidence_id":"3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3"},"authored":[],"totals":{"tests":1,"passed":1,"failed":0,"broken":0,"skipped":0,"authored":0},"duration_s":16.503,"upload":"ok","cancelled":false}
+{"type":"testrun_done","execution_id":"3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3","overall_status":"passed"}
