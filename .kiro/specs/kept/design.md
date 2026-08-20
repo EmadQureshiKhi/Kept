@@ -7,7 +7,7 @@ KEPT is a promise-verification system built as an npm workspaces TypeScript mono
 The design is shaped by four hard constraints, in this order of authority:
 
 1. **One day of build time, solo.** Every construction below is chosen because it is provable and boring. No layout engines, no state managers, no ORM, no Docker, no browser-automation dependency of our own. Kane brings its own Chrome. Anything not required to score is marked droppable in [§18](#18-droppable-scope-in-priority-order).
-2. **7 GB of free disk.** Zero-install-footprint decisions throughout: system font stack instead of downloaded fonts, a hand-rolled 60-line unified-diff renderer instead of Shiki by default, a hand-rolled deterministic lane layout instead of dagre, a node script instead of `concurrently`. Runtime dependency budget for the whole repo is eight packages ([§2.2](#22-dependency-budget)).
+2. **7 GB of free disk.** Zero-install-footprint decisions throughout: system font stack instead of downloaded fonts, a hand-rolled 60-line unified-diff renderer instead of Shiki by default, a hand-rolled deterministic lane layout instead of dagre, a node script instead of `concurrently`. Runtime dependency budget for the whole repo is **nine** packages ([§2.2](#22-dependency-budget)) — the ninth is `animejs`, admitted deliberately because the Craft dimension is scored and hand-rolled orchestration of staggered, sequenced, interruptible motion is not cheaper than ~10 KB.
 3. **Three Kane contracts, not one.** A parser built on `run_end` alone would silently report nothing on both of the paths KEPT actually uses. The design makes it *structurally impossible* to parse a Kane stream without first declaring its command family ([§4](#4-the-three-contract-kane-model)).
 4. **The Ledger must survive Kane's absence.** The deployed artefact is a read-only projection over a committed snapshot. It has no routes that mutate, no authentication, no credentials, and no knowledge that Kane exists ([§9](#9-ledger-snapshot-the-clui-contract)).
 
@@ -39,6 +39,7 @@ Everything KEPT does is a function from Kane's event stream to one JSON file, an
 ┌───────────────────────────────────┐      ┌───────────────────────────────┐
 │  packages/kept-core               │      │  .kept/  (working state)      │
 │   KaneInvoker  ── CommandFamily   │      │   config.json  plan.json      │
+│   resolveSourceId ── sources.json │      │   sources.json                │
 │   NdjsonParser ── FamilyContract  │      │   state.json   handoff.json   │
 │   coerce (result_code, credits)   │      │   handoff/<runId>.json        │
 │   evidence resolver               │      │   review-cards/*.json         │
@@ -88,6 +89,8 @@ Everything KEPT does is a function from Kane's event stream to one JSON file, an
 | Verdicts never move on an unknown outcome | Every writer takes `StateWrite` which rejects any `exitMeaning` outside `success \| failure` |
 | The deployed app cannot mutate or spend | Ledger has no non-GET handlers, no server actions, no `child_process` import; enforced by source-scan tests |
 | Promise ids survive rebuilds | Id derives from citation *file* + normalised claim text only — never line number, never ordering |
+| `maintain reconcile` is never spawned without a resolved source id | `resolveSourceId` returns a discriminated result; the `--source-id` argument can only be built from the `ok: true` arm, so an unresolved source is a no-op rather than an exit-2 spawn (§13.2.2) |
+| No animation can bypass the reduced-motion path | `animejs` is importable only from `lib/motion.ts`; every orchestration goes through `play()`, which applies the end state synchronously when motion is off (§10.6.4); enforced by an import-location scan |
 
 ---
 
@@ -128,6 +131,8 @@ KEPT/
 │   │       │   ├── evidence.ts         # resolveEvidenceDir(), listArtifacts()
 │   │       │   ├── failureYaml.ts      # loadFailureYaml()
 │   │       │   └── invoker.ts          # KaneInvoker, InvocationSpec, InvocationResult
+│   │       ├── context/
+│   │       │   └── sources.ts          # StoreSource, resolveSourceId(), SourceCache  ← §13.2.2
 │   │       ├── model/
 │   │       │   ├── promise.ts          # Promise, Citation, Verdict, PromiseGraph
 │   │       │   ├── ids.ts              # promiseId(), amendmentId(), runId()
@@ -181,10 +186,10 @@ KEPT/
 │       │   ├── runs/page.tsx
 │       │   └── badge.svg/route.ts     # GET only
 │       ├── components/{PromiseGraph,PromiseNode,PromisePanel,MetricRail,
-│       │               FreshnessChip,VerdictTag,DiffView,AcceptControl,
-│       │               ReviewCardList,LiveNdjsonPane}.tsx
-│       ├── lib/{snapshot,tokens,relativeTime,diff,layout}.ts
-│       └── styles/tokens.css
+│       │               MetricFigure,FreshnessChip,VerdictTag,DiffView,
+│       │               AcceptControl,ReviewCardList,LiveNdjsonPane}.tsx
+│       ├── lib/{snapshot,tokens,motion,relativeTime,diff,layout}.ts
+│       └── styles/{tokens.css,surfaces.css}     # tokens + the light/elevation ramp
 ├── tests/                             # Kane test-md corpus (the designed tests)
 │   ├── shop_filter_test.md
 │   ├── cart_subtotal_test.md
@@ -200,9 +205,22 @@ KEPT/
 
 ### 2.2 Dependency budget
 
-Runtime: `next`, `react`, `react-dom`, `tailwindcss`, `@xyflow/react`, `zod`, `yaml`, `clsx`, plus shadcn/ui **copied source** (not a dependency — the CLI vendors component files). Dev: `typescript`, `vitest`, `fast-check`, `@testing-library/react`, `jsdom`, `@types/*`.
+Runtime — **nine** packages: `next`, `react`, `react-dom`, `tailwindcss`, `@xyflow/react`, `zod`, `yaml`, `clsx`, and **`animejs`** pinned to **`4.5.0`**. Plus shadcn/ui **copied source** (not a dependency — the CLI vendors component files). Dev: `typescript`, `vitest`, `fast-check`, `@testing-library/react`, `jsdom`, `@types/*`.
 
-Deliberately not installed: Shiki (replaced by `lib/diff.ts`, ~60 lines; Shiki is a droppable upgrade), dagre/elkjs (replaced by `lib/layout.ts` lane layout), commander/yargs (hand-rolled arg parse, ~40 lines), concurrently (`scripts/demo.mjs`), any font package (system stack), Playwright/Puppeteer (Kane owns the browser), Docker.
+**The ninth dependency, stated explicitly.** `animejs@4.5.0` is the animation engine for the Ledger ([§10.6](#106-motion-system--orchestrated-not-decorative)). It is the latest stable line; **v5 is beta and is not used**. It ships as an ES module with named exports, so only the functions actually imported are bundled — the design imports exactly `animate`, `createTimeline`, `stagger`, `svg`, `utils` and `eases`, which lands around 10 KB gzipped. Pinned exactly, not a caret range, so the deployed build is byte-reproducible:
+
+```json
+"dependencies": { "animejs": "4.5.0" }
+```
+
+```ts
+// the only import shape permitted in apps/ledger — never `import anime from 'animejs'`
+import { animate, createTimeline, stagger, svg, utils, eases } from 'animejs';
+```
+
+A source-scan test (sibling of `check-readonly.mjs`) fails the build on a default import, on a deep `animejs/lib/*` path, and on any `animejs` import outside `apps/ledger/lib/motion.ts` and `apps/ledger/components/**` — motion must be reachable through the single gate in §10.6.4 so the reduced-motion path cannot be bypassed.
+
+Deliberately not installed: Shiki (replaced by `lib/diff.ts`, ~60 lines; Shiki is a droppable upgrade), dagre/elkjs (replaced by `lib/layout.ts` lane layout), commander/yargs (hand-rolled arg parse, ~40 lines), concurrently (`scripts/demo.mjs`), any font package (system stack), framer-motion / GSAP / lottie (anime.js covers the whole motion brief at a fraction of the weight, and Lottie would mean shipping JSON animation assets), any icon package (the few glyphs needed are inline SVG), Playwright/Puppeteer (Kane owns the browser), Docker.
 
 ---
 
@@ -581,6 +599,54 @@ export function mayWriteVerdicts<F extends CommandFamily>(r: InvocationResult<F>
 
 Every verdict mutation goes through `StateStore.applyRun(result, …)`, which calls `mayWriteVerdicts` first and returns the state unchanged when it is false. Crashed, timed out, paused, force-interrupted, preflight-rejected and kane-not-found therefore all preserve prior verdicts and the freshness timestamp by construction rather than by remembering to check (R3.7, R4.10, R4.11, R5.3, R5.4, R11.8–11.11).
 
+### 4.9 The verified `context` surface, and the abridged-help rule
+
+`kane-cli --help` omits commands that exist and work. **`kane-cli context --help` is abridged the same way** — it omits several subcommands that were confirmed present by direct probing of the installed 0.8.4. Recorded here so nobody re-derives it from the help text and concludes a capability is missing:
+
+| `context` subcommand | Verified behaviour |
+|---|---|
+| `ingest <src…>` | Lands sources into `.context/` **and extracts them** — the one-flow entry point (below) |
+| `extract` | Extraction on its own; Assurance family, terminates `done` |
+| `list --type source \| usecase` | Enumerates the store. `--json` for a machine-readable listing. **This is how a source id is resolved** (§13.2) |
+| `review --queue derived \| skipped \| archived \| drift` | Four review queues, not one |
+| `view` | Renders an interactive HTML snapshot of the store |
+| `explain <ref> --json` | Machine-readable explanation of one graph reference |
+| `sessions` | Session listing |
+| `fsck` | Store integrity check |
+| `rebuild` | Rebuilds the derived store |
+
+The operating rule, applied to the whole CLI: **help omissions prove nothing.** Probe `kane-cli <cmd> --help` before concluding anything is absent, and treat observed runtime behaviour as ranking above the skill references, which in turn rank above the website docs (A13).
+
+**The skill installs for Claude Code, Codex CLI and Gemini CLI only.** `~/.kiro/skills/` is empty and stays empty, because Kiro loads `powers/`. `kane-cli install skill` was run and it changed **no CLI behaviour whatsoever** — its only value is the `references/*.md` documentation it drops for other agents. Nothing in KEPT depends on the skill being installed, and no task should be spent installing it.
+
+#### 4.9.1 `context ingest` is the one-flow entry — the bootstrap sequence changes
+
+`context ingest <src…>` no longer only *lands* files. It lands them into `.context/` **and continues into extraction in the same invocation.** The branch is on the terminal, not on a flag:
+
+| Invocation condition | What happens |
+|---|---|
+| TTY attached, no mode override | Lands the sources, then **continues into the interactive extract chat** |
+| `--mode ci`, or stdin is piped | **Lands only.** No extraction, no chat |
+
+This is load-bearing for KEPT because the invoker always spawns with `stdio: ['ignore','pipe','pipe']` (§4.7) — stdin is never a TTY — so **any ingest KEPT performs itself lands only and never extracts.** The bootstrap is therefore two explicit steps, and the extraction step is named rather than implied:
+
+```
+# Bootstrap, once, by hand — interactive, because extraction wants a human
+kane-cli context ingest apps/fixture/README.md
+   → lands the source AND opens the extract chat (TTY path)
+
+# Bootstrap, headless / reproducible — the sequence KEPT and CI use
+kane-cli context ingest apps/fixture/README.md --mode ci     # lands only
+kane-cli context extract --mode agent                        # Assurance family, terminates `done`
+kane-cli design tests --use-case <ref> --mode agent           # designs the suite
+```
+
+Consequences recorded so they are not rediscovered mid-build:
+
+- A headless ingest that appears to "do nothing" has in fact succeeded; the missing piece is the separate `extract`, not a failed ingest.
+- `cover` refuses until a store exists (§5.3), so the ingest→extract pair is a **precondition of `kept build` producing an enriched graph** — not a parallel activity. Stage 9 of §19 opens with it.
+- Ingest is never invoked from a hook. It is a one-time human bootstrap plus a documented headless recipe in the README.
+
 ---
 
 ## 5. Promise providers and graceful degradation
@@ -636,7 +702,7 @@ Acceptance requires **all** of: `stream.kind === 'complete'`, `terminal.type ===
 |---|---|
 | binary absent | `kane-not-found` |
 | stream lacks `done` | `crashed-stream: outcome unknown` |
-| `done.status` ∈ error/refused/interrupted/aborted | `assurance-status:<status>` |
+| `done.status` ∈ error/refused/interrupted/aborted | `assurance-status:<status>` — e.g. `assurance-status:refused`, **verified** below |
 | `done.status === 'paused'`, exit 3 | `paused-resumable` |
 | killed at 60 s | `enrichment-timeout` |
 | `coverage` payload missing or unprojectable | `coverage-payload-unreadable` |
@@ -648,6 +714,26 @@ The `coverage` payload's internal schema is not pinned by observation, so `provi
 2. normalised `path` matched against `designedTest.path`.
 
 Unmatched entries are recorded as diagnostics, not failures. If **zero** entries project, that is `coverage-payload-unreadable` and the build degrades — better a visibly baseline-only ledger than a silently wrong proven number.
+
+#### 5.3.1 The refusal envelope, verified rather than assumed
+
+Running `cover` in a directory with no `.context/` store emits exactly this on **stdout**, and nothing at all on stderr:
+
+```json
+{"type":"error","v":1,"verb":"cover","message":"error: no context store here (run `kane-cli context ingest <files>` first)"}
+{"type":"done","v":1,"verb":"cover","status":"refused","exit_code":2}
+```
+
+This one observation empirically confirms four things the parser is built on, so they are no longer inferences:
+
+1. **The envelope is real.** Every Assurance event carries `{ type, v: 1, verb }`. `v` is `1`; `verb` is the command word (`cover` here). The parser types `v` and `verb` as present-and-optional rather than guessed.
+2. **`done` is genuinely terminal and genuinely always emitted** — even on a refusal that produced no work. A refusal is a *complete* stream, not a crashed one, which is precisely why `kind: 'complete'` plus a non-`complete` status must be distinguishable from `kind: 'crashed'`.
+3. **`status: "refused"` exists as an observed value**, not just a documented one.
+4. **`exit_code` is carried in the event and equals 2 here**, alongside the process exit code — two separate values, consistent with R3.14.
+
+And one operational fact: **stdout is pure NDJSON, stderr is silent.** The prefix-skip rule of §4.3 is defensive insurance for other versions, not a workaround for this one.
+
+Mapped behaviour: `stream.kind === 'complete'`, `terminal.status === 'refused'`, `exitMeaning === 'failure'` (Assurance, exit 2), so acceptance fails and the provider returns `ok: false` with **`degradedReason: 'assurance-status:refused'`**. The diagnostic quotes the `message` verbatim, so the Ledger's `/runs` page tells a reviewer the actual remedy — run `context ingest` — instead of a generic failure. `packages/kept-core/test/fixtures/assurance-cover-refused.ndjson` is these exact two lines, committed as a regression fixture.
 
 ### 5.4 Merge rules
 
@@ -1087,14 +1173,18 @@ export const snapshot = parseSnapshot(JSON.stringify(raw));   // throws at build
 ### 10.2 Component tree
 
 ```
-app/layout.tsx           tokens.css, system font stack, dark background, skip-link
+app/layout.tsx           tokens.css + surfaces.css, system font stack, ink background, skip-link
 app/page.tsx
  ├── MetricRail          ProvenCoverage | DesignedCoverage | SuiteDebt | FreshnessChip | DegradedChip
+ │    └── MetricFigure   tabular-numeral figure; counts up via lib/motion.ts   (§10.6.2)
  ├── PromiseGraph        @xyflow/react, nodes from lib/layout.ts, keyboard-navigable
  │    └── PromiseNode    id chip (mono) · claim (2 lines) · citation path:line (mono) · VerdictTag
  ├── PromisePanel        opens on selection / ?p=; verbatim claim, designed test, verdict,
  │                       evidence artefact links, repair annotation
  └── LiveNdjsonPane      dev-only, xterm, hidden in production   (nice-to-have §18)
+
+lib/motion.ts            the ONLY anime.js entry point; owns the reduced-motion branch (§10.6.4)
+lib/tokens.ts            typed mirror of tokens.css; the contrast test's input (§10.4.4)
 ```
 
 ### 10.3 Graph layout — deterministic lanes, no layout engine
@@ -1109,87 +1199,281 @@ const ROW_H = 92;
 
 Red promises sort to the top, so the thing that needs attention is where the eye lands. The layout is a pure function of the snapshot, so it is identical on every render and every machine — no physics settling, no jitter between screenshots, and the graph in the video matches the graph in the deployed build. React Flow is used for panning, zooming, edges and viewport only.
 
-### 10.4 Design tokens
+Motion is layered **on top of** this pure layout and never feeds back into it: the staggered entrance in §10.6.1 animates opacity and a small transform offset from the computed final position, so the resting state is byte-identical to the no-motion render. Screenshots taken after the entrance completes are pixel-identical to screenshots taken with motion disabled.
 
-`apps/ledger/styles/tokens.css`, mirrored as typed constants in `lib/tokens.ts` so tests can compute contrast.
+### 10.4 The visual system — a specific palette, measured
+
+The old token set was a generic near-black-blue with mint/amber/red signal colours. It is replaced. The brief is explicit: detailed, minimal, stylish; **no AI-slop colour**; real shading and lighting; a distinctive palette that is neither neon nor bright. What follows is that palette with every ratio measured rather than eyeballed.
+
+**The direction.** A deep desaturated **ink** base carrying a faint warm mineral cast — hue around 35–40°, saturation under 12% — so the page reads as dark *paper under a warm lamp* rather than dark *screen*. Verdict hues are drawn from oxidised material: **patina** for proven, **ochre** for stale, **clay/oxide** for red, **stone-sage** for undesigned. They are muted, but chosen luminous enough to clear 4.5:1 — muted-and-dim would have failed R10.6, so every verdict hue sits in the 5–8.5:1 band on the page surface.
+
+**Explicitly forbidden, and asserted by the token scan:** neon; any `#00FF…`-family hue; the purple→blue AI-startup gradient; glassmorphism `backdrop-filter: blur()`; rainbow or multi-hue scales; emoji as UI; saturation above 70% anywhere; a `box-shadow` with a coloured or glowing colour value.
+
+#### 10.4.1 Tokens
+
+`apps/ledger/styles/tokens.css`, mirrored as typed constants in `lib/tokens.ts` so tests can compute contrast against the same values the browser sees.
 
 ```css
 :root {
-  /* surfaces */
-  --bg-0:   #0B0D10;   /* page */
-  --bg-1:   #12151A;   /* panel */
-  --bg-2:   #191D24;   /* raised: nodes, cards */
-  --line:   #232932;   /* 1px hairlines, the only border treatment */
+  /* ── ink surfaces: one hue family, warm, 4-step ramp ─────────────── */
+  --ink-000: #14120F;   /* page                                            */
+  --ink-050: #1B1815;   /* sunken: panel base, rail trough, code wells     */
+  --ink-100: #221E1A;   /* raised: nodes, cards, chips                     */
+  --ink-150: #2A251F;   /* raised-2: hover, active row, selected node fill  */
+  --hairline:        #302A24;   /* 1px structural rules      — 1.32:1, non-text */
+  --hairline-strong: #3A332B;   /* section divisions          — 1.50:1, non-text */
 
-  /* text */
-  --text-0: #E6EAF0;   /* body + headings   — 14.6:1 on --bg-0 */
-  --text-1: #9BA6B4;   /* secondary body    —  6.9:1 on --bg-0 */
-  --text-2: #7C8794;   /* labels, non-body  —  4.6:1 on --bg-0 */
+  /* ── light: one implied source, top-left, 15° off vertical ───────── */
+  --light-edge:        rgba(246, 238, 226, 0.075);  /* 1px top edge, raised   */
+  --light-edge-strong: rgba(246, 238, 226, 0.115);  /* 1px top edge, raised-2 */
+  --light-wash:        rgba(246, 238, 226, 0.028);  /* large-plane gradient   */
+  --occlude:           rgba(6, 5, 4, 0.55);         /* shadow ink, warm-black */
 
-  /* verdicts — the ONLY saturated colour in the product */
-  --proven:     #3DD68C;   /*  8.9:1 on --bg-0 */
-  --stale:      #F0B429;   /* 10.4:1 */
-  --red:        #FF5C5C;   /*  5.4:1 */
-  --undesigned: #7C8794;   /* neutral, deliberately unsaturated (R10.3) */
+  /* ── text ────────────────────────────────────────────────────────── */
+  --text-000: #F2EDE4;  /* body, headings, claim text                       */
+  --text-100: #B6ADA0;  /* secondary body, panel supporting copy            */
+  --text-200: #9A9184;  /* labels, citations, gutters                       */
+
+  /* ── verdicts: oxidised material, the only chromatic channel ─────── */
+  --verdict-proven:     #6FB894;  /* patina           */
+  --verdict-stale:      #D9A64A;  /* ochre            */
+  --verdict-red:        #D97A66;  /* clay / iron oxide */
+  --verdict-undesigned: #9A9184;  /* stone-sage, deliberately unsaturated (R10.3) */
+
+  /* verdict washes: verdict hue at low alpha. Rails, node left-edges and
+     tag borders ONLY — never behind body text, so no wash enters the
+     contrast matrix. */
+  --wash-proven:     rgba(111, 184, 148, 0.10);
+  --wash-stale:      rgba(217, 166,  74, 0.10);
+  --wash-red:        rgba(217, 122, 102, 0.12);
+  --wash-undesigned: rgba(154, 145, 132, 0.08);
 
   /* structural accent: focus rings only, never a state signal */
-  --focus:  #5B8DEF;
+  --focus: #7FA6BC;   /* muted mineral blue */
 
-  /* type scale (16px root) */
-  --fs-micro: 0.6875rem;  /* 11px  ids, tags */
-  --fs-xs:    0.75rem;    /* 12px  citations */
-  --fs-sm:    0.8125rem;  /* 13px  labels */
-  --fs-base:  0.875rem;   /* 14px  body */
-  --fs-md:    1rem;       /* 16px  panel headings */
-  --fs-lg:    1.25rem;    /* 20px  section headings */
-  --fs-xl:    1.75rem;    /* 28px  page title */
-  --fs-metric:2.5rem;     /* 40px  coverage figures */
+  /* ── elevation ramp: light behaviour, not uniform box-shadow ─────── */
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 var(--light-edge) inset,
+            0 1px 2px -1px var(--occlude),
+            0 2px 6px -3px var(--occlude);
+  --elev-2: 0 1px 0 0 var(--light-edge-strong) inset,
+            0 2px 4px -2px var(--occlude),
+            0 8px 20px -8px var(--occlude);
+  --elev-3: 0 1px 0 0 var(--light-edge-strong) inset,
+            0 4px 10px -4px var(--occlude),
+            0 24px 48px -20px var(--occlude);
 
-  /* spacing: 4-based, no other values permitted */
+  /* ── type scale (16px root) ──────────────────────────────────────── */
+  --fs-micro: 0.6875rem;  /* 11px  ids, tags                    */
+  --fs-xs:    0.75rem;    /* 12px  citations                    */
+  --fs-sm:    0.8125rem;  /* 13px  labels                       */
+  --fs-base:  0.875rem;   /* 14px  body                         */
+  --fs-md:    1rem;       /* 16px  panel headings               */
+  --fs-lg:    1.25rem;    /* 20px  section headings             */
+  --fs-xl:    1.75rem;    /* 28px  page title                   */
+  --fs-metric:2.5rem;     /* 40px  coverage figures             */
+
+  --lh-tight: 1.2;  --lh-body: 1.55;  --lh-mono: 1.45;
+  --tr-tight: -0.011em;   /* display sizes only */
+  --tr-mono:   0.002em;   /* mono at small sizes, opens the counters */
+
+  /* ── spacing: 4-based, no other values permitted ─────────────────── */
   --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
   --s-6: 24px; --s-8: 32px; --s-12: 48px; --s-16: 64px;
 
-  /* radii + motion */
   --r-chip: 2px; --r-card: 6px; --r-panel: 10px;
-  --dur-select: 120ms; --dur-verdict: 240ms; --ease: cubic-bezier(.2,.6,.2,1);
 
-  /* type families — system stacks, zero downloads */
+  /* ── motion tokens: see §10.6 ────────────────────────────────────── */
+  --dur-micro:    90ms;   /* focus ring, tag tint            */
+  --dur-fast:    160ms;   /* selection outline, hover surface */
+  --dur-base:    240ms;   /* panel, verdict colour            */
+  --dur-slow:    420ms;   /* verdict flip, edge draw          */
+  --dur-figure:  760ms;   /* metric count-up                  */
+  --stagger-node: 24ms;   /* per-node entrance offset         */
+
+  --ease-out:      cubic-bezier(.16, .84, .28, 1);   /* settle: the default   */
+  --ease-in-out:   cubic-bezier(.50, .00, .20, 1);   /* move between two rests */
+  --ease-emphasis: cubic-bezier(.20, .90, .10, 1);   /* verdict flip           */
+
+  /* ── type families — system stacks, zero downloads ───────────────── */
   --font-ui:   ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
-@media (prefers-reduced-motion: reduce) { * { transition-duration: 0ms !important; } }
 ```
 
-Rules the implementation must not drift from:
+#### 10.4.2 Measured contrast
 
-- **Monospace** for promise ids, citation `path:line`, test ids, result codes, credit figures, timestamps and metric numbers. UI stack for prose.
-- **Colour is a verdict channel.** No coloured buttons, no gradient hero, no brand colour. `--focus` is the single exception and only appears as a 2px focus ring.
-- **Every verdict carries a word.** `VerdictTag` always renders the text `proven` / `red` / `stale` / `undesigned` next to its colour (R10.5). No colour-only state anywhere.
-- **Motion only on state change**: `--dur-select` on selection outline and panel slide; `--dur-verdict` on verdict colour transition. No entrance animations, no skeleton shimmer, no hover motion. Every declaration is on a `.verdict-*` or `.is-selected` class, which `scripts/check-readonly.mjs`'s sibling CSS scan asserts (R10.4).
-- **Borders, not shadows.** Flat dark surfaces separated by `--line`.
-- **Density**: node 320×72, rail tile 240×120, panel width 420px, page max width 1680px with `min-width: 1280px` avoided entirely — the graph canvas flexes, so there is no horizontal overflow between 1280 and 1920 (R10.8).
+Every ratio below is computed, not estimated. Body text needs ≥4.5:1 and graph node labels ≥3:1 (R10.6, Property 22) — both thresholds hold on **every** surface in the ramp, including `--ink-150`, so a hovered or selected node cannot drop a pair below threshold.
 
-Contrast is not asserted by eye: `lib/tokens.ts` exports the pairs actually used and a property test computes the WCAG ratio for each, requiring ≥4.5 for body text and ≥3 for node labels (R10.6).
+| Foreground | Hex | on `--ink-000` | on `--ink-050` | on `--ink-100` | on `--ink-150` | Used for |
+|---|---|---|---|---|---|---|
+| `--text-000` | `#F2EDE4` | **16.03** | 15.16 | 14.20 | 13.02 | body, headings, claim text |
+| `--text-100` | `#B6ADA0` | **8.44** | 7.97 | 7.47 | 6.85 | secondary body |
+| `--text-200` | `#9A9184` | **6.02** | 5.69 | 5.33 | 4.89 | labels, citations, gutters |
+| `--verdict-proven` | `#6FB894` | **7.98** | 7.54 | 7.06 | 6.48 | proven tag text, node label |
+| `--verdict-stale` | `#D9A64A` | **8.46** | 8.00 | 7.49 | 6.87 | stale tag, freshness > 24 h |
+| `--verdict-red` | `#D97A66` | **6.17** | 5.83 | 5.46 | 5.01 | red tag, diff deletions |
+| `--verdict-undesigned` | `#9A9184` | **6.02** | 5.69 | 5.33 | 4.89 | undesigned tag |
+| `--focus` | `#7FA6BC` | **7.20** | 6.80 | 6.37 | 5.85 | 2px focus ring only |
 
-### 10.5 Keyboard model (R10.7)
+Lowest value anywhere in the matrix: **4.89:1** (`--text-200` / `--verdict-undesigned` on `--ink-150`), which clears the 4.5:1 body-text floor with margin and the 3:1 label floor comfortably. Non-text tokens are excluded from the matrix by construction and named as such: `--hairline` (1.32:1) and `--hairline-strong` (1.50:1) are 1px rules, never text and never the sole carrier of meaning.
+
+Badge inversion (§10.11) puts `--ink-000` **on** a verdict fill: proven 7.98:1, stale 8.46:1, red 6.17:1, undesigned 6.02:1. All pass in both directions, which is why the same four tokens serve as background there.
+
+#### 10.4.3 Rules the implementation must not drift from
+
+- **Colour is the verdict channel.** No coloured buttons, no brand colour, no gradient hero. `--focus` is the single non-verdict chromatic token and appears only as a 2px ring.
+- **Every verdict carries a word.** `VerdictTag` always renders the text `proven` / `red` / `stale` / `undesigned` beside its colour (R10.5). No colour-only state anywhere, ever.
+- **Verdict washes never sit behind body text.** They are permitted on a node's 3px left edge, a rail tile's trough, and a tag's 1px border. This keeps the contrast matrix finite and testable.
+- **Depth is light, not outline-plus-shadow-on-everything.** See §10.5.
+- **Density**: node 320×76, rail tile 240×124, panel width 440px, page max width 1680px, `min-width` never set — the graph canvas flexes, so no horizontal overflow appears between 1280 and 1920 (R10.8).
+
+#### 10.4.4 How the palette is enforced
+
+`lib/tokens.ts` is the typed mirror and the test's input:
+
+```ts
+export const TOKENS = { /* every value above, as literals */ } as const;
+/** Every foreground/background pair the components actually use. */
+export const CONTRAST_PAIRS: Array<{ fg: keyof typeof TOKENS; bg: keyof typeof TOKENS;
+                                     role: 'body' | 'node-label' | 'non-text' }> = [ /* … */ ];
+```
+
+Three tests, all cheap:
+
+1. **Contrast** — computes the WCAG ratio for every entry in `CONTRAST_PAIRS`, requiring ≥4.5 for `body`, ≥3 for `node-label`, and asserting `non-text` pairs are never used for text by cross-checking the component scan. Property 22.
+2. **Parity** — every `--custom-property` in `tokens.css` has a `TOKENS` entry with an identical value, and vice versa. A palette change cannot drift the test's input away from the browser's.
+3. **Forbidden-palette scan** — fails on `backdrop-filter`, on any hex whose computed saturation exceeds 70%, on a `linear-gradient` mixing more than two hue families, on a `box-shadow` whose colour is not `--occlude` or a `--light-edge*` token, and on any emoji codepoint in `apps/ledger/**`.
+
+### 10.5 Light, shading and elevation
+
+One implied light source: **above and slightly left, 15° off vertical, warm.** Everything visual derives from it, consistently, and nothing is lit ad hoc.
+
+| Consequence of the light | Implementation |
+|---|---|
+| Raised surfaces catch light on their **top edge** | 1px `inset` highlight, `--light-edge` at elevation 1, `--light-edge-strong` at 2 and 3. This is the single most legible depth cue and it costs nothing |
+| Raised surfaces **occlude** what is under them | Two stacked shadows per level: a tight contact shadow with a negative spread, and a wide soft ambient one. Both use `--occlude`, a warm near-black — never grey, never coloured |
+| Large planes are **not flat-lit** | A single `linear-gradient(176deg, var(--light-wash), transparent 62%)` on the page shell and the panel. 176° rather than 180° so the falloff is off-axis, matching the 15° source. Amplitude is 2.8% — felt, not seen |
+| Recessed wells read as **cut into** the surface | Inverted ramp: 1px inset shadow on top, 1px `--light-edge` on the *bottom*. Used for the citation well and the diff gutter |
+| Depth ranks by **function**, not decoration | `--elev-0` page shell · `--elev-1` nodes, rail tiles, chips · `--elev-2` promise panel, amendment cards · `--elev-3` nothing by default; reserved for a future overlay |
+
+Explicitly not done: no uniform `box-shadow: 0 2px 4px rgba(0,0,0,.2)` sprayed on every box; no glow, ever, including on hover and on the red verdict; no `backdrop-filter` blur; no double borders; no shadow used to fake a border.
+
+The gradients and shadows live in `styles/surfaces.css` as three classes — `.surface-raised`, `.surface-raised-2`, `.surface-well` — so a component picks an elevation rather than authoring a shadow. The forbidden-palette scan (§10.4.4) makes an inline `box-shadow` outside that file a test failure.
+
+### 10.6 Motion system — orchestrated, not decorative
+
+The previous two-duration policy ("motion only on state change, no entrance animations") was correct about discipline and wrong about ambition. It is replaced by a small motion system with named tokens and five specific orchestrations, each of which exists because it carries information CSS transitions cannot express well: sequence, stagger, numeric interpolation, and path progression.
+
+`animejs@4.5.0` ([§2.2](#22-dependency-budget)) is the engine. Imports are named and narrow:
+
+```ts
+import { animate, createTimeline, stagger, svg, utils, eases } from 'animejs';
+```
+
+#### 10.6.1 Graph entrance — staggered, once
+
+On first paint of `/`, nodes arrive in lane order with a 24 ms stagger, from the layout's computed final position:
+
+```ts
+// nodes are already AT their final coordinates; only opacity and a 6px lift animate
+timeline.add('.promise-node', {
+  opacity: [0, 1],
+  translateY: [6, 0],
+  duration: 420,
+  ease: 'cubicBezier(.16,.84,.28,1)',
+  delay: stagger(24, { from: 'first' }),
+});
+```
+
+Lane order means documents settle, then promises, then designed tests — the reading order of the graph, so the entrance *teaches the graph's structure* rather than decorating it. Total elapsed is capped: `min(nodeCount × 24ms, 620ms)`, after which remaining nodes appear together. A 200-promise graph therefore never makes a judge wait. Runs **once per session**, gated on a `sessionStorage` flag, so navigating back to `/` does not replay it.
+
+#### 10.6.2 Metric count-up
+
+`MetricFigure` interpolates from 0 to its value over `--dur-figure`, `--ease-out`, using `utils.set` on each frame with the value formatted through the same formatter the static render uses — so the final frame is character-identical to the no-motion render. Tabular numerals (§10.7) mean no digit reflow during the count. Guard: the DOM carries the **final** value in its accessible name from first paint, so a screen reader is never read an intermediate number.
+
+#### 10.6.3 Verdict flip, panel, and edge progression
+
+| Orchestration | What animates | Duration / easing | Why it is not decoration |
+|---|---|---|---|
+| **Verdict flip** | tag colour `--verdict-*` → `--verdict-*`, tag scale `1 → 1.06 → 1`, node left-edge wash cross-fade, all on one timeline | `--dur-slow`, `--ease-emphasis` | A promise changing state is *the* event this product exists to show. The scale pulse marks it in peripheral vision without a colour flash |
+| **Panel** | coordinated slide (`translateX 16 → 0`) + fade, with the panel's three sections staggered 40 ms behind the container | `--dur-base`, `--ease-out` | The stagger establishes that the claim is the subject and the evidence links are its detail |
+| **Edge progression** | `svg.createDrawable` on the edge path between a promise and its designed test, drawn 0 → 100% when that path carried a verdict change; a single 1.4 s pulse, not a loop | `--dur-slow` draw | Shows *which* test moved the verdict — causality the static graph can only imply |
+| **Selection outline** | 2px outline colour + 1px offset | `--dur-fast`, `--ease-out` | Plain CSS transition; anime.js is not involved |
+| **Focus ring** | ring opacity | `--dur-micro` | Plain CSS transition |
+
+Forbidden, and scanned for: hover bounce or hover scale; skeleton shimmer; parallax; any looping or ambient animation; `animation-iteration-count` above 1; spring physics on layout; motion on scroll; anything animating `width`, `height`, `top` or `left` (compositor-only properties — `opacity` and `transform` — or nothing).
+
+#### 10.6.4 The reduced-motion path is a specified state, not a fallback
+
+`lib/motion.ts` is the only module that imports `animejs`, and every orchestration goes through one gate:
+
+```ts
+// apps/ledger/lib/motion.ts
+export type MotionSpec = {
+  /** The end state, expressed as properties. Applied instantly when motion is off. */
+  to: Record<string, string | number>;
+  /** The animation, built only when motion is on. */
+  run: () => { then: (f: () => void) => void };
+};
+
+export const motionEnabled = (): boolean =>
+  typeof window !== 'undefined' &&
+  !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+export function play(targets: string | Element | Element[], spec: MotionSpec): Promise<void> {
+  if (!motionEnabled()) { utils.set(targets, spec.to); return Promise.resolve(); }
+  return new Promise(res => spec.run().then(res));
+}
+```
+
+The contract, which is what makes reduced motion a *state*:
+
+- Under `prefers-reduced-motion: reduce`, **every** orchestration resolves to its end state **synchronously on first paint**. Nodes are at opacity 1. Metric figures show their final value. The panel is open at `translateX(0)`. Edges are fully drawn. Verdict tags are at their final colour and scale 1.
+- The reduced-motion render and the post-animation render are **the same DOM and the same computed styles**. That is asserted directly: a jsdom test renders `/` under both media states and compares the resolved style of every animated property.
+- CSS-level insurance, kept because a media-query change mid-session must not leave a half-played transition:
+  ```css
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0ms !important; animation-iteration-count: 1 !important;
+      transition-duration: 0ms !important; scroll-behavior: auto !important;
+    }
+  }
+  ```
+- The media query is observed live (`addEventListener('change')`), so toggling the OS setting takes effect without a reload, and any in-flight timeline is completed immediately rather than cancelled mid-way — cancelling would leave the DOM in an intermediate state, which is exactly the thing being prevented.
+- Nothing in the Ledger's *information* is carried by motion. Every verdict, figure, citation and link is present and correct with motion fully disabled. Motion is the Craft dimension; the Verified dimension does not depend on a single frame.
+
+The CSS motion scan (R10.4) is retained and widened: it asserts the reduced-motion block exists, that every `transition` and `animation` declaration in `apps/ledger/**` targets `opacity`, `transform`, `color`, `background-color`, `border-color`, `outline-color` or `box-shadow` and nothing else, and that no `animation-iteration-count` exceeds 1.
+
+### 10.7 Typography and density
+
+The scale is unchanged in its values and refined in its application.
+
+- **Monospace as texture, not as default.** `--font-mono` is used for exactly: promise ids, citation `path:line`, designed test ids, Kane `result_code` and `reason_code`, credit figures, ISO timestamps, member statuses, diff bodies, and every metric numeral. Prose — claim text, rationale, panel copy, page headings — is `--font-ui`. The contrast between the two is the page's main typographic device, so spending mono on prose would flatten it. A component scan lists mono-classed elements and fails on any element whose text content is a sentence (contains a space-separated run of four or more non-identifier words).
+- **Tabular, lining numerals wherever a number animates or aligns.** `font-variant-numeric: tabular-nums lining-nums` on `MetricFigure`, the credits column, the run table's durations, and the diff gutter. Non-negotiable: the count-up in §10.6.2 would jitter with proportional digits.
+- **Optical alignment on the metric rail.** The `%` sign is set at `--fs-lg` with `vertical-align: baseline` and a `-0.06em` right margin, so the *digits* — not the glyph run — align to the tile's optical left edge across all four tiles. `n/a` is set at `--fs-lg` and baseline-aligned to the digits it replaces, so a degraded rail does not change the rail's rhythm. Tile labels sit on a 4px baseline grid shared with the digits.
+- **Line length and leading.** `--lh-body` 1.55 for prose, `--lh-mono` 1.45 for mono, `--lh-tight` 1.2 at `--fs-xl` and above. Prose columns cap at 72ch; the claim text in a node clamps to 2 lines with `text-overflow: ellipsis` and carries the full text in `title` and in the panel.
+- **Letter-spacing** `--tr-tight` at display sizes only, `--tr-mono` on mono below `--fs-sm` to open the counters. Nowhere else.
+
+### 10.8 Keyboard model (R10.7)
 
 - Graph container is `role="application"` with a visible focus ring; `Tab` enters it, arrow keys move between promise nodes in lane order, `Enter`/`Space` selects and opens the panel, `Escape` closes it and returns focus to the node.
 - A parallel `role="list"` of promises is always present in the DOM (visually a compact sidebar list), so keyboard and screen-reader users are never dependent on the canvas.
 - `AcceptControl` is a native `<button>` with an accessible name naming the amendment: `Accept amendment am_3b9d21f0 for README line 20`.
 - Skip link to main content as the first focusable element.
 
-### 10.6 Diff rendering
+### 10.9 Diff rendering
 
-`lib/diff.ts` is a ~60-line line-level unified diff (LCS over ≤200 lines is instant) producing `{kind:'ctx'|'del'|'add', text}[]`. `DiffView` renders it in monospace with `--red` for deletions, `--proven` for additions, `--text-2` gutter line numbers. Because the docs-lie diff is nearly always a single line, this looks identical to what a syntax highlighter would produce for prose. Shiki is a droppable upgrade (§18), not a dependency.
+`lib/diff.ts` is a ~60-line line-level unified diff (LCS over ≤200 lines is instant) producing `{kind:'ctx'|'del'|'add', text}[]`. `DiffView` renders it in monospace with `--verdict-red` for deletions, `--verdict-proven` for additions, `--text-200` for gutter line numbers, and the `.surface-well` treatment (§10.5) so the diff reads as cut into the card rather than stacked on it. Deleted and added rows carry `--wash-red` / `--wash-proven` at the row's left 3px edge only, never as a full-row background, so the contrast matrix stays finite. Because the docs-lie diff is nearly always a single line, this looks identical to what a syntax highlighter would produce for prose. Shiki is a droppable upgrade (§18), not a dependency.
 
-### 10.7 Degraded and empty states
+### 10.10 Degraded and empty states
 
-- `degraded === true` → `DegradedChip` reading `baseline data only`, and the Proven Coverage tile is **replaced** by the chip rather than showing a number (R2.11).
-- `totalPromises === 0` → both figures render the literal `n/a`, no division performed (R9.3).
-- `freshness.terminalEventAt === null` → chip reads `never verified` in `--text-2`.
-- Age > 24 h → chip in `--stale` amber (R9.7); the boundary is `> 24h`, so exactly 24 h is not amber.
+- `degraded === true` → `DegradedChip` reading `baseline data only`, and the Proven Coverage tile is **replaced** by the chip rather than showing a number (R2.11). The chip takes the tile's exact footprint so the rail's rhythm is unchanged, and `MetricFigure`'s count-up does not run for a tile that has no figure.
+- `totalPromises === 0` → both figures render the literal `n/a`, no division performed (R9.3), baseline-aligned to the digits they replace (§10.7).
+- `freshness.terminalEventAt === null` → chip reads `never verified` in `--text-200`.
+- Age > 24 h → chip in `--verdict-stale` ochre (R9.7); the boundary is `> 24h`, so exactly 24 h is not ochre. The colour change uses `--dur-base` only when the value actually changes client-side; on a static render it is simply the initial colour.
 
-### 10.8 Badge
+### 10.11 Badge
 
 ```ts
 // apps/ledger/app/badge.svg/route.ts
@@ -1202,7 +1486,7 @@ export function GET() {
 }
 ```
 
-A hand-written 110×20 SVG: label `promises kept`, value `pct`, value background `--proven` when ≥80%, `--stale` 40–79%, `--red` below 40%, `--undesigned` for `n/a`. Only `GET` is exported (R9.4, R9.5).
+A hand-written 110×20 SVG: label `promises kept` on `--ink-100`, value `pct` on a verdict fill — `--verdict-proven` when ≥80%, `--verdict-stale` 40–79%, `--verdict-red` below 40%, `--verdict-undesigned` for `n/a` — with the value text in `--ink-000`. Those inverted pairs are measured in §10.4.2 and all clear 6:1. No gradient, no logo, no shadow: an SVG served as an image cannot rely on the page's light model, so it is deliberately flat. Only `GET` is exported (R9.4, R9.5).
 
 ---
 
@@ -1248,7 +1532,7 @@ A hand-written 110×20 SVG: label `promises kept`, value `pct`, value background
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Run `node bin/kept reconcile`. Then read `.kept/handoff.json` and report: the count of promises with verdict `undesigned` (the suite debt), each newly added claim with its citation, each removed promise, and every open review card. Do not edit documentation, tests or source. If `outcome.exitMeaning` is `paused-resumable`, say so and stop."
+    "prompt": "Run `node bin/kept reconcile --changed <the saved file paths>`. The CLI resolves the Kane source id for each changed document itself and passes `--from` and `--source-id`; never invent a source id and never pass one on the command line. Then read `.kept/handoff.json` and report: the count of promises with verdict `undesigned` (the suite debt), each newly added claim with its citation, each removed promise, and every open review card. Do not edit documentation, tests or source. Never run `kept reconcile apply` — applying a stored plan is a human decision. If a diagnostic reports `reconcile-source-unresolved`, report it and quote the suggested `kane-cli context ingest` command; change nothing. If `outcome.exitMeaning` is `paused-resumable`, say so and stop."
   }
 }
 ```
@@ -1373,14 +1657,17 @@ The landing screen renders well inside 30 s of `npm run demo` — it is a static
 
 ## 13. KEPT CLI surface
 
-`bin/kept` → `packages/kept-cli/dist/index.js`. Hand-rolled arg parsing, no dependency. Every command exits **0** unless the CLI itself is broken; Kane's outcomes are data, not exit codes (R2.10).
+### 13.1 Command table
+
+`bin/kept` → `packages/kept-cli/dist/index.js`. Hand-rolled arg parsing, no dependency. Every command exits **0** unless the CLI itself is broken or was invoked with mutually exclusive flags (the sole usage-error exit, §13.2.3); Kane's outcomes are data, not exit codes (R2.10).
 
 | Command | Kane invocation (final argv after the invoker adds the enabler) | Family | Timeout | Writes |
 |---|---|---|---|---|
 | `kept build` | `kane-cli cover --json --mode agent` | Assurance | 60 s | state, snapshot |
 | `kept verify --changed <p…>` | `kane-cli testrun run --dry-run` *(plan refresh, if stale)* then `kane-cli testrun run --from-context <ids> --on-failure continue` | ExecutionTestrun | 60 s / 300 s | state, handoff, snapshot |
 | `kept verify --all` | `kane-cli testrun run --on-failure continue` | ExecutionTestrun | 300 s | state, handoff, snapshot |
-| `kept reconcile` | `kane-cli maintain reconcile --mode agent` | Assurance | 300 s | state, review cards, handoff, snapshot |
+| `kept reconcile --changed <p…>` | `kane-cli maintain reconcile --from <changedDoc> --source-id <resolvedId> --plan --mode agent` — **see §13.2; `--from` and `--source-id` are both mandatory** | Assurance | 300 s | state, source cache, review cards, handoff, snapshot |
+| `kept reconcile apply [planPath]` *(human-only, never a hook)* | `kane-cli maintain reconcile --apply [planPath] --mode agent` | Assurance | 300 s | state, review cards, handoff, snapshot |
 | `kept evolve <testPath>` | `kane-cli maintain evolve <ref> --mode agent` | Assurance | 300 s | review cards, handoff |
 | `kept amend propose --run <runId>` | none | — | — | amendments, snapshot |
 | `kept amend list \| show <id> \| accept <id> \| reject <id>` | none (`accept` triggers a rebuild → `kept build`) | — | — | cited doc file (accept only), amendments, snapshot |
@@ -1404,6 +1691,138 @@ Root scripts:
 ```
 
 `scripts/demo.mjs` spawns `next dev -p 3100` in `apps/fixture` and `next dev -p 3000` in `apps/ledger`, prints both URLs, forwards output with prefixes, and exits both children on `SIGINT`. Zero dependencies, zero Kane spawns (R13.2).
+
+### 13.2 `kept reconcile` — the corrected invocation
+
+**This is a correction to an earlier version of this design, which invoked `kane-cli maintain reconcile --mode agent` with no other arguments. That invocation cannot work.** Verified against the installed 0.8.4 by `kane-cli maintain reconcile --help`:
+
+```
+Options:
+  --from <file>     The NEW version of the source document (a file path)
+  --source-id <id>  The EXISTING source this file succeeds — its head moves;
+                    see `kane-cli context list --type source`
+  --plan            Preview: head-move lands, everything else STAGED into the stored plan
+  --apply [path]    Walk a STORED plan. Bare = latest plan behind an approval prompt;
+                    a path picks one; with --from it recomputes live
+  --mode <mode>     interactive | agent | ci | override — TTY defaults to in-chat card
+                    review; headless REQUIRES one
+```
+
+`--from` and `--source-id` are **both required on a fresh run**. The command validates its inputs fail-fast and **never guesses which source a file belongs to**. The old invocation would have exited 2 on every single save, every time — a silently dead docs branch that would have looked wired up until someone read the exit code.
+
+#### 13.2.1 The invocation KEPT actually issues
+
+```
+kane-cli maintain reconcile
+    --from apps/fixture/README.md          ← the changed doc, from the Docs_Hook's saved paths
+    --source-id src_7f31c0a4               ← RESOLVED, never hardcoded (§13.2.2)
+    --plan                                 ← preview; nothing commits suite-side (§13.2.3)
+    --mode agent                            ← appended by the invoker from the Assurance contract
+  family: Assurance · terminal: `done` · timeout: 300 s
+```
+
+- **`--from` comes from the hook, not from a constant.** `kept reconcile --changed <paths>` receives the Docs_Hook's saved-file paths verbatim. Normally that is the single path `apps/fixture/README.md`. Paths are normalised to repo-relative POSIX and filtered to the Docs_Hook pattern set; a save touching several docs produces **one invocation per changed doc**, sequentially, each with its own resolved source id. Zero changed docs after filtering → no invocation, one diagnostic, exit 0.
+- **`--mode agent`** is still appended by the invoker from the contract (§4.7), unchanged. It is not optional: headless *requires* a mode, and `agent` is the one that yields the NDJSON stream the parser needs.
+
+#### 13.2.2 Source-id resolution — `resolveSourceId`, and its cache
+
+The source id is resolved at run time against the live store. Nothing is hardcoded, and no id is ever synthesised from a filename.
+
+```ts
+// packages/kept-core/src/context/sources.ts
+export interface StoreSource {
+  sourceId: string;
+  path: string | null;        // repo-relative POSIX, normalised from whatever field carried it
+  absPath: string | null;
+  digest: string | null;      // content hash recorded at ingest, when the listing carries one
+  retired: boolean;
+  raw: unknown;               // the unprojected entry, kept for diagnostics
+}
+
+export type SourceResolution =
+  | { ok: true;  source: StoreSource; via: 'cache' | 'exact-path' | 'abs-path' | 'digest' | 'unique-basename' }
+  | { ok: false; reason: 'no-store' | 'listing-unreadable' | 'crashed-stream'
+                        | 'no-match' | 'ambiguous' | 'retired'; diagnostic: Diagnostic };
+
+export async function resolveSourceId(args: {
+  repoRoot: string; file: string; invoker: KaneInvoker; cache: SourceCache;
+}): Promise<SourceResolution>;
+```
+
+**Listing invocation.** `kane-cli context list --type source --json`, Assurance family, invoker appends `--mode agent`, 60 s budget. The source array is projected **tolerantly**, exactly as the `coverage` payload is (§5.3): walk the payload for any array of objects and accept an entry carrying a recognisable id (`source_id` | `id` | `sourceId`) plus optionally a path (`path` | `file` | `uri` | `source_path`), a digest (`digest` | `sha256` | `hash` | `content_hash`) and a lifecycle marker (`retired` | `status`). The store's internal schema is not pinned by observation, so it is not assumed.
+
+**Match ladder, first hit wins, no fuzzy matching at any rung:**
+
+| # | Rung | Rule |
+|---|---|---|
+| 1 | `exact-path` | Repo-relative POSIX path equality against the projected `path` |
+| 2 | `abs-path` | Absolute-path equality after resolving both sides against `repoRoot` |
+| 3 | `digest` | sha256 of the file's current bytes equals the entry's recorded digest |
+| 4 | `unique-basename` | Basename equality **and exactly one candidate matches** |
+
+Two or more candidates tying at the same rung is `ambiguous` — **not** a coin flip. Titles, use-case names and ordinal position are never used. A matched entry that is retired resolves to `reason: 'retired'` rather than being handed to Kane, so the fail-fast check below is never reached in the normal path.
+
+**The cache.** `.kept/sources.json`, alongside `plan.json` and `state.json` in the existing working-state directory:
+
+```jsonc
+// .kept/sources.json
+{
+  "schemaVersion": 1,
+  "refreshedAt": "2026-08-20T18:39:58.301Z",
+  "listingSignature": "sha256:2c19…",          // hash of the projected listing; detects store churn
+  "sources": [ /* StoreSource[] */ ],
+  "byPath": {
+    "apps/fixture/README.md": { "sourceId": "src_7f31c0a4", "via": "exact-path",
+                                "digest": "sha256:9e0c…", "resolvedAt": "2026-08-20T18:39:58.301Z" }
+  }
+}
+```
+
+Read-through cache with the same discipline as `PlanCache` (§7.2): a `byPath` hit is used when it is younger than `maxAgeMs` (default 10 minutes) **and** the cited file's mtime is not newer than `resolvedAt`; otherwise the listing is refreshed. A refresh whose stream crashes **leaves the previous cache in place** and the previous entry is still honoured — a transient Kane hiccup must not turn a working docs branch into a no-op. The cache is `.kept/` state, so it is git-ignored and disposable; deleting it costs one extra `context list`.
+
+**Failure mode when no matching source exists.** This is the case that matters, because it is the normal state of a repository whose README was never ingested:
+
+```
+resolveSourceId → { ok: false, reason: 'no-match' }
+  1. Record diagnostic  code: 'reconcile-source-unresolved'  severity: 'warn'
+        message: "no ingested source matches apps/fixture/README.md — run
+                  `kane-cli context ingest apps/fixture/README.md` first"
+        file: the changed doc
+  2. Do NOT spawn kane-cli at all.            ← zero credits, zero process
+  3. Create NO review card.                    (R5.7 is trivially satisfied: nothing produced)
+  4. Leave every verdict and freshness.terminalEventAt unchanged.
+  5. Write the handoff with nextAction.branch: null and the diagnostic attached.
+  6. Exit 0.
+```
+
+`degraded` is **not** set by this path. `degraded` reports that the *proven axis* is untrustworthy, and an unresolved source loses no proven data — the baseline graph and every prior verdict are intact. The signal a reviewer sees is the diagnostic on `/runs`, naming the exact remedy. `no-store`, `listing-unreadable`, `crashed-stream`, `ambiguous` and `retired` take the same six steps with their own diagnostic code; only the message differs. All five are therefore one code path with one test, and none of them can move a verdict.
+
+#### 13.2.3 `--plan` is the safe path, and it is the default
+
+`--plan` previews: **the head-move lands, and everything else is STAGED into the stored plan.** Nothing commits suite-side. That is precisely the semantic R5.7 asks for — *hold every change, apply none automatically* — so KEPT does not implement holding on top of Kane, it uses Kane's own staging as the mechanism and mirrors the staged items into `.kept/review-cards/`. The hook path is `--plan`, always.
+
+- The **head move does land** even under `--plan`. That is a mutation inside Kane's own `.context/` store, not in the KEPT repository, and it is what makes the new document version the source's head. It is recorded in the run diagnostics so a reviewer is never surprised by it.
+- **`--apply` is never issued by a hook.** `kept reconcile apply [planPath]` is a deliberate human command: bare walks the latest stored plan behind Kane's approval prompt, a path selects a specific plan, and combining it with `--from` recomputes live. It is documented for the operator and absent from both hook prompts.
+- **`--plan` and `--apply` together is a usage error.** They are mutually exclusive: one stages, the other walks what was staged. `kept` rejects the combination in its own arg parser *before* spawning, with a usage message and exit 2, so the invalid argv never reaches Kane. There is no code path in `kept` that can emit both flags.
+
+#### 13.2.4 Fail-fast validation ordering
+
+`maintain reconcile` validates in a fixed order and **exits 2 with nothing mutated** on the first failure. KEPT mirrors every check it can perform locally *before* spawning, so the common failures cost no process at all; the remaining store-side checks are surfaced verbatim from the `done` event's message. Order:
+
+| # | Check | Where KEPT catches it | Result |
+|---|---|---|---|
+| 1 | `--from` present | own arg parser | exit 2, nothing mutated |
+| 2 | `--source-id` present | resolution gate (§13.2.2) — no id, no spawn | exit 2, nothing mutated |
+| 3 | `--from` file exists | `fs.stat` before spawn | exit 2, nothing mutated |
+| 4 | `--from` is an ingestable type | extension allow-list before spawn | exit 2, nothing mutated |
+| 5 | `--source-id` is a known source | match ladder — unknown ids never leave `resolveSourceId` | exit 2, nothing mutated |
+| 6 | source is not retired | `retired` projection | exit 2, nothing mutated |
+| 7 | **fork guard** — the file does not already back a *different live source* | listing scan: a second non-retired entry whose path or digest matches `--from` while its id differs from the resolved id | exit 2, nothing mutated |
+| — | `--plan` + `--apply` | own arg parser (§13.2.3) | usage error, exit 2, never spawned |
+
+The fork guard is the subtle one: it fires when one file has been ingested twice and now backs two live sources, so moving a head would silently fork the graph. Kane refuses; KEPT detects the same condition from the listing and reports it as `reconcile-source-forked` with **both** conflicting source ids in the diagnostic, which is the information a human needs to retire one of them.
+
+Every one of these is a *refusal*, not a failure of KEPT: the CLI still exits **0**, the handoff is still written with `branch: null`, and no verdict moves. Kane's exit 2 is data (R2.10).
 
 ---
 
@@ -1432,6 +1851,12 @@ Read this as the definition of correct behaviour under adversity. `verdicts` mea
 | Snapshot missing/invalid at build | zod parse in `lib/snapshot.ts` | n/a | n/a | n/a | n/a | n/a | **build fails**, message names the field path |
 | Amendment cited line changed since proposal | sha256 guard | n/a | unchanged | false | 0 | n/a | amendment shown as `stale`, no write |
 | `maintain evolve` rejects `--mode agent` | one-time `--help` probe | `failure` | unchanged | true | 0 | written | review card created from failure context + diagnostic |
+| **No `.context/` store** (`cover` refuses) | `done.status: 'refused'`, `exit_code: 2` — verified envelope §5.3.1 | `failure` | unchanged | true | 0 | n/a | `baseline data only` chip; `/runs` quotes Kane's message verbatim, `degradedReason: assurance-status:refused` |
+| **Reconcile: source id unresolved** (no match) | `resolveSourceId` → `no-match`; **no spawn** | n/a, never invoked | **unchanged** | **false** | 0 | written, `branch: null` | `reconcile-source-unresolved` on `/runs`, naming the `context ingest` remedy |
+| Reconcile: no store / listing unreadable / listing stream crashed / ambiguous match / retired source | `resolveSourceId` → `no-store` \| `listing-unreadable` \| `crashed-stream` \| `ambiguous` \| `retired`; **no spawn** | n/a, never invoked | unchanged | false | 0 | written, `branch: null` | one diagnostic per reason on `/runs` |
+| **Reconcile: fork guard** — `--from` already backs a different live source | listing scan (§13.2.4 #7), or Kane's own exit 2 | `failure` | unchanged | false | 0 | written, `branch: null` | `reconcile-source-forked` with **both** conflicting source ids |
+| Reconcile: missing `--from` / missing `--source-id` / file not found / non-ingestable type / unknown source id | fail-fast ladder §13.2.4, checks 1–5 — caught locally before spawn where possible | `failure` when Kane was reached, else never invoked | **unchanged** | false | 0 | written, `branch: null` | refusal reason on `/runs`; **nothing mutated, Kane exit 2** |
+| Reconcile: `--plan` and `--apply` both requested | `kept` arg parser | n/a, never invoked | unchanged | false | **2** (usage error — the one case `kept` itself exits non-zero) | not written | n/a, the command never ran |
 
 ### 14.2 The two generalisations
 
@@ -1483,7 +1908,9 @@ packages/kept-core/test/
     testrun-preflight-invalid.ndjson
     testrun-crashed.ndjson         ← truncated before testrun_done
     assurance-cover-done.ndjson
+    assurance-cover-refused.ndjson ← the verbatim two-line no-context-store refusal (§5.3.1)
     assurance-paused.ndjson        ← done status paused, exit_code 3
+    context-list-sources.ndjson    ← source listing: exact-path, digest-only, retired, duplicate
     failure-*.yaml
   arbitraries.ts                   ← shared fast-check generators (see below)
   *.prop.test.ts                   ← one file per property, tagged
@@ -1494,7 +1921,17 @@ Shared generators in `arbitraries.ts`: `arbCitation` (file/line/text over genera
 
 Edge cases the generators must produce, because they are where this system breaks: empty graph; zero `*_test.md` files; `result_code` as `" 740"`; `credits_consumed` absent with `credits` present; a stream whose only line is `run_end`; a stream truncated at every index; a member status string outside the four; a citation line exactly at EOF and exactly one past it; a cited line containing only whitespace; a file with CRLF endings; a doc with no trailing newline; `session_dir` absent from `run_end`.
 
-Non-property tests, deliberately few: the recorded smoke-run regression (R3.25), argv assertions per command, the two source-scan tests (`result_code` strict equality; Ledger mutating handlers/auth/`child_process`), the CSS motion scan, hook-schema validation, and referential integrity of committed evidence. Integration tests (one run each, against the live CLI, recorded and committed): the verdict spike (R6.12), zero-credit replay (R4.6), and the end-to-end closed loop (R11.6).
+Non-property tests, deliberately few:
+
+- the recorded smoke-run regression (R3.25) and the `cover` refusal regression (§5.3.1);
+- **argv assertions per command**, which now explicitly include `kept reconcile` emitting both `--from` and `--source-id`, never emitting `--plan` and `--apply` together, and never spawning at all when the source id is unresolved (§13.2);
+- the source-resolution ladder: one case per rung plus `no-match`, `ambiguous`, `retired` and the fork guard, asserting zero spawns and zero verdict movement on every failure rung;
+- the four source-scan tests: `result_code` strict equality; Ledger mutating handlers / auth / `child_process`; `animejs` import shape and location (§2.2); mono-vs-prose typography (§10.7);
+- the visual-layer trio of §10.4.4 — contrast over the whole ramp, token/CSS parity, forbidden-palette scan;
+- the **reduced-motion equivalence** test (§10.6.4): `/` rendered under both media states, compared on every animated declaration;
+- the widened CSS motion scan (R10.4), hook-schema validation, and referential integrity of committed evidence.
+
+Integration tests (one run each, against the live CLI, recorded and committed): the verdict spike (R6.12), zero-credit replay (R4.6), `maintain reconcile --plan` with a real resolved source id, and the end-to-end closed loop (R11.6).
 
 Every property test names its design property in the test title: `Feature: kept, Property 4: For any Kane stream and declared command family, …`.
 
@@ -1632,9 +2069,19 @@ Every property test names its design property in the test title: `Feature: kept,
 
 ### Property 22: Verdict presentation always pairs colour with a word, at accessible contrast
 
-*For any* verdict and *for any* surface that renders it, the verdict's text label is present in the output, the mapped token is the one specified for that verdict with `undesigned` rendered in the neutral token and no non-verdict element using a verdict token; and *for any* foreground and background token pair actually used, the contrast ratio is at least 4.5 to 1 for body text and at least 3 to 1 for graph node labels.
+*For any* verdict and *for any* surface that renders it, the verdict's text label is present in the output, the mapped token is the one specified for that verdict with `undesigned` rendered in the neutral token and no non-verdict element using a verdict token; *for any* foreground and background token pair actually used, the contrast ratio is at least 4.5 to 1 for body text and at least 3 to 1 for graph node labels, on every surface of the elevation ramp; and *for any* setting of `prefers-reduced-motion`, the rendered verdict label, verdict token and computed contrast are identical.
 
 **Validates: Requirements 10.2, 10.3, 10.5, 10.6**
+
+**Supporting notes** — the thresholds are unchanged from the earlier version of this design; the palette they are measured against is the one in [§10.4](#104-the-visual-system--a-specific-palette-measured), not the old near-black-blue scheme.
+
+- The tokens under test are `--verdict-proven` `#6FB894`, `--verdict-stale` `#D9A64A`, `--verdict-red` `#D97A66`, `--verdict-undesigned` `#9A9184`, against the four-step ink ramp `--ink-000` `#14120F`, `--ink-050` `#1B1815`, `--ink-100` `#221E1A`, `--ink-150` `#2A251F`. The full measured matrix is §10.4.2; the **lowest ratio anywhere in it is 4.89:1**, so the 4.5:1 body floor holds with margin and the 3:1 node-label floor holds by a wide one.
+- Generation covers the **whole ramp**, not just the page surface, because `--ink-150` is the hover and selected-node fill — a pair that passes only at rest is a pass that lies. The badge's inverted pairs (`--ink-000` on each verdict fill, §10.11) are generated in the same run.
+- **Verdict washes are excluded by construction, not by omission.** `--wash-*` tokens are permitted only on a 3px node edge, a rail trough and a 1px tag border, never behind text, so they contribute no foreground/background pair. The component scan cross-checks that exclusion rather than trusting it.
+- `--hairline` (1.32:1) and `--hairline-strong` (1.50:1) are declared `non-text` in `CONTRAST_PAIRS` and the test asserts they never carry text and never carry meaning alone.
+- **Parity is part of the property.** `lib/tokens.ts` and `tokens.css` must agree value-for-value, both directions. Without that, a palette edit could silently move the browser's colours away from the test's input and the property would keep passing against a stale palette.
+- **The reduced-motion clause is a specified state, not an afterthought** (§10.6.4). A jsdom render of `/` under `prefers-reduced-motion: reduce` and a render after all timelines complete are compared property-by-property on every animated declaration; verdict colour, tag scale, node opacity, panel offset and edge draw progress must all be equal. This is what guarantees that motion carries no information and that the accessible path is the same product, not a reduced one.
+- The forbidden-palette scan (§10.4.4) runs alongside: no `backdrop-filter`, no hex above 70% saturation, no more than two hue families in a gradient, no `box-shadow` colour outside `--occlude` / `--light-edge*`, no emoji. These are craft constraints rather than requirement-derived ones, so they are assertions in the same test file rather than clauses of the property.
 
 ### Property 23: Every promise is reachable, selectable and evidenced in the projection
 
@@ -1697,7 +2144,31 @@ Everything below is a *nice-to-have*. Tasks must be ordered so these are the las
 | 9 | **`kept doctor`** | Convenience only | README prerequisites section |
 | 10 | **`maintain evolve` automation for `test-drift`** (R7.2) | Only fires if the spike lands on a drift verdict; the branch is still demonstrated by the review card | Review card built from the failure context with a diagnostic |
 
-Hard floor — none of these may be dropped, because each is directly scored: the three-contract parser, the `VerdictRouter` with both implementations, the committed snapshot and its schema, the graph hero with citations, the two Kiro hooks and the handoff file, the fixture with its eight claims including the breakable and never-true ones, `/badge.svg`, the demo command, and the deployed Ledger.
+### 18.1 Motion flourishes — droppable **individually**, in this order
+
+The five orchestrations of §10.6 are not one feature. Each is independently removable because each goes through the same `play()` gate (§10.6.4), so deleting one call site leaves every other animation and the entire reduced-motion path untouched. Drop from the top.
+
+| # | Flourish | Cost if dropped | What replaces it |
+|---|---|---|---|
+| M1 | **Edge draw / pulse along the verdict path** (§10.6.3) | Lowest information density of the five, and the only one needing `svg.createDrawable`; React Flow's edge internals make it the fiddliest | Static edge in `--hairline-strong`; the panel already names which test moved the verdict |
+| M2 | **Metric count-up** (§10.6.2) | Pleasant, but the figure is legible the instant it renders | Final figure rendered directly; tabular numerals stay (they are typography, §10.7, not motion) |
+| M3 | **Panel section stagger** (§10.6.3) | The panel's own slide-and-fade is a plain CSS transition and survives | Panel slides as one unit |
+| M4 | **Graph entrance stagger** (§10.6.1) | This is the most visible craft on the page and the most likely thing a judge notices in the first three seconds. Drop reluctantly | Nodes at opacity 1 on first paint — identical to the reduced-motion render, which is already specified and already tested |
+| M5 | **Verdict flip scale pulse** (§10.6.3) | Last to go: it marks the one event the product exists to show | The colour transition alone, as a CSS `transition` on `--dur-base` — no anime.js involvement |
+
+If **all five** are dropped, `animejs` comes out of `package.json` and the runtime dependency count returns to eight. That is the cut of last resort, and it is a clean one: `lib/motion.ts` collapses to the synchronous `utils.set`-equivalent branch it already has, and no component changes.
+
+### 18.2 Not droppable — this is the Craft score
+
+The following are **not** on the droppable list and must not be treated as polish. Craft is one of four equally weighted dimensions, and these are what earns it:
+
+- **The palette** (§10.4) and its measured contrast matrix (§10.4.2). Not because it is pretty, but because Property 22 and R10.6 are enforced against it and because the whole point of a distinctive, non-generic palette is that it cannot be swapped for a default without losing the thing being scored.
+- **The light and elevation system** (§10.5) — the top-edge highlight, the two-part occlusion shadows, the off-axis plane gradients, and the `.surface-*` classes that make them the only way to author depth. Reverting to flat borders is a visible downgrade for no build-time saving; the whole system is three CSS classes.
+- **The reduced-motion path** (§10.6.4). It is an accessibility guarantee and a clause of Property 22, not a feature. It is also *cheaper* than not having it, because the gate is what makes M1–M5 individually droppable in the first place.
+- **Typography discipline** (§10.7) — the mono-as-texture rule, tabular numerals, and the metric rail's optical alignment. These are token and class choices, not work items.
+- The token parity test and the forbidden-palette scan (§10.4.4), because without them the palette silently rots.
+
+Hard floor — none of these may be dropped, because each is directly scored: the three-contract parser, the `VerdictRouter` with both implementations, the committed snapshot and its schema, the graph hero with citations, the two Kiro hooks and the handoff file, `kept reconcile`'s resolved `--from`/`--source-id` invocation with its fail-fast ladder (§13.2 — a docs branch that always exits 2 is not a closed loop), the fixture with its eight claims including the breakable and never-true ones, `/badge.svg`, the demo command, the deployed Ledger, and everything in §18.2 above.
 
 ---
 
@@ -1709,12 +2180,13 @@ Sequenced so that the highest-scoring, least-reversible things exist first and e
 2. **`kept-core` Kane layer** — `family`, `events`, `coerce`, `exit`, `ndjson`, `evidence`, `invoker`, with the recorded smoke-run regression and Properties 7, 8, 10, 11, 12, 13, 14 green. This is the part that everything else is wrong without. (~2 h)
 3. **Promise model + providers + snapshot** — `ids`, admission gate, baseline, merge, canonical snapshot, metrics; Properties 1–6, 21. (~2 h)
 4. **Fixture app** — 7 screens, README claims block, `tests/*_test.md` corpus with `@verifies` and `covers`. Snapshot now renders real promises with real citations. (~2 h)
-5. **Ledger** — tokens, graph hero, metric rail, panel, `/coverage`, `/badge.svg`, `/runs`; read-only scans green. First screenshot-worthy state. (~3 h)
+5. **Ledger, structure first** — tokens (§10.4) and `surfaces.css` (§10.5) before any component, because retro-fitting a light model costs more than authoring against one; then graph hero, metric rail, panel, `/coverage`, `/badge.svg`, `/runs`. Read-only scans, contrast, parity and forbidden-palette tests green; Property 22. First screenshot-worthy state. (~3 h)
 6. **Router + radius + verify** — `resultCode740`, `failureYamlTriage`, plan cache, `computeBlastRadius`, `kept verify`; Properties 15–18. (~2 h)
-7. **Hooks + handoff** — both hook files, `writeHandoff`, the fenced agent prompts; Properties 26, 27. (~1 h)
+7. **Hooks + handoff + source resolution** — both hook files, `writeHandoff`, the fenced agent prompts, `resolveSourceId` with `.kept/sources.json` and the fail-fast ladder (§13.2), `kept reconcile --changed`; Properties 26, 27. (~1.5 h)
 8. **Repair surfaces** — review cards, `docsAmendment` propose/accept with the sha256 interlock, `/amendments`, `/reviews`; Properties 19, 20. (~1.5 h)
-9. **Live Kane** — verdict spike, authored runs, committed `output-*/` recordings, curated evidence, closed-loop record; Property 28. (~2 h)
-10. **Submission** — Vercel deploy, README first-20-lines, 120-word summary, 180-second video, commit hygiene. (~1.5 h)
-11. **Only if everything above is green** — items from §18, top-down.
+9. **Live Kane** — opens with the bootstrap of §4.9.1: `context ingest apps/fixture/README.md` then `context extract`, because `cover` refuses until a store exists (§5.3.1) and `maintain reconcile` cannot resolve a source id until one is ingested (§13.2.2). Then the verdict spike, authored runs, committed `output-*/` recordings, curated evidence, closed-loop record; Property 28. (~2 h)
+10. **Motion layer** — `lib/motion.ts` and the reduced-motion path first, then M5→M1 from §18.1 in *reverse* drop order, so the most valuable orchestration exists first and the timebox cuts from the cheap end. Reduced-motion equivalence test green before any flourish is added. (~1.5 h)
+11. **Submission** — Vercel deploy, README first-20-lines, 120-word summary, 180-second video, commit hygiene. (~1.5 h)
+12. **Only if everything above is green** — items from §18, top-down. Never anything from §18.2.
 
-Stages 1–3 are the ones that cannot be rushed; stages 5 and 8 are where the visible craft lives; stage 9 is what makes the Verified dimension real rather than claimed.
+Stages 1–3 are the ones that cannot be rushed. Stage 5 is where the Craft dimension is won or lost, and it is deliberately sequenced *before* the loop work so that the palette and light model exist while there is still energy to get them right; stage 10 layers motion onto a page that is already correct and already accessible. Stage 9 is what makes the Verified dimension real rather than claimed, and its first two commands are the ones that were previously implicit.
