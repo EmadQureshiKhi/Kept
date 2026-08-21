@@ -26,6 +26,10 @@ import {
   type BaselineDirEntry,
   type BaselineFileSystem,
 } from '@kept/core';
+// Imported from the module rather than the barrel: the two readers below landed with
+// the Kane-format reconciliation (15.2), and this file has to compile at that commit
+// whether or not the barrel has caught up with them yet.
+import { extractCoversGlobs, readDocumentCovers } from '../src/providers/baseline.js';
 
 /**
  * Unit coverage for the baseline promise provider (design §5.2, R2.1–R2.4).
@@ -116,6 +120,87 @@ describe('baseline provider — the hand-rolled frontmatter reader', () => {
     const frontmatter = readFrontmatter(['---', 'test_id']);
     expect(frontmatter.present).toBe(true);
     expect(frontmatter.terminated).toBe(false);
+  });
+
+  it('reads the logical id out of Kane’s `assurance` block', () => {
+    // The only spelling `kane-cli` 0.8.4 accepts: a root `test_id:` is rejected as
+    // an unknown config key at exit two, before a browser launches, so every
+    // runnable document in the committed corpus declares its id here.
+    const frontmatter = readFrontmatter([
+      '---',
+      'mode: testing',
+      'assurance:',
+      '  id: T-3',
+      '  base: sha256:ce82c727',
+      'tags: [cart, subtotal]',
+      '---',
+    ]);
+    expect(frontmatter.testId).toBe('T-3');
+    expect(frontmatter.tags).toEqual(['cart', 'subtotal']);
+    expect(frontmatter.unparsedLines).toEqual([]);
+  });
+
+  it('preserves the case of an id rather than normalising it', () => {
+    // Kane writes its own ids lower-case; KEPT's corpus is authored upper-case and
+    // 0.8.4 accepts either. The value is a lookup hint, so it is read verbatim.
+    expect(readFrontmatter(['---', 'assurance:', '  id: t-4', '---']).testId).toBe('t-4');
+  });
+
+  it('prefers `assurance.id` over a legacy root `test_id`', () => {
+    const frontmatter = readFrontmatter([
+      '---',
+      'test_id: T-legacy',
+      'assurance:',
+      '  id: T-3',
+      '---',
+    ]);
+    expect(frontmatter.testId).toBe('T-3');
+  });
+
+  it('still reads a bare `covers:` list after a nested mapping block', () => {
+    const frontmatter = readFrontmatter([
+      '---',
+      'assurance:',
+      '  id: T-3',
+      'covers:',
+      '  - apps/fixture/lib/cart.ts',
+      '---',
+    ]);
+    expect(frontmatter.testId).toBe('T-3');
+    expect(frontmatter.covers).toEqual(['apps/fixture/lib/cart.ts']);
+  });
+});
+
+describe('baseline provider — the @covers body annotation', () => {
+  it('reads comma-separated globs out of an HTML comment', () => {
+    expect(
+      extractCoversGlobs(['<!-- @covers apps/fixture/lib/cart.ts, apps/fixture/app/cart/** -->']),
+    ).toEqual(['apps/fixture/lib/cart.ts', 'apps/fixture/app/cart/**']);
+  });
+
+  it('contributes nothing for a bare marker and keeps no comment delimiter', () => {
+    expect(extractCoversGlobs(['<!-- @covers -->', 'prose', '@covers'])).toEqual([]);
+  });
+
+  it('unions both homes, frontmatter first, de-duplicated', () => {
+    const document = [
+      '---',
+      'assurance:',
+      '  id: T-3',
+      'covers:',
+      '  - apps/fixture/lib/cart.ts',
+      '---',
+      '# title',
+      '<!-- @covers apps/fixture/lib/cart.ts apps/fixture/app/cart/** -->',
+    ];
+    expect(readDocumentCovers(document)).toEqual([
+      'apps/fixture/lib/cart.ts',
+      'apps/fixture/app/cart/**',
+    ]);
+  });
+
+  it('answers an empty list for a document that declares no globs at all', () => {
+    expect(readDocumentCovers(['---', 'assurance:', '  id: T-3', '---', '# title'])).toEqual([]);
   });
 });
 

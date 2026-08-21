@@ -146,11 +146,14 @@ describe('covers globs are read from the committed corpus, and ids are not', () 
   });
 
   it('carries no identifier of any kind, even though the frontmatter has one', () => {
-    // The document says `test_id: T-3`. The reader that produced these entries
-    // surfaces that field and this module drops it: an identifier may only come
-    // from the plan (R4.4), so it must not be reachable from here at all.
+    // The document declares `assurance: {id: T-3}` — Kane's own home for a logical
+    // identifier, and the only one `kane-cli` 0.8.4 accepts, since a root `test_id:`
+    // is rejected as an unknown config key before a browser launches. The reader that
+    // produced these entries surfaces that id and this module drops it: an identifier
+    // may only come from the plan (R4.4), so it must not be reachable from here at all.
     const raw = readFileSync(new URL('../../../tests/cart_subtotal_test.md', import.meta.url), 'utf8');
-    expect(raw).toContain('test_id: T-3');
+    expect(raw).toContain('assurance:');
+    expect(raw).toContain('id: T-3');
     for (const entry of collected) {
       expect(Object.keys(entry).sort()).toEqual(['covers', 'path']);
       expect(JSON.stringify(entry)).not.toContain('T-3');

@@ -57,7 +57,7 @@ import type { Diagnostic, DiagnosticDraft, DiagnosticSink } from '../diagnostics
 import { createDiagnosticSink } from '../diagnostics.js';
 import { toPosix } from '../model/ids.js';
 import type { PromiseGraph } from '../model/promise.js';
-import { readFrontmatter } from '../providers/baseline.js';
+import { readDocumentCovers } from '../providers/baseline.js';
 
 import type { PlanMember, TestrunPlan } from './plan.js';
 
@@ -190,10 +190,14 @@ function documentLines(content: string): readonly string[] {
 /**
  * Read the `covers:` globs of each test document.
  *
- * Uses the baseline provider's bounded frontmatter reader rather than a second
- * parser, so the two can never disagree about what a document declares — and
- * discards the `test_id` that reader also surfaces, because it is a cache and the
- * plan is the authority (§3.4, R4.4).
+ * Uses the baseline provider's own reader rather than a second parser, so the two
+ * can never disagree about what a document declares — and discards the id that
+ * reader also surfaces, because it is a cache and the plan is the authority
+ * (§3.4, R4.4).
+ *
+ * Both homes for the globs are read: the root frontmatter `covers:` key, and the
+ * `<!-- @covers a, b -->` body annotation the committed corpus uses because
+ * `covers` is not a frontmatter key `kane-cli` accepts.
  *
  * Total. An unreadable document and a document with no `covers:` are both
  * diagnosed and contribute an entry with no globs, which selects nothing.
@@ -230,8 +234,8 @@ export function collectTestCoverage(
       continue;
     }
 
-    const covers = readFrontmatter(documentLines(content))
-      .covers.map((glob) => toPosix(glob.trim()))
+    const covers = readDocumentCovers(documentLines(content))
+      .map((glob) => toPosix(glob.trim()))
       .filter((glob) => glob.length > 0);
 
     if (covers.length === 0) {

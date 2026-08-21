@@ -329,22 +329,47 @@ export function isSkippedDirectoryName(name: string): boolean {
 /**
  * What the hand-rolled frontmatter reader understood.
  *
- * `testId` is read from `test_id` and is a **cache, not the authority**: design
- * §3.4 makes `testrun_plan.members[].test_id` authoritative, and the designed-test
- * node id is keyed on the document path (`designedTestId(path)`), never on this
- * value. So a stale or absent `test_id` in a document's frontmatter costs a
- * lookup hint and nothing else.
+ * `testId` is read from `assurance.id` — falling back to the legacy root
+ * `test_id` — and is a **cache, not the authority**: design §3.4 makes
+ * `testrun_plan.members[].test_id` authoritative, and the designed-test node id
+ * is keyed on the document path (`designedTestId(path)`), never on this value. So
+ * a stale or absent id in a document's frontmatter costs a lookup hint and
+ * nothing else.
+ *
+ * Why two spellings. `kane-cli` 0.8.4 accepts a **closed set** of root keys —
+ * `mode, max_steps, timeout, global_context, local_context, variables,
+ * session_context, code_export, code_language, url, target, chrome_profile,
+ * cdp_endpoint, ws_endpoint, headless, app, no_reset, os_version,
+ * on_lock_conflict, tags, assurance` — and rejects anything else with
+ * `unknown config key`, exit 2, before a browser launches. A root `test_id:`
+ * therefore makes the whole document unrunnable, so the committed corpus carries
+ * its logical id under Kane's own `assurance: {id}` instead. The root form is
+ * still read because it is the shape every synthesised document in the property
+ * suite uses, and because dropping it would silently lose the id of any
+ * hand-written document that still spells it that way.
+ *
+ * **Case is preserved verbatim, never normalised.** Kane writes its own ids
+ * lower-case (`assurance: {id: t-4}`); KEPT's corpus is authored upper-case
+ * (`T-3`) to match the fixture register, and the live 0.8.4 parser accepts either.
+ * Folding case here would make this cache disagree with the bytes in the document
+ * for no gain: the value is only ever a lookup hint, and every comparison that
+ * decides anything is made against the plan.
  */
 export interface Frontmatter {
   /** Whether the document opened with a `---` fence at all. */
   readonly present: boolean;
   /** Whether that fence closed within {@link FRONTMATTER_MAX_LINES}. */
   readonly terminated: boolean;
-  /** `test_id`, or null when absent or empty. A cache; see above. */
+  /** `assurance.id`, else `test_id`, else null. A cache; see above. */
   readonly testId: string | null;
   /** `tags`, from either the inline-array or the `- item` list form. */
   readonly tags: readonly string[];
-  /** `covers`, same two forms. */
+  /**
+   * Root `covers`, same two forms. **Not the whole story for a Kane-runnable
+   * document**: `covers` is not in Kane's closed root-key set either, so the
+   * committed corpus declares its globs in the body as
+   * `<!-- @covers a, b -->`. Read both through {@link readDocumentCovers}.
+   */
   readonly covers: readonly string[];
   /**
    * How many document lines the block occupies, both fences included. Zero when
@@ -418,6 +443,13 @@ export function readFrontmatter(lines: readonly string[]): Frontmatter {
   const lists = new Map<string, string[]>();
   const unparsedLines: number[] = [];
   let pendingListKey: string | null = null;
+  /**
+   * The bare `key:` an indented `key: value` line belongs under, so
+   * `assurance:` / `  id: T-3` is read as `assurance.id` rather than as a root
+   * `id`. One level only — that is all Kane's `assurance` block needs, and a
+   * general nesting reader is the YAML parser this module exists to avoid.
+   */
+  let pendingMapKey: string | null = null;
   let terminated = false;
   let lineSpan = 0;
 
@@ -452,9 +484,21 @@ export function readFrontmatter(lines: readonly string[]): Frontmatter {
 
     const key = (pair.groups?.['key'] ?? '').toLowerCase();
     const value = (pair.groups?.['value'] ?? '').trim();
+    const indented = line.startsWith(' ') || line.startsWith('\t');
+
+    // An indented `key: value` under a bare `key:` is a nested mapping entry.
+    // Recorded as `parent.child` and the parent stays pending, so a two-entry
+    // block like `assurance:` / `  id:` / `  base:` reads as both.
+    if (indented && pendingMapKey !== null) {
+      scalars.set(`${pendingMapKey}.${key}`, unquote(value));
+      continue;
+    }
+
     pendingListKey = null;
+    pendingMapKey = null;
     if (value.length === 0) {
       pendingListKey = key;
+      pendingMapKey = key;
       if (!lists.has(key)) lists.set(key, []);
       continue;
     }
@@ -469,7 +513,10 @@ export function readFrontmatter(lines: readonly string[]): Frontmatter {
     return { ...EMPTY_FRONTMATTER, present: true, unparsedLines };
   }
 
-  const testId = scalars.get('test_id') ?? '';
+  // `assurance.id` first — the Kane-runnable spelling the committed corpus uses —
+  // then the legacy root `test_id`. Verbatim in both cases (see {@link Frontmatter}).
+  const assuranceId = scalars.get('assurance.id') ?? '';
+  const testId = assuranceId.length === 0 ? (scalars.get('test_id') ?? '') : assuranceId;
   return {
     present: true,
     terminated: true,
@@ -479,6 +526,73 @@ export function readFrontmatter(lines: readonly string[]): Frontmatter {
     lineSpan,
     unparsedLines,
   };
+}
+
+/**
+ * The body marker that carries `covers:` globs in a Kane-runnable document.
+ *
+ * `covers` is not one of the root frontmatter keys `kane-cli` 0.8.4 accepts, so a
+ * document that declares its radius in the fence cannot be run at all. Rather
+ * than invent a second annotation mechanism, the globs move into the body as an
+ * HTML comment, exactly parallel to the `<!-- @verifies file:line -->` convention
+ * that already works: Kane discards HTML comments and everything before the first
+ * `## ` heading, and this provider reads them.
+ *
+ *     <!-- @covers apps/fixture/lib/cart.ts, apps/fixture/app/cart/** -->
+ *
+ * Separators are commas or whitespace or both, because a glob contains neither.
+ * A trailing `-->` is not a glob and is dropped.
+ */
+export const COVERS_MARKER = '@covers';
+
+/** `-->`, and any `<!--` that opened the comment. Neither is a glob. */
+const COMMENT_DELIMITERS = /^(?:<!--|-->)$/;
+
+/**
+ * Every glob declared by a `@covers` body annotation, in document order.
+ *
+ * Total over every input: a line saying `@covers` and nothing else contributes
+ * nothing, and there is no malformed case to report — unlike a citation, a glob
+ * that matches no path is a legitimate thing to write.
+ */
+export function extractCoversGlobs(lines: readonly string[]): readonly string[] {
+  const globs: string[] = [];
+  for (const line of lines) {
+    if (typeof line !== 'string') continue;
+    let from = line.indexOf(COVERS_MARKER);
+    while (from >= 0) {
+      const tail = line.slice(from + COVERS_MARKER.length);
+      const next = tail.indexOf(COVERS_MARKER);
+      const segment = next >= 0 ? tail.slice(0, next) : tail;
+      for (const token of segment.split(/[,\s]+/)) {
+        const glob = token.trim();
+        if (glob.length === 0 || COMMENT_DELIMITERS.test(glob)) continue;
+        globs.push(glob);
+      }
+      from = next >= 0 ? from + COVERS_MARKER.length + next : -1;
+    }
+  }
+  return globs;
+}
+
+/**
+ * Every `covers:` glob a document declares, from **both** homes: the root
+ * frontmatter key first, then the `@covers` body annotation, de-duplicated with
+ * the first occurrence winning.
+ *
+ * One function so the two spellings can never disagree, and so a document may
+ * carry either without the radius caring which.
+ */
+export function readDocumentCovers(lines: readonly string[]): readonly string[] {
+  const seen = new Set<string>();
+  const globs: string[] = [];
+  for (const glob of [...readFrontmatter(lines).covers, ...extractCoversGlobs(lines)]) {
+    const trimmed = glob.trim();
+    if (trimmed.length === 0 || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    globs.push(trimmed);
+  }
+  return globs;
 }
 
 /** One accepted `@verifies` tag. */
