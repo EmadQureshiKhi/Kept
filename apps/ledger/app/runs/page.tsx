@@ -30,20 +30,35 @@
  *
  * **This file stays a server component**: no hooks, no handlers, no props, and
  * `dynamic = 'force-static'` below. The log's filter needs `useState`, so the
- * interactive shell is `components/RunLog.tsx` — a `'use client'` module the page
- * hands the runs to as a prop. That is the whole of the boundary: the page still
- * reads the snapshot, still owns the route's metadata, and still owns every word of
- * copy on it, because a `'use client'` module's exports reach a server component as
- * client references rather than as values.
+ * interactive shell is `components/RunLog.tsx` — a `'use client'` module. That is the
+ * whole of the boundary: the page still reads the snapshot, still owns the route's
+ * metadata, and still owns every word of copy on it, because a `'use client'` module's
+ * exports reach a server component as client references rather than as values.
+ *
+ * **The rows are rendered here, not there.** A `'use client'` module is the root of a
+ * browser bundle and everything it imports is chunked for the browser, transitively —
+ * and `RunRow` and `runVocabulary` both read the CLI-and-UI contract package, whose barrel
+ * reaches modules that open files. So the page renders one `RunRow` per run and hands
+ * the *elements* across as `rows`, alongside `facts` — `{ id, family, tone }` per run,
+ * the three strings the two filter axes read — and `columns`. Server-rendered elements
+ * serialise across the boundary already rendered, so the client component chooses which
+ * rows to place while every line of code that decides what a row *says* stays here.
+ * `facts` and `rows` are index-aligned, which is what the filter selects through.
  */
 
 import type { Metadata } from 'next';
 
-import { RunLog } from '../../components/RunLog.js';
-import { NO_DIAGNOSTICS } from '../../lib/runVocabulary.js';
+import { RunLog, type RunFact } from '../../components/RunLog.js';
+import {
+  NO_DIAGNOSTICS,
+  NO_RUNS_DETAIL,
+  NO_RUNS_HEADLINE,
+  runOutcome,
+} from '../../lib/runVocabulary.js';
 import { snapshot } from '../../lib/snapshot.js';
 
 import { DiagnosticBlock } from './DiagnosticBlock.js';
+import { RUN_COLUMNS, RunRow } from './RunRow.js';
 
 import '../../styles/runs.css';
 
@@ -129,6 +144,24 @@ export const NO_DIAGNOSTICS_DETAIL =
 export default function RunsPage() {
   const { runs, diagnostics } = snapshot;
 
+  /* The filter's whole view of a run: its id, its family, and the tone `runOutcome`
+     concludes — read through the same function `RunRow` puts in `data-tone`, so a filter
+     option and the rows it selects can never disagree. Three strings, so nothing about
+     the contract package crosses the client boundary. */
+  const facts: readonly RunFact[] = runs.map((run) => ({
+    id: run.id,
+    family: run.family,
+    tone: runOutcome(run).tone,
+  }));
+
+  /* Newest first, so the mark belongs to the first entry of the whole log. It is pinned
+     here rather than in the client shell, which means a filter that excludes the newest
+     run shows no mark at all instead of moving it to a run that is not the most recent. */
+  const newestId = runs[0]?.id;
+  const rows = runs.map((run) => (
+    <RunRow key={run.id} newest={run.id === newestId} run={run} />
+  ));
+
   return (
     <div className="runs-page">
       <header>
@@ -147,18 +180,22 @@ export default function RunsPage() {
       </header>
 
       {/* The log, and the one client boundary on this route. The heading, the filter bar,
-          the labelled scroll frame and the table live in `RunLog` because the heading's
-          count is state the moment a filter exists — see that file's header for the split.
-          Everything crossing the boundary is a string or a plain object read out of the
-          committed snapshot: nothing is fetched, and there is no handler behind the
-          controls (R8.4, R8.6). */}
+          the labelled scroll frame and the table shell live in `RunLog` because the
+          heading's count is state the moment a filter exists — see that file's header for
+          the split. Everything crossing the boundary is a string, a plain object read out
+          of the committed snapshot, or a row this file already rendered: nothing is
+          fetched, and there is no handler behind the controls (R8.4, R8.6). */}
       <section>
         <RunLog
+          columns={RUN_COLUMNS}
+          emptyDetail={NO_RUNS_DETAIL}
+          emptyHeadline={NO_RUNS_HEADLINE}
+          facts={facts}
           headingId={RUNS_TABLE_HEADING_ID}
           note={RUNS_TABLE_NOTE}
           noteLabel={RUNS_TABLE_NOTE_LABEL}
           regionLabel={RUNS_TABLE_REGION_LABEL}
-          runs={runs}
+          rows={rows}
         />
       </section>
 

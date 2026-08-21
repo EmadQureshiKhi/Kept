@@ -748,6 +748,37 @@
   white-space: nowrap;
 }
 
+/**
+ * The single-line scrollers on this page, given the bar `scrollbar-width` only asks for.
+ * Both of them, stated together — the member path above and the remedy command below —
+ * because they have one defect and one answer.
+ *
+ * `scrollbar-width: thin` is honoured by Firefox and ignored by WebKit, which falls back
+ * to its default ~15px bar — as tall as the line of mono it is scrolling, inside a box
+ * that is one line high. So the bar is stated at 6px, in the same vocabulary
+ * `.runs-table-frame` uses: recessed paper track, brightest-step thumb, ink edge, at 1px
+ * rather than `--line` because a 2px edge on both sides of a 6px thumb leaves no thumb.
+ *
+ * The frame above keeps its `--s-3` bar on purpose. That is a region a reader has to know
+ * moves before they try to move it; a member path and a remedy command are not.
+ */
+.run-member__path::-webkit-scrollbar,
+.diagnostic__remedy::-webkit-scrollbar {
+  height: 6px;
+}
+
+.run-member__path::-webkit-scrollbar-track,
+.diagnostic__remedy::-webkit-scrollbar-track {
+  background-color: var(--ink-050);
+}
+
+.run-member__path::-webkit-scrollbar-thumb,
+.diagnostic__remedy::-webkit-scrollbar-thumb {
+  border: 1px solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+}
+
 /* ── diagnostics: the message verbatim, with the producer's own fences kept ─── */
 
 /**

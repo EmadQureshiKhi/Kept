@@ -66,6 +66,7 @@ import {
   RECONCILE_UNRESOLVED_CODE,
   REFUSED_STATUS,
   TIMED_OUT,
+  runOutcome,
 } from '../lib/runVocabulary.js';
 import { snapshot } from '../lib/snapshot.js';
 
@@ -137,23 +138,40 @@ function renderRow(run: SnapshotRun) {
 }
 
 /**
- * The log's interactive shell, with the copy the page owns handed to it.
+ * The log's interactive shell, given exactly what the page gives it.
  *
- * `RunLog` is the route's one client component and the page passes it four strings —
- * see its header for why the copy stays on the server side of the boundary. Rendering
- * it directly is what lets the filter be exercised against runs constructed here: the
- * committed snapshot happens to hold one family and one outcome tone, so a filter test
- * driven off it could only ever prove that selecting the single option keeps all
- * fifteen rows.
+ * `RunLog` is the route's one client component, and nothing that reaches the CLI-and-UI
+ * contract package may be imported by it: a client module is the root of a browser
+ * bundle, and that package's barrel reaches modules that open files. So the page
+ * renders the rows itself and passes the *elements* across, alongside one
+ * `{ id, family, tone }` fact per run — index-aligned with the rows — the columns, and
+ * the copy. This helper does the same, which is what keeps it a test of the boundary
+ * the route actually has.
+ *
+ * Rendering it directly is what lets the filter be exercised against runs constructed
+ * here: the committed snapshot happens to hold one family and one outcome tone, so a
+ * filter test driven off it could only ever prove that selecting the single option
+ * keeps all fifteen rows.
  */
 function renderLog(runs: readonly SnapshotRun[]) {
+  const newestId = runs[0]?.id;
   return render(
     <RunLog
+      columns={RUN_COLUMNS}
+      emptyDetail={NO_RUNS_DETAIL}
+      emptyHeadline={NO_RUNS_HEADLINE}
+      facts={runs.map((run) => ({
+        id: run.id,
+        family: run.family,
+        tone: runOutcome(run).tone,
+      }))}
       headingId={RUNS_TABLE_HEADING_ID}
       note={RUNS_TABLE_NOTE}
       noteLabel={RUNS_TABLE_NOTE_LABEL}
       regionLabel={RUNS_TABLE_REGION_LABEL}
-      runs={runs}
+      rows={runs.map((run) => (
+        <RunRow key={run.id} newest={run.id === newestId} run={run} />
+      ))}
     />,
   );
 }

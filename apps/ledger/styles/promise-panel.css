@@ -169,6 +169,50 @@
   background-color: var(--ink-150);
 }
 
+/* ── the single-line scrollers: the same vocabulary, at a sixth the height ───── */
+
+/**
+ * `scrollbar-width: thin` is half a rule, and the missing half was the defect.
+ *
+ * The standard property is honoured by Firefox and ignored by WebKit, which keeps its
+ * default bar — around 15px. Inside a one-line box holding an identifier that is itself
+ * about 15px tall, that is a scrollbar as tall as the text it is scrolling: the value
+ * ends up half-hidden behind furniture, and on the artefact list it happens 37 times.
+ *
+ * So the bar is stated. 6px, which is the height of the drawn away-mark on the same row
+ * and small enough to sit under a line of `--fs-xs` without crowding it. The colours are
+ * the ones this file already uses — recessed paper for the track, the brightest step of
+ * the ramp for the thumb, an ink edge around it — at 1px rather than `--line`, because a
+ * 2px edge on both sides of a 6px thumb leaves no thumb.
+ *
+ * The two *region* scrollers above and in `runs.css` keep their `--s-3` bar deliberately:
+ * those are meant to be visible at rest, because a reader has to know the region moves
+ * before they try to move it. These are not. A single-line box is scrolled by dragging
+ * the text or by the keyboard, and the bar's job is only to say that there is more.
+ */
+.promise-panel__id::-webkit-scrollbar,
+.promise-panel__ident::-webkit-scrollbar,
+.promise-panel__value-inner::-webkit-scrollbar,
+.promise-panel__artifact::-webkit-scrollbar {
+  height: 6px;
+}
+
+.promise-panel__id::-webkit-scrollbar-track,
+.promise-panel__ident::-webkit-scrollbar-track,
+.promise-panel__value-inner::-webkit-scrollbar-track,
+.promise-panel__artifact::-webkit-scrollbar-track {
+  background-color: var(--ink-050);
+}
+
+.promise-panel__id::-webkit-scrollbar-thumb,
+.promise-panel__ident::-webkit-scrollbar-thumb,
+.promise-panel__value-inner::-webkit-scrollbar-thumb,
+.promise-panel__artifact::-webkit-scrollbar-thumb {
+  border: 1px solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+}
+
 .promise-panel__id {
   flex: 1 1 8rem;
   display: block;
@@ -454,10 +498,31 @@
   border-bottom-width: 0;
   border-left-width: 0;
   transform: rotate(45deg);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
+/**
+ * Hover changes the colour and nothing else, which is an override rather than a style.
+ *
+ * `shell.css` gives every `<a>` the neubrutalist inversion — an ink fill with paper text
+ * — and that is right for a link in prose. It is wrong here. This is a mono filename in
+ * a dense list that runs to 37 rows, inside a single-line scroll box, so the fill lands
+ * as a black bar the width of whatever the row happens to be scrolled to, and a pointer
+ * travelling down the pack strobes. `background-color: transparent` is therefore stated
+ * explicitly: it is not a fill, and it is the only way to say "no fill" against a rule
+ * that already set one. The signal is the step from `--text-100` to `--text-000`, plus
+ * the underline the link carries at rest, so hover remains legible without inverting.
+ */
 .promise-panel__artifact:hover {
+  background-color: transparent;
   color: var(--text-000);
+}
+
+/* The drawn mark is the second half of one object, so it moves with the link rather than
+   staying pale beside a darkened filename. Border colour only — the mark has no fill and
+   is not given one. */
+.promise-panel__artifact:hover + .promise-panel__artifact-away {
+  border-color: var(--text-000);
 }
 
 .promise-panel__artifact-kind {

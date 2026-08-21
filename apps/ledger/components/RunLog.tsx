@@ -4,15 +4,37 @@
  *
  * The one client boundary on `/runs`, and the whole of it. `app/runs/page.tsx`
  * stays a server component exporting `dynamic = 'force-static'`: it reads the
- * committed snapshot, decides the page copy, and hands both to this component as
- * props. Everything that needs `useState` lives here — two `<select>`s and the
- * count in the heading — and nothing else moved.
+ * committed snapshot, decides the page copy, renders the rows, and hands all three
+ * to this component as props. Everything that needs `useState` lives here — two
+ * `<select>`s and the count in the heading — and nothing else moved.
+ *
+ * ── This module imports react, one stylesheet, and nothing else ───────────────
+ *
+ * That is a hard rule rather than tidiness, and it is the reason the rows arrive as
+ * elements. A `'use client'` module is the root of a browser bundle: every module it
+ * reaches at runtime is chunked for the browser, transitively. `runVocabulary` and
+ * `RunRow` both read the CLI-and-UI contract package at runtime, and that package's
+ * barrel re-exports modules that open files — a Node built-in no browser chunk can
+ * contain. Importing either of them from here therefore does not merely bloat the
+ * bundle, it fails the build outright with a chunking error naming `node:fs`.
+ *
+ * So the boundary carries values instead of code. The server renders one `RunRow` per
+ * run and passes the rendered elements down as `rows`; the vocabulary that decides a
+ * run's outcome tone runs on the server too, and arrives as `facts` — three strings
+ * per run, the only three either axis needs. The columns arrive the same way, as
+ * `columns`. Passing server-rendered elements to a client component is ordinary App
+ * Router practice: they serialise across the boundary already rendered, so this
+ * component can choose *which* rows to place without holding any of the code that
+ * decides what a row says.
+ *
+ * `facts` and `rows` are index-aligned — `facts[i]` describes `rows[i]` — which is
+ * what lets the filter select rows without reading them.
  *
  * **The filter spends nothing and fetches nothing.** It is `Array.prototype.filter`
- * over an array the server already handed down, so there is no request, no route,
- * no handler and no invocation behind it (R8.4, R8.6). A reader narrowing fifteen
- * runs to one is doing arithmetic in their own browser over data that was committed
- * to the repository.
+ * over data the server already handed down, so there is no request, no route, no
+ * handler and no invocation behind it (R8.4, R8.6). A reader narrowing fifteen runs to
+ * one is doing arithmetic in their own browser over data that was committed to the
+ * repository.
  *
  * ── Why the heading is in here, and the copy is not ───────────────────────────
  *
@@ -30,34 +52,48 @@
  *
  * ── Two axes, and neither of them is a list this file knows ───────────────────
  *
- * The options are derived from the runs actually present: the command families are
- * the distinct `run.family` values, and the outcome tones are the distinct
- * `runOutcome(run).tone` values — the same function `RunRow` puts in `data-tone`, so
- * a filter option and the rows it selects can never disagree. A hardcoded list would
- * offer a reader an option that matches nothing, or hide a family the snapshot grew.
+ * The options are derived from the facts actually present: the command families are
+ * the distinct `fact.family` values, and the outcome tones the distinct `fact.tone`
+ * values — the same tone the server put in the row's `data-tone`, so a filter option
+ * and the rows it selects can never disagree. A hardcoded list would offer a reader an
+ * option that matches nothing, or hide a family the snapshot grew.
  *
  * A filter that yields nothing renders the dashed empty state of `runs.css` and names
  * what is selected (§10.10). An empty table under a heading reading `(0 of 15)` would
  * be the page implying the log is empty when it is the filter that is narrow.
  *
- * `RunRow` is imported from beside the route rather than the other way round: it is
- * the route's own row and has no second consumer, and this component is under
- * `components/` because it is the one thing on the page that has to be a client
- * module. The `<tbody>` grouping, the sticky ink header, the labelled focusable
- * scroll frame and the table's accessible name are all unchanged — this component
- * decides which runs go in, and nothing about how one is laid out.
+ * The `<tbody>` grouping, the sticky ink header, the labelled focusable scroll frame,
+ * the `newest` mark and the table's accessible name are all unchanged — and all of
+ * them are now decided on the server. This component decides which rows go in, and
+ * nothing about how one is laid out.
  */
 
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
-import type { SnapshotRun } from '@kept/core';
-
-import { NO_RUNS_DETAIL, NO_RUNS_HEADLINE, runOutcome } from '../lib/runVocabulary.js';
-
-import { RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
+import { useState, type ChangeEvent, type ReactNode } from 'react';
 
 import '../styles/runs.css';
+
+/**
+ * What the filter needs to know about a run, and the whole of it.
+ *
+ * Three strings, declared here rather than imported: the shape is small enough to
+ * state, and stating it is what keeps this module free of the contract package the
+ * server reads. The server derives `tone` through the same function that put it in
+ * the row's `data-tone`, so the fact and the row it describes cannot drift.
+ */
+export interface RunFact {
+  readonly id: string;
+  readonly family: string;
+  readonly tone: string;
+}
+
+/** One column of the log. The array arrives as a prop, for the same reason. */
+export interface RunColumn {
+  readonly key: string;
+  readonly label: string;
+  readonly numeric: boolean;
+}
 
 /** The value of "do not narrow this axis". Empty, so it is never a family or a tone. */
 export const EVERY = '';
@@ -74,36 +110,33 @@ export const TONE_FILTER_LABEL = 'outcome';
 export const FAMILY_FILTER_ID = 'runs-filter-family';
 export const TONE_FILTER_ID = 'runs-filter-tone';
 
-/** What the first row of a newest-first log is marked with. */
-export const NEWEST_LABEL = 'newest';
-
-/** The command families present, sorted. Derived from the runs, never declared. */
-export function familyOptions(runs: readonly SnapshotRun[]): readonly string[] {
-  return [...new Set<string>(runs.map((run) => run.family))].sort();
+/** The command families present, sorted. Derived from the facts, never declared. */
+export function familyOptions(facts: readonly RunFact[]): readonly string[] {
+  return [...new Set<string>(facts.map((fact) => fact.family))].sort();
 }
 
 /**
  * The outcome tones present, sorted.
  *
- * Read through `runOutcome` rather than off a field, because a tone is a conclusion
- * about a run and not a value the run reports — which is the same reason `RunRow`
- * reads it that way for `data-tone`.
+ * A tone is a conclusion about a run rather than a value the run reports, which is why
+ * it is decided by the vocabulary on the server and arrives here as a fact.
  */
-export function toneOptions(runs: readonly SnapshotRun[]): readonly string[] {
-  return [...new Set<string>(runs.map((run) => runOutcome(run).tone))].sort();
+export function toneOptions(facts: readonly RunFact[]): readonly string[] {
+  return [...new Set<string>(facts.map((fact) => fact.tone))].sort();
 }
 
-/** The runs both axes admit. `EVERY` on an axis admits everything on it. */
+/** Whether both axes admit one run. `EVERY` on an axis admits everything on it. */
+function admits(fact: RunFact, family: string, tone: string): boolean {
+  return (family === EVERY || fact.family === family) && (tone === EVERY || fact.tone === tone);
+}
+
+/** The runs both axes admit. */
 export function filterRuns(
-  runs: readonly SnapshotRun[],
+  facts: readonly RunFact[],
   family: string,
   tone: string,
-): readonly SnapshotRun[] {
-  return runs.filter(
-    (run) =>
-      (family === EVERY || run.family === family) &&
-      (tone === EVERY || runOutcome(run).tone === tone),
-  );
+): readonly RunFact[] {
+  return facts.filter((fact) => admits(fact, family, tone));
 }
 
 /** `true` when either axis is narrowed. */
@@ -155,7 +188,12 @@ export function filterStatus(shown: number, total: number): string {
 }
 
 export interface RunLogProps {
-  readonly runs: readonly SnapshotRun[];
+  /** One per run, index-aligned with `rows`: the three strings the two axes read. */
+  readonly facts: readonly RunFact[];
+  /** The rows, rendered on the server. One `<tbody>` each; already keyed. */
+  readonly rows: readonly ReactNode[];
+  /** The columns, in the order design §10.1 lists the fields. */
+  readonly columns: readonly RunColumn[];
   /** The heading's `id`; the table borrows its accessible name from it. */
   readonly headingId: string;
   /** The scroll region's accessible name. */
@@ -163,9 +201,22 @@ export interface RunLogProps {
   /** The log's reading note, and the accessible name of the `?` that holds it. */
   readonly note: string;
   readonly noteLabel: string;
+  /** The two lines an empty log says, decided by the page. */
+  readonly emptyHeadline: string;
+  readonly emptyDetail: string;
 }
 
-export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLogProps) {
+export function RunLog({
+  facts,
+  rows,
+  columns,
+  headingId,
+  regionLabel,
+  note,
+  noteLabel,
+  emptyHeadline,
+  emptyDetail,
+}: RunLogProps) {
   const [family, setFamily] = useState<string>(EVERY);
   const [tone, setTone] = useState<string>(EVERY);
 
@@ -177,12 +228,16 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
   };
 
   const filtered = isFiltered(family, tone);
-  const shown = filterRuns(runs, family, tone);
-  /* The newest run is the newest run, filtered or not: the marker is pinned to the
-     first entry of the whole log rather than to whichever row happens to be at the
-     top of a view. So it disappears under a filter that excludes it instead of
-     migrating to a run that is not the most recent. */
-  const newestId = runs[0]?.id;
+  /* Selected by position, because `facts[i]` describes `rows[i]`: the filter reads the
+     facts and places the matching elements untouched. The `newest` mark is already
+     inside those elements, pinned by the server to the first entry of the whole log
+     rather than to whichever row happens to be at the top of a view — so it disappears
+     under a filter that excludes it instead of migrating to a run that is not the most
+     recent. */
+  const shown = rows.filter((_row, index) => {
+    const fact = facts[index];
+    return fact !== undefined && admits(fact, family, tone);
+  });
 
   return (
     <>
@@ -192,7 +247,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
           container is clipped by it. */}
       <div className="section-head-line">
         <h2 className="section-head" id={headingId}>
-          {terminalEventsHeading(shown.length, runs.length, filtered)}
+          {terminalEventsHeading(shown.length, facts.length, filtered)}
         </h2>
         <details className="hint">
           <summary aria-label={noteLabel} className="hint__summary">
@@ -202,13 +257,13 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
         </details>
       </div>
 
-      {runs.length === 0 ? (
+      {facts.length === 0 ? (
         /* No `.surface-well` here: an empty region is marked by the one dashed border in
            the system rather than by depth, so "specified and empty" looks the same on
            every page (§10.10). */
         <div className="runs-empty">
-          <p className="runs-empty__headline">{NO_RUNS_HEADLINE}</p>
-          <p className="runs-empty__detail">{NO_RUNS_DETAIL}</p>
+          <p className="runs-empty__headline">{emptyHeadline}</p>
+          <p className="runs-empty__detail">{emptyDetail}</p>
         </div>
       ) : (
         <>
@@ -226,7 +281,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
                 value={family}
               >
                 <option value={EVERY}>{EVERY_FAMILY_OPTION}</option>
-                {familyOptions(runs).map((option) => (
+                {familyOptions(facts).map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -242,7 +297,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
                 value={tone}
               >
                 <option value={EVERY}>{EVERY_TONE_OPTION}</option>
-                {toneOptions(runs).map((option) => (
+                {toneOptions(facts).map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -252,7 +307,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
             {/* The heading's count changes without saying so, which is silent to a screen
                 reader. This is the same fact in a live region. */}
             <p aria-live="polite" className="runs-filter__status" role="status">
-              {filterStatus(shown.length, runs.length)}
+              {filterStatus(shown.length, facts.length)}
             </p>
           </div>
 
@@ -261,7 +316,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
                log is not empty, this filter is. */
             <div className="runs-empty">
               <p className="runs-empty__headline">{NO_MATCH_HEADLINE}</p>
-              <p className="runs-empty__detail">{noMatchDetail(family, tone, runs.length)}</p>
+              <p className="runs-empty__detail">{noMatchDetail(family, tone, facts.length)}</p>
             </div>
           ) : (
             /* A labelled, focusable scroll region, unchanged from before the filter
@@ -279,7 +334,7 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
               <table aria-labelledby={headingId} className="runs-table">
                 <thead>
                   <tr>
-                    {RUN_COLUMNS.map((column) => (
+                    {columns.map((column) => (
                       <th
                         className={
                           column.numeric
@@ -294,11 +349,9 @@ export function RunLog({ runs, headingId, regionLabel, note, noteLabel }: RunLog
                     ))}
                   </tr>
                 </thead>
-                {/* One `<tbody>` per run, emitted by `RunRow` — see its header for why the
-                    grouping is what makes the banding honest. */}
-                {shown.map((run) => (
-                  <RunRow key={run.id} newest={run.id === newestId} run={run} />
-                ))}
+                {/* One `<tbody>` per run, emitted on the server by `RunRow` — see its
+                    header for why the grouping is what makes the banding honest. */}
+                {shown}
               </table>
             </div>
           )}
