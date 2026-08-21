@@ -1,0 +1,5 @@
+
+Update available: 0.8.4 → 0.8.5 — run `npm install -g @testmuai/kane-cli@latest` to update
+
+evidence: 1 status_disagrees advisory(ies) — expected under --bug-detection continue
+evidence: view locally with `kane-cli evidence serve /Users/nokitha/.testmuai/kaneai/sessions/88599883-c57e-4318-867f-366abd025951/evidence/1cba249b-25f9-4309-a5c3-c4648dc9e570.evidence`
