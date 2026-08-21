@@ -829,16 +829,51 @@ Rules 1 and 2 read `severity`, `category` and `confidence` off the object into `
 
 ### 6.3 `failureYamlTriage`
 
-Loads `<evidenceDir>/<newest pack>/failure.yaml` via the `yaml` package and reads a category-ish field (`triage.category` | `category` | `classification` | `reason`), lower-cased:
+Reads the triage note and takes a category-ish field, lower-cased, in this precedence:
+
+`triage.rca.category` | `triage.category` | `category` | `classification` | `reason`
 
 | Signal | Branch |
 |---|---|
-| `product_bug`, `app_error`, `server_error`, `http_5xx`, `crash`, `console_error` | `code-break` |
-| `selector_not_found`, `locator`, `element_not_found`, `stale_element`, `timeout`, `navigation`, `flaky`, `timing` | `test-drift` |
-| `assertion`, `expectation_mismatch`, `value_mismatch` **and** coerced `result_code` in `700..799` | `docs-lie` |
-| file absent, unparseable, or unrecognised signal | `docs-lie` (default) |
+| **`application_issue`**, `product_bug`, `app_error`, `server_error`, `http_5xx`, `crash`, `console_error` | `code-break` |
+| `automation_bug`, `selector_not_found`, `locator`, `element_not_found`, `stale_element`, `timeout`, `navigation`, `flaky`, `timing` | `test-drift` |
+| `assertion`, `expectation_mismatch`, `value_mismatch` **and** coerced `result_code` in the seven-hundred band | `docs-lie` |
+| note absent, unparseable, or unrecognised signal | `docs-lie` (default) |
 
-The `assertion ⇒ docs-lie` mapping is the interesting one and it is deliberate: an assertion that fails while the app behaves normally and the selector resolves is the signature of a claim that was never true. `code-break` requires positive evidence of a product fault; `test-drift` requires positive evidence of a test-mechanics fault; the residue is the documentation's problem. That ordering is what makes the third branch fire on the fixture's never-true claim rather than mis-routing it.
+The `assertion ⇒ docs-lie` mapping is deliberate: an assertion that fails while the app behaves normally and the selector resolves is the signature of a claim that was never true. `code-break` requires positive evidence of a product fault; `test-drift` requires positive evidence of a test-mechanics fault; the residue is the documentation's problem.
+
+#### 6.3.1 Where the note actually is, and what it actually says
+
+Three corrections, each measured against the installed 0.8.4 rather than assumed, and each recorded in `docs/kane/loop/README.md`.
+
+**The note is inside a zip, and it is per failing step.** `listArtifacts` resolves a pack *directory*; Kane seals a single `.evidence` **archive**. Nothing opened it, so `failure-yaml-absent` was reported for every run and the answer was `docs-lie` every time — including for a deliberately broken `subtotal`. The three-way branch was a one-way branch that looked alive. `kane/packArchive.ts` is the reader (`node:zlib` `inflateRawSync`, no dependency, no spawned `unzip`), shared with `kept snapshot`'s evidence curation which built it first.
+
+Attribution is **by identifier, never by name.** The note lives at `tests/<slug>/steps/<n-a-b>/failure.yaml` where the slug derives from the document's *title* (`cart-subtotal-d5ba3490`), and matching a slug to a member path would be inferring identity from a name — the one thing §7.1 and §4.6 exist to forbid. The pack answers it properly: each `tests/<slug>/result.yaml` carries the member's own `test_id`, the same UUID `testrun_member_end` reports. `kane/packTriage.ts` keys on that, locates the archive by this run's own `execution_id` so a previous or parallel run's pack is never read, and attributes nothing to a member the pack does not name.
+
+**The category is nested one level deeper than the alias list read.** Every real note spells it `triage.rca.category`, with `confidence` beside it and `severity` one level up. The four shallower aliases are kept; the deeper one leads.
+
+**`application_issue` is Kane's own product-fault family and was missing from the list.** The seven tokens beside it were authored from Kane's documented vocabulary before any pack had been opened. Without the family, the broken `subtotal` routed `docs-lie` while Kane's note read `application_issue/ui_data_defect` at confidence 0.96 on the first attempt. Admitting it is what makes `code-break` reachable at all.
+
+#### 6.3.2 What this vocabulary cannot decide, and why that is not a bug in it
+
+Admitting `application_issue` is necessary and **it is not sufficient**, and the reason is structural rather than a gap in the list.
+
+**Kane treats the test document as the specification.** For the fixture's deliberately never-true discount claim its note reads `application_issue/ui_data_defect` at 0.89, with `suggested_fix: Check the cart's discount calculation … verify the total updates to 10% below the subtotal` — a correct description, on Kane's own terms, of a discount the cart never applies, written with no way to know the sentence was invented to be false (§12.7). The genuinely broken `subtotal` earns the *same* category at 0.96. One token, two opposite meanings, and there is no third token meaning "the claim itself is false", because from where Kane stands the claim cannot be false.
+
+Measured, for one unchanged T-7 failure across three committed packs and six live runs:
+
+| source | what Kane said | branch it implies |
+|---|---|---|
+| pack `0944d075`, broken `subtotal` (T-3) | `application_issue/ui_data_defect` 0.96 | `code-break` — correct |
+| pack `57591bff`, discount claim (T-7) | `application_issue/ui_data_defect` 0.89 | `code-break` — wrong |
+| pack `108dbb62`, discount claim (T-7) | `automation_bug/state_transition_bug` 0.91 | `test-drift` — wrong |
+| `[member]` stream, 15.3's suite replay | `740`, `confirmed: true`, 0.95 | `code-break` |
+| `[member]` streams, three runs | absent entirely | `docs-lie` residue |
+| `[member]` stream, `57591bff` | `710`, `confirmed: false`, 0.89 | `test-drift` |
+
+Four answers for one failure. No widening of the signal list turns that into a discriminator, and re-running until it says something convenient is a coin flip presented as a demonstration.
+
+So the router keeps reporting what Kane concluded — R6.3, R6.4, R6.5 and R6.9 unchanged, and the Ledger publishes it verbatim, which is the honest thing to show. The distinction the *repair* needs is made one layer up, on evidence Kane does not have: §8.1.1.
 
 ### 6.4 Selection and isolation
 
@@ -949,6 +984,28 @@ Credits: replay against committed `output-*/` recordings is free. The CLI report
 | `code-break` | Kiro agent via hook | applied automatically to fixture source | patch + re-fired verification |
 | `test-drift` | `kept evolve` → `kane-cli maintain evolve --mode agent` | held | `.kept/review-cards/<id>.json` |
 | `docs-lie` | `kept` proposes, human accepts | never silent | `.kept/amendments/<id>.json` |
+
+### 8.1.1 The one condition on automatic repair
+
+**Automatic repair is granted only to restore a promise KEPT has itself proven.** The `code-break` row above reads unconditionally, and it is conditional: `handoff/handoff.ts` hands back `BRANCH_FENCES['code-break']` only when at least one promise carrying that branch had verdict `proven` before the run. Otherwise it hands back `UNPROVEN_CODE_BREAK_FENCE` — same branch, `autonomy: 'hold'`, `artefact: null`, `allowedPaths: []` — and reports `handoff-code-break-unproven` naming the promise, its prior verdict and its citation.
+
+**Why.** §6.3.2 measures it: Kane's triage category cannot separate a regression from a claim that was never true, because Kane reads the test document as the specification. Both the broken `subtotal` and the never-true discount claim earn `application_issue/ui_data_defect`. Granting the second one a write path would point an agent at `apps/fixture/**` under the instruction *"restore the behaviour the cited claim describes"* and set it to **implementing a discount nobody designed** — the system rewriting the product to match a lie, which is strictly worse than the routing bug it would be fixing.
+
+The discriminator KEPT has and Kane cannot is the promise's **own prior verdict**. `proven` means this repository witnessed the behaviour, with a terminal event and a sealed pack behind it; red after that is a regression, and restoring it is exactly what the branch authorises. A promise never `proven` has no such witness — nothing established it worked, so nothing broke.
+
+> **You cannot break what was never proven to work.**
+
+That upgrades the safety claim from *"we trust Kane's category"* to *"automatic repair only ever restores behaviour KEPT has observed"*, which this repository can enforce rather than assert about another tool's word choice.
+
+**Why a fence and not a branch.** R6.3, R6.4 and R6.5 prescribe what the router returns for a coerced `740`, for a Verdict_Object and for `confirmed: false`. The router keeps returning it, so the snapshot, `/runs` and the Ledger keep publishing Kane's real conclusion. What is withheld is *autonomy*, which is this section's own column. `fenceFor` therefore still answers §8.1's table unconditionally — a test can assert the table without knowing the gate exists — and `fenceForResults` is the single site that applies the condition.
+
+**The direction matters.** The withheld row only ever **narrows**: `allowedPaths` empties, every glob the granted row allowed becomes forbidden, and nothing is added anywhere. Property 26's containment holds more strictly than before, and its fence clause reads the expected row off `grantsAutomaticRepair` rather than off the table.
+
+**Grant is "at least one", not "all".** A radius can hold a real regression beside a promise nobody ever proved; restoring the regression is legitimate work that the second promise's history has no standing to forbid, and the second promise is still named in a diagnostic. The fence is glob-scoped to fixture source either way, so this widens nothing.
+
+**The honest cost.** On a repository where nothing has ever been verified every promise is `stale`, so the first failing run grants no automatic repair. That is correct — there is no observed state to restore — and it is diagnosed rather than silent. It does not affect the judge path: the committed snapshot ships the baseline, so a clone already has `proven` promises to regress from.
+
+`HandoffResult.previousVerdict` carries the value. It defaults off the supplied graph record, which needs no plumbing at the call site because `runVerify` routes off `prior.graph.promises` — the record it passes *is* the pre-run one. It is recorded on every result, failing or not, because it is also the only field that says whether `verdict` is a *transition*: `/runs` can distinguish `proven → red` from `stale → red`, and only the first is a regression.
 
 ### 8.2 Review cards
 
@@ -2123,7 +2180,7 @@ Every property test names its design property in the test title: `Feature: kept,
 
 ### Property 26: The handoff file is complete for every run and fences the agent by branch
 
-*For any* completed hook-triggered invocation, the handoff file validates against its schema and records the outcome, the exit meaning, the terminal-event type and whether a terminal event was seen; for every failing result it additionally records the verdict, the repair branch, the verdict object fields where present, the citation and the resolved evidence path; and whenever the branch is `code-break`, the allowed paths contain only fixture source globs while the forbidden paths include the fixture documentation and the test corpus.
+*For any* completed hook-triggered invocation, the handoff file validates against its schema and records the outcome, the exit meaning, the terminal-event type and whether a terminal event was seen; for every failing result it additionally records the verdict, the repair branch, the verdict object fields where present, the citation and the resolved evidence path; and the allowed paths are non-empty **only** when the branch is `code-break` *and* some promise carrying it was `proven` before the run (§8.1.1), in which case they contain only fixture source globs while the forbidden paths include the fixture documentation and the test corpus — and on a `code-break` whose promises were never proven the allowed set is empty and every glob the granted fence would have allowed is forbidden.
 
 **Validates: Requirements 11.4, 7.1**
 

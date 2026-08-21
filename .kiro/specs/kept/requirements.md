@@ -193,6 +193,9 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 12. THE Verdict_Spike SHALL confirm empirically whether `result_code` 740 and the Verdict_Object are emitted on a failing cached replay, and THE selected default Verdict_Router implementation SHALL be recorded in the repository as the outcome of that confirmation.
 13. THE packages/kept-core SHALL provide the `failureYamlTriage` implementation as a working fallback regardless of the outcome of the Verdict_Spike.
 14. THE KEPT_CLI SHALL operate correctly with either Verdict_Router implementation selected, without changes to blast-radius verification, repair handling, or the Ledger.
+15. THE Verdict_Router SHALL read the triage content from the sealed `.evidence` archive the run's own `execution_id` names, SHALL attribute a triage note to a member only by the test identifier the archive itself declares for that note, and SHALL attribute no note to a member the archive does not name.
+
+*Measured against `kane-cli` 0.8.4, and the reason 15 exists: Kane seals a single `.evidence` zip, `listArtifacts` resolved only a pack directory, and the note is per failing step under a slug derived from the document's title. Nothing read it, so every failure fell to the `docs-lie` default — including a deliberately broken `subtotal`. Matching the slug to a member path would infer identity from a name, which R4.4 and R6.11 exist to forbid; the archive's own `result.yaml` carries the member's `test_id`, so identity is read rather than guessed. Recorded in `docs/kane/loop/README.md` and design §6.3.1.*
 
 ### Requirement 7: Branch-specific repair autonomy
 
@@ -207,6 +210,10 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 5. WHILE a Docs_Amendment is pending, THE Ledger SHALL render that Docs_Amendment as a syntax-highlighted diff with an accept control.
 6. WHEN a Docs_Amendment is accepted, THE KEPT_CLI SHALL apply the proposed replacement text to the cited file at the cited line and SHALL rebuild the Promise_Graph.
 7. THE Ledger SHALL render each Review_Card with its originating Promise identifier, Repair_Branch, and Kane_CLI evidence reference.
+8. WHERE the Verdict_Router returns Repair_Branch `code-break`, THE Handoff_File SHALL authorise Fixture_App source paths only when the Promise carried verdict `proven` before that run, SHALL otherwise authorise no path at all while still reporting the returned Repair_Branch unchanged, and SHALL record a diagnostic naming the Promise, its prior verdict and its citation.
+9. THE Handoff_File SHALL record, for every Promise a run reported on, the verdict that Promise held before the run alongside the verdict the run produced.
+
+*Why 8 is a condition on the fence and not on the branch. `code-break` is the only branch whose repair an agent applies automatically, and the only product-fault evidence that survives to KEPT is the category in Kane's sealed triage note — which cannot carry the distinction the repair needs, because Kane reads the designed test as the specification. The Fixture_App's never-true discount claim (R12.7) and its genuinely broken subtotal both earn `application_issue/ui_data_defect`; one unchanged failure has drawn four different Kane answers across three packs and six runs. Authorising a patch on the first would set an agent to implementing a feature nobody designed, to satisfy a claim invented to be false. The prior verdict is the discriminator KEPT holds and Kane does not: `proven` means this repository observed the behaviour, so red after it is a regression and restoring it is what the branch is for; a Promise never `proven` has no observed state to restore. R6.3, R6.4, R6.5 and R6.9 are untouched, so the Ledger still publishes Kane's real conclusion — only the write path is withheld, and the withheld fence forbids every path the granted one allowed. Design §8.1.1.*
 
 ### Requirement 8: Ledger projection and read-only guarantee
 
