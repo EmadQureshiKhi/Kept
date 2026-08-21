@@ -124,7 +124,15 @@ export const VERIFY_ARGV_TAIL: readonly string[] = Object.freeze([
   'continue',
 ]);
 
-/** The flag that scopes a replay to the radius. Comma-joined ids follow it. */
+/**
+ * The flag R4.2 specifies for scoping a replay, and the flag the installed 0.8.4
+ * cannot be scoped with.
+ *
+ * Kept as a named constant because it is still the *specified* spelling and
+ * because two assertions depend on naming it — the argv contract asserts it is
+ * absent from both scopes, and `docs/kane/command-surface.md` records why. See
+ * {@link verifyArgv} for the measured error text.
+ */
 export const FROM_CONTEXT_FLAG = '--from-context';
 
 /** The synthetic run id used when the terminal event carried none of Kane's own. */
@@ -249,9 +257,31 @@ export function fromContextValue(testIds: readonly string[]): string {
 /**
  * The argv for one replay (§7.4, §13.1).
  *
- * `--changed` names exactly the radius with `--from-context`, as R4.2 requires.
+ * **Both scopes name the plan's member paths, and neither can name identifiers.**
+ * R4.2 specifies `--changed` as `--from-context <ids>` carrying the radius, and
+ * that invocation exits 2 against the installed 0.8.4 for the same measured reason
+ * `--all` could not use it: the flag resolves ids against the **assurance graph**,
+ * and a plan's `test_id` is a testcase UUID that does not live there —
  *
- * **`--all` names the plan's member paths, and it has to.** Left unscoped,
+ * ```
+ * error: --from-context: unknown id '6badb68a-3ff8-4a1f-a8bd-3a6a4a2f5e2c' — it
+ *   does not resolve in the assurance graph
+ * ```
+ *
+ * — while the only ids it *does* resolve are `t-1`…`t-4`, which name the four
+ * unauthored `.testmuai/tests/*_test.md` drafts `design tests` wrote. The corpus is
+ * unreachable through that flag in either scope, so `kept verify --changed` — the
+ * code hook's own path, and the command that closes the loop — could not fire at
+ * all while the requirement's spelling was kept. The correction is the one `--all`
+ * already made and nothing more: **the argv names paths, the radius is still
+ * computed from identifiers.** `radius.testIds` comes from
+ * `testrun_plan.members[].test_id` and from nothing else (R4.4, Property 16), and
+ * the paths handed over here are looked up *from those identifiers* by
+ * {@link planMemberPaths} — so the set replayed is exactly the set the plan
+ * identified, and widening the radius to the whole suite is not a thing this
+ * function can do.
+ *
+ * **Why `--all` needed it first.** Left unscoped,
  * `testrun run` selects every `*_test.md` in the project, which in this repository
  * is thirteen documents rather than eight: the corpus, the verdict spike's
  * transcription, and the four `.testmuai/tests/*_test.md` documents Kane's own
@@ -262,15 +292,9 @@ export function fromContextValue(testIds: readonly string[]): string {
  * have. A judge's `npm run loop` would spend real credits on documents that mint no
  * promise, which is what R4.6 and R13.6 forbid.
  *
- * `--from-context` cannot express the scoping, measured against 0.8.4 rather than
- * assumed: it resolves ids against the **assurance graph**, so the plan's own
- * `test_id` — a testcase UUID — is rejected outright (`--from-context: unknown id
- * '6badb68a-…' — it does not resolve in the assurance graph`, exit 2), and the only
- * ids it does resolve are `t-1`…`t-4`, which name the four unauthored drafts. The
- * corpus is unreachable through that flag. Positional member paths are what is
- * left, and they keep the authority where §7.1 puts it: every path comes from
- * `testrun_plan.members[]`, and only from members the plan gave an identifier, so
- * the set replayed is exactly the set with a recording.
+ * Positional member paths are what is left, and they keep the authority where §7.1
+ * puts it: every path comes from `testrun_plan.members[]`, and only from members the
+ * plan gave an identifier, so the set replayed is exactly the set with a recording.
  *
  * Neither scope carries an NDJSON enabler, because this family gets NDJSON from
  * piped stdout and `--agent` does not exist on `testrun run`.
@@ -280,19 +304,36 @@ export function verifyArgv(
   testIds: readonly string[],
   memberPaths: readonly string[] = [],
 ): readonly string[] {
-  if (scope === 'all') {
-    return Object.freeze([
-      ...VERIFY_ARGV_HEAD,
-      ...[...new Set(memberPaths)].sort(),
-      ...VERIFY_ARGV_TAIL,
-    ]);
-  }
+  // `testIds` is unused in the argv and deliberately still a parameter: it is what
+  // decided `memberPaths`, and R4.2's identifier-first rule is easier to check when
+  // the function that composes the argv is handed both halves.
+  void testIds;
   return Object.freeze([
     ...VERIFY_ARGV_HEAD,
-    FROM_CONTEXT_FLAG,
-    fromContextValue(testIds),
+    ...[...new Set(memberPaths)].sort(),
     ...VERIFY_ARGV_TAIL,
   ]);
+}
+
+/**
+ * The repository-relative paths of the plan members carrying these identifiers.
+ *
+ * The one lookup that turns a radius into an argv (§7.1, R4.4). It reads
+ * `plan.members[]` and nothing else, so a path can only reach Kane by way of a
+ * member the plan gave a `test_id` *and* the radius selected: no filename is
+ * guessed, no directory is walked, and an identifier the plan does not carry
+ * selects nothing.
+ */
+export function planMemberPaths(
+  plan: TestrunPlan | null,
+  testIds: readonly string[],
+): readonly string[] {
+  const wanted = new Set(testIds);
+  const paths = new Set<string>();
+  for (const member of plan?.members ?? []) {
+    if (member.testId !== null && wanted.has(member.testId)) paths.add(toPosix(member.path));
+  }
+  return Object.freeze([...paths].sort());
 }
 
 /**
@@ -459,9 +500,11 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     }
   }
 
-  // `coveringTests` is the paths of the members selected. For `--all` that is
-  // every plan member the plan gave an identifier — the recorded ones.
-  const argv = verifyArgv(scope, radius.testIds, radius.coveringTests);
+  // The argv names paths, and every path is looked up from an identifier the radius
+  // selected — never from `radius.coveringTests`, which for `--changed` also holds
+  // the documents that covered the save but carried no `test_id`, and naming one of
+  // those would author it live.
+  const argv = verifyArgv(scope, radius.testIds, planMemberPaths(plan, radius.testIds));
   const invoke = shouldInvokeKane(radius) && request.invoker !== undefined;
   if (shouldInvokeKane(radius) && request.invoker === undefined) {
     sink.report({

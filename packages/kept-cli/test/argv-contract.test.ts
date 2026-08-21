@@ -370,8 +370,17 @@ describe('the plan refresh → testrun run --dry-run, with no --agent', () => {
   });
 });
 
-describe('kept verify --changed → testrun run --from-context <ids> --on-failure continue', () => {
-  it('names exactly the blast radius, and nothing else', async () => {
+/**
+ * The corrected row (15.6). §13.1 and R4.2 specify
+ * `testrun run --from-context <ids> --on-failure continue`, and that argv exits 2
+ * against the installed 0.8.4: `--from-context` resolves ids against the assurance
+ * graph, and the plan's own `test_id` is a testcase UUID that does not live there.
+ * The correction is the one `--all` already made — the argv names the plan's member
+ * **paths**, while the radius is still computed from plan identifiers — and it is
+ * recorded verbatim in `docs/kane/command-surface.md` with the observed error text.
+ */
+describe('kept verify --changed → testrun run <plan members> --on-failure continue', () => {
+  it('names exactly the blast radius, by path, and nothing else', async () => {
     const kane = recorder();
     const result = await runVerify({
       repoRoot: REPO,
@@ -398,11 +407,19 @@ describe('kept verify --changed → testrun run --from-context <ids> --on-failur
       invoker: kane.invoker,
     });
 
+    // The radius is identifiers, and they come from `testrun_plan.members[].test_id`
+    // and from nothing else (R4.4). Only the *argv* changed.
     expect(result.radius.testIds).toEqual(['T-3']);
     expect(spawnsOf(kane.spawns, 'testrun')).toEqual([
-      ['testrun', 'run', '--from-context', 'T-3', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
     ]);
     for (const argv of kane.spawns) expect(argv).not.toContain('--agent');
+    // The flag the requirement specifies and the CLI rejects, absent from both
+    // scopes now rather than from one.
+    for (const argv of kane.spawns) expect(argv).not.toContain('--from-context');
+    // One member covered the save, so one path is named. `orders_persist` is in the
+    // same plan and stays out of it: the radius was not widened to the suite.
+    expect(spawnsOf(kane.spawns, 'testrun')[0]).not.toContain('tests/orders_persist_test.md');
   });
 });
 

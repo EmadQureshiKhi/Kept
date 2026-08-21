@@ -84,7 +84,7 @@ Flags confirmed from the installed CLI's own `--help`:
 
 | Flag | Notes |
 |---|---|
-| `--from-context <ids>` | **Select members by assurance-graph test ids** (`T-1,T-2`). Unions with explicit paths. Our blast-radius selector. **Not present in skill v0.0.17's flag table — the CLI is ahead of the skill here.** |
+| `--from-context <ids>` | Selects members by **assurance-graph** ids. **It cannot name this corpus** — see the correction below. **Not present in skill v0.0.17's flag table — the CLI is ahead of the skill here.** |
 | `--tags <list>` | ANY-match on frontmatter `tags:`, case-insensitive |
 | `--match <regex>` | filter by project-relative path |
 | `--parallel <n>` | default `1`; each worker gets an isolated Chrome + fresh temp profile |
@@ -93,6 +93,40 @@ Flags confirmed from the installed CLI's own `--help`:
 | `--dry-run` | plan + validate, execute nothing |
 | `--retry` / `--retry-count <n>` | replay recovery, default 3 |
 | `--remote [backend]` | needs `kane-cli plugin install remote-execution` |
+
+### Correction, observed 2026-08-21: `--from-context` cannot name the corpus, in either scope
+
+The flag resolves its ids against the **assurance graph**. A plan member's `test_id`
+is a *testcase* UUID and does not live there, so handing the plan's own identifiers
+back to the CLI that produced them is rejected outright:
+
+```
+$ kane-cli testrun run --from-context 6badb68a-3ff8-4a1f-a8bd-3a6a4a2f5e2c --on-failure continue
+error: --from-context: unknown id '6badb68a-3ff8-4a1f-a8bd-3a6a4a2f5e2c' — it does not
+  resolve in the assurance graph
+$ echo $?
+2
+```
+
+The only ids it *does* resolve here are `t-1`…`t-4`, which name the four unauthored
+`.testmuai/tests/*_test.md` documents `design tests` wrote during the stage-15
+bootstrap — documents with no recording, which a replay would **author live**. So the
+flag is unusable for both of KEPT's scopes, and for opposite reasons: it rejects the
+corpus and accepts exactly the four documents that must never be named.
+
+Positional member paths are what is left. `kept verify --all` moved to them in 15.3;
+`kept verify --changed` — the code hook's path, and the command that closes the loop
+— moved to them in 15.6, because until it did, **every save-triggered verification
+exited 2 and nothing was ever verified**. R4.2 specifies the `--from-context`
+spelling and is not silently rewritten: the mismatch is recorded here, the flag
+constant is still named in `verify.ts`, and `argv-contract.test.ts` now asserts the
+flag is absent from both scopes.
+
+What did **not** change is where the selection comes from. The radius is still
+computed from `testrun_plan.members[].test_id` and from nothing else (R4.4,
+Property 16); the paths handed to Kane are looked up *from those identifiers*, so a
+member the plan gave no id is unreachable — there is no id that selects it — and the
+radius is never widened to the whole suite to route around the flag.
 
 ### testrun event stream
 

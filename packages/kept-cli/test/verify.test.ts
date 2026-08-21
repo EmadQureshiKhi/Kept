@@ -36,6 +36,7 @@ import { main } from '../src/main.js';
 import {
   VERIFY_DIAGNOSTIC_CODES,
   fromContextValue,
+  planMemberPaths,
   runVerify,
   verifyArgv,
 } from '../src/commands/verify.js';
@@ -376,25 +377,31 @@ async function run(
 // ---------------------------------------------------------------------------
 
 describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
-  it('names exactly the radius on --changed and carries no --agent', async () => {
+  it('names exactly the radius on --changed, by path, and carries no --agent', async () => {
     const io = harness();
     const { result, fake } = await run(io, { changed: ['apps/fixture/lib/cart.ts'] });
 
+    // The radius is still identifiers, and they still come from the plan (R4.4).
     expect(result.radius.testIds).toEqual(['T-3']);
+    // The argv names the path of the member carrying that identifier, because
+    // `--from-context` resolves against the assurance graph and rejects a plan
+    // `test_id` outright — see `verifyArgv`'s header for the measured error.
     expect(fake.argv).toEqual([
-      ['testrun', 'run', '--from-context', 'T-3', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
     ]);
     // The enabler for this family is the pipe itself. Nothing is appended, and an
     // `--agent` anywhere would mean nothing ran at all.
     expect(result.argv).toEqual([
       'testrun',
       'run',
-      '--from-context',
-      'T-3',
+      'tests/cart_subtotal_test.md',
       '--on-failure',
       'continue',
     ]);
     for (const args of fake.argv) expect(args).not.toContain('--agent');
+    for (const args of fake.argv) expect(args).not.toContain('--from-context');
+    // One member selected, one path named: the radius is not widened to the suite.
+    expect(fake.argv[0]?.filter((word) => word.endsWith('_test.md'))).toHaveLength(1);
   });
 
   it('names the plan’s own member paths on --all', async () => {
@@ -422,16 +429,54 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
     for (const args of fake.argv) expect(args).not.toContain('--agent');
   });
 
-  it('comma-joins several identifiers, deduped and sorted', () => {
+  it('dedupes and sorts the member paths, and never emits the specified flag', () => {
+    // `fromContextValue` is the spelling R4.2 specifies and 0.8.4 cannot accept. It
+    // is kept, and kept correct, so the requirement and the correction are both
+    // readable — but no argv this function composes carries it.
     expect(fromContextValue(['T-5', 'T-3', 'T-5'])).toBe('T-3,T-5');
-    expect(verifyArgv('changed', ['T-5', 'T-3'])).toEqual([
+    expect(
+      verifyArgv('changed', ['T-5', 'T-3'], [
+        'tests/orders_persist_test.md',
+        'tests/cart_subtotal_test.md',
+        'tests/orders_persist_test.md',
+      ]),
+    ).toEqual([
       'testrun',
       'run',
-      '--from-context',
-      'T-3,T-5',
+      'tests/cart_subtotal_test.md',
+      'tests/orders_persist_test.md',
       '--on-failure',
       'continue',
     ]);
+    // An identifier no path was looked up for selects nothing, in either scope.
+    expect(verifyArgv('changed', ['T-9'], [])).toEqual([
+      'testrun',
+      'run',
+      '--on-failure',
+      'continue',
+    ]);
+  });
+
+  it('looks a path up only from a plan member the radius identified', () => {
+    const plan = {
+      valid: true,
+      capturedAt: AT,
+      members: [
+        { path: 'tests/cart_subtotal_test.md', testId: 'T-3', tags: [], failure: null },
+        { path: 'tests/orders_persist_test.md', testId: 'T-5', tags: [], failure: null },
+        // No `test_id`: no recording, so naming it would author it live (R4.6).
+        { path: '.testmuai/tests/apply-discount_test.md', testId: null, tags: [], failure: null },
+      ],
+    } as const;
+
+    expect(planMemberPaths(plan, ['T-3'])).toEqual(['tests/cart_subtotal_test.md']);
+    // An unidentified member is unreachable: there is no id that selects it.
+    expect(planMemberPaths(plan, ['T-3', 'T-5'])).toEqual([
+      'tests/cart_subtotal_test.md',
+      'tests/orders_persist_test.md',
+    ]);
+    expect(planMemberPaths(plan, [])).toEqual([]);
+    expect(planMemberPaths(null, ['T-3'])).toEqual([]);
   });
 
   it('refreshes the plan through --dry-run before the replay, both without --agent', async () => {
@@ -447,8 +492,7 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
     expect(fake.argv[1]).toEqual([
       'testrun',
       'run',
-      '--from-context',
-      'T-3',
+      'tests/cart_subtotal_test.md',
       '--on-failure',
       'continue',
     ]);
