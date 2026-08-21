@@ -1,0 +1,4 @@
+
+Update available: 0.8.4 → 0.8.5 — run `npm install -g @testmuai/kane-cli@latest` to update
+
+evidence: view locally with `kane-cli evidence serve /Users/nokitha/.testmuai/kaneai/sessions/cc2b070f-ebae-4013-b0e5-c814f28c0a92/evidence/a4fe5635-edc6-407b-9df8-f9c89dfff5cc.evidence`
