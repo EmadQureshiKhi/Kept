@@ -447,6 +447,29 @@ const GATE_CONSUMERS: string[] = SHIPPED.filter(
   .map((file) => file.path)
   .sort();
 
+/**
+ * The budget for a test that settles every orchestration.
+ *
+ * The two tests below wait out **real declared durations**, one orchestration after
+ * another, because the claim is about the state motion leaves behind and there is no
+ * honest way to reach that state without letting the motion finish. Added up from
+ * `tokens.css`: the edge pulse is `--dur-pulse` (1400 ms), each of the rail's two
+ * counting figures is `--dur-figure` (760 ms), the flip is `--dur-slow` (420 ms), the
+ * panel cascade is `--dur-base` plus three `--stagger-panel` steps (~360 ms) and the
+ * entrance is capped at `nodeCount × --stagger-node` — a little under **4 s** of clock
+ * that is neither waste nor slowness, measured here at 3.6–3.7 s.
+ *
+ * The ledger project's per-test budget is Vitest's default 5 s, since a project does
+ * not inherit the root `testTimeout`. Four seconds of deliberate waiting inside a 5 s
+ * budget is a flake waiting for a busy machine, and the lever that would make it fast
+ * is shortening the motion tokens — which would be changing the product to suit the
+ * test. So these two tests state their own budget, the same 30 s the root config gives
+ * every other project, and the number below is a statement about the tokens rather
+ * than a place to hide a slow test: if it is ever *reached*, an orchestration never
+ * resolved, which is what `pendingMotion()` asserts.
+ */
+const MOTION_SETTLE_BUDGET_MS = 30_000;
+
 /** Runs every registered orchestration and waits for the engine to go quiet. */
 async function settleEveryOrchestration(container: HTMLElement): Promise<void> {
   for (const orchestration of ORCHESTRATIONS) await orchestration.drive(container);
@@ -641,7 +664,9 @@ describe('Property 22 (reduced-motion clause): a preference change completes in-
 /* ─────────── Property 22 — the two renders of / are the same DOM ───────────── */
 
 describe('Property 22 (reduced-motion clause): the two renders of / are one render', () => {
-  it('compares every animated declaration, node opacity and transform included', async () => {
+  it('compares every animated declaration, node opacity and transform included', {
+    timeout: MOTION_SETTLE_BUDGET_MS,
+  }, async () => {
     setReducedMotion(true);
     const reduced = animatedSnapshot(render(<LedgerPage />).container);
     cleanup();
@@ -712,7 +737,9 @@ describe('the metric figure carries its final value from first paint', () => {
     for (const tile of EXPECTED) expect(found[tile.metric]).toBe(tile.label);
   });
 
-  it('announces the same final value with motion on, before anything has run', async () => {
+  it('announces the same final value with motion on, before anything has run', {
+    timeout: MOTION_SETTLE_BUDGET_MS,
+  }, async () => {
     setReducedMotion(false);
     const { container } = render(<LedgerPage />);
 

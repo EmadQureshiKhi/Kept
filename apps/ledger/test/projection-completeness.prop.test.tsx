@@ -62,8 +62,30 @@ import { installBrowserShims } from './_dom.js';
 
 installBrowserShims();
 
-/** Runs per property. */
+/**
+ * Runs per property, in two budgets — because the properties in this file cost two
+ * very different things, and one budget for both made the expensive half unreliable.
+ *
+ * `NUM_RUNS` is the repository's usual 500 and covers the two analytic properties,
+ * which only read a generated snapshot: they finish in 66 ms and 134 ms.
+ *
+ * `RENDER_RUNS` covers the five clauses that **mount `PromiseGraph` once per case**.
+ * Measured on an idle machine, one mount-assert-unmount cycle costs 6–8 ms, so 500
+ * of them is 3.2–5.7 s of a single `it`, and the ledger project's per-test budget is
+ * **5 s** — the root `testTimeout` is not inherited by a project. That is not a
+ * margin, it is a coin flip: the clause below that opens the panel on `Enter` was
+ * observed at 3.9 s alone and 5.7 s — a timeout — with the rest of the project's
+ * files running beside it. A property whose greenness depends on how busy the
+ * machine is proves nothing to whoever runs it next, so the sample is cut to a size
+ * that fits the budget with room to spare (~1.2 s per clause) rather than the budget
+ * being raised to fit the sample. 150 is still half again the floor this plan sets
+ * for a property (100 cases), and the five clauses together sample 750 snapshots.
+ *
+ * If a clause here ever needs a bigger sample than the budget allows, the thing to
+ * make cheaper is the render, not the clock.
+ */
 const NUM_RUNS = 500;
+const RENDER_RUNS = 150;
 
 afterEach(cleanup);
 
@@ -196,7 +218,7 @@ describe('Property 23 — completeness: exactly one node per promise (R8.1, R8.2
           unmount();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: RENDER_RUNS },
     );
   });
 });
@@ -236,7 +258,7 @@ describe('Property 23 — reachability: the parallel list is always there (§10.
           unmount();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: RENDER_RUNS },
     );
   });
 
@@ -274,7 +296,7 @@ describe('Property 23 — reachability: the parallel list is always there (§10.
           unmount();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: RENDER_RUNS },
     );
   });
 });
@@ -328,7 +350,7 @@ describe('Property 23 — evidenced: the panel is the promise, in full (R8.3)', 
           unmount();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: RENDER_RUNS },
     );
   });
 
@@ -367,7 +389,7 @@ describe('Property 23 — evidenced: the panel is the promise, in full (R8.3)', 
           unmount();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: RENDER_RUNS },
     );
   });
 });
