@@ -98,6 +98,7 @@ import {
   selectRouter,
   shouldInvokeKane,
   toPosix,
+  toRepoRelative,
   writeHandoff,
 } from '@kept/core';
 
@@ -111,9 +112,9 @@ import { runSnapshot } from './snapshot.js';
 export const VERIFY_FAMILY = 'ExecutionTestrun' as const;
 
 /**
- * The argv of a blast-radius replay, **without** the identifier list and
- * **without** an NDJSON enabler — this family has none to add, and `--agent`
- * anywhere in it is rejected by the invoker (§4.1, §7.4, R3.5).
+ * The argv of a replay, **without** the selection and **without** an NDJSON
+ * enabler — this family has none to add, and `--agent` anywhere in it is rejected
+ * by the invoker (§4.1, §7.4, R3.5).
  */
 export const VERIFY_ARGV_HEAD: readonly string[] = Object.freeze(['testrun', 'run']);
 
@@ -142,6 +143,8 @@ export const VERIFY_DIAGNOSTIC_CODES = Object.freeze({
   memberUnattributed: 'verify-member-unattributed',
   /** `--all` and `--changed` were both given; the whole suite wins. */
   scopeOverridden: 'verify-scope-overridden',
+  /** A suite member carries no plan identifier, so `--all` does not replay it. */
+  suiteMemberUnidentified: 'verify-suite-member-unidentified',
   completed: 'verify-completed',
 } as const);
 
@@ -246,19 +249,68 @@ export function fromContextValue(testIds: readonly string[]): string {
 /**
  * The argv for one replay (§7.4, §13.1).
  *
- * `--all` replays what the suite holds and names no identifiers;
- * `--changed` names exactly the radius. Neither carries an NDJSON enabler,
- * because this family gets NDJSON from piped stdout and `--agent` does not exist
- * on `testrun run`.
+ * `--changed` names exactly the radius with `--from-context`, as R4.2 requires.
+ *
+ * **`--all` names the plan's member paths, and it has to.** Left unscoped,
+ * `testrun run` selects every `*_test.md` in the project, which in this repository
+ * is thirteen documents rather than eight: the corpus, the verdict spike's
+ * transcription, and the four `.testmuai/tests/*_test.md` documents Kane's own
+ * `design tests` wrote during the stage-15 bootstrap. Those four have never been
+ * authored — the plan gives them **no `test_id`**, because a member's id is read
+ * from its recording's `.internal/meta.json`, so no recording means no id — and
+ * replaying them authors them live against a discount feature the fixture does not
+ * have. A judge's `npm run loop` would spend real credits on documents that mint no
+ * promise, which is what R4.6 and R13.6 forbid.
+ *
+ * `--from-context` cannot express the scoping, measured against 0.8.4 rather than
+ * assumed: it resolves ids against the **assurance graph**, so the plan's own
+ * `test_id` — a testcase UUID — is rejected outright (`--from-context: unknown id
+ * '6badb68a-…' — it does not resolve in the assurance graph`, exit 2), and the only
+ * ids it does resolve are `t-1`…`t-4`, which name the four unauthored drafts. The
+ * corpus is unreachable through that flag. Positional member paths are what is
+ * left, and they keep the authority where §7.1 puts it: every path comes from
+ * `testrun_plan.members[]`, and only from members the plan gave an identifier, so
+ * the set replayed is exactly the set with a recording.
+ *
+ * Neither scope carries an NDJSON enabler, because this family gets NDJSON from
+ * piped stdout and `--agent` does not exist on `testrun run`.
  */
-export function verifyArgv(scope: VerifyScope, testIds: readonly string[]): readonly string[] {
-  if (scope === 'all') return Object.freeze([...VERIFY_ARGV_HEAD, ...VERIFY_ARGV_TAIL]);
+export function verifyArgv(
+  scope: VerifyScope,
+  testIds: readonly string[],
+  memberPaths: readonly string[] = [],
+): readonly string[] {
+  if (scope === 'all') {
+    return Object.freeze([
+      ...VERIFY_ARGV_HEAD,
+      ...[...new Set(memberPaths)].sort(),
+      ...VERIFY_ARGV_TAIL,
+    ]);
+  }
   return Object.freeze([
     ...VERIFY_ARGV_HEAD,
     FROM_CONTEXT_FLAG,
     fromContextValue(testIds),
     ...VERIFY_ARGV_TAIL,
   ]);
+}
+
+/**
+ * The budget for a whole-suite replay, in milliseconds (§13.1).
+ *
+ * `timeouts.hookMs` is 300 000 and stays the budget for `--changed`, which is the
+ * save-hook path and replays a handful of members. `--all` is a manual operation
+ * over the entire suite, and the measurement says it does not fit: one cached
+ * three-step member replays in **29 s** wall-clock, and the suite has nine
+ * identified members, so 300 s terminates the run mid-flight — a `kane-timeout`
+ * and a crashed stream, which writes no verdict at all. Fifteen minutes clears the
+ * measured cost with room for the six-step members.
+ */
+export const VERIFY_ALL_TIMEOUT_MS = 900_000;
+
+/** The budget for one scope. `--changed` keeps the configured hook budget. */
+export function verifyTimeoutMs(scope: VerifyScope, hookMs: number): number {
+  return scope === 'all' ? Math.max(hookMs, VERIFY_ALL_TIMEOUT_MS) : hookMs;
 }
 
 /** A string field off an unknown record, or null. */
@@ -390,7 +442,26 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
           sink,
         });
 
-  const argv = verifyArgv(scope, radius.testIds);
+  // R4.6's cost rule, made visible: a member with no plan identifier has no
+  // recording to replay from, so naming it would author it live. `--all` leaves it
+  // out, and says so per member rather than quietly running a shorter suite.
+  if (scope === 'all') {
+    for (const path of radius.skippedNoTestId) {
+      sink.report({
+        code: VERIFY_DIAGNOSTIC_CODES.suiteMemberUnidentified,
+        severity: 'warn',
+        message:
+          `${path} is in the testrun plan with no test_id, which means Kane holds no recording ` +
+          `for it, so replaying it would author it live and spend credits. It is excluded from ` +
+          `the whole-suite replay and no verdict of its own moves.`,
+        file: path,
+      });
+    }
+  }
+
+  // `coveringTests` is the paths of the members selected. For `--all` that is
+  // every plan member the plan gave an identifier — the recorded ones.
+  const argv = verifyArgv(scope, radius.testIds, radius.coveringTests);
   const invoke = shouldInvokeKane(radius) && request.invoker !== undefined;
   if (shouldInvokeKane(radius) && request.invoker === undefined) {
     sink.report({
@@ -411,7 +482,7 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
         argv,
         cwd: request.repoRoot,
         env: memberDebugEnv(request.config),
-        timeoutMs: request.config.timeouts.hookMs,
+        timeoutMs: verifyTimeoutMs(scope, request.config.timeouts.hookMs),
       })
     : null;
 
@@ -420,8 +491,16 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
       ? null
       : parseStream(contractFor(VERIFY_FAMILY), invocation.stdoutLines, { sink });
   const terminal = stream !== null && stream.kind === 'complete' ? stream.terminal : null;
+  // `execution_id` is the id this family actually carries: `testrun_done` is
+  // `{type, execution_id, overall_status}` — no `run_id`, observed on the live
+  // stream and recorded in `docs/kane/verdict-spike.md`. It is also the id Kane
+  // seals the evidence pack under, so reading it is what ties a run entry to the
+  // artefacts a judge clicks. `run_id` is still preferred in case a later release
+  // adds one, and the synthetic id remains for a stream that carried neither.
   const runId =
-    readString(terminal, 'run_id') ?? `${SYNTHETIC_RUN_ID_PREFIX}${at}`;
+    readString(terminal, 'run_id') ??
+    readString(terminal, 'execution_id') ??
+    `${SYNTHETIC_RUN_ID_PREFIX}${at}`;
 
   // ── 1. `testrun_plan`. `valid: false` is a preflight rejection (R4.11). ───
   let preflightRejected = false;
@@ -488,9 +567,11 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     const testId = typeof event.test_id === 'string' && event.test_id.length > 0
       ? event.test_id
       : null;
+    // Kane reports this path absolute; the graph keys on repository-relative
+    // (§7.3). One conversion, on the boundary, or every member is unattributed.
     const path =
       typeof event.path === 'string' && event.path.trim().length > 0
-        ? toPosix(event.path.trim())
+        ? toRepoRelative(event.path.trim(), request.repoRoot)
         : testId === null
           ? null
           : pathForTestId.get(testId) ?? null;

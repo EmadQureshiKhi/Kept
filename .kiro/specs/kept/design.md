@@ -1665,7 +1665,7 @@ The landing screen renders well inside 30 s of `npm run demo` — it is a static
 |---|---|---|---|---|
 | `kept build` | `kane-cli cover --json --mode agent` | Assurance | 60 s | state, snapshot |
 | `kept verify --changed <p…>` | `kane-cli testrun run --dry-run` *(plan refresh, if stale)* then `kane-cli testrun run --from-context <ids> --on-failure continue` | ExecutionTestrun | 60 s / 300 s | state, handoff, snapshot |
-| `kept verify --all` | `kane-cli testrun run --on-failure continue` | ExecutionTestrun | 300 s | state, handoff, snapshot |
+| `kept verify --all` | `kane-cli testrun run --dry-run` *(plan refresh, if stale)* then `kane-cli testrun run <every plan member carrying a test_id> --on-failure continue` — **see §13.1.1** | ExecutionTestrun | 60 s / 900 s | state, handoff, snapshot |
 | `kept reconcile --changed <p…>` | `kane-cli maintain reconcile --from <changedDoc> --source-id <resolvedId> --plan --mode agent` — **see §13.2; `--from` and `--source-id` are both mandatory** | Assurance | 300 s | state, source cache, review cards, handoff, snapshot |
 | `kept reconcile apply [planPath]` *(human-only, never a hook)* | `kane-cli maintain reconcile --apply [planPath] --mode agent` | Assurance | 300 s | state, review cards, handoff, snapshot |
 | `kept evolve <testPath>` | `kane-cli maintain evolve <ref> --mode agent` | Assurance | 300 s | review cards, handoff |
@@ -1677,6 +1677,20 @@ The landing screen renders well inside 30 s of `npm run demo` — it is a static
 | `kept watch` *(nice-to-have)* | none | — | — | loopback accept listener + NDJSON tail |
 
 Flags common to all: `--repo <root>` (default cwd), `--json` (machine-readable stdout), `--router <name>` (overrides config for one invocation), `--member-debug` (sets `KANE_TESTRUN_MEMBER_DEBUG=1` and captures `[member]` stderr lines — R4.12).
+
+#### 13.1.1 Why `--all` names its members, and why its budget is 900 s
+
+**This corrects an earlier version of this table, which gave `kept verify --all` the bare argv `kane-cli testrun run --on-failure continue` and a 300 s budget. Neither survives contact with 0.8.4.** Both figures are measured in `docs/kane/replay/`, where the run is committed.
+
+**An unscoped `testrun run` is not free.** With no selection, Kane selects every `**/*_test.md` in the project: thirteen documents here, not eight — the corpus, the verdict spike's transcription, and the four `.testmuai/tests/*_test.md` documents Kane's own `design tests` wrote in stage 15.1. Those four have **no recording**, so replaying them *authors* them live, against a discount feature the fixture does not have. `npm run loop` on a fresh clone would spend a judge's credits on documents that mint no promise, which R4.6 and R13.6 forbid.
+
+The plan already distinguishes them: a member's `test_id` is read from its recording's `.internal/meta.json`, so **no recording means no `test_id`**, and those members are exactly `radius.skippedNoTestId`. So `--all` names the members the plan gave an identifier — by **path**, positionally — and diagnoses each excluded member as `verify-suite-member-unidentified`.
+
+**`--from-context` cannot carry that selection.** It resolves ids against the *assurance graph*, not against the plan: the plan's own `test_id` is a testcase UUID and is rejected with `--from-context: unknown id '…' — it does not resolve in the assurance graph` at exit 2, and the only ids it does resolve — `t-1`…`t-4` — name the four unauthored drafts. The corpus is unreachable through the flag. `--changed` keeps `--from-context` because R4.2 specifies it; the mismatch is recorded in `docs/kane/replay/README.md` rather than patched silently.
+
+**The budget.** Nine cached members replay in 215–242 s wall-clock, so 300 s terminates the suite mid-flight — a `kane-timeout`, a crashed stream, and no verdict written at all. `--all` is a manual whole-suite operation rather than a save hook, so it takes `max(hookMs, 900 000)`; `--changed` keeps the configured `hookMs`.
+
+**One more correction, to §7.2's trust gate.** `testrun run --dry-run` prints **one line** — the `testrun_plan` event — and exits 0. There is no `testrun_done`, because a dry run executes nothing and so has no execution to report done. Requiring the terminal event conjunctively discarded every plan the installed CLI can produce, which left `.kept/plan.json` unwritten and every radius empty. The gate is now: a **clean exit carrying a plan event** is a complete dry run and is cached; a truncated stream that *also* exited badly is still a crash and keeps the cache.
 
 Root scripts:
 

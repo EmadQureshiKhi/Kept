@@ -397,14 +397,29 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
     for (const args of fake.argv) expect(args).not.toContain('--agent');
   });
 
-  it('names no identifiers at all on --all', async () => {
+  it('names the plan’s own member paths on --all', async () => {
     const io = harness();
     const { result, fake } = await run(io, { all: true });
 
     expect(result.scope).toBe('all');
     expect(result.radius.testIds).toEqual(['T-1', 'T-3', 'T-4', 'T-5', 'T-6']);
-    expect(fake.argv).toEqual([['testrun', 'run', '--on-failure', 'continue']]);
-    expect(result.argv).toEqual(['testrun', 'run', '--on-failure', 'continue']);
+    // Naming them is what keeps a whole-suite replay free: a member the plan gave
+    // no id has no recording, so an unscoped selection authors it live (15.3). The
+    // paths come from `testrun_plan.members[]`, never from a directory walk.
+    const expected = [
+      'testrun',
+      'run',
+      'tests/cart_subtotal_test.md',
+      'tests/checkout_validation_test.md',
+      'tests/orders_persist_test.md',
+      'tests/settings_currency_test.md',
+      'tests/shop_filter_test.md',
+      '--on-failure',
+      'continue',
+    ];
+    expect(fake.argv).toEqual([expected]);
+    expect(result.argv).toEqual(expected);
+    for (const args of fake.argv) expect(args).not.toContain('--agent');
   });
 
   it('comma-joins several identifiers, deduped and sorted', () => {

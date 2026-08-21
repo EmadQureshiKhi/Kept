@@ -406,8 +406,8 @@ describe('kept verify --changed → testrun run --from-context <ids> --on-failur
   });
 });
 
-describe('kept verify --all → testrun run --on-failure continue', () => {
-  it('names no identifiers at all', async () => {
+describe('kept verify --all → testrun run <plan members> --on-failure continue', () => {
+  it('names the plan’s member paths, and no identifiers', async () => {
     const kane = recorder();
     await runVerify({
       repoRoot: REPO,
@@ -433,8 +433,14 @@ describe('kept verify --all → testrun run --on-failure continue', () => {
       invoker: kane.invoker,
     });
 
+    // An unscoped `testrun run` selects every `*_test.md` in the project, which
+    // includes documents no recording exists for — and replaying one of those
+    // authors it live and spends credits (15.3). So the whole-suite replay names
+    // the members the plan gave an identifier, by path: `--from-context` cannot
+    // carry them, because it resolves against the assurance graph and rejects the
+    // plan's own `test_id`.
     expect(spawnsOf(kane.spawns, 'testrun')).toEqual([
-      ['testrun', 'run', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
     ]);
     for (const argv of kane.spawns) expect(argv).not.toContain('--from-context');
   });

@@ -208,10 +208,42 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
     ...(request.citations === undefined ? {} : { citations: request.citations }),
   });
 
+  // ── 4b. Carry the verified state of every promise that survived (R4.15). ───
+  //
+  // The merge answers from the providers, and no provider knows a verdict: the
+  // baseline scan reads claims out of Markdown and enrichment supplies coverage
+  // axes. So a rebuilt promise arrives `stale`, with no `verdictSource`, no
+  // repair, no pack and no credits. Writing that graph would mean `kept build`
+  // silently discarding every verdict `kept verify` earned — measured, not
+  // theorised: a `--all` replay that had just written eight verdicts came back
+  // eight times `stale` from the next `npm run build:snapshot` (15.3). The header
+  // above and the two diagnostics below both promise that "every prior verdict is
+  // preserved", so this restores the behaviour the command already documents.
+  //
+  // Keyed on `id`, and that is what makes it safe rather than a guess. A promise
+  // id is derived from the citation file plus the **normalised claim** and nothing
+  // else, so an id that matches is the same sentence in the same file: the verdict
+  // it earned is still about the thing being described. Edit the claim and the id
+  // changes, no prior record matches, and the new promise is `stale` — which is
+  // exactly right, because nothing has verified the new wording.
+  const priorById = new Map(prior.graph.promises.map((promise) => [promise.id, promise]));
+  const carried = merge.graph.promises.map((promise) => {
+    const previous = priorById.get(promise.id);
+    if (previous === undefined) return promise;
+    return {
+      ...promise,
+      verdict: previous.verdict,
+      verdictSource: previous.verdictSource,
+      repair: previous.repair,
+      evidencePackId: previous.evidencePackId,
+      credits: previous.credits,
+    };
+  });
+
   // ── 5. Edges, then the canonical graph. ───────────────────────────────────
   const graph = createPromiseGraph({
-    promises: merge.graph.promises,
-    edges: deriveEdges(merge.graph.promises),
+    promises: carried,
+    edges: deriveEdges(carried),
     degraded: merge.graph.degraded,
     degradedReasons: merge.graph.degradedReasons,
     diagnostics: merge.graph.diagnostics,
