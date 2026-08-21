@@ -104,7 +104,7 @@ function fixtureLines(name: string): readonly string[] {
 
 const COVER_DONE = fixtureLines('assurance-cover-done.ndjson');
 const TESTRUN_MIXED = fixtureLines('testrun-mixed.ndjson');
-const LISTING = fixtureLines('context-list-sources.ndjson');
+const LISTING = fixtureLines('context-list-sources.jsonl');
 
 /** A reconcile that completed, in the Assurance envelope's shape. */
 const RECONCILE_DONE = [
@@ -112,21 +112,20 @@ const RECONCILE_DONE = [
     '"message":"staged into the stored plan"}',
 ];
 
-/** An empty store: nothing backs the document, so nothing may be spawned. */
-const EMPTY_STORE = [
-  '{"type":"sources","v":1,"verb":"context list","total":0,"sources":[]}',
-  '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-];
+/**
+ * An empty store: no lines at all, exit 0. Nothing backs the document, so nothing
+ * may be spawned.
+ */
+const EMPTY_STORE: readonly string[] = [];
 
-/** A listing carrying one live source per named document. */
+/**
+ * A listing carrying one live source per named document — one JSON object per
+ * line, which is what `context list --json` actually emits.
+ */
 function listingFor(entries: readonly (readonly [string, string])[]): readonly string[] {
-  const sources = entries
-    .map(([id, path]) => JSON.stringify({ source_id: id, path, retired: false }))
-    .join(',');
-  return [
-    `{"type":"sources","v":1,"verb":"context list","total":${entries.length},"sources":[${sources}]}`,
-    '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-  ];
+  return entries.map(([id, path]) =>
+    JSON.stringify({ source_id: id, path, retired: false }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -550,8 +549,11 @@ describe('kept reconcile --changed → maintain reconcile --from … --source-id
 
   it('asks the store for its listing with the argv §13.2.2 fixes', async () => {
     const run = await reconcile({ changed: [README] });
+    // No enabler: `context list` belongs to no family and has no `--mode` flag,
+    // so the declared argv is the effective argv. Appending `--mode agent` was
+    // observed to exit 1 with an empty stdout, so no save could ever match.
     expect(spawnsOf(run.spawns, 'context')).toEqual([
-      ['context', 'list', '--type', 'source', '--json', '--mode', 'agent'],
+      ['context', 'list', '--type', 'source', '--json'],
     ]);
   });
 });

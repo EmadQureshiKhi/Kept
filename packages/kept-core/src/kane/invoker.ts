@@ -73,7 +73,7 @@ import { delimiter as pathDelimiter, join } from 'node:path';
 import type { Diagnostic, DiagnosticSink } from '../diagnostics.js';
 import { createDiagnosticSink } from '../diagnostics.js';
 import { contractFor, familyForArgv, type CommandFamily, type NdjsonEnabler } from './family.js';
-import { exitMeaning, type ExitMeaning } from './exit.js';
+import { exitMeaning, plainExitMeaning, type ExitMeaning } from './exit.js';
 
 /** The binary KEPT invokes. Never invoked to probe it — resolution is filesystem-only. */
 export const KANE_BINARY_NAME = 'kane-cli';
@@ -147,6 +147,67 @@ export interface InvocationResult<F extends CommandFamily> {
   /** Absolute path spawned, or null when the binary was not found. */
   readonly resolvedBinary: string | null;
   /** Everything recorded. Also reported to the injected sink. */
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+/**
+ * What a call site asks for when the command belongs to **no** family.
+ *
+ * Structurally `InvocationSpec` minus `family`, and that absence is the whole
+ * point: there is no family to declare, so there is no enabler to append and no
+ * terminal event to wait for.
+ */
+export interface PlainInvocationSpec {
+  /** argv without the binary name. Must not classify into a family. */
+  readonly argv: readonly string[];
+  readonly cwd: string;
+  /** Overrides layered over `process.env`; PATH survives unless overridden. */
+  readonly env?: Readonly<Record<string, string>> | undefined;
+  /** Budget in milliseconds. Only a finite positive value arms the timer. */
+  readonly timeoutMs: number;
+  /** Live tail, one call per complete stdout line, in order. */
+  readonly onLine?: ((line: string) => void) | undefined;
+}
+
+/**
+ * Everything one family-less invocation produced.
+ *
+ * The same fields as {@link InvocationResult} with a family-less `spec`, so a
+ * `/runs` page renders either without a special case. `stdoutLines` is *lines*,
+ * never a `ParsedStream`: a plain command has no terminal event, and a caller
+ * that wanted one would have to name a family to get a contract.
+ */
+export interface PlainInvocationResult {
+  readonly spec: PlainInvocationSpec;
+  /** argv actually passed. Identical to `spec.argv`: nothing is appended. */
+  readonly effectiveArgv: readonly string[];
+  readonly stdoutLines: readonly string[];
+  readonly exitCode: number | null;
+  /** The code read family-independently (see `plainExitMeaning`). */
+  readonly exitMeaning: ExitMeaning;
+  readonly timedOut: boolean;
+  readonly durationMs: number;
+  readonly stderrTail: readonly string[];
+  readonly resolvedBinary: string | null;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+/**
+ * What the shared runner produced, before any exit interpretation.
+ *
+ * `meaningOverride` carries the two outcomes that are decided by the process
+ * boundary itself rather than by a family: an absent binary and a spawn that
+ * threw. Both are the same for every command, and re-deriving them per caller is
+ * how two callers come to disagree about what ENOENT meant.
+ */
+interface RawInvocation {
+  readonly stdoutLines: readonly string[];
+  readonly exitCode: number | null;
+  readonly meaningOverride: ExitMeaning | null;
+  readonly timedOut: boolean;
+  readonly durationMs: number;
+  readonly stderrTail: readonly string[];
+  readonly resolvedBinary: string | null;
   readonly diagnostics: readonly Diagnostic[];
 }
 
@@ -306,6 +367,35 @@ export function applyNdjsonEnabler<F extends CommandFamily>(
   return Object.freeze([...argv, ...NDJSON_ENABLER_ARGV[contract.ndjson]]);
 }
 
+/**
+ * The argv of a command that belongs to no family: the caller's argv, unchanged.
+ *
+ * Exported for the same reason {@link applyNdjsonEnabler} is — so the per-command
+ * argv contract can be asserted with no process anywhere — and it is the honest
+ * spelling of "nothing is appended here", which is a claim worth a test rather
+ * than a comment.
+ *
+ * Throws `TypeError` when the argv **does** classify into a family. That is the
+ * mirror of `applyNdjsonEnabler`'s mismatch check and it closes the loop in both
+ * directions: a family command cannot lose its enabler by being invoked plainly,
+ * and a plain command cannot acquire one it does not have. Observed cost of
+ * getting this wrong: `context list --type source --json --mode agent` exits 1
+ * with an empty stdout, so every source resolution failed and no save could ever
+ * match (`docs/kane/reconcile/`).
+ */
+export function plainArgv(argv: readonly string[]): readonly string[] {
+  const detected = familyForArgv(argv);
+  if (detected !== null) {
+    throw new TypeError(
+      `Kane argv belongs to the ${detected} family, so it cannot be invoked as a plain command: ` +
+        `its NDJSON enabler would be dropped and its terminal event never read (argv: ${argv.join(
+          ' ',
+        )})`,
+    );
+  }
+  return Object.freeze([...argv]);
+}
+
 /** `--agent` anywhere, in bare or `--agent=…` form. Position is irrelevant. */
 function hasAgentFlag(argv: readonly string[]): boolean {
   return argv.some(
@@ -409,14 +499,86 @@ export class KaneInvoker {
   }
 
   /**
-   * Run one Kane command. Resolves for every outcome; rejects only for the two
-   * development-time programming errors described on {@link applyNdjsonEnabler}.
+   * Run one Kane command of a declared family. Resolves for every outcome;
+   * rejects only for the two development-time programming errors described on
+   * {@link applyNdjsonEnabler}.
    */
   async invoke<F extends CommandFamily>(spec: InvocationSpec<F>): Promise<InvocationResult<F>> {
     // Steps 2 and 3 first, and before anything observable happens: a mismatch is
     // our bug, and it should surface without a process, a diagnostic or a credit.
     const effectiveArgv = applyNdjsonEnabler(spec.family, spec.argv);
+    const raw = await this.run(effectiveArgv, spec);
+    return {
+      spec,
+      effectiveArgv,
+      stdoutLines: raw.stdoutLines,
+      exitCode: raw.exitCode,
+      // A `notFound` outcome reads as `kane-not-found` whatever the code, matching
+      // the ENOENT row of design §4.5. Every other outcome goes through the family
+      // interpretation, where `killed` already outranks the code.
+      exitMeaning:
+        raw.meaningOverride ?? exitMeaning(spec.family, raw.exitCode, raw.timedOut),
+      timedOut: raw.timedOut,
+      durationMs: raw.durationMs,
+      stderrTail: raw.stderrTail,
+      resolvedBinary: raw.resolvedBinary,
+      diagnostics: raw.diagnostics,
+    };
+  }
 
+  /**
+   * Run one Kane command that belongs to **no** family (design §4.1, §13.2.2).
+   *
+   * `context list --type source --json` is the one KEPT issues. It carries none
+   * of the four family-dependent facts — no terminal event, no NDJSON enabler, no
+   * family-specific exit 3 — so nothing is appended to its argv and its stdout
+   * comes back as lines a caller reads for itself. {@link parseStream} is
+   * unreachable from here by construction: it takes a `FamilyContract`, there is
+   * no contract for "no family", and {@link contractFor} is still the only way to
+   * obtain one.
+   *
+   * Rejects for exactly one programming error, the mirror of
+   * {@link applyNdjsonEnabler}'s first: an argv that **does** classify into a
+   * family. Invoking a family command plainly would silently drop its NDJSON
+   * enabler and hand back a stream nobody parsed, which is the same
+   * silent-nothing failure the three-contract model exists to prevent.
+   */
+  async invokePlain(spec: PlainInvocationSpec): Promise<PlainInvocationResult> {
+    const effectiveArgv = plainArgv(spec.argv);
+    const raw = await this.run(effectiveArgv, spec);
+    return {
+      spec,
+      effectiveArgv,
+      stdoutLines: raw.stdoutLines,
+      exitCode: raw.exitCode,
+      exitMeaning: raw.meaningOverride ?? plainExitMeaning(raw.exitCode, raw.timedOut),
+      timedOut: raw.timedOut,
+      durationMs: raw.durationMs,
+      stderrTail: raw.stderrTail,
+      resolvedBinary: raw.resolvedBinary,
+      diagnostics: raw.diagnostics,
+    };
+  }
+
+  /**
+   * The process itself: binary resolution, the fixed stdio triple, incremental
+   * line splitting, the timeout escalation and the bounded stderr tail.
+   *
+   * Family-independent on purpose. Everything above it decides *what* to run and
+   * how to read the exit; this decides nothing and interprets nothing, which is
+   * what lets `invoke` and `invokePlain` share one process boundary rather than
+   * two subtly different ones.
+   */
+  private async run(
+    effectiveArgv: readonly string[],
+    spec: {
+      readonly argv: readonly string[];
+      readonly cwd: string;
+      readonly env?: Readonly<Record<string, string>> | undefined;
+      readonly timeoutMs: number;
+      readonly onLine?: ((line: string) => void) | undefined;
+    },
+  ): Promise<RawInvocation> {
     const started = this.now();
     const diagnostics: Diagnostic[] = [];
     const record = (
@@ -436,11 +598,9 @@ export class KaneInvoker {
         `${KANE_BINARY_NAME} was not found on PATH; ${spec.argv.join(' ')} was not invoked`,
       );
       return {
-        spec,
-        effectiveArgv,
         stdoutLines: [],
         exitCode: null,
-        exitMeaning: 'kane-not-found',
+        meaningOverride: 'kane-not-found',
         timedOut: false,
         durationMs: Math.max(0, this.now() - started),
         stderrTail: [],
@@ -487,11 +647,9 @@ export class KaneInvoker {
         `${KANE_BINARY_NAME} could not be spawned: ${describeError(error)}`,
       );
       return {
-        spec,
-        effectiveArgv,
         stdoutLines: [],
         exitCode: null,
-        exitMeaning: isNotFoundError(error) ? 'kane-not-found' : 'force-interrupted',
+        meaningOverride: isNotFoundError(error) ? 'kane-not-found' : 'force-interrupted',
         timedOut: false,
         durationMs: Math.max(0, this.now() - started),
         stderrTail: [],
@@ -588,20 +746,13 @@ export class KaneInvoker {
       );
     }
 
-    // A `notFound` outcome reads as `kane-not-found` whatever the code, matching
-    // the ENOENT row of design §4.5. Every other outcome goes through the family
-    // interpretation, where `killed` already outranks the code.
-    const meaning: ExitMeaning =
-      outcome.notFound && !outcome.killed
-        ? 'kane-not-found'
-        : exitMeaning(spec.family, outcome.code, outcome.killed);
-
     return {
-      spec,
-      effectiveArgv,
       stdoutLines,
       exitCode: outcome.code,
-      exitMeaning: meaning,
+      // A `notFound` outcome reads as `kane-not-found` whatever the code, matching
+      // the ENOENT row of design §4.5; everything else is left to the caller's
+      // interpretation, where `killed` already outranks the code.
+      meaningOverride: outcome.notFound && !outcome.killed ? 'kane-not-found' : null,
       timedOut: outcome.killed,
       durationMs: Math.max(0, this.now() - started),
       stderrTail: stderrTail.snapshot(),

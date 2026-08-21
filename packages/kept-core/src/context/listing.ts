@@ -8,48 +8,68 @@
  * {@link resolveSourceId} — the async function that composes the two and is the
  * only door `kept reconcile` may knock on for a `--source-id`.
  *
- * ## The invocation
+ * ## The invocation, and the correction it carries
  *
  * ```
  * kane-cli context list --type source --json
- *    family:   Assurance          ← `context list` is Assurance by §4.1
- *    enabler:  --mode agent       ← appended by the invoker from the contract
- *    terminal: done
+ *    family:   none               ← `context list` is not one of the three (§4.1)
+ *    enabler:  nothing appended
+ *    terminal: none — one plain JSON object per line
  *    budget:   60 s
  * ```
  *
- * The enabler is never written here. `SOURCE_LISTING_ARGV` stops at `--json` and
- * the invoker appends `--mode agent` from the contract table (§4.7), which is why
- * the effective argv is a fact this module reports rather than a string it
- * composes. For this family a process exit of 3 is a **pause, resumable** and an
- * exit of 2 is generic failure whose reason lives in `done.status` — so the gate
- * below reads the stream first and the exit code second, exactly as
- * `providers/enrichment.ts` does.
+ * An earlier version of this module declared the listing `Assurance`, so the
+ * invoker appended that family's NDJSON enabler. Observed against 0.8.4:
+ *
+ * ```
+ * kane-cli context list --type source --json --mode agent
+ * → exit 1, stdout empty, stderr: error: unknown option '--mode'
+ * ```
+ *
+ * `context list` takes `--type`, `--inferred`, `--stale`, `--all`, `--json` and
+ * **no `--mode` at all** (its own `--help`). Its `--json` output is one plain
+ * object per line — `{"id":"readme","cid":"sha256:883d…","label":"source",…}` —
+ * not the `{type,v,verb}` envelope, and it never emits `done`. An empty stdout has
+ * no listing in it, so every save resolved to `listing-unreadable` and no source
+ * could ever match. That was not a flag to suppress: it was a command in the wrong
+ * table. `kane/family.ts` no longer lists it, `familyForArgv` answers `null` for
+ * it, and it is invoked through `KaneInvoker.invokePlain`, which appends nothing.
+ *
+ * Nothing here parses a stream, and it cannot: `parseStream` takes a
+ * `FamilyContract`, there is no contract for "no family", and `contractFor` is
+ * still the only way to obtain one. Both streams are recorded under
+ * `docs/kane/reconcile/`.
  *
  * ## Three failure reasons, and where each one comes from
  *
  * | reason | the observation behind it |
  * |---|---|
- * | `no-store` | a **complete** stream whose `done.status` is `refused` |
- * | `crashed-stream` | the stream ended without its `done` event |
+ * | `no-store` | a failing exit whose output names a missing context store |
+ * | `crashed-stream` | the process died by signal, so the listing is truncated |
  * | `listing-unreadable` | everything else that left us without a listing |
  *
- * `no-store` is the one worth stating carefully, because it is the *live* path
- * today: there is no `.context/` store in this repository yet, and a `context
- * list` against a repository without one produces the refusal envelope committed
- * as `test/fixtures/assurance-cover-refused.ndjson` — a `complete` stream with
- * `status: 'refused'` and the event's own `exit_code: 2`, carrying Kane's remedy
- * in its message. A refusal is **not** a crash (§5.3.1). Classifying it as one
- * would throw away the remedy and describe a working Kane as a broken one, so the
- * refusal branch is checked before any exit code is consulted and Kane's own
- * message is quoted verbatim into the diagnostic.
+ * `no-store` is pinned to what Kane actually says. In a directory with no
+ * `.context/`, `context list --type source --json` prints one line on **stdout**
+ * and exits 2:
  *
- * A refusal is read as `no-store` whatever its message says. `context list
- * --type source` takes no input that could be rejected, so there is nothing else
- * for Kane to refuse; and every failure reason of §13.2.2 takes the same six
- * steps — diagnostic, no spawn, no review card, verdicts untouched, handoff with
- * `branch: null`, exit 0 — so the reason chooses a code and a sentence, never a
- * behaviour. The message carries whatever the reason cannot.
+ * ```
+ * error: no context store here (run `kane-cli context ingest <files>` first)
+ * ```
+ *
+ * That is the same sentence design §5.3.1 records for `cover`, arriving as plain
+ * text rather than in an envelope, and it is quoted verbatim into the diagnostic
+ * because it carries the remedy. A failing exit that says something *else* is
+ * `listing-unreadable`: we did not learn that there is no store, we failed to read
+ * one.
+ *
+ * `crashed-stream` is a signalled death — `exitMeaning` reads a `null` code as
+ * `force-interrupted` — because a listing cut off mid-flight is a listing missing
+ * entries, and a partial listing turns a real match into a missing one.
+ *
+ * Every failure reason of §13.2.2 takes the same six steps — diagnostic, no spawn,
+ * no review card, verdicts untouched, handoff with `branch: null`, exit 0 — so the
+ * reason chooses a code and a sentence, never a behaviour. The message carries
+ * whatever the reason cannot.
  *
  * ## Tolerance, and where it stops
  *
@@ -60,6 +80,10 @@
  * reader that hard-coded `sources` as the key would be over-fitting one capture —
  * and an extra envelope level would then project zero sources, which reads as an
  * empty store and answers every save with the wrong remedy.
+ *
+ * The observed shape is flat: the parsed lines *are* the array. They are handed to
+ * the same walk regardless, so a release that wraps them in an envelope still
+ * projects, and the walk's tolerance costs nothing to keep.
  *
  * Two boundaries keep that from becoming credulity:
  *
@@ -87,13 +111,8 @@ import { readFileSync } from 'node:fs';
 
 import { createDiagnosticSink, type Diagnostic, type DiagnosticSink } from '../diagnostics.js';
 import type { ExitMeaning } from '../kane/exit.js';
-import { contractFor, type CommandFamily } from '../kane/family.js';
+import type { CommandFamily } from '../kane/family.js';
 import type { KaneInvoker } from '../kane/invoker.js';
-import { parseStream, type ParsedStream } from '../kane/ndjson.js';
-import {
-  ACCEPTED_ASSURANCE_STATUS,
-  normaliseAssuranceStatus,
-} from '../providers/enrichment.js';
 
 import {
   SOURCE_REASON_DIAGNOSTIC_CODE,
@@ -108,19 +127,23 @@ import {
 } from './sources.js';
 
 /**
- * The family `context list` belongs to (§4.1). `satisfies` rather than an
- * annotation, so `ParsedStream<'Assurance'>` keeps the family that makes
- * `terminal` an `AssuranceDoneEvent` instead of widening to `CommandFamily`.
+ * The family `context list` belongs to: **none** (§4.1, observed).
+ *
+ * `null` rather than a missing export, because a reader who comes here looking for
+ * the family should find the reason there is none rather than an absence they have
+ * to interpret. Typed `CommandFamily | null` so the one thing that can be written
+ * against it is a comparison, never a `contractFor` call — the enabler bug this
+ * fixes was a family declared where no family exists.
  */
-export const SOURCE_LISTING_FAMILY = 'Assurance' satisfies CommandFamily;
+export const SOURCE_LISTING_FAMILY: CommandFamily | null = null;
 
 /**
- * argv **without** the NDJSON enabler (§13.2.2).
+ * argv exactly as issued (§13.2.2).
  *
- * `context list --type source --json`, and nothing else. The Assurance enabler is
- * `--mode agent`, appended by the invoker from the contract table — writing it
- * here would be a second encoding of the one fact §4.7 exists to encode once, and
- * `--agent` (which is `ExecutionRun`'s) would be rejected outright.
+ * `context list --type source --json`, and nothing else — no enabler is appended
+ * to it, because `context list` has no `--mode` flag and belongs to no family.
+ * {@link SOURCE_LISTING_ARGV} is therefore the *effective* argv as well as the
+ * declared one, which is what `plainArgv` asserts.
  */
 export const SOURCE_LISTING_ARGV: readonly string[] = Object.freeze([
   'context',
@@ -470,20 +493,109 @@ export function projectSourceListing(
   };
 }
 
+/**
+ * The JSON-lines output of `context list --json`, read line by line.
+ *
+ * One object per accepted line, in wire order. Nothing here is an event: there is
+ * no `type`, no `v`, no `verb` and no terminal, so there is nothing to classify —
+ * only lines that parsed and lines that did not.
+ */
+export interface SourceListingLines {
+  /** Every line that parsed as a JSON object, in order. */
+  readonly objects: readonly Record<string, unknown>[];
+  /**
+   * Lines skipped before they were parsed, verbatim.
+   *
+   * R3.23's prefix-skip rule earns its keep here rather than merely being
+   * defensive: an `Update available: 0.8.4 → 0.8.5` advisory was observed on
+   * stdout, ahead of the JSON, on some invocations.
+   */
+  readonly skipped: readonly string[];
+  /** Lines that began with `{` and still failed to parse. */
+  readonly unparsable: readonly string[];
+}
+
+/**
+ * Read `context list --json` output (§13.2.2, R3.23).
+ *
+ * A line is a candidate when it begins with `{` after trimming; anything else is
+ * skipped as a prefix rather than treated as a failure, because Kane prints
+ * advisories on stdout ahead of the payload. A candidate that does not parse, or
+ * parses to something other than an object, is recorded as unparsable — that is a
+ * listing we could not read, and it must not be silently narrowed to a listing
+ * that was empty.
+ *
+ * Total over every input; never throws.
+ */
+export function readSourceListingLines(
+  lines: readonly string[],
+): SourceListingLines {
+  const objects: Record<string, unknown>[] = [];
+  const skipped: string[] = [];
+  const unparsable: string[] = [];
+
+  for (const raw of lines) {
+    if (typeof raw !== 'string') continue;
+    const line = raw.trim();
+    if (line.length === 0) continue;
+    if (!line.startsWith('{')) {
+      skipped.push(raw);
+      continue;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      unparsable.push(raw);
+      continue;
+    }
+    if (isPlainObject(parsed)) objects.push(parsed);
+    else unparsable.push(raw);
+  }
+
+  return {
+    objects: Object.freeze(objects),
+    skipped: Object.freeze(skipped),
+    unparsable: Object.freeze(unparsable),
+  };
+}
+
+/**
+ * How Kane says there is no store, on stdout, at exit 2 (observed):
+ *
+ * ```
+ * error: no context store here (run `kane-cli context ingest <files>` first)
+ * ```
+ *
+ * Matched on the distinctive clause rather than the whole sentence, lowercased, so
+ * a reworded remedy still classifies. A failing exit that matches nothing here is
+ * `listing-unreadable`: the difference between "there is no store" and "we could
+ * not read the store" is the difference between one remedy and none.
+ */
+export const SOURCE_LISTING_NO_STORE_MARKERS: readonly string[] = Object.freeze([
+  'no context store',
+]);
+
+/** Does this output name a missing context store? */
+function namesMissingStore(text: string): boolean {
+  const haystack = text.toLowerCase();
+  return SOURCE_LISTING_NO_STORE_MARKERS.some((marker) => haystack.includes(marker));
+}
+
 /** Everything one listing attempt produced, whether or not it produced sources. */
 interface SourceListingShared {
-  /** The parsed stream, or null when no process ran at all. */
-  readonly stream: ParsedStream<typeof SOURCE_LISTING_FAMILY> | null;
+  /** The lines as read, or null when no process ran at all. */
+  readonly lines: SourceListingLines | null;
   /** What the payload projected, or null when the gate refused before projecting. */
   readonly projection: SourceListingProjection | null;
   /** The exit meaning of the invocation, or `kane-not-found` when none ran. */
   readonly exitMeaning: ExitMeaning;
-  /** argv actually issued, enabler included — `--mode agent`, never `--agent`. */
+  /** argv actually issued. Identical to {@link SOURCE_LISTING_ARGV}: nothing is appended. */
   readonly effectiveArgv: readonly string[];
   /** Whether *our* timer fired and the process was killed. */
   readonly timedOut: boolean;
-  /** `done.status`, normalised, or null when no terminal event arrived. */
-  readonly status: string | null;
+  /** The process exit code, or null when it was signalled or never started. */
+  readonly exitCode: number | null;
 }
 
 /**
@@ -520,11 +632,24 @@ export interface ListStoreSourcesRequest {
   readonly onLine?: ((line: string) => void) | undefined;
 }
 
-/** The first non-empty `message` string in the stream, to quote verbatim. */
-function firstMessage(stream: ParsedStream<typeof SOURCE_LISTING_FAMILY>): string | null {
-  for (const event of stream.events) {
-    const message = event['message'];
-    if (typeof message === 'string' && message.trim().length > 0) return message;
+/**
+ * Kane's own words for a failed listing, to quote verbatim.
+ *
+ * Its `error:` line arrives on **stdout**, ahead of any JSON, so stdout is read
+ * first and the stderr tail second; the update advisory is skipped because it is
+ * not what went wrong. Nothing is paraphrased: the remedy is inside the sentence.
+ */
+function firstMessage(
+  stdoutLines: readonly string[],
+  stderrTail: readonly string[],
+): string | null {
+  for (const line of [...stdoutLines, ...stderrTail]) {
+    if (typeof line !== 'string') continue;
+    const text = line.trim();
+    if (text.length === 0) continue;
+    if (text.startsWith('{')) continue;
+    if (text.toLowerCase().startsWith('update available')) continue;
+    return text;
   }
   return null;
 }
@@ -539,21 +664,21 @@ const ARGV_TEXT = SOURCE_LISTING_ARGV.join(' ');
  *
  * 1. **no invoker / no binary** → `listing-unreadable`. Answered first, because
  *    a repository with no Kane is a supported state and nothing else needs to run.
- * 2. **our timer fired** → `listing-unreadable`. Before the crash check, because
- *    a killed process leaves a truncated stream that would otherwise read as a
- *    crash, and "we cut it off at the budget" is both more accurate and the part
- *    we know from our own side.
- * 3. **no `done` event** → `crashed-stream`. Before the status branch, because a
- *    stream with no terminal event has no status to read.
- * 4. **`done.status` is `refused`** → `no-store`, quoting Kane's own message.
- * 5. **any other non-accepting status** → `listing-unreadable`, including a
- *    pause: exit 3 is resumable, not a failure, but a paused listing is still a
- *    listing we do not have.
- * 6. **a failing exit under an accepting envelope** → `listing-unreadable`. The
- *    envelope is inconsistent, and trusting half of it is how a partial listing
- *    becomes an `ambiguous` that should have been a match.
- * 7. **nothing recognisable in the payload** → `listing-unreadable`; an *empty*
- *    array is instead `ok` with no sources.
+ * 2. **our timer fired** → `listing-unreadable`. Before anything else about the
+ *    output, because a killed process leaves a truncated listing and "we cut it
+ *    off at the budget" is both more accurate and the part we know from our own
+ *    side.
+ * 3. **signalled death** → `crashed-stream`. A listing cut off mid-flight is
+ *    missing entries, and a partial listing turns a real match into a missing one.
+ * 4. **a failing exit naming a missing store** → `no-store`, quoting Kane's own
+ *    sentence, which carries the `context ingest` remedy.
+ * 5. **any other failing exit** → `listing-unreadable`. `--mode agent` used to
+ *    land here, at exit 1 with an empty stdout, on every single save.
+ * 6. **lines that would not parse** → `listing-unreadable`, even at exit 0: a
+ *    listing we could not read is not a listing that was empty.
+ * 7. **nothing recognisable in the payload** → `listing-unreadable`; **no lines
+ *    at all** and an *empty* array are instead `ok` with no sources, which is what
+ *    an empty store looks like in a JSON-lines listing.
  */
 export async function listStoreSources(
   request: ListStoreSourcesRequest,
@@ -578,12 +703,12 @@ export async function listStoreSources(
   });
 
   const noProcess: SourceListingShared = {
-    stream: null,
+    lines: null,
     projection: null,
     exitMeaning: 'kane-not-found',
     effectiveArgv: declaredArgv,
     timedOut: false,
-    status: null,
+    exitCode: null,
   };
 
   try {
@@ -598,8 +723,11 @@ export async function listStoreSources(
       );
     }
 
-    const invocation = await invoker.invoke({
-      family: SOURCE_LISTING_FAMILY,
+    // `invokePlain`, not `invoke`: nothing is appended, because `context list`
+    // has no `--mode` flag and belongs to no family. The invoker asserts exactly
+    // that — an argv that classified into a family would throw here rather than
+    // quietly lose its enabler.
+    const invocation = await invoker.invokePlain({
       argv: SOURCE_LISTING_ARGV,
       cwd: request.cwd ?? request.repoRoot,
       timeoutMs: request.timeoutMs ?? SOURCE_LISTING_TIMEOUT_MS,
@@ -615,17 +743,17 @@ export async function listStoreSources(
       );
     }
 
-    const stream = parseStream(contractFor(SOURCE_LISTING_FAMILY), invocation.stdoutLines, {
-      sink,
-    });
+    const lines = readSourceListingLines(invocation.stdoutLines);
     const shared: SourceListingShared = {
-      stream,
+      lines,
       projection: null,
       exitMeaning: invocation.exitMeaning,
       effectiveArgv: invocation.effectiveArgv,
       timedOut: invocation.timedOut,
-      status: stream.kind === 'complete' ? normaliseAssuranceStatus(stream.terminal.status) : null,
+      exitCode: invocation.exitCode,
     };
+    const message = firstMessage(invocation.stdoutLines, invocation.stderrTail);
+    const quoted = message === null ? '' : ` Kane reported: ${message}`;
 
     if (invocation.timedOut || invocation.exitMeaning === 'killed-by-timeout') {
       return fail(
@@ -638,65 +766,59 @@ export async function listStoreSources(
       );
     }
 
-    if (stream.kind === 'crashed') {
+    if (invocation.exitMeaning === 'force-interrupted') {
       return fail(
         'crashed-stream',
-        `The \`${ARGV_TEXT}\` stream ended without a '${stream.expectedTerminal}' event, so the ` +
-          `store listing is incomplete and cannot be trusted: a partial listing turns a real ` +
-          `match into a missing one. No source id was resolved, nothing was invoked, and no ` +
-          `verdict moved.`,
-        shared,
-      );
-    }
-
-    const status = normaliseAssuranceStatus(stream.terminal.status);
-    const message = firstMessage(stream);
-    const quoted = message === null ? '' : ` Kane reported: ${message}`;
-
-    if (status === 'refused') {
-      // The live path today: no `.context/` store exists in this repository yet,
-      // and a refusal is a *complete* stream carrying its own remedy (§5.3.1).
-      return fail(
-        'no-store',
-        `\`${ARGV_TEXT}\` was refused, which is how Kane reports that there is no context ` +
-          `store to list, so no source id could be resolved. Run \`kane-cli context ingest ` +
-          `<files>\` to create one. Nothing was invoked and no verdict moved.${quoted}`,
-        shared,
-      );
-    }
-
-    if (status !== ACCEPTED_ASSURANCE_STATUS) {
-      return fail(
-        'listing-unreadable',
-        `\`${ARGV_TEXT}\` finished with status '${status}', so the store listing was not ` +
-          `obtained and no source id was resolved.${
-            status === 'paused' ? ' The listing is resumable and this is not a failure.' : ''
-          } Nothing was invoked and no verdict moved.${quoted}`,
+        `\`${ARGV_TEXT}\` was signalled rather than exiting, so the listing it had printed so ` +
+          `far is incomplete and cannot be trusted: a partial listing turns a real match into a ` +
+          `missing one. No source id was resolved, nothing was invoked, and no verdict ` +
+          `moved.${quoted}`,
         shared,
       );
     }
 
     if (invocation.exitMeaning !== 'success') {
+      const storeless = namesMissingStore(
+        [...invocation.stdoutLines, ...invocation.stderrTail].join('\n'),
+      );
+      return storeless
+        ? fail(
+            'no-store',
+            `\`${ARGV_TEXT}\` reports that there is no context store to list, so no source id ` +
+              `could be resolved. Run \`kane-cli context ingest <files>\` to create one, then ` +
+              `\`kane-cli context extract\` — a headless ingest lands only (§4.9.1). Nothing ` +
+              `was invoked and no verdict moved.${quoted}`,
+            shared,
+          )
+        : fail(
+            'listing-unreadable',
+            `\`${ARGV_TEXT}\` exited ${invocation.exitCode ?? 'unknown'} (${
+              invocation.exitMeaning
+            }), so the store listing was not obtained and no source id was resolved. Nothing was ` +
+              `invoked and no verdict moved.${quoted}`,
+            shared,
+          );
+    }
+
+    if (lines.unparsable.length > 0) {
       return fail(
         'listing-unreadable',
-        `\`${ARGV_TEXT}\` reported status '${status}' but its process exit meant ` +
-          `'${invocation.exitMeaning}'. The envelope is inconsistent, so the listing was ` +
-          `discarded rather than half-trusted: a listing missing entries turns a real match ` +
-          `into a missing one.${quoted}`,
+        `\`${ARGV_TEXT}\` exited 0 but ${lines.unparsable.length} of its line` +
+          `${lines.unparsable.length === 1 ? '' : 's'} could not be read as JSON, so the store ` +
+          `listing is incomplete and was discarded rather than half-trusted. This is not an ` +
+          `empty store. No source id was resolved and no verdict moved.`,
         shared,
       );
     }
 
-    // The events are handed to the walk as an object keyed by wire position, so
-    // the walk offers *array members* as candidate entries and never the events
-    // themselves — an event object is not a source, and examining it would both
-    // report a phantom refusal and blur the empty-store test below. Locations
-    // read `events[1].sources[3]`.
-    const payload: Record<string, unknown> = {};
-    stream.events.forEach((event, index) => {
-      payload[`events[${index}]`] = event;
-    });
-    const projection = projectSourceListing(payload, { repoRoot: request.repoRoot });
+    // The parsed lines *are* the array (observed), and they are handed to the walk
+    // as one so an entry's location reads `lines[3]` and a release that wrapped
+    // them in an envelope would still project. Nothing else is offered to the
+    // walk, so nothing that is not a listing line can be mistaken for a source.
+    const projection = projectSourceListing(
+      { lines: [...lines.objects] },
+      { repoRoot: request.repoRoot },
+    );
     const withProjection: SourceListingShared = { ...shared, projection };
 
     for (const location of projection.refused) {
@@ -736,12 +858,12 @@ export async function listStoreSources(
     if (projection.sources.length === 0 && projection.emptyArrays === 0) {
       return fail(
         'listing-unreadable',
-        `\`${ARGV_TEXT}\` completed but nothing in its payload projected as a source ` +
+        `\`${ARGV_TEXT}\` completed but nothing in its output projected as a source ` +
           `(${projection.examined} object${projection.examined === 1 ? '' : 's'} examined ` +
           `across ${projection.arrays} array${projection.arrays === 1 ? '' : 's'}` +
           `${projection.truncated ? ', walk truncated' : ''}), so the store listing could not ` +
-          `be read. This is not an empty store: an empty store lists an empty array. No source ` +
-          `id was resolved and no verdict moved.`,
+          `be read. This is not an empty store: an empty store prints no lines at all. No ` +
+          `source id was resolved and no verdict moved.`,
         withProjection,
       );
     }

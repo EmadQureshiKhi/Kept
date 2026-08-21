@@ -1360,3 +1360,27 @@ export {
   serialiseAmendment,
   toSnapshotAmendment,
 } from './repair/docsAmendment.js';
+
+// The family-less process boundary and the JSON-lines source listing (15.4) —
+// design §4.1, §13.2.2. `context list --json` is **not** one of the three event
+// contracts: it has no `--mode` flag (its own `--help`), its output is one plain
+// JSON object per line rather than the `{type,v,verb}` envelope, and it never emits
+// `done`. Declaring it `Assurance` made the invoker append `--mode agent`, which
+// Kane rejects with `error: unknown option '--mode'` at exit 1 and an empty stdout
+// — so every source resolution answered `listing-unreadable` and no save could ever
+// match. `invokePlain` is the corrected seam: it appends nothing, asserts through
+// `plainArgv` that the argv does **not** classify into a family (the mirror of
+// `applyNdjsonEnabler`'s check), and hands back lines. `parseStream` stays
+// unreachable from it, because it takes a `FamilyContract` and there is no contract
+// for "no family". `plainExitMeaning` reads the exit family-independently: a plain
+// listing has no pause to resume and no preflight to reject, so 2 and 3 are
+// ordinary failures rather than invented meanings. Recorded at
+// `docs/kane/reconcile/`.
+export type { PlainInvocationResult, PlainInvocationSpec } from './kane/invoker.js';
+export { plainArgv } from './kane/invoker.js';
+export { plainExitMeaning } from './kane/exit.js';
+export type { SourceListingLines } from './context/listing.js';
+export {
+  SOURCE_LISTING_NO_STORE_MARKERS,
+  readSourceListingLines,
+} from './context/listing.js';

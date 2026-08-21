@@ -37,7 +37,11 @@ const EXPECTED = {
     evidence: 'none',
     commands: [
       ['context', 'extract'],
-      ['context', 'list'],
+      // `context list` is deliberately absent. It has no `--mode` flag (its own
+      // `--help`), its `--json` output is one plain object per line rather than
+      // the `{type,v,verb}` envelope, and it never emits `done` — so it carries
+      // none of the four facts this table holds. Listing it here made the invoker
+      // append `--mode agent`, which Kane rejects at exit 1 with an empty stdout.
       ['design', 'tests'],
       ['maintain', 'reconcile'],
       ['maintain', 'evolve'],
@@ -160,7 +164,6 @@ describe('familyForArgv — the reverse lookup', () => {
     [['testrun', 'run', '--from-context', 'T-1,T-2', '--on-failure', 'continue'], 'ExecutionTestrun'],
     [['testrun', 'run', '--dry-run'], 'ExecutionTestrun'],
     [['context', 'extract'], 'Assurance'],
-    [['context', 'list', '--type', 'source', '--json'], 'Assurance'],
     [['design', 'tests', '--use-case', 'UC-1'], 'Assurance'],
     [['maintain', 'reconcile', '--from', 'README.md', '--source-id', 'S-1', '--plan'], 'Assurance'],
     [['maintain', 'evolve', 'UC-1'], 'Assurance'],
@@ -195,6 +198,9 @@ describe('familyForArgv — the reverse lookup', () => {
       ['--version'], // `kept doctor`
       ['--agent'],
       ['context', 'ingest', 'apps/fixture/README.md', '--mode', 'ci'], // never invoked with a family
+      // Nor is this one: `context list --json` is a plain JSON-lines listing with
+      // no `--mode` flag and no terminal event, so it goes through `invokePlain`.
+      ['context', 'list', '--type', 'source', '--json'],
       ['evidence', 'serve', '.testmuai/evidence/pack'],
       ['generate'],
       ['doctor'],

@@ -62,8 +62,9 @@ function fixtureLines(name: string): readonly string[] {
     .filter((line) => line.length > 0);
 }
 
-const LISTING_LINES = fixtureLines('context-list-sources.ndjson');
-const REFUSED_LINES = fixtureLines('assurance-cover-refused.ndjson');
+const LISTING_LINES = fixtureLines('context-list-sources.jsonl');
+/** The verbatim stdout of a `context list` in a directory with no `.context/`. */
+const NO_STORE_LINES = fixtureLines('context-list-no-store.txt');
 
 /** The byte strings the fixtures register pins for the hashed entries. */
 const BYTES = {
@@ -145,7 +146,8 @@ function stub(
       const child = new FakeChild();
       queueMicrotask(() => {
         for (const line of options.lines ?? LISTING_LINES) child.stdout.emit(`${line}\n`);
-        child.emitClose(options.exitCode ?? 0);
+        // `null` is a signalled death, which is a different fact from exit 0.
+        child.emitClose(options.exitCode === undefined ? 0 : options.exitCode);
       });
       return child.asChild();
     },
@@ -430,15 +432,9 @@ describe('a byPath hit is honoured, and spawns nothing at all', () => {
     expect(outcome.staleness.reason).toBe('expired');
     expect(outcome.refreshed).toBe(true);
     expect(spawns).toHaveLength(1);
-    expect(spawns[0]).toEqual([
-      'context',
-      'list',
-      '--type',
-      'source',
-      '--json',
-      '--mode',
-      'agent',
-    ]);
+    // No enabler is appended: `context list` belongs to no family and has no
+    // `--mode` flag at all.
+    expect(spawns[0]).toEqual(['context', 'list', '--type', 'source', '--json']);
     expect(sink.has(SOURCE_CACHE_DIAGNOSTIC_CODES.stale)).toBe(true);
     // And the answer is the ladder's own rung, not the cache's.
     expect(resolved(outcome)).toEqual({ sourceId: 'src_7f31c0a4', via: 'exact-path' });
@@ -708,8 +704,13 @@ describe('a refresh records what it resolved, and what it listed', () => {
 // ---------------------------------------------------------------------------
 
 describe('a refresh that fails leaves the cache in place (§13.2.2)', () => {
-  /** The listing fixture, truncated before its `done` event: a crashed stream. */
-  const CRASHED = [LISTING_LINES[0] as string, LISTING_LINES[1] as string];
+  /**
+   * A listing cut off mid-flight. `context list` has no terminal event to be
+   * missing — it is a JSON-lines listing — so a truncated one is a *signalled*
+   * death, which the stub spells as a `null` exit code.
+   */
+  const CRASHED = LISTING_LINES.slice(0, 3);
+  const CRASHED_EXIT = null;
 
   it('honours the previous entry when the stream crashes', async () => {
     const previous = cacheOf({
@@ -722,6 +723,7 @@ describe('a refresh that fails leaves the cache in place (§13.2.2)', () => {
       // refresh that had to happen, and it is the refresh that then crashed.
       mtimeMs: NOW_MS - 1_000,
       lines: CRASHED,
+      exitCode: CRASHED_EXIT,
     });
 
     expect(resolved(outcome)).toEqual({ sourceId: 'src_7f31c0a4', via: 'cache' });
@@ -744,12 +746,12 @@ describe('a refresh that fails leaves the cache in place (§13.2.2)', () => {
       readonly reason: string;
       readonly options: {
         readonly lines?: readonly string[];
-        readonly exitCode?: number;
+        readonly exitCode?: number | null;
         readonly binary?: string | null;
       };
     }[] = [
-      { reason: 'crashed-stream', options: { lines: CRASHED } },
-      { reason: 'no-store', options: { lines: REFUSED_LINES, exitCode: 2 } },
+      { reason: 'crashed-stream', options: { lines: CRASHED, exitCode: CRASHED_EXIT } },
+      { reason: 'no-store', options: { lines: NO_STORE_LINES, exitCode: 2 } },
       { reason: 'listing-unreadable', options: { binary: null } },
     ];
     for (const testCase of cases) {
@@ -775,6 +777,7 @@ describe('a refresh that fails leaves the cache in place (§13.2.2)', () => {
       cache: cacheOf({ byPath: {} }),
       mtimeMs: NOW_MS - 120_000,
       lines: CRASHED,
+      exitCode: CRASHED_EXIT,
     });
     expect(outcome.resolution.ok).toBe(false);
     if (outcome.resolution.ok) return;
@@ -796,6 +799,7 @@ describe('a refresh that fails leaves the cache in place (§13.2.2)', () => {
       }),
       mtimeMs: NOW_MS - 120_000,
       lines: CRASHED,
+      exitCode: CRASHED_EXIT,
     });
     expect(outcome.resolution.ok).toBe(false);
     if (!outcome.resolution.ok) expect(outcome.resolution.reason).toBe('crashed-stream');

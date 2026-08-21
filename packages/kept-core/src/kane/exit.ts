@@ -179,6 +179,35 @@ export function exitMeaning(
 }
 
 /**
+ * Interpret the exit of a Kane command that belongs to **no** family — the plain
+ * commands that emit ordinary output instead of one of the three event streams
+ * (design §4.1, §13.2.2).
+ *
+ * `context list --json` is the one KEPT invokes. Observed on 0.8.4: it prints one
+ * JSON object per line and exits `0`, and in a directory with no store it prints
+ * `error: no context store here (run `kane-cli context ingest <files>` first)`
+ * on **stdout** and exits `2`. There is no terminal event, no `--mode` flag and
+ * no `done`, so there is no contract to read a family-dependent code against.
+ *
+ * Which is exactly why this is a separate function rather than
+ * {@link exitMeaning} with a defaulted family. The two codes {@link exitMeaning}
+ * reads from a family are `3` and `2`, and both would be *invented* here: a plain
+ * listing has no pause to resume and no preflight to reject. So `3` and `2` are
+ * ordinary failures, and nothing pretends to know more than the process said.
+ *
+ * Total over `number | null`; never throws. `killed` outranks every code, for the
+ * reason given on {@link exitMeaning}.
+ */
+export function plainExitMeaning(code: number | null, killed: boolean): ExitMeaning {
+  if (killed === true) return 'killed-by-timeout';
+  if (code === null || code === undefined) return 'force-interrupted';
+  if (code === EXIT_SUCCESS) return 'success';
+  if (code === EXIT_KANE_NOT_FOUND) return 'kane-not-found';
+  if (code === EXIT_FORCE_INTERRUPTED) return 'force-interrupted';
+  return 'failure';
+}
+
+/**
  * May a run with this exit meaning move verdicts? The exit-code half of
  * `mayWriteVerdicts()` (design §4.8); the stream half — `kind === 'complete'` —
  * is applied alongside it in `state.ts`, because a proven outcome needs both.

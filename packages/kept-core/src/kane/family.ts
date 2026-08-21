@@ -144,15 +144,28 @@ const CONTRACTS: { readonly [F in CommandFamily]: FamilyContract<F> } = {
     ndjson: 'mode-agent',
     exit3: 'paused-resumable',
     evidence: 'none',
-    // `context list` is here on the strength of design §13.2: the source-id
-    // listing is invoked as `context list --type source --json`, Assurance
-    // family, invoker appends `--mode agent`, gated on the terminal `done`.
+    // `context list` was here, on the strength of a reading of design §13.2 that
+    // observation has since refuted. It is **not** an Assurance command, and the
+    // correction is recorded because it is load-bearing for `resolveSourceId`:
+    //
+    //   $ kane-cli context list --type source --json --mode agent
+    //   → exit 1, stdout empty, stderr: error: unknown option '--mode'
+    //
+    // `context list` takes `--type`, `--inferred`, `--stale`, `--all`, `--json`
+    // and no `--mode` at all (its own `--help`, 0.8.4). Its `--json` output is one
+    // plain JSON object per line — not the `{type,v,verb}` envelope — and it never
+    // emits `done`. So it carries none of the four family-dependent facts this
+    // table exists to hold, and listing it here made the invoker append a flag
+    // Kane rejects, which resolved every save to `listing-unreadable` and could
+    // never match. It is invoked through `KaneInvoker.invokePlain` instead, which
+    // appends nothing and hands back lines rather than a stream; the read path
+    // lives in `context/listing.ts`. Recorded at `docs/kane/reconcile/`.
+    //
     // `maintain evolve` is here on A10's grouping plus R7.2's explicit
     // `--mode agent` requirement; the invoker probes its `--help` once per
     // process and degrades to a review card if the flag is refused.
     commands: [
       ['context', 'extract'],
-      ['context', 'list'],
       ['design', 'tests'],
       ['maintain', 'reconcile'],
       ['maintain', 'evolve'],
@@ -227,8 +240,8 @@ function verbTokens(argv: readonly string[]): string[] {
  * is ordered longest-first, so `cover gaps` never falls through to `cover`.
  *
  * Returns `null` — never a default family — for an argv it cannot classify:
- * `[]`, `--version` (`kept doctor`), `context ingest`, `evidence serve`,
- * `generate`, or a misspelled verb. A default would be the worst possible
+ * `[]`, `--version` (`kept doctor`), `context ingest`, `context list`,
+ * `evidence serve`, `generate`, or a misspelled verb. A default would be the worst possible
  * answer here, because the invoker compares this result against the declared
  * family and a wrong-but-plausible family would parse a stream against the
  * wrong terminal event — exactly the silent-nothing failure the three-contract

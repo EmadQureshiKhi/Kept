@@ -7,6 +7,7 @@ import {
   NDJSON_ENABLER_ARGV,
   applyNdjsonEnabler,
   contractFor,
+  plainArgv,
   type ChildProcessLike,
   type CommandFamily,
   type SpawnOptionsLike,
@@ -133,7 +134,6 @@ describe('applyNdjsonEnabler — the per-family argv contract', () => {
   it('appends `--mode agent` for every Assurance command', () => {
     for (const argv of [
       ['context', 'extract'],
-      ['context', 'list', '--type', 'source', '--json'],
       ['design', 'tests', '--use-case', 'UC-1'],
       ['maintain', 'reconcile', '--from', 'README.md', '--source-id', 'S-1'],
       ['maintain', 'evolve'],
@@ -142,6 +142,20 @@ describe('applyNdjsonEnabler — the per-family argv contract', () => {
     ]) {
       expect(applyNdjsonEnabler('Assurance', argv)).toEqual([...argv, '--mode', 'agent']);
     }
+  });
+
+  it('refuses `context list`, which has no `--mode` flag to append', () => {
+    // Observed: `context list --type source --json --mode agent` exits 1 with an
+    // empty stdout and `error: unknown option '--mode'` on stderr. The command
+    // carries none of the four family facts, so it is not in the table, and asking
+    // for an enabler is now a loud programming error rather than a silent listing
+    // that never matched.
+    const argv = ['context', 'list', '--type', 'source', '--json'];
+    expect(() => applyNdjsonEnabler('Assurance', argv)).toThrow(TypeError);
+    // The mirror: it is invoked plainly, and nothing is appended.
+    expect(plainArgv(argv)).toEqual(argv);
+    // And a family command cannot go the other way either.
+    expect(() => plainArgv(['cover', '--json'])).toThrow(TypeError);
   });
 
   it('matches the written-out table for every family', () => {
