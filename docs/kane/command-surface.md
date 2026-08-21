@@ -304,6 +304,63 @@ rather than the stream: `tests/<slug>/steps/<n>/failure.yaml` carries
 `triage.rca.category: application_issue/ui_data_defect` with a confidence figure. That
 is one level deeper than `triage.category`, and the pack is a zip.
 
+### Correction, observed 2026-08-21: a sealed pack is one **file**, and the note is attributable
+
+`<cwd>/.testmuai/evidence/<execution_id>.evidence` is a single **zip archive** of two
+to eleven megabytes, not a directory. Any resolver that lists directories finds only
+extractions somebody left behind — which is what KEPT did, so `failure-yaml-absent` was
+reported on every run and no evidence pack was ever curated.
+
+The archive's shape, read off four live packs:
+
+```
+failure.yaml                                  # index: one row per failing member
+run.yaml
+coverage/usecases.yaml                        # absent on a replay pack — see below
+tests/<slug>/result.yaml                      # carries external_id, incl. test_id
+tests/<slug>/logs/{meta.yaml,N-console.ndjson,N-network.har}
+tests/<slug>/steps/<ordinal-a-b>/failure.yaml # the categorised triage note
+tests/<slug>/steps/<ordinal-a-b>/screenshot.jpg
+tests/<slug>/steps/<ordinal-a-b>/annotated.png
+```
+
+`<slug>` is derived from the document's **title** — `cart-subtotal-d5ba3490` — and
+nothing in the note ties it to a member path. The attribution key is one level over, in
+`tests/<slug>/result.yaml`:
+
+```yaml
+external_id:
+  execution_id: 58fb2dfa-94f1-4190-8922-cd8e2079bfe6
+  test_id: 1c4fff07-a0da-495b-8471-26d45b4a1441      # == testrun_member_end.test_id
+```
+
+That is the same UUID the member event reports and the same one the blast radius
+selected, so a note can be attributed by identifier and never by matching a name.
+
+Two further facts about the directory it lives in. `testrun_done` carries
+`execution_id` and Kane names the archive after it, so "this run's pack" is knowable —
+"the newest pack present" is a different pack on any machine that has run the suite
+twice. And on a synced filesystem, iCloud Drive resolves a write collision by keeping
+both sides and appending an ordinal: `<uuid> 2.evidence`, sometimes a directory holding
+a partial extraction, which sorts **newest** because the sync wrote it last. Both are
+rejected by name in `kane/evidence.ts`.
+
+### `cover` on a replay pack: `coverage-payload-unreadable`, not a refusal
+
+`cover --json --mode agent` used to answer `done.status = refused` at exit 2 because
+there was no `.context/` store. It no longer refuses; it returns `done: complete` with a
+payload whose `depth` axis is empty, and against the newest sealed pack it reports:
+
+```
+error: <execution_id> carries no coverage/usecases.yaml — the pack predates coverage
+       or its project had no .context at seal time
+```
+
+A pack sealed by a *replay* carries no `coverage/usecases.yaml`, so the enrichment axis
+is discarded and `kept build` reports `coverage-payload-unreadable`. `provenCoverage`
+stays `null` as a result: verdicts are what KEPT observed, coverage is what Kane's graph
+says they cover, and withholding the second is honest rather than reporting zero.
+
 ## The open question — answered, and the answer is "not on a cached replay"
 
 `--bug-detection` is documented as applying to **authoring** members, which

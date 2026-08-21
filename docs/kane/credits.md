@@ -10,11 +10,16 @@ that is called out, because *where* the number lives is the finding.
 
 ```
 $ kane-cli balance
-Available credits: 10629.3207
+Available credits: 10436.4352
 Total credits:     11200
 ```
 
-**Total project spend to date: 570.6793 credits.**
+**Total project spend to date: 763.5648 credits.**
+
+The figures in the body below were taken at **10629.3207** (spend 570.6793); the
+**192.885** since then is the closed loop of 15.6, driven four times so that both
+committed records came from the shipped code rather than from a build that was still
+being corrected. It is itemised in [the closed-loop section](#the-closed-loop-15-6).
 
 ## The one figure R14.7 asks for
 
@@ -131,12 +136,46 @@ recording and only the last was re-authored. That ratio is the whole argument fo
 force-adding `output-*/` in `.gitignore`: a reviewer who clones this repository replays
 from those recordings and is charged for nothing.
 
-**Stage 15.3's full-suite replay has not landed.** `git log` carries no
-"recorded zero-credit replay" commit, so there is no measured all-eight replay figure to
-publish yet. The two measurements above are what the repository can prove today: a real
-six-step document replayed end to end for 0.00, and a real corpus document re-run for 12
-percent of its authoring cost. When 15.3 lands, its figure belongs in this table read the
-same way — sum of `run_end.credits_consumed`, cross-checked against a balance delta.
+**The full-suite replay, measured.** `npm run loop` — nine identified members, eight
+passing from cache and T-7 failing by design — reported **no `credits_consumed` field
+anywhere on the suite stream**, so `credits()` answers `null` rather than `0`, and
+`totals.authored: 0` with `authored: []` confirms nothing was re-authored. The figure
+exists one layer down: with `--member-debug`, exactly one member of the nine emits it,
+and it is the failing one — `run_end.credits_consumed` **10.84068**, of which
+`verdict.credits_consumed` **5.01660** is the bug judgement, billed separately. Balance
+deltas either side of three whole-suite runs: 17.699, 19.832, 23.049. So a replay is free
+where a member passes and costs a judgement where one fails. R4.6's "zero credits" holds
+for eight members of nine; the ninth fails on purpose. Stream at
+`docs/kane/replay/verify-all-replay.ndjson`, run entry beside it.
+
+## The closed loop (15.6)
+
+`kept verify --changed apps/fixture/lib/cart.ts --member-debug`, two members in the
+radius, driven four times. The first two pairs were discarded: the first because the
+handoff builder was resurrecting a stale repair annotation onto a member that had
+passed, the second to re-drive both records against the corrected build. Publishing the
+discarded runs' cost as well as the kept pair's is the honest arithmetic, since the
+account paid for all four.
+
+| pair | run | id | balance before | after | delta |
+|---|---|---|---|---|---|
+| 1 (discarded) | red | `73ab6abb` | 10510.5581 | 10502.3129 | **8.245** |
+| 1 (discarded) | green | `5c2b8c30` | 10502.3129 | 10486.5445 | **15.768** |
+| 2 (discarded) | green re-run | `1307e6b6` | 10486.5445 | 10476.5270 | **10.018** |
+| 3 (discarded) | red | `defd438c` | 10476.5270 | 10471.5365 | **4.990** |
+| 3 (discarded) | green | `f4cc8633` | 10471.5365 | 10456.5464 | **14.990** |
+| **4 (committed)** | **red** | `58fb2dfa` | 10456.5464 | 10451.2451 | **5.301** |
+| **4 (committed)** | **green** | `f2cac6b7` | 10451.2451 | 10436.4352 | **14.810** |
+
+Committed pair: **20.111** for one full red-to-proven loop over two members. Balance
+files at `docs/kane/loop/codebreak-balance-*.txt`.
+
+The green run costs about three times the red one, consistently across all four pairs,
+and the reason is the shape of the economy above rather than anything about the loop: in
+the green run T-3 replays clean for nothing while T-7 still fails and draws a *full*
+post-failure investigation, whereas in the red run both members fail on the same
+underlying arithmetic and Kane's investigation has less to work out. Neither run
+re-authored a step.
 
 ## A refusal is free
 
@@ -223,8 +262,12 @@ before the data plane timed out.
 | first smoke run, a 3-step `kane-cli run` | 10.351 | `docs/kane/smoke-run.ndjson`, session `d43420ab-6ff9-47ac-9bed-a8d3fbf5749f`, one `run_end` |
 | refusals, listings, `balance` | 0.000 | 2 refusals, 23 listing captures |
 | **sum of every committed stream** | **524.203** | |
-| **measured spend** (`11200 − 10629.3207`) | **570.679** | `kane-cli balance` |
-| residual | **46.476** | not reported on any event |
+| **spend at the time these were read** (`11200 − 10629.3207`) | **570.679** | `kane-cli balance` |
+| residual at that point | **46.476** | not reported on any event |
+| whole-suite replays, 3 × | 60.580 | balance deltas, `docs/kane/replay/` |
+| closed loop, 7 runs across 4 pairs | 74.122 | balance deltas, `docs/kane/loop/` |
+| other live probing (single-member replays, dry runs) | 58.184 | not separately captured |
+| **measured spend now** (`11200 − 10436.4352`) | **763.565** | `kane-cli balance` |
 
 The residual is not a lost capture; it is spend the ExecutionRun family does not report.
 Two runs have both a stream sum and a recorded balance delta, and both under-report:

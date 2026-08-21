@@ -41,6 +41,11 @@ build/
 # Scratch
 .tmp/
 
+# Editor state. Deleted once and recreated by the IDE holding `{}` — there is no
+# setting in it to preserve, and a file that reappears empty after every session is
+# noise in `git status` rather than configuration anyone shares.
+.vscode/
+
 # iCloud exclusion marker
 .nosync
 
