@@ -34,6 +34,8 @@ That third branch is the interesting one.
   words or fewer, which is the count the test suite holds it to.
 - [docs/judge-path.md](docs/judge-path.md) — the measured time from `npm run demo`
   to the rendered landing view, and what the judge path does not spend.
+- [docs/commit-history-audit.md](docs/commit-history-audit.md) — what the commit
+  history measures against R14.2, counted rather than claimed.
 
 ## Status
 
