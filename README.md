@@ -1,7 +1,7 @@
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture></p>
 <p align="center"><strong>Every promise your product makes, and continuous proof it's still kept.</strong></p>
 <p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-29%20verified-111111" alt="29 correctness properties"> <img src="https://img.shields.io/badge/tests-2406-111111" alt="2406 tests"></p>
-<p align="center"><a href="#start-here">Start here</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a> · <a href="#roadmap">Roadmap</a></p>
+<p align="center"><a href="#start-here">Start here</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a> · <a href="#roadmap">Roadmap</a></p>
 
 ---
 
@@ -27,6 +27,32 @@ with warm reloads around 38 ms. Figures, method and the one 383 s cold outlier a
 
 The live Kane loop is a separate command with prerequisites, [documented below](#the-live-loop).
 You do not need it, or an account, to see everything the Ledger shows.
+
+**Three-minute demo:** [youtu.be/2dUtE4bwVO0](https://youtu.be/2dUtE4bwVO0), which walks the
+deployed Ledger, a code-break repair, and an accepted documentation amendment, in that order.
+
+---
+
+## The short version
+
+Every claim a product makes about itself is an untested promise. KEPT builds a graph of those
+claims, cites each one to the file and line that states it, binds each to a Kane CLI test, and
+publishes the result in a read-only ledger.
+
+Kepler Coffee, the fixture application in this repository, makes eight claims about itself. All
+eight are cited to `apps/fixture/README.md` lines 13 through 20. Eight carry a designed test,
+seven are proven, and one is red. That last one was never true.
+
+What Kane CLI does here: it designs the browser flows, drives real Chrome, and returns the
+verdict. Every test identifier comes from Kane's own test plan, coverage comes from Kane's
+coverage report, and evidence packs are matched back to their run by id.
+
+Three different completion contracts are handled separately, because reading a paused run as a
+failed one would corrupt the ledger. Authoring a test measured about 10.35 credits; every
+re-verification after that is a cached replay and costs nothing.
+
+When Kane cannot be reached, the ledger withholds the proven number and names the reason rather
+than showing a stale one. A ledger that shows what it owes is the product.
 
 ---
 
