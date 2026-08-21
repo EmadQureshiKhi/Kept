@@ -9,6 +9,7 @@ import type {
   CollectingDiagnosticSink,
   KeptState,
   PromiseRecord,
+  SourceMtimeReader,
   SourceResolutionReason,
   StateFileSystem,
   StoreSource,
@@ -344,11 +345,36 @@ function stub(options: StubOptions = {}): Stub {
   return { invoker, spawns };
 }
 
-/** An in-memory tree holding the prior state and nothing else. */
+/**
+ * The cited document's mtime, stated rather than read off disk.
+ *
+ * **This has to be injected or the suite is not hermetic.** `resolveSourceIdCached`
+ * honours a cache entry only while it is inside `SOURCES_CACHE_MAX_AGE_MS` *and* the
+ * cited file's mtime is no newer than the entry's `resolvedAt` — an edit to the
+ * document is the one moment the mapping is most likely to have moved. The mtime seam
+ * defaults to `nodeSourceMtimeReader`, which reads real disk, so a test that seeds a
+ * cache stamped at a fixed past instant and leaves that default in place is asserting
+ * against `apps/fixture/README.md`'s modification time on whatever machine is running.
+ *
+ * That default made the fork-guard check below pass or fail depending on nothing to do
+ * with the fork: **git sets a file's mtime to checkout time, so on any fresh clone the
+ * real mtime is newer than `NOW_MS` and the cache entry is discarded** — the ladder
+ * refreshes instead of reaching check 7, and `npm test` fails for a reader who did
+ * nothing wrong. It was found by touching the file and watching one assertion flip.
+ *
+ * One minute before `NOW_MS`, matching the `resolvedAt` the seeded caches carry, so the
+ * entry is honoured on its own terms and the guard is what decides the outcome.
+ */
+const FILE_MTIME_MS = NOW_MS - 60_000;
+
+/** An in-memory tree holding the prior state, and a stated mtime for the document. */
 function files(seed: Readonly<Record<string, string>> = {}): StateFileSystem & {
   readonly files: Map<string, string>;
+  readonly mtimeMs: SourceMtimeReader;
 } {
-  return inMemorySourceCacheFileSystem({ [STATE_PATH]: PRIOR_BYTES, ...seed });
+  return inMemorySourceCacheFileSystem({ [STATE_PATH]: PRIOR_BYTES, ...seed }, {
+    [`${REPO}/${README}`]: FILE_MTIME_MS,
+  });
 }
 
 /** An empty baseline scan, so a gated rebuild costs no walk of the real tree. */
@@ -391,6 +417,9 @@ async function reconcile(
     diagnostics: sink,
     at: AT,
     now: () => NOW_MS,
+    /* The mtime seam, stated. Without this the default reads real disk — see
+       `FILE_MTIME_MS`. */
+    mtimeMs: fileSystem.mtimeMs,
     ...(options.withKane === false ? {} : { invoker: kane.invoker }),
   });
   return { result, spawns: kane.spawns, files: fileSystem.files, sink };

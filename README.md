@@ -897,7 +897,7 @@ deployment state described above rather than switched off. Nothing is red and no
 the one `todo` that used to print the outstanding deploy edit in every run's summary is
 discharged, which is why the total moved down by one rather than up.
 
-**What is next** is not a list of regrets. Ten items are specified, scoped and ordered in
+**What is next** is not a list of regrets. Eleven items are specified, scoped and ordered in
 [.kiro/specs/kept/tasks.md](.kiro/specs/kept/tasks.md), and the [Roadmap](#roadmap) below says
 what each one does, how it works, and what it is blocked on.
 
@@ -908,11 +908,13 @@ what each one does, how it works, and what it is blocked on.
 Everything here is **specified before it is built** — each item exists in
 [`.kiro/specs/kept/tasks.md`](.kiro/specs/kept/tasks.md) with its requirement ids, its argv, its
 acceptance criteria and, where the CLI surprised us, the measurement that corrected the plan. None
-of it is a sketch, and two items are corrections to the plan rather than additions to it.
+of it is a sketch, and two items are corrections to the plan rather than additions to it. Item 10 is
+the one most people will care about: **a published `@kept/cli` and `@kept/core` are coming**, so
+this runs against your repository rather than only against this one.
 
 Build order is deliberate and is the reverse of the drop order: the two items that close gaps
 against the original design come first, then the ones that need live Kane credits, then the local
-developer surfaces, then polish.
+developer surfaces, then packaging and polish.
 
 ### 1. The dual-axis coverage ribbon
 
@@ -1077,7 +1079,43 @@ absent. The second keeps the budget honest and is the stated intent.
 prose, where highlighting adds nothing a reader notices. `lib/diff.ts` stays the default renderer
 either way.
 
-### 10. A second target, to prove none of this is fixture-specific
+### 10. Shipping it: `@kept/cli` and `@kept/core` on npm
+
+**Coming soon — a published CLI and library, so KEPT runs against your repository rather
+than only against this one.**
+
+The plumbing is already in place. `packages/kept-cli/package.json` declares its binary
+(`"bin": { "kept": "dist/index.js" }`) and its published surface (`"files": ["dist"]`), and
+`@kept/core` exports one barrel that is the only consumer entry point. What stands between
+that and an install is deliberate rather than difficult: both packages are `private: true`
+at version `0.0.0`, the `@kept` scope is unclaimed, `@kept/cli` depends on `@kept/core` by
+exact version through the workspace rather than by a semver range, and `dist/` is gitignored
+so publishing needs a `prepublishOnly` build step. The `bin/kept` launcher at the repository
+root is a development convenience that reports honestly when `dist/` is absent; a published
+install puts `kept` on `PATH` and does not use it.
+
+The intended shape:
+
+```bash
+npm i -D @kept/cli
+npx kept build          # scan @verifies tags, admit citations, build the graph
+npx kept verify --all   # replay through Kane, route every failure
+npx kept snapshot       # write the JSON a Ledger renders
+```
+
+**You bring your own Kane.** KEPT never bundles, installs or vendors `kane-cli` — it spawns
+whatever is on `PATH` and parses the NDJSON, and a missing binary is a supported state that
+exits zero. So an adopter needs Kane installed, a local Chrome, and their own credentials.
+
+**What honestly is not ready, and saying so is the point.** Publishing the CLI is the easy
+half. Three things have to land before someone can point this at their own repository on a
+Tuesday afternoon: a `kept init` that scaffolds the `*_test.md` corpus and
+`.kept/config.json` instead of expecting them to exist, the Ledger shipped as something
+installable rather than a directory in this repository, and the second target below — which
+is what would prove none of this is fixture-specific. Until those exist the accurate claim
+is "the engine works and the packaging does not", which is the claim this section makes.
+
+### 11. A second target, to prove none of this is fixture-specific
 
 Point `kept build` at [RealWorld/Conduit](https://github.com/gothinkster/realworld)'s README,
 produce a promise graph and a coverage figure, and stop.
