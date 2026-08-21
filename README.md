@@ -1,21 +1,23 @@
-<p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture>
-</p>
-
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture></p>
 <p align="center"><strong>Every promise your product makes, and continuous proof it's still kept.</strong></p>
-
-<p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-29%20verified-111111" alt="29 correctness properties"> <img src="https://img.shields.io/badge/tests-2360%20passing-111111" alt="2360 tests passing"></p>
-
+<p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-29%20verified-111111" alt="29 correctness properties"> <img src="https://img.shields.io/badge/tests-2402-111111" alt="2402 tests"></p>
 <p align="center"><a href="#start-here">Start here</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a></p>
 
 ---
+
+> Every claim a product makes about itself is an untested promise. KEPT graphs them all, each cited to the file and line that
+> states it; a citation that does not resolve never enters it. Each binds to a Kane test: saving code re-verifies the blast
+> radius, saving documentation reconciles what the suite owes. When a promise goes red, Kane's verdict picks one of three
+> repairs: patch the code, evolve the test, or amend the documentation because the claim was never true. A deployed read-only
+> ledger publishes every verdict, coverage and evidence. Kane reads the test as the specification, so it cannot separate a
+> regression from a lie. KEPT can: you cannot break what was never proven to work.
 
 ## Start here
 
 - **Live Ledger** — `LEDGER_URL_PENDING_DEPLOY`
 - **Or run it yourself** — `npm run demo`, then open `http://localhost:3000`
 
-<!-- DEPLOY, one edit: on line 15, replace `LEDGER_URL_PENDING_DEPLOY` — backticks included — with the HTTPS URL Vercel gives you. Nothing else in this file changes. Settings, in order: docs/deploy-ledger.md -->
+<!-- DEPLOY, one edit: on line 17, replace `LEDGER_URL_PENDING_DEPLOY` — backticks included — with the HTTPS URL Vercel gives you. Nothing else in this file changes. Settings, in order: docs/deploy-ledger.md -->
 
 `npm run demo` is the whole judge path. It boots the Ledger and the fixture application from
 a snapshot committed in this repository: **Kane is invoked zero times, zero credits are spent,
@@ -651,7 +653,7 @@ npm test          # vitest --run — never watch
 npm run check     # the read-only scan, tsc -b, both app type-checks, then the suite
 ```
 
-**135 files, 2360 tests, about 36 seconds** on a bare checkout. No Kane, no credentials, no
+**136 files, 2402 tests, about 40 seconds** on a bare checkout. No Kane, no credentials, no
 network — every Kane behaviour under test comes from a committed fixture.
 
 **All 29 correctness properties** from the design are implemented, each as a `fast-check`
@@ -751,11 +753,13 @@ terminal event it structurally cannot have, so the plan cache was never written 
 was empty. `--from-context` cannot address this corpus at all. Each is fixed, each has a test
 that fails on its recurrence, and each is written up with the stream that revealed it.
 
-**Currently green.** 135 files, 2360 tests, 3 skipped, one `todo` — the outstanding deploy edit,
-which Vitest prints in every run's summary so it cannot be forgotten in a document. The visual
-layer is mid-inversion from a dark ink ramp to a light paper one; the measured contrast matrix,
-the token parity check and the forbidden-palette scan all moved with it, which is what those
-three tests exist for.
+**136 files, 2402 tests.** 2396 pass, 3 are skipped, and one `todo` names the outstanding deploy
+edit so that Vitest prints it in every run's summary rather than leaving it in a document. Two
+assertions in `promise-graph-density` are red at the time of writing: the visual layer is
+mid-inversion from a dark ink ramp to a light paper one, a panel width moved from 240 to 288, and
+that test still expects the old figure. That is a guard catching work in flight rather than a
+defect in what is committed — the measured contrast matrix, the token parity check and the
+forbidden-palette scan all moved with the palette, which is what those three exist for.
 
 **Not yet done.** Four things, in the order they matter.
 

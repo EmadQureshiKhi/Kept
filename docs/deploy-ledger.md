@@ -101,7 +101,7 @@ the build half does not.
 6. **Deploy.**
 
 Then one edit to `README.md`. Requirement 13.9 wants the deployed URL inside the README's
-first 20 lines, and line 15 currently reads:
+first 20 lines, and line 17 currently reads:
 
 ```
 - **Live Ledger** — `LEDGER_URL_PENDING_DEPLOY`

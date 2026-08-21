@@ -124,12 +124,61 @@ describe('the project summary covers what task 19.4 requires', () => {
 });
 
 describe('the summary is reachable', () => {
-  it('is linked from the README rather than restated in it', () => {
-    const readme = readFileSync(resolve(REPO_ROOT, 'README.md'), 'utf8');
+  const README = readFileSync(resolve(REPO_ROOT, 'README.md'), 'utf8');
+
+  it('is linked from the README', () => {
     expect(
-      readme,
+      README,
       `README.md does not link ${SUMMARY_PATH}. A summary nobody can find is not a ` +
-        `deliverable, and a second copy of it in the README would drift from this one.`,
+        `deliverable.`,
     ).toContain(SUMMARY_PATH);
+  });
+
+  /**
+   * The README opens on this paragraph, so there are two copies of it, and the
+   * original worry stands: a second copy drifts from the first.
+   *
+   * It is a *checked* copy rather than a trusted one. The README's opening
+   * blockquote is compared against this file with the `> ` prefixes stripped and
+   * whitespace collapsed, so re-wrapping the quote to a different column is free
+   * and changing a word in either place is a failure. The comparison is normalised
+   * rather than byte-exact for exactly that reason: line width is presentation and
+   * the words are the deliverable.
+   *
+   * This is the same discipline the diagram alt text is held to against each SVG's
+   * own `<desc>` — one source, and a test rather than a habit keeping the copy
+   * honest.
+   */
+  it('is quoted verbatim as the README intro, so the two cannot drift', () => {
+    const flatten = (text: string): string => text.split(/\s+/).filter(Boolean).join(' ');
+
+    /* The *opening* blockquote, not every blockquote: the README carries two others
+       further down, and sweeping all of them up compared this paragraph against an
+       accidental concatenation of three. So the run is taken up to the first blank
+       line after it begins, which is where a Markdown blockquote actually ends. */
+    const readmeLines = README.split('\n');
+    const opensAt = readmeLines.findIndex((line) => line.startsWith('> '));
+    const quoted: string[] = [];
+    for (let i = opensAt; i >= 0 && i < readmeLines.length; i += 1) {
+      const line = readmeLines[i] ?? '';
+      if (!line.startsWith('> ')) break;
+      quoted.push(line.slice(2));
+    }
+    expect(
+      quoted.length,
+      'README.md carries no opening blockquote. The summary is the intro above ' +
+        '"Start here"; if that changed, this assertion should change with it.',
+    ).toBeGreaterThan(0);
+    expect(
+      readmeLines.slice(0, opensAt).join('\n'),
+      'the opening blockquote should be the intro, above "Start here"',
+    ).not.toContain('## Start here');
+
+    expect(
+      flatten(quoted.join(' ')),
+      `the README intro and ${SUMMARY_PATH} say different things. They are one ` +
+        `paragraph in two places, so copy this file over the blockquote — re-wrapping ` +
+        `it to any width is fine, changing the words is not.`,
+    ).toBe(flatten(SUMMARY));
   });
 });

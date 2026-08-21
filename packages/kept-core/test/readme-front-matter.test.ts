@@ -199,8 +199,12 @@ describe('the README front matter carries what R13.9 requires', () => {
        time, and which half depends on a reader's OS setting rather than on
        anything this repository controls. `tools/logo/build_logo.sh` builds them. */
     const header = FRONT_MATTER.join('\n');
+    /* The four centred blocks sit on four consecutive lines with no blank lines
+       between them. That is not formatting preference: Markdown keeps them as one
+       HTML block either way, and collapsing them buys four lines for the intro
+       paragraph while keeping the URL and the demo command inside R13.9's twenty. */
     expect(header, 'the logo is the first thing in the file').toMatch(
-      /^<p align="center">\s*\n\s*<picture>/,
+      /^<p align="center">\s*\n?\s*<picture>/,
     );
     expect(header, 'the dark-theme plate is offered first, as <picture> requires').toContain(
       '<source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png">',

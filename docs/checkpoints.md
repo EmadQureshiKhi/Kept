@@ -238,7 +238,7 @@ Checkpoint 20 cannot be cleared from the repository alone. Two items need the ac
 
 - **The Vercel deployment.** Everything it depends on is done — `vercel.json`,
   [`deploy-ledger.md`](deploy-ledger.md), and a README whose only remaining edit is one URL on
-  line 15.
+  line 17.
 - **The demonstration video**, 180 seconds, in the mandated order: the deployed Ledger, a
   code-break repair, then an accepted docs-lie amendment diff.
 
