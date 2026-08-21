@@ -1394,3 +1394,15 @@ export {
 // carrying its own `via` string so a reviewer is never told a path matched when the
 // listing published none.
 export { basenameSlug, slugOfName } from './context/sources.js';
+
+// The Kane-runnable homes for a document's KEPT-only annotations (15.2) — design
+// §5.2, R4.4. `kane-cli` 0.8.4 accepts a closed set of root frontmatter keys and
+// rejects anything else with `unknown config key`, exit 2, before a browser
+// launches — so neither `test_id` nor `covers` can live in the fence of a document
+// that has to run. The logical id moves to Kane's own `assurance: {id}`, read by
+// `readFrontmatter` and still only ever a cache; the radius globs move into the
+// body as `<!-- @covers a, b -->`, exactly parallel to the `<!-- @verifies
+// file:line -->` convention that already works, so there is one annotation
+// mechanism rather than two. `readDocumentCovers` reads both homes so the radius
+// never has to know which one a document used.
+export { COVERS_MARKER, extractCoversGlobs, readDocumentCovers } from './providers/baseline.js';
