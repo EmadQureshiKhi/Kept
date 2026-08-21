@@ -715,6 +715,51 @@ The `coverage` payload's internal schema is not pinned by observation, so `provi
 
 Unmatched entries are recorded as diagnostics, not failures. If **zero** entries project, that is `coverage-payload-unreadable` and the build degrades — better a visibly baseline-only ledger than a silently wrong proven number.
 
+#### 5.3.0 Correction: the axes come from `cover gaps`, not from `cover` (R9.9–R9.15)
+
+Everything above describes the singular `cover` command, and against 0.8.4 it **cannot deliver the axes on this repository** — not because of a bug, but because it reads its depth axis out of a sealed Evidence_Pack:
+
+```
+$ kane-cli cover --json --mode agent
+{"type":"error","v":1,"verb":"cover","message":"error: f2cac6b7-… 2.evidence carries no
+  coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time"}
+{"type":"done","v":1,"verb":"cover","status":"refused","exit_code":2}
+```
+
+A coverage document is minted at **authoring** time. Every pack this repository seals is a **replay** pack, so none carries one, and no amount of retrying changes that. Reaching the axes through `cover` would mean re-authoring the whole corpus through the interactive, credit-metered design chain — the one scope risk the plan was explicitly shaped to avoid.
+
+`cover gaps` answers the same two axes from the **live graph** instead, and it works today:
+
+```
+$ kane-cli cover gaps --json --mode agent          # exit 0
+{"type":"gaps","v":1,"verb":"gaps","stage":"all","rollup_version":1,
+ "design_completeness":{"pct":100,"acs_designed":"6/6","usecases_complete":"1/9",
+                        "ucs_needing_scenarios":8,"config":{…}},
+ "proven":{"aspect":"lenient","pct":100,"acs_proven":"6/6","failing":0,"blocked":0,
+           "not_run":0,"latest_run":{"execution_id":"f2cac6b7-…","started_at":"…"},
+           "config":{"source":"graph_execution_facts","denominator":"current_live_acs",…}},
+ "usecases":[ … 9 entries … ]}
+{"type":"done","v":1,"verb":"gaps","status":"complete","exit_code":0,"next":[…]}
+```
+
+`proven.config.source` is `graph_execution_facts` and its denominator is `current_live_acs` — it counts execution facts the graph holds against the acceptance criteria that are currently live, and `latest_run.execution_id` is this repository's own newest run. So the axis is real, derived from work KEPT actually caused, and free to read.
+
+**The invocation.** `['cover', 'gaps', '--json']`, Assurance family, invoker appends `--mode agent`, 60 s budget. Acceptance is the same shape as above with one substitution: a `gaps` payload event replaces the `coverage` one. `done.status === 'complete'` at exit 0 is the only accepting case; every row of the degradation table above applies unchanged, with `gaps-payload-unreadable` replacing `coverage-payload-unreadable`.
+
+**The projection**, in `providers/coverage.ts`, tolerant in the same way and for the same reason — the payload's schema is observed, not documented:
+
+| axis | read from | shape |
+|---|---|---|
+| design completeness | `design_completeness.pct`, `.acs_designed` | percentage plus an `n/m` ratio string, verbatim |
+| proven | `proven.pct`, `.acs_proven`, `.failing`, `.blocked`, `.not_run` | percentage, ratio, three counts |
+| per use-case | `usecases[]` | `{id, title, risk, design_completeness{pct,status}, proven{pct,status}, stale_acs, pending[]}` |
+
+A `pending[]` entry carries `{kind, why, risk, stage, tag, ready_command}` — `ready_command` being a literal `kane-cli …` string Kane composed. It is published as **text**, never executed and never offered as a control: the Ledger has no mutating route (§9) and a rendered button that spends credits would violate that outright.
+
+**Two figures that must not be confused**, which is why R9.15 exists. `metrics.provenCoverage` counts *promises this repository verified* — eight claims, seven proven. The `proven` axis counts *acceptance criteria Kane's graph holds execution facts for* — six of six. They are different denominators over different objects and they will disagree; the ribbon labels them "acceptance criteria" and the rail labels its own "promises", and neither borrows the other's word.
+
+`cover` (singular) stays in the codebase as the documented first choice for a repository whose packs *are* authored, with `cover gaps` as the axis KEPT actually reads. The refusal recorded in §5.3.1 remains the regression fixture for the no-store case.
+
 #### 5.3.1 The refusal envelope, verified rather than assumed
 
 Running `cover` in a directory with no `.context/` store emits exactly this on **stdout**, and nothing at all on stderr:
@@ -1661,6 +1706,33 @@ The two pattern sets are disjoint by construction (source extensions vs `.md`), 
 
 Committed as `.kept/handoff/<runId>.json` × 2 plus the patch diff, and reflected in `snapshot.runs[]` where both terminal events are visible on `/runs`.
 
+### 11.4 The other demonstrable loop — docs-triggered (R5.9–R5.11)
+
+§11.3 is the code trigger and it is recorded. This is the docs trigger, and it is the branch no competing approach shows: **documentation that overpromises, caught and answered without a line of product code being written.** It must be captured as one continuous cycle rather than as separately-recorded fragments, because the fragments are what make it read as the thinner of the two triggers.
+
+```
+1. add a ninth claim to apps/fixture/README.md that the product does not implement
+2. kept-docs-reconcile fires   → kept reconcile --changed apps/fixture/README.md
+3. done · reconcile plan       → the new claim is outstanding suite debt, verdict `undesigned`
+4. bind a designed test to it  → one *_test.md carrying @verifies README.md:<line>
+5. kept verify --changed       → testrun_done · member failed
+6. the router answers `docs-lie`, and §8.1.1 withholds any write path
+7. kept amend propose          → .kept/amendments/<id>.json, rendered on /amendments
+8. the ninth claim is reverted; the amendment records what was proposed
+```
+
+Four things about step 4, because it is the only step with a choice in it.
+
+**The safe path is a hand-written test**, exactly as the plan's own mitigation intends: a `*_test.md` with an `@verifies` tag and a `<!-- @covers -->` marker, authored the way the other eight were. It costs one replay, needs no assurance chain, and the cycle it produces is fully honest — the claim is real, the failure is real, the branch is real.
+
+**The richer path is `design tests --use-case <uc> --mode agent`**, which has Kane mint the scenario and the test from the claim itself. `--mode agent` is *required* when headless, `--force` supersedes an existing design, and `--plan` is transcription-only — it prints each finalize payload and **commits nothing**, which makes it a free rehearsal for the whole step. The rehearsal is mandatory before the committing run.
+
+**Either way the amendment is the point.** Step 6 is what distinguishes this from a failing test: the router says the product is not at fault, so `nextAction.allowedPaths` is empty, the agent is forbidden from touching source, and the only artefact it may produce is a proposal a human accepts. R7.4 already forbids writing documentation until acceptance, and §8.4's surgical writer is what performs it afterwards.
+
+**Step 8 is not cleanup, it is a requirement.** R5.11 returns `apps/fixture/README.md` to its committed content, so the repository's own eight claims are unchanged by the demonstration and the pinned sha256 still holds. The amendment survives as the record; the lie does not survive in the tree.
+
+Committed as the reconciliation stream, the verification stream, both handoffs, the amendment JSON and the snapshot that renders it — reproducible from committed bytes with Kane invoked zero times.
+
 ---
 
 ## 12. Fixture application
@@ -2214,12 +2286,12 @@ Everything below is a *nice-to-have*. Tasks must be ordered so these are the las
 | 2 | **`@xterm/xterm` live NDJSON pane** (R8.7) | Dev-only surface, invisible to judges on the deployed build; the score comes from `/runs` | `/runs` page rendered from `snapshot.runs[]`, plus raw terminal output during the video |
 | 3 | **`kept watch` loopback accept listener** (§8.5) | Acceptance already works via CLI; the deployed control is the copy-command button either way | `AcceptControl` copies `kept amend accept <id>` |
 | 4 | **Shiki syntax highlighting for diffs** | Heavy install against a 7 GB disk; docs-lie diffs are single-line prose where highlighting adds nothing | `lib/diff.ts` unified diff with verdict colours |
-| 5 | **`KANE_TESTRUN_MEMBER_DEBUG` stderr capture** (R4.12) | Requirement is conditional (`WHERE per-member diagnostics are requested`) | Member statuses are already in `testrun_member_end` |
-| 6 | **`cover gaps` dual-axis ribbon** | `cover --json` already supplies both axes | Metric rail tiles |
-| 7 | **Evidence lane in the graph** (evidence nodes + edges) | Evidence is reachable from the promise panel | Panel artefact links only |
+| 5 | ~~**`KANE_TESTRUN_MEMBER_DEBUG` stderr capture**~~ (R4.12) — **SHIPPED, and it was never droppable** | Assumed conditional. It is where the *only* classification signal lives: `testrun_member_end` carries no `result_code`, no `reason_code` and no verdict object, so without this capture every failure routes to the `docs-lie` residue and the three-way branch is a one-way branch that looks alive | Nothing — dropping it removes two of the three repair branches | statuses are already in `testrun_member_end` |
+| 6 | **`cover gaps` dual-axis ribbon** — *reclassified: no longer droppable, and no longer optional* | The stated reason was wrong. `cover --json` does **not** supply both axes here: it reads depth from a sealed pack and refuses on a replay pack, which is every pack this repository has (§5.3.0). `cover gaps` is the only working path to the axis, so dropping it drops the Promise-Ledger half's headline metric entirely | Nothing honest — the rail can only withhold the figure |
+| 7 | ~~**Evidence lane in the graph**~~ (evidence nodes + edges) — **already built** | `LANES` has carried `evidence` since §10.3 landed, `layoutSnapshot` emits a node per `snapshot.evidence` entry and `PromiseGraph` renders the `evidence` case. It looked droppable only because `snapshot.evidence` was empty until curation was fixed | Nothing to replace; the work left is proving it renders |
 | 8 | **Badge visual polish** (shields-style gradients, logo) | R9.4/R9.5 only require valid SVG with a whole-number percentage | Flat two-tone 110×20 SVG |
 | 9 | **`kept doctor`** | Convenience only | README prerequisites section |
-| 10 | **`maintain evolve` automation for `test-drift`** (R7.2) | Only fires if the spike lands on a drift verdict; the branch is still demonstrated by the review card | Review card built from the failure context with a diagnostic |
+| 10 | **`maintain evolve` automation for `test-drift`** (R7.2, corrected by R7.10/R7.11) | Only fires if the spike lands on a drift verdict; the branch is still demonstrated by the review card | Review card built from the failure context with a diagnostic |
 
 ### 18.1 Motion flourishes — droppable **individually**, in this order
 
