@@ -22,27 +22,251 @@
   ],
   "degraded": true,
   "degradedReasons": [
-    "assurance-status:refused"
+    "coverage-payload-unreadable"
   ],
   "diagnostics": [
     {
-      "at": "2026-08-21T03:58:20.194Z",
-      "code": "enrichment-assurance-status",
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
       "file": null,
       "line": null,
-      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: 108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time",
+      "message": "The coverage payload entry at completeness[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[0].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[0].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[0].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[1].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[1].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[1].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[2].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[2].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[2].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[3] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[4] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[5] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[6] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[7] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[8] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[8].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[8].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[8].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[9] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[9].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[9].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[9].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[10] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[11] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-entry-refused",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload entry at completeness[12] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "severity": "info"
+    },
+    {
+      "at": "2026-08-21T05:43:53.269Z",
+      "code": "enrichment-coverage-unprojectable",
+      "file": null,
+      "line": null,
+      "message": "The coverage payload projected no usable entries (28 objects examined across 6 arrays), so the assurance axes were discarded: a visibly baseline-only ledger is better than a silently wrong proven figure (§5.3).",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:20.196Z",
+      "at": "2026-08-21T05:43:53.271Z",
       "code": "merge-degraded",
       "file": null,
       "line": null,
-      "message": "The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
+      "message": "The enrichment axis was discarded (coverage-payload-unreadable), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 19,
@@ -50,7 +274,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 18,
@@ -58,23 +282,23 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 20,
-      "message": "Promise 'p_45ccecba7aa5' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_45ccecba7aa5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 20,
-      "message": "Promise 'p_45ccecba7aa5' has a repair annotation referencing '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared.",
+      "message": "Promise 'p_45ccecba7aa5' has a repair annotation referencing '.testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 14,
@@ -82,15 +306,15 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 16,
-      "message": "Promise 'p_8d965c2fae07' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_8d965c2fae07' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 15,
@@ -98,7 +322,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 13,
@@ -106,7 +330,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.370Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 17,
@@ -114,7 +338,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -122,7 +346,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -130,15 +354,15 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_45ccecba7aa5 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_45ccecba7aa5 → dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence names 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -146,15 +370,15 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_8d965c2fae07 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_8d965c2fae07 → dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence names 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -162,7 +386,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -170,7 +394,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -178,7 +402,55 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '57591bff-4480-455e-9ab7-c92263ff58ac' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '0944d075-8dab-4683-a59f-96e51308697c' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run 'f0d80fd8-3499-41ad-b1a2-3c12ad919cb1' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run 'f4726521-991e-4027-8f0c-304ff679e21a' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '15d244e5-ea15-4caa-97e2-bf021672f94c' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -186,7 +458,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -194,7 +466,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:02:28.550Z",
+      "at": "2026-08-21T05:43:53.371Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": null,
       "line": null,
@@ -294,10 +566,10 @@
   "evidence": [],
   "freshness": {
     "commandFamily": "ExecutionTestrun",
-    "terminalEventAt": "2026-08-21T03:52:23.744Z",
+    "terminalEventAt": "2026-08-21T05:34:51.562Z",
     "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-21T05:02:28.544Z",
+  "generatedAt": "2026-08-21T05:43:53.362Z",
   "generator": {
     "kaneCli": null,
     "kept": "0.0.0"
@@ -376,7 +648,7 @@
         "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
       },
       "claim": "The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
-      "credits": null,
+      "credits": 4.147365,
       "designedTest": {
         "path": "tests/cart_discount_test.md",
         "testId": "T-7"
@@ -387,21 +659,21 @@
         "baseline"
       ],
       "repair": {
-        "branch": "docs-lie",
-        "category": null,
-        "confidence": null,
+        "branch": "test-drift",
+        "category": "ui_data_defect",
+        "confidence": 0.89,
         "evidenceRef": null,
-        "rationale": "No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt.",
-        "severity": null,
-        "strategy": "failureYamlTriage"
+        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The cart showed the full $72.00 total instead of reducing it to $64.80 after the subtotal went over $50.\".",
+        "severity": "major",
+        "strategy": "resultCode740"
       },
       "verdict": "red",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-21T05:34:51.562Z",
         "memberStatus": "failed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "assertion_error.final_verification",
+        "resultCode": 710,
+        "runId": "57591bff-4480-455e-9ab7-c92263ff58ac",
         "terminalEventType": "testrun_done"
       }
     },
@@ -453,11 +725,11 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-21T05:34:51.562Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "57591bff-4480-455e-9ab7-c92263ff58ac",
         "terminalEventType": "testrun_done"
       }
     },
@@ -548,6 +820,328 @@
   ],
   "reviewCards": [],
   "runs": [
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": 86399,
+      "endedAt": "2026-08-21T05:34:51.562Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "57591bff-4480-455e-9ab7-c92263ff58ac",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.89,
+        "confirmed": false,
+        "family": "application_issue",
+        "one_liner": "The cart showed the full $72.00 total instead of reducing it to $64.80 after the subtotal went over $50.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T05:29:46.907Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:31:06.165Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:31:06.166Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 79247,
+      "endedAt": "2026-08-21T05:29:46.343Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "0944d075-8dab-4683-a59f-96e51308697c",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T05:28:25.310Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:28:25.310Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 102990,
+      "endedAt": "2026-08-21T05:26:42.305Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "f0d80fd8-3499-41ad-b1a2-3c12ad919cb1",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T05:24:58.435Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:24:58.435Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 92628,
+      "endedAt": "2026-08-21T05:23:25.797Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "f4726521-991e-4027-8f0c-304ff679e21a",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T05:18:52.382Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:20:08.218Z",
+          "code": "member-debug-unpaired",
+          "file": null,
+          "line": null,
+          "message": "The captured '[member]' terminals could not be tied to the suite's members: 10 member terminal(s) were captured for 2 member event(s). No classification signal was attributed, so every failing member is routed from the triage note instead — a signal on the wrong member would authorise the wrong repair.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:20:08.219Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:20:08.219Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 75827,
+      "endedAt": "2026-08-21T05:18:51.649Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "dbef2b96-eee0-4ae0-9c1b-6519acbd13f8",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T05:08:31.045Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:09:53.454Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T05:09:53.455Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 82404,
+      "endedAt": "2026-08-21T05:08:30.732Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "15d244e5-ea15-4caa-97e2-bf021672f94c",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
     {
       "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue",
       "credits": null,

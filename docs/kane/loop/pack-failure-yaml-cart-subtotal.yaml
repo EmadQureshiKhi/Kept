@@ -1,0 +1,35 @@
+step: 5-3
+status: broken
+error:
+  message: 'assertion_failed: @ step 3'
+  type: replay_failure
+page_state:
+  url: http://localhost:3100/cart
+  screenshot: steps/18-5-3/screenshot.jpg
+locator_context:
+  replay_reason: 'assertion_failed: @ step 3'
+console_at_failure:
+  ref: logs/5-console.ndjson
+  step: 5-3
+network_at_failure:
+  ref: logs/5-network.har
+  step: 5-3
+title: Cart summary totals stay at $18.00 while line total is $36.00
+triage:
+  status: triaged
+  by:
+    kind: agent
+    id: v16-investigation/replay
+    at: '2026-08-21T05:31:00.517708+00:00'
+  rca:
+    root_cause: The cart summary is using the wrong amount. It is not matching the
+      item's quantity and line total, so the numbers shown to the shopper are inconsistent.
+    category: application_issue/ui_data_defect
+    confidence: 0.96
+  verification:
+    status: not_verified
+  severity: major
+  suggested_fix:
+    summary: Check the cart total calculation and refresh logic so subtotal and total
+      are computed from the current item quantity and line totals, not a single-unit
+      amount.

@@ -1,0 +1,2 @@
+return roundMoney(items[0]?.price ?? 0);   // the break
+return roundMoney(items.reduce((total, line) => total + line.price * line.qty, 0));   // the repair

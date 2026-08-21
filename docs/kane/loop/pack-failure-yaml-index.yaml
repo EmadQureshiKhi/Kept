@@ -1,0 +1,20 @@
+generated: 2026-08-21T05:31:02.234Z
+totals:
+  failures: 2
+  triaged: 2
+  untriaged: 0
+failures:
+  - test: cart-discount-27eaa1da
+    ordinal: 14
+    step: 3-5
+    status: broken
+    path: tests/cart-discount-27eaa1da/steps/14-3-5/failure.yaml
+    title: Cart subtotal ignores item quantity
+    triage_status: triaged
+  - test: cart-subtotal-d5ba3490
+    ordinal: 18
+    step: 5-3
+    status: broken
+    path: tests/cart-subtotal-d5ba3490/steps/18-5-3/failure.yaml
+    title: Cart summary totals stay at $18.00 while line total is $36.00
+    triage_status: triaged

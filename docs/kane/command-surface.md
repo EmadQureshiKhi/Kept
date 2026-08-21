@@ -277,7 +277,34 @@ pack is created directly in `<cwd>/.testmuai/evidence/`.
 A 3-step authored run cost **10.35 credits**; balance moved `11200 → 11188.80`,
 so ~11.2 all-in. Authoring costs; replay is free. Budget is a non-issue.
 
-## The open question — now substantially de-risked, still worth confirming
+### Correction, observed 2026-08-21: `testrun_member_end` carries no classification signal
+
+It carries `path`, `test_id` and `status`. **That is all** — no `result_code`, no
+`reason_code`, no `verdict` object, across six live runs. The signals are on each
+member's **own** `run_end`, which reaches stderr only under
+`KANE_TESTRUN_MEMBER_DEBUG=1`, prefixed `[member] `. So `--member-debug` is not a
+debugging convenience: without it §6.2's object and numeric rungs are unreachable and
+every failure routes to the residue. See `docs/kane/loop/README.md`.
+
+Two shapes matter for reading that stream:
+
+- `run_end` is emitted **per step group**, `run-0`, `run-1`, …, renumbered for each
+  member — nine members of the suite replay produced **forty** of them, and `run_id`
+  names no member.
+- `test_md_done` (`{type, overall_status, duration_s, session_id}`) is the per-member
+  boundary: exactly nine for nine members.
+
+`--bug-detection` is also a **profile** setting (`kane-cli config show` →
+`"bug_detection":"off"`), so the branch KEPT chooses would otherwise depend on ambient
+state in another tool's config. Every replay now states `--bug-detection continue` in
+the argv.
+
+And the investigation's own conclusion, when it runs, is written into the sealed pack
+rather than the stream: `tests/<slug>/steps/<n>/failure.yaml` carries
+`triage.rca.category: application_issue/ui_data_defect` with a confidence figure. That
+is one level deeper than `triage.category`, and the pack is a zip.
+
+## The open question — answered, and the answer is "not on a cached replay"
 
 `--bug-detection` is documented as applying to **authoring** members, which
 raised the worry that `740` never fires on cached replay — and our whole
@@ -293,6 +320,26 @@ issue"), the picture is:
 - Post-failure **investigation is automatic** and does apply to replay failures.
 
 So `740` plus the `verdict` object should be available on a failing replay. That
-is a strong signal, not a proof — the spike stays, but it is now a confirmation
-rather than a gamble. Fallback remains `failure.yaml` triage plus the `7xx`
-assertion codes, behind the same strategy interface.
+was a strong signal, not a proof.
+
+**Measured 2026-08-21, and the original worry was justified.** Across four live
+replay failures of the same unchanged test, the member's own `run_end` carried:
+
+| run | `result_code` | `verdict` object |
+|---|---|---|
+| 15.3's suite replay, where the member **authored** its failing step | `740` | `confirmed: true`, `application_issue`, 0.95 |
+| three replay-only failures | *absent* | *absent* |
+| one replay-only failure | `710` | `confirmed: false`, `ui_data_defect`, 0.89 |
+
+Three different KEPT branches for one unchanged failure of one unchanged test
+against one unchanged application. `740` fires when the member **authors**; on a
+cached replay the investigation is intermittent, and when it does run it has
+answered both *confirmed* and *not confirmed* about the same disagreement.
+
+The `verdict` object is therefore the richest signal available and not a dependable
+one, which is why `failureYamlTriage` ships as a working fallback (R6.13) — and why
+the per-step `failure.yaml` **inside the sealed pack**, where the investigation's
+real answer lands with a 0.96 confidence and a product-fault category, is the signal
+worth reaching next. `docs/kane/loop/README.md` records all of it, including the
+three changes and one specification question that stand between that file and the
+`code-break` branch.

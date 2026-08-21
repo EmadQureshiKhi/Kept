@@ -234,7 +234,12 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
       ...promise,
       verdict: previous.verdict,
       verdictSource: previous.verdictSource,
-      repair: previous.repair,
+      // The same invariant `applyRun` enforces on the way in: a repair annotation
+      // belongs to a failure, so a promise carried forward as `proven` carries no
+      // annotation. Enforcing it here as well is what lets a state file written
+      // before the rule existed heal on the next rebuild rather than keep
+      // publishing a `proven` promise labelled `docs-lie`.
+      repair: previous.verdict === 'proven' ? null : previous.repair,
       evidencePackId: previous.evidencePackId,
       credits: previous.credits,
     };

@@ -125,6 +125,23 @@ export interface InvocationSpec<F extends CommandFamily> {
    * diagnosed, never propagated.
    */
   readonly onLine?: ((line: string) => void) | undefined;
+  /**
+   * The same, for stderr — one call per complete line, in order (R4.12).
+   *
+   * `stderrTail` keeps the last {@link STDERR_TAIL_LINES} lines, which is right
+   * for the evidence hint and wrong for the `[member]` stream: nine members of a
+   * suite replay produce hundreds of lines and the tail throws away all but the
+   * end. `testrun_member_end` carries no `result_code`, no `reason_code` and no
+   * `verdict` object — measured, and recorded in
+   * `docs/kane/command-surface.md` — so the member's own `run_end`, which arrives
+   * here under `KANE_TESTRUN_MEMBER_DEBUG=1`, is the *only* place the primary
+   * classification signal exists. Without this seam the verdict router's object
+   * rung and numeric rung are both unreachable and every failure falls through to
+   * `docs-lie`.
+   *
+   * A throwing callback is caught and diagnosed, never propagated.
+   */
+  readonly onStderrLine?: ((line: string) => void) | undefined;
 }
 
 /** Everything one invocation produced. No field is a promise of success. */
@@ -577,6 +594,7 @@ export class KaneInvoker {
       readonly env?: Readonly<Record<string, string>> | undefined;
       readonly timeoutMs: number;
       readonly onLine?: ((line: string) => void) | undefined;
+      readonly onStderrLine?: ((line: string) => void) | undefined;
     },
   ): Promise<RawInvocation> {
     const started = this.now();
@@ -630,6 +648,25 @@ export class KaneInvoker {
       }
     };
 
+    let onStderrLineFailed = false;
+    const emitStderr = (line: string): void => {
+      stderrTail.push(line);
+      const onStderrLine = spec.onStderrLine;
+      if (onStderrLine === undefined) return;
+      try {
+        onStderrLine(line);
+      } catch (error) {
+        if (!onStderrLineFailed) {
+          onStderrLineFailed = true;
+          record(
+            'invoker-on-stderr-line',
+            'warn',
+            `onStderrLine callback threw: ${describeError(error)}`,
+          );
+        }
+      }
+    };
+
     const options: SpawnOptionsLike = {
       cwd: spec.cwd,
       env: { ...process.env, ...spec.env },
@@ -664,9 +701,7 @@ export class KaneInvoker {
       stdoutSplitter.push(String(chunk), emitStdout);
     });
     child.stderr?.on('data', (chunk: string) => {
-      stderrSplitter.push(String(chunk), (line) => {
-        stderrTail.push(line);
-      });
+      stderrSplitter.push(String(chunk), emitStderr);
     });
 
     const outcome = await new Promise<{
@@ -696,9 +731,7 @@ export class KaneInvoker {
         settled = true;
         clearTimers();
         stdoutSplitter.flush(emitStdout);
-        stderrSplitter.flush((line) => {
-          stderrTail.push(line);
-        });
+        stderrSplitter.flush(emitStderr);
         resolve({ ...result, killed });
       };
 

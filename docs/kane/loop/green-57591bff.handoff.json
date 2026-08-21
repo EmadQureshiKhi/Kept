@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "runId": "57591bff-4480-455e-9ab7-c92263ff58ac",
+  "writtenAt": "2026-08-21T05:34:51.562Z",
+  "trigger": {
+    "hook": null,
+    "event": null,
+    "paths": [
+      "apps/fixture/lib/cart.ts"
+    ]
+  },
+  "command": {
+    "family": "ExecutionTestrun",
+    "argv": [
+      "testrun",
+      "run",
+      "tests/cart_discount_test.md",
+      "tests/cart_subtotal_test.md",
+      "--on-failure",
+      "continue",
+      "--bug-detection",
+      "continue"
+    ],
+    "ndjsonEnabledBy": "piped-stdout",
+    "invoked": true
+  },
+  "outcome": {
+    "terminalSeen": true,
+    "terminalEventType": "testrun_done",
+    "exitCode": 1,
+    "exitMeaning": "failure",
+    "timedOut": false,
+    "resumable": false,
+    "verdictsPermitted": true,
+    "status": "failed",
+    "resultCode": null,
+    "reasonCode": null,
+    "credits": null,
+    "durationMs": 86399
+  },
+  "blastRadius": {
+    "testIds": [
+      "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "4be09740-bce4-483f-ad83-9e6cc24bd421"
+    ],
+    "promiseIds": [
+      "p_45ccecba7aa5",
+      "p_8d965c2fae07"
+    ],
+    "unmatchedPaths": [],
+    "skippedNoTestId": []
+  },
+  "results": [
+    {
+      "promiseId": "p_45ccecba7aa5",
+      "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "designedTest": "tests/cart_discount_test.md",
+      "memberStatus": "failed",
+      "verdict": "red",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 20,
+        "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+      },
+      "repair": {
+        "branch": "test-drift",
+        "strategy": "resultCode740",
+        "severity": "major",
+        "category": "ui_data_defect",
+        "confidence": 0.89,
+        "evidenceRef": ".testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence",
+        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The cart showed the full $72.00 total instead of reducing it to $64.80 after the subtotal went over $50.\"."
+      },
+      "verdictObject": {
+        "confirmed": false,
+        "family": "application_issue",
+        "category": "ui_data_defect",
+        "severity": "major",
+        "one_liner": "The cart showed the full $72.00 total instead of reducing it to $64.80 after the subtotal went over $50.",
+        "confidence": 0.89
+      },
+      "evidenceDir": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence",
+      "evidencePackId": "dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence",
+      "artifacts": {
+        "annotated": null,
+        "failureYaml": null,
+        "screenshots": [],
+        "other": []
+      }
+    },
+    {
+      "promiseId": "p_8d965c2fae07",
+      "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "designedTest": "tests/cart_subtotal_test.md",
+      "memberStatus": "passed",
+      "verdict": "proven",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 16,
+        "text": "- The Cart screen shows a running subtotal that updates immediately when a quantity changes."
+      },
+      "repair": {
+        "branch": "docs-lie",
+        "strategy": "failureYamlTriage",
+        "severity": null,
+        "category": null,
+        "confidence": null,
+        "evidenceRef": ".testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence",
+        "rationale": "No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt."
+      },
+      "verdictObject": null,
+      "evidenceDir": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence",
+      "evidencePackId": "dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence",
+      "artifacts": {
+        "annotated": null,
+        "failureYaml": null,
+        "screenshots": [],
+        "other": []
+      }
+    }
+  ],
+  "nextAction": {
+    "branch": "test-drift",
+    "autonomy": "hold",
+    "artefact": "review-card",
+    "instruction": "The test mechanics drifted, not the product. Run the evolve command and stop: the proposed change is held as a review card for a human. Write no file yourself.",
+    "allowedPaths": [],
+    "forbiddenPaths": [
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**",
+      "tests/**",
+      "apps/ledger/**",
+      "packages/**"
+    ],
+    "command": "node bin/kept evolve tests/cart_discount_test.md"
+  },
+  "diagnostics": [
+    {
+      "code": "verify-started",
+      "severity": "info",
+      "message": "kept verify --changed: 8 promise(s) in the graph, budget 300000 ms, router 'resultCode740'",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T05:34:51.564Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-21T05:34:51.566Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-21T05:34:51.566Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "line": null,
+      "at": "2026-08-21T05:34:51.567Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-21T05:34:51.567Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": "docs/kane/spike/cart_subtotal_spike_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "line": null,
+      "at": "2026-08-21T05:34:51.567Z"
+    },
+    {
+      "code": "verify-member-stream-captured",
+      "severity": "info",
+      "message": "235 '[member]' event(s) were captured into .kept/diagnostics/57591bff-4480-455e-9ab7-c92263ff58ac.member.ndjson (R4.12). This is where the classification signal lives: testrun_member_end carries no result code, no reason code and no verdict object.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T05:36:17.974Z"
+    },
+    {
+      "code": "member-debug-captured",
+      "severity": "info",
+      "message": "Captured 2 member segment(s) from the '[member]' stream (235 line(s), 11 step group(s)), 1 failing, 1 carrying an inline verdict object. testrun_member_end carries no result code, no reason code and no verdict object, so this is the only place the primary classification signal exists (R4.12, R6.4).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T05:36:17.976Z"
+    },
+    {
+      "code": "member-status",
+      "severity": "info",
+      "message": "testrun_member_end reported status \"failed\" for 4be09740-bce4-483f-ad83-9e6cc24bd421 (tests/cart_discount_test.md), mapped to verdict red. Recorded verbatim so a failed member stays distinguishable from an asserted failure.",
+      "file": "tests/cart_discount_test.md",
+      "line": null,
+      "at": "2026-08-21T05:36:17.976Z"
+    }
+  ]
+}

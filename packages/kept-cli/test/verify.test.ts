@@ -387,7 +387,7 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
     // `--from-context` resolves against the assurance graph and rejects a plan
     // `test_id` outright — see `verifyArgv`'s header for the measured error.
     expect(fake.argv).toEqual([
-      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue', '--bug-detection', 'continue'],
     ]);
     // The enabler for this family is the pipe itself. Nothing is appended, and an
     // `--agent` anywhere would mean nothing ran at all.
@@ -396,6 +396,8 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
       'run',
       'tests/cart_subtotal_test.md',
       '--on-failure',
+      'continue',
+      '--bug-detection',
       'continue',
     ]);
     for (const args of fake.argv) expect(args).not.toContain('--agent');
@@ -423,6 +425,8 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
       'tests/shop_filter_test.md',
       '--on-failure',
       'continue',
+      '--bug-detection',
+      'continue',
     ];
     expect(fake.argv).toEqual([expected]);
     expect(result.argv).toEqual(expected);
@@ -447,12 +451,16 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
       'tests/orders_persist_test.md',
       '--on-failure',
       'continue',
+      '--bug-detection',
+      'continue',
     ]);
     // An identifier no path was looked up for selects nothing, in either scope.
     expect(verifyArgv('changed', ['T-9'], [])).toEqual([
       'testrun',
       'run',
       '--on-failure',
+      'continue',
+      '--bug-detection',
       'continue',
     ]);
   });
@@ -494,6 +502,8 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
       'run',
       'tests/cart_subtotal_test.md',
       '--on-failure',
+      'continue',
+      '--bug-detection',
       'continue',
     ]);
     expect(result.radius.testIds).toEqual(['T-3']);

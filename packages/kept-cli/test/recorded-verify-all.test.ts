@@ -202,9 +202,15 @@ describe('the recorded whole-suite replay — the stream itself', () => {
 
 describe('the recorded whole-suite replay — the argv KEPT actually spawned', () => {
   it('names the plan’s member paths and carries no --agent', () => {
+    // The recorded argv, verbatim, and it is a *historical* record: this run
+    // predates `--bug-detection continue`, which 15.6 added when Kane's profile
+    // setting turned out to decide the repair branch. The recording is not
+    // rewritten to match the current composition — that is the whole point of
+    // committing it — so the tail asserted here is the tail this run had.
     const argv = RUN_ENTRY.command.argv;
     expect(argv.slice(0, 2)).toEqual(['testrun', 'run']);
     expect(argv.slice(-2)).toEqual(['--on-failure', 'continue']);
+    expect(argv).not.toContain('--bug-detection');
     expect(argv).not.toContain('--agent');
     expect(RUN_ENTRY.command.ndjsonEnabledBy).toBe('piped-stdout');
 
@@ -454,6 +460,17 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
 
     // One spawn: the plan came from the committed cache, so no refresh was needed.
     expect(kane.argv).toHaveLength(1);
-    expect(kane.argv[0]).toEqual([...RUN_ENTRY.command.argv]);
+    // Identical to the recording up to the tail, and then two words longer: the
+    // recorded run predates `--bug-detection continue`. The member *selection* —
+    // the part this test exists to protect — is unchanged, which is asserted as
+    // the whole recorded argv minus its tail.
+    const spawned = kane.argv[0] as readonly string[];
+    expect(spawned.slice(0, -4)).toEqual([...RUN_ENTRY.command.argv].slice(0, -2));
+    expect(spawned.slice(-4)).toEqual([
+      '--on-failure',
+      'continue',
+      '--bug-detection',
+      'continue',
+    ]);
   });
 });

@@ -1417,3 +1417,37 @@ export { COVERS_MARKER, extractCoversGlobs, readDocumentCovers } from './provide
 // leaves a path under a different root absolute, so a member outside the
 // repository stays visible instead of being reshaped to fit.
 export { toRepoRelative } from './model/ids.js';
+
+// The `[member]` stream, captured rather than tailed (15.6) — design §4.1, §6.2,
+// §7.4, R4.12, R6.4, R6.5. `testrun_member_end` carries `path`, `test_id` and
+// `status` and **nothing else**: no `result_code`, no `reason_code`, no `verdict`
+// object. That was assumed rather than measured until the closed loop was driven
+// live, and the consequence was that §6.2's object rung and numeric rung had
+// nothing to read, so every failing member delegated to a triage note that lives
+// inside a sealed `.evidence` zip nothing opens — and answered `docs-lie` every
+// time, including for a deliberately broken `subtotal`. The three-way branch was a
+// one-way branch that looked like it was working. Under
+// `KANE_TESTRUN_MEMBER_DEBUG=1` each member's own `run_end` is echoed on stderr
+// prefixed `[member] `, carrying the code, the reason code, the full verdict object
+// and the credits the judgement cost. `parseMemberDebug` collects those terminals;
+// `pairMemberDebug` ties them to the suite's member events **by order** — Kane's
+// `run_id: "run-4"` is a session-local index that names no member — and refuses the
+// whole attribution on any disagreement in length or status, because a verdict
+// object on the wrong failure would authorise an automatic source patch against a
+// promise nobody tested.
+export type {
+  MemberDebugCapture,
+  MemberDebugPairing,
+  MemberTerminal,
+  PairableMember,
+} from './kane/memberDebug.js';
+export type { MemberSegment } from './kane/memberDebug.js';
+export {
+  MEMBER_DEBUG_DIAGNOSTIC_CODES,
+  MEMBER_DEBUG_DIAGNOSTIC_CODE_VALUES,
+  MEMBER_DEBUG_PREFIX,
+  MEMBER_TERMINAL_TYPE,
+  STEP_GROUP_TERMINAL_TYPE,
+  pairMemberDebug,
+  parseMemberDebug,
+} from './kane/memberDebug.js';

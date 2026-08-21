@@ -509,7 +509,14 @@ export function applyRun<F extends CommandFamily>(
       ...promise,
       verdict: write.verdict,
       verdictSource,
-      repair: write.repair ?? promise.repair,
+      // A repair annotation belongs to a *failure*. Carrying one forward onto a
+      // verdict that now passes is how the closed loop of 15.6 first published a
+      // `proven` promise still labelled `docs-lie`: the run that repaired it wrote
+      // `repair: null`, and `?? promise.repair` resurrected the annotation from the
+      // run that broke it. A promise Kane just proved has nothing to repair, so the
+      // annotation is cleared rather than preserved — for `red` and `stale` the
+      // prior annotation is still the best available reading and is kept.
+      repair: write.verdict === 'proven' ? null : write.repair ?? promise.repair,
       evidencePackId: write.evidencePackId ?? promise.evidencePackId,
       credits: write.credits ?? promise.credits,
     };

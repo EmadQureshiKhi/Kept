@@ -90,7 +90,11 @@ import {
   entersVerdictRouter,
   isMemberStatus,
   listArtifacts,
+  MEMBER_DEBUG_PREFIX,
   nodeBaselineFileSystem,
+  nodeStateFileSystem,
+  pairMemberDebug,
+  parseMemberDebug,
   parseStream,
   readPlan,
   reportMemberStatus,
@@ -118,9 +122,28 @@ export const VERIFY_FAMILY = 'ExecutionTestrun' as const;
  */
 export const VERIFY_ARGV_HEAD: readonly string[] = Object.freeze(['testrun', 'run']);
 
-/** `--on-failure continue`: one failing member must not stop the suite (§7.4). */
+/**
+ * The flags every replay carries, whatever its scope.
+ *
+ * `--on-failure continue`: one failing member must not stop the suite (§7.4).
+ *
+ * `--bug-detection continue`: **the branch depends on it, so it is stated rather
+ * than inherited.** Kane's bug investigation is what produces `result_code 740` and
+ * the inline `verdict` object, and those are §6.2's first three rungs — without
+ * them every failure falls through to a triage note inside a sealed zip nothing
+ * opens, and answers `docs-lie`. The mode is a *profile* setting
+ * (`kane-cli config show` → `"bug_detection":"off"` on this machine), which means
+ * the branch KEPT chooses would otherwise depend on ambient state in a config file
+ * belonging to another tool, changeable by anyone, invisible in the argv, and
+ * absent from the recording. A run that reports `code-break` on Tuesday and
+ * `docs-lie` on Wednesday for the same failure is not a router; the flag overrides
+ * the profile so the contract is the argv (R3.4, §4.7). `continue` rather than
+ * `stop` for the same reason as `--on-failure`.
+ */
 export const VERIFY_ARGV_TAIL: readonly string[] = Object.freeze([
   '--on-failure',
+  'continue',
+  '--bug-detection',
   'continue',
 ]);
 
@@ -153,6 +176,10 @@ export const VERIFY_DIAGNOSTIC_CODES = Object.freeze({
   scopeOverridden: 'verify-scope-overridden',
   /** A suite member carries no plan identifier, so `--all` does not replay it. */
   suiteMemberUnidentified: 'verify-suite-member-unidentified',
+  /** The `[member]` stream was captured to `.kept/diagnostics/` (R4.12). */
+  memberStreamCaptured: 'verify-member-stream-captured',
+  /** It was captured and could not be written. The routing is unaffected. */
+  memberStreamUnwritten: 'verify-member-stream-unwritten',
   completed: 'verify-completed',
 } as const);
 
@@ -244,6 +271,8 @@ export interface VerifyResult {
   readonly credits: number | null;
   /** The newest pack this run resolved, or null. Family-derived (R4.13). */
   readonly evidencePackId: string | null;
+  /** Where the captured `[member]` stream landed, or null (R4.12). */
+  readonly memberStreamPath: string | null;
   readonly handoff: WriteHandoffResult;
   readonly snapshot: SnapshotResult;
   readonly diagnostics: readonly Diagnostic[];
@@ -352,6 +381,59 @@ export const VERIFY_ALL_TIMEOUT_MS = 900_000;
 /** The budget for one scope. `--changed` keeps the configured hook budget. */
 export function verifyTimeoutMs(scope: VerifyScope, hookMs: number): number {
   return scope === 'all' ? Math.max(hookMs, VERIFY_ALL_TIMEOUT_MS) : hookMs;
+}
+
+/** Where a run's captured `[member]` stream lands, relative to the repo root. */
+export const MEMBER_STREAM_DIRECTORY_RELATIVE_PATH = '.kept/diagnostics';
+
+/**
+ * Persist the captured `[member]` stream as NDJSON — R4.12's second clause.
+ *
+ * One file per run, payloads only, prefix stripped, in arrival order. It is written
+ * before anything is routed, so a run whose branch surprises somebody leaves the
+ * bytes that decided it — and, more usefully, a run where the signal turned out to
+ * be *absent* leaves proof of the absence. Returns the path, or null when there was
+ * nothing to write.
+ */
+function writeMemberStream(
+  request: VerifyRequest,
+  runId: string,
+  lines: readonly string[],
+  sink: CollectingDiagnosticSink,
+): string | null {
+  const payloads = lines
+    .filter((line) => line.includes(MEMBER_DEBUG_PREFIX))
+    .map((line) => line.slice(line.indexOf(MEMBER_DEBUG_PREFIX) + MEMBER_DEBUG_PREFIX.length));
+  if (payloads.length === 0) return null;
+
+  const fileSystem = request.fileSystem ?? nodeStateFileSystem();
+  const directory = `${request.repoRoot}/${MEMBER_STREAM_DIRECTORY_RELATIVE_PATH}`;
+  const path = `${directory}/${runId.replace(/[^A-Za-z0-9._-]+/g, '_')}.member.ndjson`;
+  try {
+    fileSystem.ensureDir(directory);
+    fileSystem.writeFile(path, `${payloads.join('\n')}\n`);
+  } catch (error) {
+    sink.report({
+      code: VERIFY_DIAGNOSTIC_CODES.memberStreamUnwritten,
+      severity: 'warn',
+      message:
+        `${payloads.length} '[member]' event(s) were captured and could not be written to ` +
+        `${MEMBER_STREAM_DIRECTORY_RELATIVE_PATH}/ (${
+          error instanceof Error ? error.message : String(error)
+        }). The routing is unaffected; only the record of it is missing.`,
+    });
+    return null;
+  }
+  sink.report({
+    code: VERIFY_DIAGNOSTIC_CODES.memberStreamCaptured,
+    severity: 'info',
+    message:
+      `${payloads.length} '[member]' event(s) were captured into ` +
+      `${MEMBER_STREAM_DIRECTORY_RELATIVE_PATH}/${runId}.member.ndjson (R4.12). This is where ` +
+      `the classification signal lives: testrun_member_end carries no result code, no reason ` +
+      `code and no verdict object.`,
+  });
+  return path;
 }
 
 /** A string field off an unknown record, or null. */
@@ -517,6 +599,11 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     });
   }
 
+  // R4.12: the `[member]` stream, captured in full rather than tailed. This is not
+  // diagnostics — `testrun_member_end` carries no result code, no reason code and
+  // no verdict object, so a member's own `run_end` on stderr is the only place the
+  // signal R6.4 calls primary exists. See `kane/memberDebug.ts`.
+  const stderrLines: string[] = [];
   const invocation: InvocationResult<typeof VERIFY_FAMILY> | null = invoke
     ? await (request.invoker as KaneInvoker).invoke({
         family: VERIFY_FAMILY,
@@ -526,6 +613,9 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
         cwd: request.repoRoot,
         env: memberDebugEnv(request.config),
         timeoutMs: verifyTimeoutMs(scope, request.config.timeouts.hookMs),
+        onStderrLine: (line: string): void => {
+          stderrLines.push(line);
+        },
       })
     : null;
 
@@ -605,7 +695,31 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
   const results: HandoffResultInput[] = [];
   const writes: VerdictWrite[] = [];
 
-  for (const event of stream?.members ?? []) {
+  // Pair the captured member terminals with the suite's member events, by order,
+  // and refuse the whole attribution on any disagreement. `terminals[i]` is the
+  // signal for the ith member event, or null when there is none to trust.
+  const memberEvents = stream?.members ?? [];
+  // R4.12's second clause: the captured events land in the run diagnostics, as
+  // NDJSON, one file per run. Without this the only record of the signal that
+  // decided a branch is the branch itself — and when the signal is *absent*, as it
+  // was on the first live loop, there is nothing at all to look at.
+  const memberStreamPath = writeMemberStream(request, runId, stderrLines, sink);
+  const pairing = pairMemberDebug(
+    memberEvents.map((event) => ({
+      status: typeof event.status === 'string' ? event.status : '',
+      path:
+        typeof event.path === 'string' && event.path.trim().length > 0
+          ? toRepoRelative(event.path.trim(), request.repoRoot)
+          : null,
+    })),
+    parseMemberDebug(stderrLines, sink),
+    sink,
+  );
+
+  let memberIndex = -1;
+  for (const event of memberEvents) {
+    memberIndex += 1;
+    const memberTerminal = pairing.terminals[memberIndex] ?? null;
     const status = typeof event.status === 'string' ? event.status : '';
     const testId = typeof event.test_id === 'string' && event.test_id.length > 0
       ? event.test_id
@@ -645,22 +759,31 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
         repair = router.route(
           createFailureContext({
             family: VERIFY_FAMILY,
-            // The **member** event, not `testrun_done`. For this family the
-            // per-member failure signal — the coerced code, the reason code and
-            // the inline `verdict` object — rides on `testrun_member_end`; R3.3
-            // says verdict data comes from the terminal event *plus* this
-            // family's members, and the committed `testrun-mixed.ndjson` carries
-            // no code on its terminal at all. Handing the terminal over instead
-            // would make every failing member fall through the numeric rung of
-            // §6.2 and be triaged from a note, which is a different branch for
-            // the same run. The terminal is still *required*: `terminal !== null`
-            // is what says `testrun_done` arrived, and routing is gated on it.
-            terminal: event as Record<string, unknown>,
+
+            // Never `testrun_done`. R3.3 says verdict data comes from the
+            // terminal event *plus* this family's members, and for this family it
+            // is entirely the members: the suite terminal is
+            // `{type, execution_id, overall_status}` and carries no code at all.
+            //
+            // Which member event, though, is the thing that was measured wrong.
+            // `testrun_member_end` carries `path`, `test_id` and `status` and
+            // **nothing else** — no `result_code`, no `reason_code`, no `verdict`
+            // object — so routing from it makes every failure fall past §6.2's
+            // object and numeric rungs into the triage note, and the note lives
+            // inside a sealed `.evidence` zip that `listArtifacts` does not open.
+            // The result was `docs-lie` for every failure ever routed, including a
+            // deliberately broken `subtotal`. The member's **own** `run_end`, from
+            // the `[member]` stream (R4.12), carries all three; it is preferred
+            // when the capture paired, and the member event remains the fallback
+            // so an unpaired run still routes conservatively rather than not at
+            // all. The suite terminal is still *required*: `terminal !== null` is
+            // what says `testrun_done` arrived, and routing is gated on it.
+            terminal: memberTerminal ?? (event as Record<string, unknown>),
             promiseId: promise.id,
             ...(isMemberStatus(status) ? { memberStatus: status } : {}),
             evidence,
             repoRoot: request.repoRoot,
-            verdictObject: event.verdict,
+            verdictObject: memberTerminal?.['verdict'] ?? event.verdict,
             diagnostics: sink,
             ...(request.yaml === undefined ? {} : { yaml: request.yaml }),
           }),
@@ -672,7 +795,7 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
         memberStatus: isMemberStatus(status) ? status : null,
         verdict: mapping.verdict,
         repair,
-        verdictObject: event.verdict,
+        verdictObject: memberTerminal?.['verdict'] ?? event.verdict,
         evidence,
       });
       // A preflight-rejected run executed nothing, so it proposes no verdict at
@@ -683,11 +806,15 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
         promiseId: promise.id,
         verdict: mapping.verdict,
         memberStatus: isMemberStatus(status) ? status : null,
-        resultCode: resultCode(event as Record<string, unknown>),
-        reasonCode: readString(event, 'reason_code'),
+        // Same source as the routing, and for the same reason: the code, the
+        // reason code and the credits a member's judgement cost are all on its own
+        // `run_end` and none of them are on `testrun_member_end`.
+        resultCode: resultCode(memberTerminal ?? (event as Record<string, unknown>)),
+        reasonCode:
+          readString(memberTerminal, 'reason_code') ?? readString(event, 'reason_code'),
         repair,
         evidencePackId: evidence?.pack?.id ?? null,
-        credits: creditsOf(event as Record<string, unknown>),
+        credits: creditsOf(memberTerminal ?? (event as Record<string, unknown>)),
       });
     }
 
@@ -794,6 +921,7 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     runId,
     credits: terminal === null ? null : creditsOf(terminal as Record<string, unknown>),
     evidencePackId: evidence?.pack?.id ?? null,
+    memberStreamPath,
     handoff,
     snapshot,
     diagnostics: sink.entries,

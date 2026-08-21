@@ -300,6 +300,7 @@ async function dispatchVerify(
           updatedPromiseIds: result.updatedPromiseIds,
           credits: result.credits,
           evidencePackId: result.evidencePackId,
+          memberStreamPath: result.memberStreamPath,
           statePath: result.statePath,
           handoffPath: result.handoff.paths.newest,
           nextAction: result.handoff.handoff.nextAction,

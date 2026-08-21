@@ -8,12 +8,12 @@
   "session_name": "cart_discount",
   "executions": [
     {
-      "execution_id": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+      "execution_id": "57591bff-4480-455e-9ab7-c92263ff58ac",
       "run_kind": "author",
       "status": "failed",
       "valid": true,
       "uploaded": true,
-      "at": "2026-08-21T03:56:02.720Z"
+      "at": "2026-08-21T05:36:17.710Z"
     }
   ]
 }

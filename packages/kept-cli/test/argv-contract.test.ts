@@ -411,7 +411,7 @@ describe('kept verify --changed → testrun run <plan members> --on-failure cont
     // and from nothing else (R4.4). Only the *argv* changed.
     expect(result.radius.testIds).toEqual(['T-3']);
     expect(spawnsOf(kane.spawns, 'testrun')).toEqual([
-      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue', '--bug-detection', 'continue'],
     ]);
     for (const argv of kane.spawns) expect(argv).not.toContain('--agent');
     // The flag the requirement specifies and the CLI rejects, absent from both
@@ -457,7 +457,7 @@ describe('kept verify --all → testrun run <plan members> --on-failure continue
     // carry them, because it resolves against the assurance graph and rejects the
     // plan's own `test_id`.
     expect(spawnsOf(kane.spawns, 'testrun')).toEqual([
-      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
+      ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue', '--bug-detection', 'continue'],
     ]);
     for (const argv of kane.spawns) expect(argv).not.toContain('--from-context');
   });
