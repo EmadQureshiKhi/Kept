@@ -27,7 +27,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { TOKENS } from '../lib/tokens.js';
+import { TOKENS, contrastRatio } from '../lib/tokens.js';
 import {
   STYLE_EXTENSIONS,
   TEXT_EXTENSIONS,
@@ -36,6 +36,7 @@ import {
   parseCss,
   saturation,
   scanLedger,
+  type CssRule,
   type ScannedFile,
 } from './_scan.js';
 
@@ -335,7 +336,31 @@ describe('source scan 6 of 6 — forbidden palette', () => {
 
 /* ───────────────── the surface contract the scan exists to protect ─────────── */
 
-describe('source scan 6 of 6 — three surface classes, and only three', () => {
+/**
+ * The surface set, and the one deliberate widening of it.
+ *
+ * This was "three surface classes, and only three" until the page-title treatment
+ * landed. The fourth is `.surface-slab-ink`: elevation 2 with the ink and the paper
+ * exchanged, so a page title covers the drawn ruling of `shell.css` instead of sitting
+ * on it. It is a *surface* rather than a heading style for one mechanical reason — it
+ * needs a `box-shadow`, and rule 5 above makes `surfaces.css` the only file that may
+ * declare one. Putting the plane anywhere else would mean either a title with no depth
+ * or a second file that knows what a shadow is.
+ *
+ * The expectation is widened here, once, and named — not loosened into a count range or
+ * a `toContain`. What these assertions protect is "this file defines a closed set of
+ * surface classes, each of which authors depth and a fill"; a fifth arriving without
+ * this list being edited is still a failure, which is the whole point of spelling the
+ * set out rather than counting braces.
+ */
+const SURFACE_CLASSES = [
+  '.surface-raised',
+  '.surface-raised-2',
+  '.surface-slab-ink',
+  '.surface-well',
+] as const;
+
+describe('source scan 6 of 6 — four surface classes, and only four', () => {
   const surfaces = STYLESHEETS.find((file) => file.path === SURFACES_CSS);
 
   function surfacesFile(): ScannedFile {
@@ -344,17 +369,95 @@ describe('source scan 6 of 6 — three surface classes, and only three', () => {
     return surfaces;
   }
 
-  it('defines exactly .surface-raised, .surface-raised-2 and .surface-well', () => {
-    const preludes = parseCss(surfacesFile().text).map((rule) => rule.prelude);
-    expect(preludes.sort()).toEqual(['.surface-raised', '.surface-raised-2', '.surface-well']);
+  /**
+   * The rules that *define* the surfaces: top-level, and not an at-rule's own prelude.
+   *
+   * This filter was added when `surfaces.css` grew an `@media print` block, which
+   * removes the slab shadows on paper — a shadow printed is not depth, it is a bar of
+   * solid ink down two sides of every card. A print block necessarily adds preludes:
+   * the at-rule's own, plus one rule inside it per group of classes it adjusts. So a
+   * flat count over every prelude in the file now reads five where it used to read
+   * three, and the two assertions below would fail for a reason that has nothing to do
+   * with what they are guarding.
+   *
+   * The expectation is adapted rather than the stylesheet, deliberately. What these two
+   * assertions protect is "this file defines the surface classes {@link SURFACE_CLASSES}
+   * names and no other, and each one authors depth and a fill" — not "this file contains
+   * exactly three braces".
+   * Restructuring the classes to preserve the simpler count would be letting the shape
+   * of a test dictate the shape of the CSS, and would have cost the print treatment.
+   * The print block is not left unchecked either: it is asserted by name in the third
+   * test below, which is stricter than the count it replaced.
+   */
+  function surfaceClassRules(): CssRule[] {
+    return parseCss(surfacesFile().text).filter(
+      (rule) => rule.ancestors.length === 0 && !rule.prelude.startsWith('@'),
+    );
+  }
+
+  it('defines exactly the four surface classes and no fifth', () => {
+    const preludes = surfaceClassRules().map((rule) => rule.prelude);
+    expect(preludes.sort()).toEqual([...SURFACE_CLASSES]);
   });
 
   it('gives every one of them a shadow, because that is what they are for', () => {
-    for (const rule of parseCss(surfacesFile().text)) {
+    const rules = surfaceClassRules();
+    expect(rules.length).toBe(SURFACE_CLASSES.length);
+    for (const rule of rules) {
       const properties = rule.declarations.map((declaration) => declaration.property.toLowerCase());
       expect(properties, `${rule.prelude} authors no depth`).toContain(SHADOW_PROPERTY);
       expect(properties, `${rule.prelude} sets no fill`).toContain('background-color');
     }
+  });
+
+  it('drops every slab shadow in print and leaves no surface without an edge', () => {
+    const print = parseCss(surfacesFile().text).filter((rule) =>
+      rule.ancestors.some((ancestor) => /^@media\s+print$/.test(ancestor)),
+    );
+    expect(
+      print.length,
+      `${SURFACES_CSS} authors no print treatment, so every card prints with a slab of ` +
+        `solid --occlude down two of its sides`,
+    ).toBeGreaterThan(0);
+
+    const cleared = new Set(
+      print
+        .filter((rule) =>
+          rule.declarations.some(
+            (declaration) =>
+              declaration.property.toLowerCase() === SHADOW_PROPERTY &&
+              declaration.value.trim().toLowerCase() === 'none',
+          ),
+        )
+        .flatMap((rule) => rule.prelude.split(',').map((selector) => selector.trim())),
+    );
+    for (const surface of SURFACE_CLASSES) {
+      expect(cleared.has(surface), `${surface} keeps its slab shadow on paper`).toBe(true);
+    }
+
+    /* Nothing in the block may take a border away: once the shadow is gone the border
+       is the whole of the structure. The two raised classes keep the 2px ink border
+       they already declare; the well, which has none because it is authored entirely
+       out of inset occlusion, is given one — so exactly one `border` is expected here,
+       and a print block that removed edges instead of adding one fails. */
+    for (const rule of print) {
+      for (const declaration of rule.declarations) {
+        if (!declaration.property.toLowerCase().startsWith('border')) continue;
+        expect(
+          declaration.value.trim().toLowerCase(),
+          `${rule.prelude} drops a border in print, leaving the surface with neither a ` +
+            `shadow nor an edge`,
+        ).not.toBe('none');
+      }
+    }
+    const borders = print.flatMap((rule) =>
+      rule.declarations.filter((declaration) => declaration.property.toLowerCase() === 'border'),
+    );
+    expect(
+      borders.length,
+      'the recessed well prints with no shadow and no border, and its fill cannot be ' +
+        'relied on because user agents drop background graphics by default',
+    ).toBe(1);
   });
 
   it('expresses the light source as a top edge, downward occlusion and an off-axis wash', () => {
@@ -368,6 +471,58 @@ describe('source scan 6 of 6 — three surface classes, and only three', () => {
     expect(text).toContain('linear-gradient(176deg, var(--light-wash), transparent 62%)');
     /* the well inverts the ramp rather than lighting itself from below */
     expect(text).toContain('var(--occlude) inset');
+  });
+
+  /**
+   * The fourth surface is composed where it was added for, and inverts in one rule.
+   *
+   * Two failure modes this guards, both of which present as green: a surface class
+   * declared and never used — which is a shadow nobody sees and a widening of the set
+   * above for nothing — and a page that quietly drops back to a bare `h1`, which is how
+   * the title treatment would decay one route at a time.
+   *
+   * The inversion clause is deliberately duplicated from `verdict-presentation.prop.test.tsx`
+   * rather than delegated to it. That file derives the pair space from the whole tree and
+   * would catch a *broken* inversion; this states the specific pair this specific class is
+   * built on, so a failure names the class instead of naming two tokens.
+   */
+  it('inverts in one rule, and every route composes it on its page title', () => {
+    const slab = surfaceClassRules().find((rule) => rule.prelude === '.surface-slab-ink');
+    expect(slab, '.surface-slab-ink is not defined at the top level of surfaces.css').toBeDefined();
+    const declared = new Map(
+      (slab?.declarations ?? []).map((entry) => [
+        entry.property.toLowerCase(),
+        entry.value.trim(),
+      ]),
+    );
+    expect(declared.get('background-color')).toBe('var(--text-000)');
+    expect(
+      declared.get('color'),
+      'an ink fill that leaves its text to be inherited is dark type on dark ink',
+    ).toBe('var(--ink-000)');
+    expect(
+      contrastRatio(TOKENS['--ink-000'], TOKENS['--text-000']),
+      'the title slab is read as body copy like anything else on the page',
+    ).toBeGreaterThanOrEqual(4.5);
+
+    /* Every route's page body composes the plane, the box and the standfirst. Matched on
+       the filename Next treats as a route rather than on a list of paths, so a sixth route
+       is held to the same treatment without this assertion being revisited. */
+    const routes = CODE_AND_STYLE.filter((file) =>
+      /^apps\/ledger\/app\/(?:[\w-]+\/)*page\.tsx$/.test(file.path),
+    );
+    expect(routes.length, 'no route page was scanned — has app/ moved?').toBeGreaterThanOrEqual(5);
+    const missing = routes.flatMap((file) => {
+      const gaps: string[] = [];
+      if (!file.text.includes('page-title__slab surface-slab-ink')) {
+        gaps.push(`${file.path} sets its page title outside the ink slab`);
+      }
+      if (!file.text.includes('page-standfirst')) {
+        gaps.push(`${file.path} does not use the shared standfirst under its title`);
+      }
+      return gaps;
+    });
+    expect(missing, missing.join('\n')).toEqual([]);
   });
 
   it('leaves --elev-3 declared and unused, reserved for a future overlay', () => {

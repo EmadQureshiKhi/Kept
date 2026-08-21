@@ -1,26 +1,29 @@
 /**
  * Light, occlusion and elevation — design §10.5.
  *
- * One implied light source: above, slightly left, 15° off vertical, warm. Every
- * depth cue in the Ledger derives from it and nothing is lit ad hoc. The source
- * is expressed three ways, and only these three:
+ * One implied light source: above, slightly left, 15° off vertical. Every depth cue
+ * in the Ledger derives from it and nothing is lit ad hoc. On paper the source is
+ * expressed three ways, and only these three:
  *
  *   1. *Above*        — a 1px `inset` highlight on the top edge of anything
  *                       raised, `--light-edge` at elevation 1 and
  *                       `--light-edge-strong` at 2. The cheapest legible depth
  *                       cue there is.
- *   2. *Occluding*    — two stacked shadows per level, a tight contact shadow
- *                       with negative spread and a wide soft ambient one, both
- *                       cast straight down in `--occlude`, a warm near-black.
- *                       Never grey, never coloured, never a glow.
+ *   2. *Occluding*    — one hard shadow per level: a solid slab of `--occlude`
+ *                       offset down and to the right at **zero blur and zero
+ *                       spread**, so the shape of the shadow is the shape of the
+ *                       element. The offset grows with elevation, 4px then 6px,
+ *                       and nothing softens. Never grey, never coloured, never
+ *                       diffuse, never a glow.
  *   3. *Off vertical* — the large-plane wash is `linear-gradient(176deg, …)`
  *                       rather than 180°, so the falloff runs off-axis with the
- *                       source instead of straight down the page. Amplitude is
- *                       `--light-wash` at 2.8% — felt, not seen.
+ *                       source instead of straight down the page.
  *
- * Recessed surfaces invert the ramp rather than inventing a second light: the
- * occlusion moves inside and to the top, and the highlight moves to the bottom
- * edge, because a cut reveals its far wall to the same lamp.
+ * Raised surfaces are slabs: a 2px ink border in `--text-000` closes the plane, and
+ * the shadow sits outside it rather than standing in for it. Recessed surfaces
+ * invert the ramp rather than inventing a second light — the occlusion moves inside
+ * and to the top, and the highlight moves to the bottom edge, because a cut reveals
+ * its far wall to the same lamp.
  *
  * These three classes are the ONLY way a component authors depth. A component
  * picks an elevation; it never writes a shadow. The forbidden-palette scan
@@ -31,19 +34,45 @@
  *   --elev-0  page shell                        (set on the shell in app/layout)
  *   --elev-1  nodes, rail tiles, chips          .surface-raised
  *   --elev-2  promise panel, amendment cards    .surface-raised-2
+ *             page titles, inverted             .surface-slab-ink
  *   --elev-3  nothing — reserved for a future overlay, declared and unused
  *
- * Deliberately absent: a uniform shadow sprayed on every box, any glow including
- * on hover and on the red verdict, glassmorphism blur, double borders, and a
- * shadow standing in for a border. The forbidden-palette scan reads comments as
- * well as declarations, so those are named in words — prose that spells out a
- * banned value is how the banned value gets copied into code later.
+ * ── The fourth class, and why it is a surface rather than a heading style ─────
+ *
+ * `.surface-slab-ink` is the same elevation-2 slab with the ink and the paper the
+ * other way round: the plane is `--text-000` and the type on it is `--ink-000`. It
+ * exists because a page title is the one element in the Ledger that has to win
+ * against the drawn ruling of `shell.css` from across a room, and the only way to
+ * win against a texture is to cover it. A 2px border cannot; a solid plane can.
+ *
+ * It lives here rather than in `shell.css` for the reason every other surface does:
+ * it needs a `box-shadow`, and a shadow is declared in this file and in no other. So
+ * `shell.css` owns the title's *type* — the clamp, the weight, the uppercase, the
+ * padding that becomes the slab's optical margin — and this class owns its plane, its
+ * ink, its paper and its depth. The two compose in the markup, exactly as the canvas
+ * frame and the amendment card already do.
+ *
+ * The inversion sets its own `color` in the *same rule*, and that is a requirement
+ * rather than tidiness: `verdict-presentation.prop.test.tsx` derives every
+ * foreground/background pair the stylesheets produce by co-occurrence, admits
+ * `--text-000` as a fill only where the interface deliberately inverts, and fails an
+ * inverting rule that leaves its text to be inherited — dark type on dark ink. Paper
+ * on ink measures 19.0:1, the highest-contrast pair in the palette.
+ *
+ * Deliberately absent: a uniform shadow sprayed on every box, any blurred or
+ * ambient falloff, any glow including on hover and on the red verdict,
+ * glassmorphism blur, double borders, and a shadow standing in for a border. The
+ * forbidden-palette scan reads comments as well as declarations, so those are named
+ * in words — prose that spells out a banned value is how the banned value gets
+ * copied into code later.
  */
 
-/* Elevation 1 — nodes, rail tiles, chips. Small planes, so no wash: the top edge
-   and the contact shadow carry it. */
+/* Elevation 1 — nodes, rail tiles, chips. Small planes, so no wash: the top edge,
+   the ink border and the offset slab carry it. */
 .surface-raised {
   background-color: var(--ink-100);
+  border: 2px solid var(--text-000);
+  border-radius: var(--r-card);
   box-shadow: var(--elev-1);
 }
 
@@ -52,16 +81,80 @@
 .surface-raised-2 {
   background-color: var(--ink-150);
   background-image: linear-gradient(176deg, var(--light-wash), transparent 62%);
+  border: 2px solid var(--text-000);
+  border-radius: var(--r-panel);
   box-shadow: var(--elev-2);
 }
 
-/* Recessed — the citation well and the diff gutter. Inverted ramp: occlusion
-   inside the top edge, the light edge along the bottom, so the surface reads as
-   cut into its parent rather than stacked on it. */
+/* Elevation 2, inverted — the page title slab. Ink is the plane and paper is the
+   type, so the title covers the ruling instead of sitting on it. The radius is the
+   chip's 2px rather than the panel's 10px: this is a printer's plate, and a plate has
+   corners. No border, because a 2px ink edge around a solid ink plane is 2px of
+   nothing — the offset slab is the whole of the edge. */
+.surface-slab-ink {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+  border-radius: var(--r-chip);
+  box-shadow: var(--elev-2);
+}
+
+/* Recessed — the citation well and the diff gutter. Inverted ramp, still at zero
+   blur: a hard band of occlusion inside the top edge and the light edge along the
+   bottom, so the surface reads as cut into its parent rather than stacked on it. */
 .surface-well {
   background-color: var(--ink-050);
+  border-radius: var(--r-chip);
   box-shadow:
-    0 1px 0 0 var(--occlude) inset,
-    0 2px 5px -2px var(--occlude) inset,
+    0 2px 0 0 var(--occlude) inset,
     0 -1px 0 0 var(--light-edge) inset;
+}
+
+/* ── print: the structure, without the light ──────────────────────────────────
+ *
+ * A slab shadow is a claim about a light source, and paper has its own. Printed,
+ * `--occlude` is not depth — it is a 4px to 10px bar of solid near-black ink down
+ * two sides of every card, which costs toner, closes up at low resolution and
+ * reads as a printing fault rather than as elevation. So the shadows come off and
+ * the borders carry the structure alone, which is what they were drawn to do: the
+ * 2px ink border on the two raised classes is what closes their plane, and the
+ * shadow always sat outside it rather than standing in for it.
+ *
+ * Two classes need more than the shadow taken off, and each gets exactly what it needs
+ * and nothing else.
+ *
+ * The well is the first. It has no border by design —
+ * it is authored *entirely* out of inset occlusion, so removing the shadow would
+ * leave a recess with no edge at all, and its `--ink-050` fill cannot be relied on
+ * either because user agents drop background graphics by default when printing. It
+ * gets a hairline instead: the lightest structural rule in the palette, enough to
+ * say "this content is set into its parent" without asking for a second border
+ * weight on the page.
+ *
+ * The title slab is the second, and it goes the other way: it is given nothing back, it
+ * has something taken away. See the note on it below.
+ *
+ * This block is why `forbidden-palette.test.ts` counts the file's *top-level*
+ * preludes rather than all of them — the note there explains the change. */
+@media print {
+  .surface-raised,
+  .surface-raised-2,
+  .surface-slab-ink,
+  .surface-well {
+    box-shadow: none;
+  }
+
+  .surface-well {
+    border: 1px solid var(--hairline-strong);
+  }
+
+  /* The title slab turns itself the right way up on paper. A solid near-black plane
+     the width of a heading is a page of toner, closes up on a laser printer and reads
+     as a printing fault; the type it carries is already 800 weight uppercase display
+     and needs no plane to be found. So the ink goes back to the type and the plane
+     goes back to paper, and the heading prints as the heading. The pair is stated in
+     one rule because an inversion undone in halves is a moment of paper on paper. */
+  .surface-slab-ink {
+    background-color: var(--ink-150);
+    color: var(--text-000);
+  }
 }

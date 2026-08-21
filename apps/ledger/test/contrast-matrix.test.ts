@@ -9,15 +9,21 @@
  *
  *   - A palette edit that lowered a ratio fails here rather than shipping. The
  *     floor is not "the design says 4.5"; it is "the measured minimum anywhere in
- *     this matrix is 4.89:1, produced by `--text-200` on `--ink-150`". Move a hex
- *     one step darker and this suite names the cell.
+ *     this matrix is 4.98:1, produced by `--verdict-proven` on `--ink-050`". Move a
+ *     hex one step lighter and this suite names the cell.
  *   - `--ink-150` is the hover and selected-node fill, so measuring the full
  *     cross product rather than the resting surface alone is what proves an
  *     interaction cannot drop a pair below threshold.
  *
+ * The palette is paper and ink, so the ramp's worst case moved: `--ink-050` is the
+ * recessed surface and therefore the darkest of the four, which makes it — not
+ * `--ink-150` — the cell where dark type has least room. Deep patina on that recess
+ * is the whole matrix's tightest pair at 4.98:1, and every judged cell above it
+ * clears its floor with margin.
+ *
  * Non-text pairs are excluded from the text floors *by construction*, not by
- * exception: `--hairline` at 1.32:1 and `--hairline-strong` at 1.50:1 are 1px
- * rules and `--focus` is a 2px ring. Their ratios are still pinned below, and a
+ * exception: `--hairline` at 1.49:1 and `--hairline-strong` at 2.12:1 are 1px
+ * rules and `--focus` is a 3px ring. Their ratios are still pinned below, and a
  * separate assertion checks none of them is ever handed to a `color` declaration.
  */
 
@@ -36,10 +42,15 @@ import {
 import { STYLE_EXTENSIONS, parseCss, scanLedger } from './_scan.js';
 
 /** The measured minimum anywhere in the matrix, from design §10.4.2. */
-const MATRIX_MINIMUM = 4.89;
+const MATRIX_MINIMUM = 4.98;
 
-/** The two pairs that produce it — `--text-200` and `--verdict-undesigned` share a hex. */
-const MINIMUM_PAIRS = ['--text-200 on --ink-150', '--verdict-undesigned on --ink-150'] as const;
+/**
+ * The pair that produces it: deep patina on the recessed surface, the darkest of the
+ * four papers. `--text-200` and `--verdict-undesigned` still share a hex and so still
+ * tie with each other, but they tie at 6.03:1 on the same recess — comfortably above
+ * this floor rather than at it.
+ */
+const MINIMUM_PAIRS = ['--verdict-proven on --ink-050'] as const;
 
 const key = (pair: Pick<ContrastPair, 'fg' | 'bg'>): string => `${pair.fg} on ${pair.bg}`;
 
@@ -49,53 +60,53 @@ const key = (pair: Pick<ContrastPair, 'fg' | 'bg'>): string => `${pair.fg} on ${
  * measured expectation being written down beside it.
  */
 const EXPECTED: Readonly<Record<string, number>> = {
-  /* text ramp on all four ink surfaces */
-  '--text-000 on --ink-000': 16.03,
-  '--text-000 on --ink-050': 15.16,
-  '--text-000 on --ink-100': 14.2,
-  '--text-000 on --ink-150': 13.02,
-  '--text-100 on --ink-000': 8.44,
-  '--text-100 on --ink-050': 7.97,
-  '--text-100 on --ink-100': 7.47,
-  '--text-100 on --ink-150': 6.85,
-  '--text-200 on --ink-000': 6.02,
-  '--text-200 on --ink-050': 5.69,
-  '--text-200 on --ink-100': 5.33,
-  '--text-200 on --ink-150': 4.89,
+  /* text ramp on all four paper surfaces */
+  '--text-000 on --ink-000': 17.72,
+  '--text-000 on --ink-050': 16.01,
+  '--text-000 on --ink-100': 19.15,
+  '--text-000 on --ink-150': 19.68,
+  '--text-100 on --ink-000': 10.17,
+  '--text-100 on --ink-050': 9.19,
+  '--text-100 on --ink-100': 10.99,
+  '--text-100 on --ink-150': 11.3,
+  '--text-200 on --ink-000': 6.67,
+  '--text-200 on --ink-050': 6.03,
+  '--text-200 on --ink-100': 7.21,
+  '--text-200 on --ink-150': 7.41,
 
-  /* verdict hues as tag text on the page and the panel base */
-  '--verdict-proven on --ink-000': 7.98,
-  '--verdict-proven on --ink-050': 7.54,
-  '--verdict-stale on --ink-000': 8.46,
-  '--verdict-stale on --ink-050': 8.0,
-  '--verdict-red on --ink-000': 6.17,
-  '--verdict-red on --ink-050': 5.83,
-  '--verdict-undesigned on --ink-000': 6.02,
-  '--verdict-undesigned on --ink-050': 5.69,
+  /* verdict hues as tag text on the page and the recessed panel base */
+  '--verdict-proven on --ink-000': 5.51,
+  '--verdict-proven on --ink-050': 4.98,
+  '--verdict-stale on --ink-000': 6.47,
+  '--verdict-stale on --ink-050': 5.85,
+  '--verdict-red on --ink-000': 5.74,
+  '--verdict-red on --ink-050': 5.19,
+  '--verdict-undesigned on --ink-000': 6.67,
+  '--verdict-undesigned on --ink-050': 6.03,
 
   /* the same hues as graph node labels, at rest and hovered / selected */
-  '--verdict-proven on --ink-100': 7.06,
-  '--verdict-proven on --ink-150': 6.48,
-  '--verdict-stale on --ink-100': 7.49,
-  '--verdict-stale on --ink-150': 6.87,
-  '--verdict-red on --ink-100': 5.46,
-  '--verdict-red on --ink-150': 5.01,
-  '--verdict-undesigned on --ink-100': 5.33,
-  '--verdict-undesigned on --ink-150': 4.89,
+  '--verdict-proven on --ink-100': 5.96,
+  '--verdict-proven on --ink-150': 6.12,
+  '--verdict-stale on --ink-100': 6.99,
+  '--verdict-stale on --ink-150': 7.19,
+  '--verdict-red on --ink-100': 6.2,
+  '--verdict-red on --ink-150': 6.38,
+  '--verdict-undesigned on --ink-100': 7.21,
+  '--verdict-undesigned on --ink-150': 7.41,
 
-  /* badge inversion (§10.11): ink on a verdict fill */
-  '--ink-000 on --verdict-proven': 7.98,
-  '--ink-000 on --verdict-stale': 8.46,
-  '--ink-000 on --verdict-red': 6.17,
-  '--ink-000 on --verdict-undesigned': 6.02,
+  /* badge inversion (§10.11): the page surface as type on a verdict fill */
+  '--ink-000 on --verdict-proven': 5.51,
+  '--ink-000 on --verdict-stale': 6.47,
+  '--ink-000 on --verdict-red': 5.74,
+  '--ink-000 on --verdict-undesigned': 6.67,
 
   /* non-text: the focus ring and the two rules */
-  '--focus on --ink-000': 7.2,
-  '--focus on --ink-050': 6.8,
-  '--focus on --ink-100': 6.37,
-  '--focus on --ink-150': 5.85,
-  '--hairline on --ink-000': 1.32,
-  '--hairline-strong on --ink-000': 1.5,
+  '--focus on --ink-000': 17.72,
+  '--focus on --ink-050': 16.01,
+  '--focus on --ink-100': 19.15,
+  '--focus on --ink-150': 19.68,
+  '--hairline on --ink-000': 1.49,
+  '--hairline-strong on --ink-000': 2.12,
 };
 
 const round = (ratio: number): number => Math.round(ratio * 100) / 100;
@@ -126,7 +137,7 @@ describe('visual enforcement 1 of 3 — the matrix is not a no-op', () => {
   it('computes WCAG ratios the WCAG way', () => {
     expect(round(contrastRatio('#FFFFFF', '#000000'))).toBe(21);
     expect(round(contrastRatio('#000000', '#FFFFFF'))).toBe(21);
-    expect(round(contrastRatio('#14120F', '#14120F'))).toBe(1);
+    expect(round(contrastRatio('#0B0B0B', '#0B0B0B'))).toBe(1);
     expect(round(contrastRatio('#fff', '#FFFFFF'))).toBe(1);
   });
 });
@@ -178,7 +189,7 @@ describe('visual enforcement 1 of 3 — contrast over the whole ramp', () => {
     expect(failures, failures.join('\n')).toEqual([]);
   });
 
-  it('has 4.89:1 as its lowest measured ratio, from --text-200 on --ink-150', () => {
+  it('has 4.98:1 as its lowest measured ratio, from --verdict-proven on --ink-050', () => {
     const ratios = JUDGED.map((pair) => ({ name: key(pair), ratio: round(pairRatio(pair)) }));
     const lowest = Math.min(...ratios.map((entry) => entry.ratio));
 
@@ -219,8 +230,8 @@ describe('visual enforcement 1 of 3 — contrast over the whole ramp', () => {
 
 describe('visual enforcement 1 of 3 — non-text pairs are excluded by construction', () => {
   it('pins the hairline and focus ratios design §10.4.2 names', () => {
-    expect(round(pairRatio({ fg: '--hairline', bg: '--ink-000', role: 'non-text' }))).toBe(1.32);
-    expect(round(pairRatio({ fg: '--hairline-strong', bg: '--ink-000', role: 'non-text' }))).toBe(1.5);
+    expect(round(pairRatio({ fg: '--hairline', bg: '--ink-000', role: 'non-text' }))).toBe(1.49);
+    expect(round(pairRatio({ fg: '--hairline-strong', bg: '--ink-000', role: 'non-text' }))).toBe(2.12);
     for (const pair of NON_TEXT) {
       if (!pair.fg.startsWith('--hairline')) continue;
       expect(pairRatio(pair)).toBeLessThan(CONTRAST_FLOORS['node-label']);

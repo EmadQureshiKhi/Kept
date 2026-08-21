@@ -17,50 +17,61 @@
  */
 
 export const TOKENS = {
-  /* ink surfaces */
-  '--ink-000': '#14120F',
-  '--ink-050': '#1B1815',
-  '--ink-100': '#221E1A',
-  '--ink-150': '#2A251F',
-  '--hairline': '#302A24',
-  '--hairline-strong': '#3A332B',
+  /* paper surfaces — the `--ink-*` names are kept, the values are now paper and
+     the ramp reads brighter as it rises */
+  '--ink-000': '#F4F3EE',
+  '--ink-050': '#E9E8E0',
+  '--ink-100': '#FCFCF9',
+  '--ink-150': '#FFFFFF',
+
+  /* The two rules are ink at 18% and 32% over the page in intent, written as the
+     opaque flattening of exactly that: `parseHex` below accepts hex only, and both
+     rules are pinned as non-text cells in the matrix, so an rgba() value here would
+     throw rather than measure. Recompute if the page surface moves. */
+  '--hairline': '#CAC9C5',
+  '--hairline-strong': '#A9A9A5',
 
   /* light: one implied source, above and 15° off vertical */
-  '--light-edge': 'rgba(246, 238, 226, 0.075)',
-  '--light-edge-strong': 'rgba(246, 238, 226, 0.115)',
-  '--light-wash': 'rgba(246, 238, 226, 0.028)',
-  '--occlude': 'rgba(6, 5, 4, 0.55)',
+  '--light-edge': 'rgba(255, 255, 255, 0.90)',
+  '--light-edge-strong': 'rgba(255, 255, 255, 1)',
+  '--light-wash': 'rgba(255, 255, 255, 0.55)',
+  '--occlude': '#0B0B0B',
 
   /* text */
-  '--text-000': '#F2EDE4',
-  '--text-100': '#B6ADA0',
-  '--text-200': '#9A9184',
+  '--text-000': '#0B0B0B',
+  '--text-100': '#3A3A40',
+  '--text-200': '#55555A',
 
-  /* verdicts — the only chromatic channel */
-  '--verdict-proven': '#6FB894',
-  '--verdict-stale': '#D9A64A',
-  '--verdict-red': '#D97A66',
-  '--verdict-undesigned': '#9A9184',
+  /* verdicts — the only chromatic channel, darkened for AA on paper */
+  '--verdict-proven': '#1F6F4A',
+  '--verdict-stale': '#6B5426',
+  '--verdict-red': '#9A4630',
+  '--verdict-undesigned': '#55555A',
 
   /* verdict washes — edges, troughs and tag borders only, never behind text */
-  '--wash-proven': 'rgba(111, 184, 148, 0.10)',
-  '--wash-stale': 'rgba(217, 166, 74, 0.10)',
-  '--wash-red': 'rgba(217, 122, 102, 0.12)',
-  '--wash-undesigned': 'rgba(154, 145, 132, 0.08)',
+  '--wash-proven': 'rgba(31, 111, 74, 0.16)',
+  '--wash-stale': 'rgba(107, 84, 38, 0.16)',
+  '--wash-red': 'rgba(154, 70, 48, 0.18)',
+  '--wash-undesigned': 'rgba(85, 85, 90, 0.14)',
 
-  /* structural accent — 2px focus ring only */
-  '--focus': '#7FA6BC',
+  /* structural accent — a solid ink focus ring only */
+  '--focus': '#0B0B0B',
 
-  /* elevation ramp */
+  /* elevation ramp — hard offset slab, zero blur, one direction */
   '--elev-0': 'none',
-  '--elev-1':
-    '0 1px 0 0 var(--light-edge) inset, 0 1px 2px -1px var(--occlude), 0 2px 6px -3px var(--occlude)',
-  '--elev-2':
-    '0 1px 0 0 var(--light-edge-strong) inset, 0 2px 4px -2px var(--occlude), 0 8px 20px -8px var(--occlude)',
-  '--elev-3':
-    '0 1px 0 0 var(--light-edge-strong) inset, 0 4px 10px -4px var(--occlude), 0 24px 48px -20px var(--occlude)',
+  '--elev-1': '0 1px 0 0 var(--light-edge) inset, 4px 4px 0 0 var(--occlude)',
+  '--elev-2': '0 1px 0 0 var(--light-edge-strong) inset, 6px 6px 0 0 var(--occlude)',
+  '--elev-3': '0 1px 0 0 var(--light-edge-strong) inset, 10px 10px 0 0 var(--occlude)',
+
+  /* neubrutalist geometry — parity covers every declared custom property, not just
+     the colours, so these are mirrored here too */
+  '--line': '2px',
+  '--line-heavy': '3px',
+  '--shadow-pressed': '1px 1px 0 0 var(--occlude)',
+  '--grid-cell': '28px',
 
   /* type scale (16px root) */
+  '--fs-root': '0.9375rem',
   '--fs-micro': '0.6875rem',
   '--fs-xs': '0.75rem',
   '--fs-sm': '0.8125rem',
@@ -70,12 +81,25 @@ export const TOKENS = {
   '--fs-xl': '1.75rem',
   '--fs-metric': '2.5rem',
 
-  /* line height and tracking */
+  /* leading, loosest first: the document inherits --lh-root, prose resets to
+     --lh-body, display type sets solid at --lh-display */
+  '--lh-root': '1.6',
   '--lh-tight': '1.2',
   '--lh-body': '1.55',
   '--lh-mono': '1.45',
+  '--lh-display': '1.1',
+
+  /* tracking — one step per role, negative as the size grows and positive as it
+     shrinks into caps */
+  '--tr-display': '-0.03em',
+  '--tr-heading': '-0.02em',
   '--tr-tight': '-0.011em',
   '--tr-mono': '0.002em',
+  '--tr-caps-nav': '0.02em',
+  '--tr-caps-wordmark': '0.04em',
+  '--tr-caps-label': '0.06em',
+  '--tr-caps-table': '0.09em',
+  '--tr-caps-eyebrow': '0.1em',
 
   /* spacing — 4-based, no other values permitted */
   '--s-1': '4px',
@@ -114,9 +138,11 @@ export const TOKENS = {
 export type TokenName = keyof typeof TOKENS;
 
 /**
- * The four ink surfaces a foreground can land on, darkest first. `--ink-150` is
- * the hover / selected fill, so a pair that clears its floor here clears it in
- * every interaction state (§10.4.2).
+ * The four paper surfaces a foreground can land on, in ramp order: page, recess,
+ * raised, raised-2. Elevation now reads brighter as it rises, so `--ink-050` is the
+ * darkest of the four and the worst case for dark text. `--ink-150` is the hover /
+ * selected fill, so a pair that clears its floor across all four clears it in every
+ * interaction state (§10.4.2).
  */
 export const INK_SURFACES = ['--ink-000', '--ink-050', '--ink-100', '--ink-150'] as const;
 
@@ -195,8 +221,8 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   { fg: '--ink-000', bg: '--verdict-red', role: 'body' },
   { fg: '--ink-000', bg: '--verdict-undesigned', role: 'body' },
 
-  /* non-text: a 2px focus ring and two 1px rules. Never text, and never the
-     sole carrier of meaning */
+  /* non-text: a 3px solid ink focus outline and two 1px rules. Never text, and
+     never the sole carrier of meaning */
   { fg: '--focus', bg: '--ink-000', role: 'non-text' },
   { fg: '--focus', bg: '--ink-050', role: 'non-text' },
   { fg: '--focus', bg: '--ink-100', role: 'non-text' },

@@ -1,11 +1,20 @@
 /**
  * KEPT Ledger design tokens — design §10.4.1.
  *
- * The whole visual system lives here. A deep desaturated *ink* base with a faint
- * warm mineral cast (hue 30–39°, saturation under 16%) so the page reads as dark
- * paper under a warm lamp rather than a dark screen. Verdict hues are drawn from
- * oxidised material — patina, ochre, clay, stone-sage — and are the only
- * chromatic channel in the product.
+ * The whole visual system lives here. A near-white *paper* base with a faint warm
+ * mineral cast (hue 40-60°, saturation under 5%) carrying near-black *ink*, so the
+ * page reads as a printed ledger sheet rather than a lit screen. The `--ink-*`
+ * names are load-bearing across fifteen stylesheets and are kept verbatim; what
+ * changed is what they hold. They now name paper, and the ramp reads BRIGHTER as
+ * it rises: `--ink-050` is a recess cut into the sheet, `--ink-150` is pure white
+ * lifted clear of it.
+ *
+ * Depth is neubrutalist: a solid ink slab offset down and to the right at zero
+ * blur, plus a 1px top-edge highlight so the light source still has a direction.
+ * Nothing is soft, nothing is ambient, and the offset grows with elevation rather
+ * than the spread. Verdict hues are drawn from oxidised material — patina, ochre,
+ * clay, stone — darkened until each one clears the body floor against white, and
+ * they remain the only chromatic channel in the product.
  *
  * Forbidden, and asserted by the forbidden-palette scan (§10.4.4): neon; the
  * pure-channel `00FF` hue family; the purple-to-blue startup gradient;
@@ -21,55 +30,67 @@
  */
 
 :root {
-  /* ── ink surfaces: one hue family, warm, 4-step ramp ─────────────── */
-  --ink-000: #14120F;   /* page                                            */
-  --ink-050: #1B1815;   /* sunken: panel base, rail trough, code wells     */
-  --ink-100: #221E1A;   /* raised: nodes, cards, chips                     */
-  --ink-150: #2A251F;   /* raised-2: hover, active row, selected node fill  */
-  --hairline:        #302A24;   /* 1px structural rules      — 1.32:1, non-text */
-  --hairline-strong: #3A332B;   /* section divisions          — 1.50:1, non-text */
+  /* ── paper surfaces: one hue family, warm, 4-step ramp, brighter as it rises ── */
+  --ink-000: #F4F3EE;   /* page                                              */
+  --ink-050: #E9E8E0;   /* recessed: wells, banding, dt cells                */
+  --ink-100: #FCFCF9;   /* raised: cards, nodes, chips                       */
+  --ink-150: #FFFFFF;   /* raised-2: panel, hover, selected node fill        */
+
+  /* The two rules are ink at low alpha in intent — 18% and 32% over the page.
+     They are written as the opaque flattening of exactly that, because the
+     contrast matrix's `parseHex` accepts hex only and both rules are pinned as
+     non-text cells; an rgba() value there would throw rather than measure. Recompute
+     these two if the page surface moves. */
+  --hairline:        #CAC9C5;   /* 1px internal rules  — ink at 18% over the page */
+  --hairline-strong: #A9A9A5;   /* section divisions   — ink at 32% over the page */
 
   /* ── light: one implied source, top-left, 15° off vertical ───────── */
-  --light-edge:        rgba(246, 238, 226, 0.075);  /* 1px top edge, raised   */
-  --light-edge-strong: rgba(246, 238, 226, 0.115);  /* 1px top edge, raised-2 */
-  --light-wash:        rgba(246, 238, 226, 0.028);  /* large-plane gradient   */
-  --occlude:           rgba(6, 5, 4, 0.55);         /* shadow ink, warm-black */
+  --light-edge:        rgba(255, 255, 255, 0.90);  /* 1px top edge, raised   */
+  --light-edge-strong: rgba(255, 255, 255, 1);     /* 1px top edge, raised-2 */
+  --light-wash:        rgba(255, 255, 255, 0.55);  /* large-plane gradient   */
+  --occlude:           #0B0B0B;                    /* shadow ink, solid, zero blur */
 
   /* ── text ────────────────────────────────────────────────────────── */
-  --text-000: #F2EDE4;  /* body, headings, claim text                       */
-  --text-100: #B6ADA0;  /* secondary body, panel supporting copy            */
-  --text-200: #9A9184;  /* labels, citations, gutters                       */
+  --text-000: #0B0B0B;  /* body, headings, claim text, structural borders    */
+  --text-100: #3A3A40;  /* secondary body, panel supporting copy             */
+  --text-200: #55555A;  /* labels, citations, gutters                        */
 
   /* ── verdicts: oxidised material, the only chromatic channel ─────── */
-  --verdict-proven:     #6FB894;  /* patina           */
-  --verdict-stale:      #D9A64A;  /* ochre            */
-  --verdict-red:        #D97A66;  /* clay / iron oxide */
-  --verdict-undesigned: #9A9184;  /* stone-sage, deliberately unsaturated (R10.3) */
+  --verdict-proven:     #1F6F4A;  /* deep patina       */
+  --verdict-stale:      #6B5426;  /* deep ochre        */
+  --verdict-red:        #9A4630;  /* deep clay / iron oxide */
+  --verdict-undesigned: #55555A;  /* stone, deliberately unsaturated (R10.3) */
 
-  /* verdict washes: verdict hue at low alpha. Rails, node left-edges and
-     tag borders ONLY — never behind body text, so no wash enters the
+  /* verdict washes: verdict hue at low alpha, raised from the dark palette's
+     values because paper hides a tint that ink showed. Rails, node left-edges
+     and tag borders ONLY — never behind body text, so no wash enters the
      contrast matrix. */
-  --wash-proven:     rgba(111, 184, 148, 0.10);
-  --wash-stale:      rgba(217, 166, 74, 0.10);
-  --wash-red:        rgba(217, 122, 102, 0.12);
-  --wash-undesigned: rgba(154, 145, 132, 0.08);
+  --wash-proven:     rgba(31, 111, 74, 0.16);
+  --wash-stale:      rgba(107, 84, 38, 0.16);
+  --wash-red:        rgba(154, 70, 48, 0.18);
+  --wash-undesigned: rgba(85, 85, 90, 0.14);
 
-  /* structural accent: focus rings only, never a state signal */
-  --focus: #7FA6BC;   /* muted mineral blue */
+  /* structural accent: focus rings only, never a state signal. A 3px solid ink
+     outline — on paper, ink is the loudest ring available and needs no hue. */
+  --focus: #0B0B0B;
 
-  /* ── elevation ramp: light behaviour, not uniform box-shadow ─────── */
+  /* ── elevation ramp: a hard offset slab, one direction, zero blur ── */
   --elev-0: none;
   --elev-1: 0 1px 0 0 var(--light-edge) inset,
-            0 1px 2px -1px var(--occlude),
-            0 2px 6px -3px var(--occlude);
+            4px 4px 0 0 var(--occlude);
   --elev-2: 0 1px 0 0 var(--light-edge-strong) inset,
-            0 2px 4px -2px var(--occlude),
-            0 8px 20px -8px var(--occlude);
+            6px 6px 0 0 var(--occlude);
   --elev-3: 0 1px 0 0 var(--light-edge-strong) inset,
-            0 4px 10px -4px var(--occlude),
-            0 24px 48px -20px var(--occlude);
+            10px 10px 0 0 var(--occlude);
+
+  /* ── neubrutalist geometry: border weights, the pressed slab, the grid ── */
+  --line: 2px;          /* structural border, drawn in --text-000            */
+  --line-heavy: 3px;    /* focus outline and the selected node's border      */
+  --shadow-pressed: 1px 1px 0 0 var(--occlude);  /* active state: slab sits down */
+  --grid-cell: 28px;    /* paper ruling and node snap                        */
 
   /* ── type scale (16px root) ──────────────────────────────────────── */
+  --fs-root:  0.9375rem;  /* 15px  the size the document inherits */
   --fs-micro: 0.6875rem;  /* 11px  ids, tags                    */
   --fs-xs:    0.75rem;    /* 12px  citations                    */
   --fs-sm:    0.8125rem;  /* 13px  labels                       */
@@ -79,11 +100,27 @@
   --fs-xl:    1.75rem;    /* 28px  page title                   */
   --fs-metric: 2.5rem;    /* 40px  coverage figures             */
 
+  /* Leading, loosest first: the document inherits --lh-root, prose blocks reset to
+     --lh-body, and display type sets solid at --lh-display because at 28px and up the
+     ascenders and descenders already separate the lines for you. */
+  --lh-root: 1.6;         /* the document element                */
   --lh-tight: 1.2;
   --lh-body: 1.55;
   --lh-mono: 1.45;
-  --tr-tight: -0.011em;   /* display sizes only */
-  --tr-mono: 0.002em;     /* mono at small sizes, opens the counters */
+  --lh-display: 1.1;      /* h1 through h6                       */
+
+  /* Tracking, and the inversion this style lives on: negative as the size grows,
+     positive as it shrinks into caps. One step per role, named for the role, because
+     a bare number in a stylesheet is a decision with nowhere to be reviewed. */
+  --tr-display: -0.03em;       /* h1, clamped display type       */
+  --tr-heading: -0.02em;       /* h2                             */
+  --tr-tight: -0.011em;        /* display figures and titles     */
+  --tr-mono: 0.002em;          /* mono at small sizes, opens the counters */
+  --tr-caps-nav: 0.02em;       /* masthead nav, 13px caps        */
+  --tr-caps-wordmark: 0.04em;  /* the masthead lockup            */
+  --tr-caps-label: 0.06em;     /* labels, 12px caps              */
+  --tr-caps-table: 0.09em;     /* table heads, 11px caps         */
+  --tr-caps-eyebrow: 0.1em;    /* h3 eyebrows, 12px caps         */
 
   /* ── spacing: 4-based, no other values permitted ─────────────────── */
   --s-1: 4px;
