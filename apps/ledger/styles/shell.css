@@ -4,30 +4,53 @@
  * R10.7.
  *
  * Third and last stylesheet, imported after `tokens.css` and `surfaces.css` so
- * every value here resolves through a token and nothing is invented at the shell
- * level. It owns four things and deliberately nothing else:
+ * every value here resolves through a token wherever a token exists. It owns the
+ * global shell and deliberately nothing else:
  *
- *   1. *The ink page.* `--ink-000` on both `html` and `body`, so an overscroll
- *      bounce or a rubber-band at the bottom of a short page shows the page
- *      colour rather than the user agent's white. `color-scheme: dark` hands the
- *      same news to the scrollbars and to any native control.
- *   2. *The elevation floor.* The shell sits at `--elev-0`, which is `none` — so
+ *   1. *The paper page.* `--ink-000` on `html`, so an overscroll bounce at the
+ *      bottom of a short page shows the sheet rather than the user agent's own
+ *      white. `color-scheme: light` hands the same news to the scrollbars, to any
+ *      native control and to the native focus ring, which would otherwise arrive
+ *      drawn for a dark interface.
+ *   2. *The drawn grid.* Two 1px rulings at `--grid-cell`, ink at 4.5%, on a
+ *      viewport-pinned layer. It is the reason the slab shadows of `surfaces.css`
+ *      read as falling on a surface instead of floating in a void: the ruling
+ *      stays put while the sheet moves over it, so the shadow has something to
+ *      land on. Drawn on its own layer rather than as a pinned background
+ *      attachment — see the note above `.page-grid`.
+ *   3. *The elevation floor.* The shell sits at `--elev-0`, which is `none` — so
  *      it is authored by declaring no depth at all. Depth belongs to the three
- *      surface classes in `surfaces.css` and the forbidden-palette scan (§10.4.4)
- *      makes any other file that reaches for it a test failure.
- *   3. *Density.* `max-width: 1680px` on the main column and `min-width` set
- *      nowhere, so the graph canvas flexes and no horizontal overflow appears
- *      between 1280 and 1920 (§10.4.3, R10.8). Every length is a `--s-*` step or
- *      a 1px/2px rule; the 4-based scale has no exceptions.
- *   4. *The skip link*, first focusable element in the document (§10.8, R10.7),
- *      parked above the viewport with a `transform` and brought back on focus.
- *      `transform` because it is compositor-only; a `top` animation is on the
- *      forbidden list of §10.6.3 and the motion scan would reject it.
+ *      surface classes in `surfaces.css`, and the forbidden-palette scan (§10.4.4)
+ *      makes any other file that reaches for a shadow declaration a test failure.
+ *   4. *The type ramp.* Heavy uppercase display type with the tracking inversion
+ *      this style lives on: negative tracking as the size grows, positive as it
+ *      shrinks into small caps. Large text is set tight because at 40px the
+ *      counters are already open; 11px table heads are set loose because at 11px
+ *      they are not. Every step of it — the document's own size and leading, the
+ *      display leading, and each tracking step — is a token declared in
+ *      `tokens.css` and mirrored in `lib/tokens.ts`. This file selects from that
+ *      ramp; it does not set it, because a bare `0.09em` in a rule is a decision
+ *      with nowhere to be reviewed and nothing to keep it in step with its
+ *      neighbours.
+ *   5. *Links, and the focus ring.* A link is ink with a 2px underline and
+ *      inverts to paper on ink when hovered. The ring is `--line-heavy` solid
+ *      `--focus` at a 2px offset, and the offset is the whole trick: the ring is
+ *      the same ink as the border it usually sits on, so the gap is what makes it
+ *      visible. It is never removed, anywhere.
+ *   6. *The masthead*, sticky under a 3px ink rule and carrying the logo lockup
+ *      rather than a text wordmark, and *the skip link*, first
+ *      focusable element in the document (§10.8, R10.7), parked above the
+ *      viewport with a `transform` and brought back on focus. `transform`
+ *      because it is compositor-only; a `top` animation is on the forbidden list
+ *      of §10.6.3 and the motion scan would reject it.
+ *   7. *The entrance.* One `rise` keyframe on the direct children of `main`,
+ *      420ms, staggered 50ms a block and capped at 380ms, fully off under
+ *      reduced motion. CSS only — the orchestrated flourishes are `lib/motion`'s
+ *      business, and this is the thing that has to work before any of them load.
  *
- * The focus ring is the only motion in this file: `outline-color` over
- * `--dur-micro`, which is the "Focus ring | ring opacity | --dur-micro | Plain
- * CSS transition" row of §10.6.3. `--focus` appears here and only here, as a 2px
- * ring and never as a state signal (§10.4.3).
+ * Density is unchanged: `max-width: 1680px` on the main column and `min-width`
+ * set nowhere, so the graph canvas flexes and no horizontal overflow appears
+ * between 1280 and 1920 (§10.4.3, R10.8).
  */
 
 *,
@@ -37,68 +60,740 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   background-color: var(--ink-000);
   -webkit-text-size-adjust: 100%;
 }
 
 body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
   margin: 0;
-  background-color: var(--ink-000);
   color: var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-base);
+  font-size: var(--fs-root);
+  line-height: var(--lh-root);
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── the drawn grid: the signature texture (§10.1) ─────────────────────────── */
+
+/* Two 1px rulings, one ink hue plus transparent, at the 28px cell the node snap
+   already uses — so the graph lands on the same ruling the page is drawn on.
+ *
+ * Drawn as a viewport-pinned layer rather than as a pinned background attachment,
+ * and that is a forced move rather than a preference: the motion scan's parallax
+ * rule (§10.6.3) rejects a pinned attachment by name, because that is one of the
+ * three shapes parallax takes. A `position: fixed` layer produces the identical
+ * result — the ruling does not scroll, the sheet scrolls over it — and stays on
+ * the right side of the rule. It is inert: no pointer events, no accessible
+ * presence, nothing to tab to. */
+.page-grid {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(11, 11, 11, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(11, 11, 11, 0.045) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+}
+
+/* ── the type ramp: tracking inverts with size (§10.7) ─────────────────────── */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  line-height: var(--lh-display);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(var(--fs-xl), 1.3rem + 1.8vw, var(--fs-metric));
+  font-weight: 800;
+  letter-spacing: var(--tr-display);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+h2 {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  letter-spacing: var(--tr-heading);
+  color: var(--text-000);
+}
+
+h3 {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+label,
+.label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* ── the page title, set in a solid ink slab ────────────────────────────────── */
+
+/**
+ * Every route's `h1` sits inside `<span class="page-title__slab surface-slab-ink">`,
+ * and the composition is deliberate on both sides.
+ *
+ * `.surface-slab-ink` in `surfaces.css` supplies the plane: `--text-000` filled,
+ * `--ink-000` type, the 6px offset slab of elevation 2. It has to live there because a
+ * shadow may be declared in that one file (§10.5) and the offset is half of what makes
+ * this read as a printed plate rather than as a highlighted word.
+ *
+ * This rule supplies the box. Three decisions in it:
+ *
+ *   1. `display: inline-block`, so the plane is as wide as the words and no wider. A
+ *      block-level slab would run the full measure and turn a one-word title into a
+ *      black band across the page, which is a rule, not a title.
+ *   2. `max-width: 100%` with the padding inside the border box, so the longest title
+ *      in the product — the home page's full sentence — wraps *within* the slab
+ *      instead of widening it past the column. That is the whole of why this cannot
+ *      overflow at 320px: the plane never has a width of its own to overflow with.
+ *   3. The padding is the slab's optical margin. Uppercase display type has no
+ *      descenders, so the type sits high in its own line box; `--s-2` over `--s-3`
+ *      puts the visible ink where a reader reads it as centred.
+ *
+ * Size, weight, case and tracking are *not* restated here. They are the `h1` rule
+ * above — one clamp across the whole viewport range — so a title is fluid from a phone
+ * to a wide monitor and there is exactly one place that decides how big a page title
+ * is. `color` is the one property the slab does override, because inverting is what it
+ * is for.
+ */
+.page-title__slab {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--s-2) var(--s-4) var(--s-3);
+}
+
+/**
+ * The standfirst: the sentence under the slab, held off the margin by a 3px ink rule.
+ *
+ * The rule down the left edge is the device that pairs it with the title — the slab is
+ * ink and this is the same ink drawn as an edge, so the two read as one masthead rather
+ * than as a heading and a paragraph that happen to be adjacent. 62ch is narrower than
+ * the shell's 74ch prose cap on purpose: a standfirst is read in one pass, and a long
+ * line makes that two.
+ *
+ * `--text-100` rather than `--text-200`: at 17px this is still body copy a reader
+ * reads through, not a label they glance at. Both clear the 4.5:1 floor on all four
+ * paper surfaces; this one is the darker of the two.
+ */
+.page-standfirst {
+  max-width: 62ch;
+  margin: 0;
+  padding-left: var(--s-4);
+  border-left: var(--line-heavy) solid var(--text-000);
+  font-family: var(--font-ui);
+  font-size: 1.0625rem;
+  font-weight: 500;
   line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/**
+ * A section head: the small caps strip that names a block of the page.
+ *
+ * The named complaint this answers is that `Promises (8), attention first`,
+ * `Terminal events (15)` and `Diagnostics (29)` "are just there". They were `h2`s
+ * inheriting the ramp's 20px sentence case and nothing else, so on a page drawn over a
+ * 28px ruling they read as one more line of text rather than as the start of a block.
+ *
+ * So a section head is now a *strip*: small caps at the label size, tracked open, over
+ * a 3px ink rule the full width of the block it opens. The rule is the whole device —
+ * it says "everything under this line is one thing" before a word is read, and it costs
+ * one border instead of a second fill competing with the slabs below it. The counts
+ * stay inside the heading's own string, because the count is what makes the heading
+ * checkable against the list beneath it.
+ */
+.section-head {
+  display: block;
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-2);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: var(--s-6);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+/**
+ * A section head that carries something beside it — today, a `?` disclosure.
+ *
+ * The 3px rule moves from the heading to this line, and the heading keeps only its type.
+ * That is the whole of the composition: `.section-head` above still decides what a
+ * section heading *looks* like, and there is no second copy of the small caps, the
+ * tracking or the weight anywhere in the product. A wrapper that restated them would be a
+ * second opinion about a heading, and the two would drift the first time one was edited.
+ *
+ * `space-between` rather than a gap after the title, so the disclosure sits at the far end
+ * of the rule it opens rather than trailing the words — a badge tucked against a heading
+ * reads as punctuation. `flex-wrap` and `align-items: center` mean that at 320px, where
+ * `Terminal events (15)` and a 22px circle do not share a line, the badge drops below the
+ * heading and the rule still closes the block; nothing overflows and nothing is clipped.
+ */
+.section-head-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-2);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+}
+
+/* The heading inside the line gives up the rule and the margin, and keeps the type. */
+.section-head-line > .section-head {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom-width: 0;
+}
+
+/* ── the hint disclosure: a native details, and a panel that shifts nothing ──── */
+
+/**
+ * A sentence that explains a block, parked behind a `?` until it is asked for.
+ *
+ * It is a native `<details>`/`<summary>` and that is the point rather than a shortcut. It
+ * opens with no JavaScript at all, the summary is focusable and operable from the keyboard
+ * for free, and assistive technology announces it as a disclosure with an expanded state
+ * without a line of `aria` being written. A `<button>` plus state would be three of those
+ * four things and a `useState`.
+ *
+ * The panel is `position: absolute` on `[open]`, and that is what makes the disclosure
+ * safe to put above a table: opening it draws the sentence *over* the page instead of
+ * inserting a block into the flow, so the grid below does not jump down while a reader is
+ * looking at it. The consequence is a constraint rather than a detail — an absolutely
+ * positioned panel is clipped by the nearest ancestor that scrolls, so this pattern
+ * cannot live inside a scroll frame. Which is exactly where the sentence it replaced was
+ * living, and exactly why it read as a bug.
+ *
+ * `right: 0` anchors the panel to the badge's right edge and lets it grow leftwards into
+ * the page column. That is the direction with room: the badge sits at the end of the
+ * section rule, so a left-anchored panel would grow towards the viewport edge and be the
+ * one thing on the page that could overflow sideways at 320px.
+ */
+.hint {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* The badge. A 22px ink-bordered circle, `list-style: none` plus the WebKit pseudo so no
+   engine draws its own disclosure triangle inside it. No shadow: a slab shadow on a 22px
+   circle is a smudge, and depth is picked rather than authored anyway (§10.5). */
+.hint__summary {
+  display: grid;
+  width: 1.375rem;
+  height: 1.375rem;
+  place-items: center;
+  border: var(--line) solid var(--text-000);
+  border-radius: 50%;
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1;
+  list-style: none;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.hint__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The one place the badge inverts, and it inverts both halves in the same rule: ink fills
+   the circle and paper draws the mark, so an open disclosure is legible as *open* without
+   a second glyph and without moving anything. */
+.hint[open] > .hint__summary {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+.hint__summary:hover {
+  background-color: var(--ink-050);
+  color: var(--text-000);
+}
+
+/* The panel. `.surface-raised-2` in the markup carries the fill, the ink border and the
+   offset slab — this rule contributes the position, the measure and the type. `52ch` is a
+   reading measure for one or two sentences; the `vw` term is what keeps it inside a 320px
+   viewport, since the panel is the one absolutely positioned box on the page. */
+.hint__panel {
+  position: absolute;
+  z-index: 15;
+  top: calc(100% + var(--s-2));
+  right: 0;
+  width: max-content;
+  max-width: min(52ch, 80vw);
+  padding: var(--s-3) var(--s-4);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  text-align: left;
+}
+
+th {
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-table);
+  text-transform: uppercase;
+}
+
+p {
+  max-width: 74ch;
+}
+
+/* ── links: ink, underlined, inverted on hover (§10.7) ─────────────────────── */
+
+a {
+  color: var(--text-000);
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--line);
+  text-underline-offset: 0.18em;
+  text-decoration-skip-ink: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+a:hover {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* ── the focus ring: one token, never removed (§10.4.3, R10.7) ─────────────── */
+
+/* The offset is load-bearing. The ring is `--focus`, which is ink, and it lands
+   most often on a 2px ink border — without the gap the two would be one thick
+   edge and the ring would be invisible exactly where it matters most. */
+:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: 2px;
 }
 
 /* ── the skip link: first focusable element in the document (§10.8) ────────── */
 
 /* Parked one viewport-safe step above the top edge rather than hidden: it stays
    in the accessibility tree and in the tab order, which is the entire point of
-   it. Reaching it with `transform` keeps the reveal on the compositor. */
+   it. Reaching it with `transform` keeps the reveal on the compositor, and the
+   z-index clears the sticky masthead so the revealed link is not behind it.
+   Depth and fill come from `.surface-raised` in the markup, so nothing here
+   authors either. */
 .skip-link {
   position: absolute;
-  z-index: 2;
+  z-index: 30;
   top: var(--s-2);
   left: var(--s-2);
   transform: translateY(calc(-100% - var(--s-8)));
   padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-card);
-  background-color: var(--ink-100);
   color: var(--text-000);
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
-  text-decoration: none;
+  font-weight: 700;
+  text-decoration-line: none;
   transition: outline-color var(--dur-micro) var(--ease-out);
+}
+
+.skip-link:hover {
+  background-color: var(--ink-150);
+  color: var(--text-000);
 }
 
 .skip-link:focus-visible {
   transform: translateY(0);
 }
 
-/* ── the focus ring: one token, 2px, everywhere (§10.4.3, R10.7) ───────────── */
+/* ── the masthead (§10.2) ──────────────────────────────────────────────────── */
 
-:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+/**
+ * `align-items: center`, and that one word is the whole of the logo fix.
+ *
+ * The row used to be `align-items: baseline`, which is right for two runs of type and
+ * wrong the moment one of the items is a picture. An `<img>` has no text baseline, so
+ * CSS synthesises one at its **bottom margin edge** — and `.masthead-home` is itself a
+ * flex container, so it inherits that synthetic baseline from the image inside it. The
+ * row therefore lined the *bottom of the artwork* up with the *baseline of the nav
+ * caps*, which sits a descender's depth above their own bottom edge. Every pixel of the
+ * logo was pushed up by that difference, and it read exactly as reported: the lockup
+ * floating above the links.
+ *
+ * That is why this is a one-word change rather than a larger negative offset. A magic
+ * `top: -6px` would have cancelled the symptom at 34px and been wrong again at 26px
+ * under the breakpoint, because the error was proportional to a font metric the offset
+ * knew nothing about. Centring removes the synthetic baseline from the arithmetic
+ * altogether: the mark's box centre and the nav line's box centre are the same line at
+ * every size, so the correction survives both the responsive step-down and a redrawn
+ * mark.
+ *
+ * `.masthead-nav` keeps `align-items: baseline` internally, because there the items
+ * really are five runs of type and a shared baseline is what makes them one line.
+ */
+.masthead {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-6);
+  padding: var(--s-3) var(--s-6);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+  background-color: var(--ink-000);
+}
+
+/* The lockup, in place of the old text wordmark.
+ *
+ * Three things the artwork does not supply and this rule does. The logo is trimmed
+ * to its own ink, so it has no side bearing: the padding here *is* the lockup's
+ * clear space, and the left edge is deliberately left tight to the masthead's own
+ * padding so the ink of the mark lines up with the ink of the page column below it.
+ * Its height is set here rather than taken from the file, so redrawing the artwork
+ * cannot resize the masthead. And a tall glyph's optical centre sits above its box
+ * centre, so the vertical correction is a `position: relative` offset — a margin
+ * would move the flow box and take the row height with it, which is the shift this
+ * is trying to avoid.
+ *
+ * The type properties are not decoration. They style the `alt` text for the one
+ * case the file does not arrive, so a failed request renders the wordmark this
+ * replaced rather than a stray lowercase word. */
+.masthead-home {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-1) var(--s-2);
+  color: var(--text-000);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-wordmark);
+  text-transform: uppercase;
+  text-decoration-line: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* A paper tint rather than the global ink inversion: inverting behind a mark drawn
+   in ink would print the logo on itself. Same device as the nav links, so the two
+   halves of the masthead answer a pointer the same way. */
+.masthead-home:hover {
+  background-color: var(--ink-050);
+  color: var(--text-000);
+}
+
+/**
+ * The lockup's own box.
+ *
+ * The artwork is trimmed to its own ink and has no side bearing, so the clear space is
+ * padding here rather than anything the file supplies. Horizontal only: `box-sizing` is
+ * `border-box` across the document, so vertical padding would come out of the 34px
+ * rather than sit around it, and the height is the one number that keeps the masthead
+ * row from resizing when the artwork is redrawn.
+ *
+ * What is left of the vertical correction after `align-items: center` did the real work
+ * is the *cap-height* offset, and it is small and stated: the nav links are uppercase, so
+ * the ink a reader sees sits about 2px above the centre of their line box — the space
+ * below their baseline is descender room that caps never use, and the 3px transparent
+ * bottom border that carries the current-route marker adds half its weight to the same
+ * side. The mark's box centre *is* its ink centre, because the file is trimmed, so the
+ * mark is moved up by that difference and the two optical centres meet.
+ *
+ * It is `position: relative` with a `top` rather than a negative margin on purpose. A
+ * margin is in flow: it would move the item's flow box, take the row's own height with it
+ * and make the sticky masthead a different height from the one the page was laid out
+ * against. `top` moves the painted mark and leaves the box where the layout put it, which
+ * is the whole reason the row stays stable. And because the offset is a function of the
+ * *nav's* type metrics rather than of the logo's height, it is still correct at the 26px
+ * step below the breakpoint without being restated there.
+ */
+.masthead-logo {
+  position: relative;
+  top: -2px;
+  display: block;
+  width: auto;
+  height: 34px;
+  padding: 0 var(--s-1);
+}
+
+.masthead-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-1) var(--s-4);
+  margin-left: auto;
+}
+
+/* A 3px transparent bottom border on every link, so the current route fills it
+   with ink and hover fills it with a paper tint — nothing moves, nothing
+   reflows, and the four states differ by colour alone. */
+.masthead-link {
+  padding: var(--s-2) var(--s-1);
+  border-bottom: var(--line-heavy) solid transparent;
+  color: var(--text-200);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-nav);
+  text-transform: uppercase;
+  text-decoration-line: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.masthead-link:hover {
+  border-bottom-color: var(--ink-050);
+  background-color: var(--ink-050);
+  color: var(--text-000);
+}
+
+/* The current route, and the only signal of it. Driven by `aria-current`, which
+   is set from the pathname rather than from a per-page prop — a value only one
+   renderer supplies is a value eight pages do not get. */
+.masthead-link[aria-current='page'] {
+  border-bottom-color: var(--text-000);
+  color: var(--text-000);
 }
 
 /* ── the page column ──────────────────────────────────────────────────────── */
 
 /* `min-height`, never `min-width`: the shell fills the viewport vertically and
-   yields horizontally, so a 1280px window has nothing to overflow. */
+   yields horizontally, so a 1280px window has nothing to overflow. Raised one
+   step above the ruling so the grid stays behind the sheet's content. */
 .page-shell {
+  position: relative;
+  z-index: 1;
   display: flex;
-  min-height: 100vh;
+  flex: 1 1 auto;
   flex-direction: column;
 }
 
 .page-main {
   width: 100%;
   max-width: 1680px;
+  flex: 1 1 auto;
   margin: 0 auto;
   padding: var(--s-8) var(--s-6) var(--s-16);
+}
+
+/* ── the footer: a thin band at the end of the sheet ───────────────────────── */
+
+/**
+ * The colophon, and the last thing on every page.
+ *
+ * It "appears when the page is scrolled to the bottom" without a scroll listener, an
+ * observer or a class toggled from JavaScript, and that is a property of where it sits
+ * rather than a trick: `<main>` is `flex: 1 1 auto` inside the shell's column, so on a
+ * page shorter than the viewport it grows and pushes the band to the bottom edge, and on a
+ * page longer than the viewport the band is simply the end of the document. Scroll-driven
+ * reveals are on the forbidden list of §10.6.3 in any case, so the honest implementation
+ * and the permitted one are the same implementation.
+ *
+ * The class name is `.page-footer` because `shell.css` already hid that name in its print
+ * block before anything rendered it: a colophon is furniture, and paper does not need to
+ * be told where the repository is. Reusing the name is what keeps the print treatment
+ * correct rather than adding a second one.
+ *
+ * *A band, not a sitemap.* One hairline above it, two links, one muted line, small and
+ * left-aligned. The fill is `--ink-050`, the recessed step of the paper ramp — the one
+ * surface that reads as *below* the sheet rather than raised off it, which is what a
+ * footer is. It is opaque, so the drawn ruling stops at the band rather than running
+ * through the last thing on the page.
+ *
+ * Nothing here is sticky and nothing here has a z-index, so it cannot argue with the
+ * sticky masthead: the two are at opposite ends of one flow.
+ *
+ * *No horizontal overflow at 320px*, by construction rather than by breakpoint: the band
+ * is a wrapping flex row, the links group wraps within it, and the tagline is a paragraph
+ * with a measure. At 320px the tagline drops under the links and both fit the column.
+ */
+.page-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  align-items: baseline;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-6);
+  border-top: 1px solid var(--hairline);
+  background-color: var(--ink-050);
+}
+
+.page-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* Ink, underlined, and inverting on hover — the document's own link treatment, restated
+   only in the two properties a footer link differs in: it is smaller than body copy and it
+   is not bold, because a colophon that shouts is a colophon a reader reads twice. */
+.page-footer__link {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* One line, muted, and the widest thing in the band — so it takes a measure and wraps
+   rather than deciding the band's width. */
+.page-footer__tagline {
+  max-width: 62ch;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+/* ── the entrance: one keyframe, once, CSS only (§10.6.1) ──────────────────── */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Every direct child of `main` is a block of the page, so the cascade below is a
+   read of document order rather than a guess at content. The delay is expressed
+   through `--enter-delay`, defaulted per position: a block that needs its own
+   delay sets the property and keeps the shared curve.
+ *
+ * 50ms a step, capped at 380ms — from the ninth block on the delay stops growing,
+ * because a reader who has waited half a second for the page to assemble is
+ * watching a page assemble rather than reading one. */
+.page-main > * {
+  animation: rise var(--dur-slow) cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.page-main > *:nth-child(2) {
+  animation-delay: var(--enter-delay, 50ms);
+}
+
+.page-main > *:nth-child(3) {
+  animation-delay: var(--enter-delay, 100ms);
+}
+
+.page-main > *:nth-child(4) {
+  animation-delay: var(--enter-delay, 150ms);
+}
+
+.page-main > *:nth-child(5) {
+  animation-delay: var(--enter-delay, 200ms);
+}
+
+.page-main > *:nth-child(6) {
+  animation-delay: var(--enter-delay, 250ms);
+}
+
+.page-main > *:nth-child(7) {
+  animation-delay: var(--enter-delay, 300ms);
+}
+
+.page-main > *:nth-child(8) {
+  animation-delay: var(--enter-delay, 350ms);
+}
+
+.page-main > *:nth-child(n + 9) {
+  animation-delay: var(--enter-delay, 380ms);
+}
+
+/* ── responsive: one breakpoint, because the shell has one shape ───────────── */
+
+@media (max-width: 56rem) {
+  .masthead {
+    padding: var(--s-3) var(--s-4);
+  }
+
+  /* The lockup steps down with the padding rather than wrapping under it: 26px is
+     still a logo a reader identifies, and the row stays one line. */
+  .masthead-logo {
+    height: 26px;
+  }
+
+  .page-main {
+    padding: var(--s-6) var(--s-4) var(--s-8);
+  }
+
+  /* The band keeps the column's own gutter, so the footer's first character stays in the
+     same vertical line as the page content above it at every width. */
+  .page-footer {
+    padding: var(--s-4);
+  }
+
+  /* The slab keeps its ink and loses a little of its margin. At 28px — the floor of
+     the `h1` clamp — `--s-4` of side padding is a fifth of a 320px screen spent on
+     nothing, and the plane is doing the work either way. */
+  .page-title__slab {
+    padding: var(--s-1) var(--s-3) var(--s-2);
+  }
+
+  .page-standfirst {
+    padding-left: var(--s-3);
+    font-size: var(--fs-md);
+  }
+}
+
+/* ── print: the sheet, without the furniture ───────────────────────────────── */
+
+@media print {
+  html,
+  body {
+    background-color: var(--ink-150);
+  }
+
+  /* the ruling is a screen texture; on paper the paper is the texture */
+  .page-grid,
+  .masthead,
+  .page-footer {
+    display: none;
+  }
+
+  .page-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .page-main > * {
+    animation: none;
+  }
+
+  a {
+    text-decoration-line: none;
+  }
 }
 
 /* ── reduced motion: CSS-level insurance, verbatim from §10.6.4 ────────────── */
@@ -109,14 +804,24 @@ body {
    it, and it exists for one case that JavaScript cannot cover: the setting
    changing mid-session, with a transition already in flight. Without it that
    transition finishes at its authored duration. With it, every duration is
-   already zero and there is nothing left to finish. */
+   already zero and there is nothing left to finish.
+
+   The delay is zeroed alongside the duration, and the entrance is switched off by
+   name. A zero-duration animation with a 350ms delay and a backwards fill is
+   still a third of a second of invisible content, which is the flicker this block
+   exists to prevent rather than a milder version of it. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
+    animation-delay: 0ms !important;
     animation-duration: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .page-main > * {
+    animation: none;
   }
 }

@@ -2,33 +2,33 @@
  * The hero's heading — design §10.4.3 (density), §10.7 (the type scale and its
  * tracking), R10.1.
  *
- * Three rules, and deliberately no more: the page's title, the sentence under it, and
- * the spacing between that pair and the metric rail. Everything else on `/` belongs to
- * a component with a stylesheet of its own.
+ * Three rules, and deliberately no more: the header block, the title's placement, and
+ * the space between that pair and the metric rail. Everything else on `/` belongs to a
+ * component with a stylesheet of its own.
  *
- * `--tr-tight` appears on the title and nowhere else on the page, because §10.7 allows
- * it at display sizes only. Prose caps at 72ch so the lede is one readable measure
- * rather than a line the width of a 1920px window.
+ * The title carries no size, weight, tracking or colour of its own, and now no plane
+ * either. It is an `h1` holding one `.page-title__slab surface-slab-ink` span, so the
+ * display end of the ramp is decided in `shell.css` (the clamp, the 800 weight, the
+ * -0.03em, the uppercase, the balanced wrap), the box is decided in `shell.css`, and the
+ * ink plane and its offset shadow are decided in `surfaces.css`. Restating any of that
+ * here would give the page a second opinion about how a page title looks, and the shell
+ * would lose.
+ *
+ * The standfirst is `.page-standfirst`, the shared class the other four routes use, so
+ * the sentence under the title is the same sentence-shape everywhere: a 3px ink rule
+ * down its left edge, 62ch of measure, one step above body copy. It used to be a
+ * `.hero-lede` rule that restated four of those five values and omitted the rule, which
+ * is why `/` read as a paragraph under a heading and `/coverage` read as a masthead.
+ * That rule is gone rather than kept as an alias — a class that exists only to be
+ * overridden is a place for the two pages to drift apart again.
  */
 
 .hero-header {
-  margin: 0 0 var(--s-6);
+  margin: 0 0 var(--s-8);
 }
 
+/* Placement only. The slab inside it is `inline-block`, so the margin below is measured
+   from the plane's own bottom edge rather than from a line box the ink does not fill. */
 .hero-title {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
-  color: var(--text-000);
-}
-
-.hero-lede {
-  max-width: 72ch;
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-base);
-  line-height: var(--lh-body);
-  color: var(--text-100);
+  margin: 0 0 var(--s-4);
 }
