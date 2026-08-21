@@ -73,7 +73,7 @@ import type { CommandFamily } from '../kane/family.js';
 import { contractFor } from '../kane/family.js';
 import type { InvocationResult, KaneInvoker } from '../kane/invoker.js';
 import { parseStream } from '../kane/ndjson.js';
-import { toPosix } from '../model/ids.js';
+import { toPosix, toRepoRelative } from '../model/ids.js';
 import {
   isSkippedDirectoryName,
   isTestDocumentName,
@@ -120,8 +120,10 @@ export const PLAN_DIAGNOSTIC_CODES = Object.freeze({
   refreshUnavailable: 'plan-refresh-unavailable',
   /** `kane-cli` is not on PATH, so no plan could be obtained (R2.12). */
   kaneNotFound: 'plan-kane-not-found',
-  /** The `--dry-run` stream never reached `testrun_done`. Cache left in place. */
+  /** The `--dry-run` stream stopped early *and* exited badly. Cache left in place. */
   refreshCrashed: 'plan-refresh-crashed',
+  /** A clean dry run with a plan and no `testrun_done` — what 0.8.4 emits (15.3). */
+  refreshedWithoutTerminal: 'plan-refreshed-without-terminal',
   /** The stream completed but carried no `testrun_plan`. Cache left in place. */
   planEventAbsent: 'plan-event-absent',
   /** A plan member carried no usable `path`, so it cannot be tied to a document. */
@@ -372,10 +374,21 @@ export function serialisePlan(plan: TestrunPlan): string {
  * A blank `test_id` becomes `null` rather than an empty string, so "no identifier"
  * has one representation. Nothing is synthesised — not from the path, not from
  * the member's position, not from anywhere.
+ *
+ * `repoRoot` is the one conversion this projection performs. Kane 0.8.4 reports
+ * `members[].path` **absolute** — observed, from a live `testrun run --dry-run`
+ * against this repository — while {@link PlanMember.path} is documented as
+ * repository-relative and every consumer keys on that form. Without the root the
+ * paths are passed through unchanged, so a fixture that already writes relative
+ * paths is unaffected.
  */
 export function normalisePlanEvent(
   event: TestrunPlanEvent,
-  options: { readonly capturedAt: string; readonly sink?: DiagnosticSink | undefined } = {
+  options: {
+    readonly capturedAt: string;
+    readonly sink?: DiagnosticSink | undefined;
+    readonly repoRoot?: string | undefined;
+  } = {
     capturedAt: new Date(0).toISOString(),
   },
 ): TestrunPlan {
@@ -403,7 +416,7 @@ export function normalisePlanEvent(
       ? member.tags.filter((tag): tag is string => typeof tag === 'string')
       : [];
     members.push({
-      path: toPosix(path),
+      path: toRepoRelative(path, options.repoRoot),
       testId: usableString(member?.test_id),
       tags: Object.freeze([...tags]),
       failure: usableString(member?.failure),
@@ -689,11 +702,35 @@ export async function readPlan(request: ReadPlanRequest): Promise<TestrunPlan | 
 
   const stream = parseStream(contractFor(PLAN_FAMILY), invocation.stdoutLines, { sink });
 
-  // The gate is conjunctive: the terminal event **and** the plan event. Only
-  // `testrun_plan` is consumed, but a stream that never reached `testrun_done`
-  // has an unknown outcome, and a plan lifted out of one may be missing members
-  // Kane had not enumerated — which shrinks the blast radius silently.
-  if (stream.kind === 'crashed') {
+  // The gate was conjunctive — the terminal event **and** the plan event —
+  // because a stream that stopped early may be missing members Kane had not
+  // enumerated, which shrinks the blast radius silently. That reasoning is right
+  // for an *execution* stream and wrong for this one, measured against 0.8.4
+  // rather than assumed: `testrun run --dry-run` plans, validates, executes
+  // nothing, prints **one line** — the `testrun_plan` event — and exits 0. There
+  // is no `testrun_done`, because nothing was done. Requiring one rejected every
+  // plan the installed CLI can produce, so `.kept/plan.json` was never written,
+  // no identifier was ever derived, and `kept verify` reported an empty radius on
+  // a repository with thirteen selectable members (15.3).
+  //
+  // So the gate is: a **clean exit** carrying a plan event is a complete dry run,
+  // and anything else is still a crash. A truncated stream exits non-zero or was
+  // terminated, and both keep the cache.
+  const dryRunComplete =
+    stream.kind === 'crashed' && stream.plan !== null && invocation.exitMeaning === 'success';
+  if (dryRunComplete) {
+    report({
+      code: PLAN_DIAGNOSTIC_CODES.refreshedWithoutTerminal,
+      severity: 'info',
+      message:
+        `\`${PLAN_REFRESH_ARGV.join(' ')}\` emitted its 'testrun_plan' event and exited cleanly ` +
+        `without a '${stream.expectedTerminal}' event, which is what a dry run does: it executes ` +
+        `nothing, so there is no execution to report done. The plan is accepted.`,
+      file: PLAN_FILE_RELATIVE_PATH,
+    });
+  }
+
+  if (stream.kind === 'crashed' && !dryRunComplete) {
     report({
       code: PLAN_DIAGNOSTIC_CODES.refreshCrashed,
       severity: 'warn',
@@ -723,6 +760,7 @@ export async function readPlan(request: ReadPlanRequest): Promise<TestrunPlan | 
   const refreshed = normalisePlanEvent(stream.plan, {
     capturedAt: new Date(nowMs).toISOString(),
     sink,
+    repoRoot: request.repoRoot ?? request.cwd,
   });
 
   if (!refreshed.valid) {

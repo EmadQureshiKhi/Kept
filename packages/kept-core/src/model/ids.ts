@@ -97,6 +97,31 @@ export function toPosix(file: string): string {
   return withoutDotSegments.replace(/\/+$/, '');
 }
 
+/**
+ * Rebase an absolute path onto the repository root, so it keys the graph.
+ *
+ * The graph keys every document on a **repository-relative** POSIX path, and so
+ * does every `covers:` glob and every `designedTest.path`. Kane, however, reports
+ * absolute paths: both `testrun_plan.members[].path` and
+ * `testrun_member_end.path` arrive as `/Users/…/KEPT/tests/home_cta_test.md`
+ * against a repository whose graph says `tests/home_cta_test.md`. Comparing the
+ * two forms directly matches nothing, which reads as "no promise is designed by
+ * this member" — a silent empty radius rather than an error.
+ *
+ * So this is the one conversion on the boundary. A path already relative is
+ * returned unchanged, which keeps it idempotent and keeps a fixture written in
+ * either form working. A path under a *different* root is left absolute rather
+ * than being forced to fit: a member outside the repository is a fact worth
+ * seeing, not something to rewrite.
+ */
+export function toRepoRelative(file: string, repoRoot?: string | undefined): string {
+  const path = toPosix(file);
+  if (repoRoot === undefined) return path;
+  const root = toPosix(repoRoot).replace(/\/+$/, '');
+  if (root.length === 0) return path;
+  return path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path;
+}
+
 /** Zero-width and invisible formatting characters JS `\s` does not cover. */
 const ZERO_WIDTH = /[\u200b\u200c\u200d\u2060]/g;
 

@@ -185,7 +185,7 @@ describe('the plan refresh is an ExecutionTestrun invocation (§7.2, R3.5)', () 
 // The trust gate
 // ---------------------------------------------------------------------------
 
-describe('a plan is trusted only when the stream also reached testrun_done (§7.2)', () => {
+describe('a plan is trusted when the refresh ended cleanly and carried one (§7.2)', () => {
   it('caches the members of a complete stream', async () => {
     const kane = stub({ lines: MIXED_LINES });
     const fs = fsWith(null);
@@ -210,11 +210,39 @@ describe('a plan is trusted only when the stream also reached testrun_done (§7.
     expect(kane.sink.has(PLAN_DIAGNOSTIC_CODES.refreshed)).toBe(true);
   });
 
-  it('leaves the previous cache byte-identical when the stream crashes', async () => {
+  it('caches a dry run that carried a plan and exited cleanly without a terminal', async () => {
+    // What `kane-cli` 0.8.4 actually emits: `testrun run --dry-run` prints one
+    // line — the `testrun_plan` event — and exits 0. There is no `testrun_done`,
+    // because a dry run executes nothing, so there is no execution to report done.
+    // Requiring one rejected every plan the installed CLI can produce, and left
+    // `kept verify` reporting an empty radius on a suite of thirteen members (15.3).
+    const fs = fsWith(null);
+    const kane = stub({ lines: CRASHED_LINES });
+
+    const plan = await readPlan({
+      invoker: kane.invoker,
+      cwd: REPO,
+      fs,
+      sink: kane.sink,
+      now: () => NOW,
+    });
+
+    const wire = parseStream(contractFor(PLAN_FAMILY), CRASHED_LINES).plan as TestrunPlanEvent;
+    const expected = (wire.members ?? []).filter((member) => typeof member.path === 'string');
+
+    expect(plan?.members).toHaveLength(expected.length);
+    expect(fs.files.has(PLAN_FILE_RELATIVE_PATH)).toBe(true);
+    expect(kane.sink.has(PLAN_DIAGNOSTIC_CODES.refreshedWithoutTerminal)).toBe(true);
+    expect(kane.sink.has(PLAN_DIAGNOSTIC_CODES.refreshCrashed)).toBe(false);
+  });
+
+  it('leaves the previous cache byte-identical when the refresh exits badly', async () => {
     const previous = cachedPlan(PLAN_MAX_AGE_MS * 2);
     const fs = fsWith(previous);
     const before = fs.files.get(PLAN_FILE_RELATIVE_PATH)?.text;
-    const kane = stub({ lines: CRASHED_LINES });
+    // Truncated **and** a bad exit: nothing about this run is trustworthy, so the
+    // plan it half-carried is discarded and the cache stands.
+    const kane = stub({ lines: CRASHED_LINES, exitCode: 1 });
 
     const plan = await readPlan({
       invoker: kane.invoker,
@@ -248,7 +276,7 @@ describe('a plan is trusted only when the stream also reached testrun_done (§7.
   });
 
   it('answers null and says so when there is no cache and the refresh crashed', async () => {
-    const kane = stub({ lines: CRASHED_LINES });
+    const kane = stub({ lines: CRASHED_LINES, exitCode: 1 });
     const plan = await readPlan({
       invoker: kane.invoker,
       cwd: REPO,

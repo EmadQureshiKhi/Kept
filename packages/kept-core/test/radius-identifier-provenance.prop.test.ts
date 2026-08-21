@@ -178,8 +178,17 @@ function buildDocument(slug: string, index: number, seed: DocumentSeed): Generat
 interface Scenario {
   readonly documents: readonly GeneratedDocument[];
   readonly changed: readonly string[];
-  /** Whether the generated `--dry-run` stream reaches `testrun_done`. */
-  readonly streamComplete: boolean;
+  /**
+   * What the `--dry-run` refresh looks like on the wire.
+   *
+   * - `complete` — a `testrun_plan` and a `testrun_done`, exit 0.
+   * - `dry-run` — a `testrun_plan` and **no** `testrun_done`, exit 0. This is what
+   *   `kane-cli` 0.8.4 actually emits: a dry run plans and validates, executes
+   *   nothing, and so reports no execution done (15.3). The plan is accepted.
+   * - `crashed` — a truncated stream that also exited badly. Nothing is accepted,
+   *   and the cache, or `null`, is what a caller gets.
+   */
+  readonly refresh: 'complete' | 'dry-run' | 'crashed';
   /** Whether a previous plan is already cached. */
   readonly cachePresent: boolean;
   /** Kane's own preflight verdict on the suite. */
@@ -201,7 +210,7 @@ const arbScenario: fc.Arbitrary<Scenario> = fc
       ),
       { maxLength: 5 },
     ),
-    streamComplete: fc.boolean(),
+    refresh: fc.constantFrom('complete' as const, 'dry-run' as const, 'crashed' as const),
     cachePresent: fc.boolean(),
     valid: fc.boolean(),
     extraMembers: fc.uniqueArray(fc.constantFrom('tests/settings_currency_test.md', 'tests/product_currency_test.md'), {
@@ -214,7 +223,7 @@ const arbScenario: fc.Arbitrary<Scenario> = fc
         buildDocument(SLUGS[index] ?? `extra_${index}`, index, document),
       ),
       changed: seed.changed,
-      streamComplete: seed.streamComplete,
+      refresh: seed.refresh,
       cachePresent: seed.cachePresent,
       valid: seed.valid,
       extraMembers: seed.extraMembers,
@@ -283,7 +292,7 @@ function streamLines(scenario: Scenario): readonly string[] {
     'kane-cli 0.8.4 — enumerating suite',
     JSON.stringify({ type: 'testrun_plan', valid: scenario.valid, members }),
   ];
-  if (!scenario.streamComplete) return lines;
+  if (scenario.refresh !== 'complete') return lines;
   return [...lines, JSON.stringify({ type: 'testrun_done', status: 'complete', exit_code: 0 })];
 }
 
@@ -337,10 +346,14 @@ async function run(scenario: Scenario): Promise<Outcome> {
     spawn: (_command, args) => {
       invocations.push([...args]);
       const child = new FakeChild();
-      const lines = invocations.length === 1 ? streamLines(scenario) : [];
+      const refresh = invocations.length === 1;
+      const lines = refresh ? streamLines(scenario) : [];
       queueMicrotask(() => {
         for (const line of lines) child.stdout.emit(`${line}\n`);
-        child.close(0);
+        // A crashed refresh is a truncated stream that *also* exited badly. Exit 0
+        // with a plan and no terminal event is a completed dry run, and accepting
+        // it is the corrected rule of §7.2 (15.3).
+        child.close(refresh && scenario.refresh === 'crashed' ? 1 : 0);
       });
       return child.asChild();
     },

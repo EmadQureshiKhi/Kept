@@ -1406,3 +1406,14 @@ export { basenameSlug, slugOfName } from './context/sources.js';
 // mechanism rather than two. `readDocumentCovers` reads both homes so the radius
 // never has to know which one a document used.
 export { COVERS_MARKER, extractCoversGlobs, readDocumentCovers } from './providers/baseline.js';
+
+// The one path conversion on the Kane boundary (15.3) — design §7.3, §7.4, R4.4.
+// The graph, every `covers:` glob and every `designedTest.path` are
+// repository-relative POSIX; Kane 0.8.4 reports `testrun_plan.members[].path` and
+// `testrun_member_end.path` **absolute**, observed against this repository. The
+// two forms compare unequal, and an unequal comparison here reads as "no promise
+// is designed by this member" — an empty radius that looks like a decision rather
+// than a mismatch. `toRepoRelative` is idempotent on an already-relative path and
+// leaves a path under a different root absolute, so a member outside the
+// repository stays visible instead of being reshaped to fit.
+export { toRepoRelative } from './model/ids.js';
