@@ -11,6 +11,7 @@ could leak and nothing to authenticate against.
 
 | | |
 |---|---|
+| Live at | **<https://withkept.vercel.app>** |
 | Host | Vercel |
 | Framework | Next.js 16.3 |
 | Project root | the **monorepo root**, not `apps/ledger` — see below |
@@ -162,18 +163,25 @@ the build half does not.
 6. **Deploy.**
 
 Then one edit to `README.md`. Requirement 13.9 wants the deployed URL inside the README's
-first 20 lines, and line 17 currently reads:
+first 20 lines, and line 17 held a placeholder until the deploy landed. **That edit is
+made**: line 17 now reads
 
 ```
-- **Live Ledger** — `LEDGER_URL_PENDING_DEPLOY`
+- **Live Ledger** — [withkept.vercel.app](https://withkept.vercel.app)
 ```
 
-Replace the backticked token, backticks included, with the HTTPS URL. That is the whole
-edit, and the suite is watching that one line: while the placeholder is there it holds the
-README to *making no URL claim at all*, and the moment a real URL replaces it the same file
-starts asserting Requirement 13.9 against the URL instead — inside the first 20 lines,
-HTTPS, and not localhost. A single `it.todo` names the edit and prints in every run's
-summary until it is made, so it cannot be forgotten in a document.
+and the `<!-- DEPLOY … -->` note beside it is gone, because an instruction to replace a
+token that is no longer in the file is worse than no instruction.
+
+The suite followed the line across on its own, which is the part worth knowing if you ever
+redeploy to a different host. While the placeholder was there it held the README to *making
+no URL claim at all* — not URL-shaped, no `deployed at`, no second HTTPS address in the
+front matter — and an `it.todo` printed the pending edit in every run's summary so it could
+not be forgotten in a document. The moment a real URL replaced the token, that block went
+quiet and the opposite block woke up: exactly one HTTPS URL on the bullet, not localhost, a
+host with a dot in it, not the repository URL by mistake, and still inside line 20. Nothing
+was re-enabled by hand and no assertion was relaxed; the `it.todo` is discharged and the
+file's test count drops by one.
 
 ### If the build fails on `next: command not found` or `tsc: command not found`
 
@@ -218,3 +226,44 @@ Also worth a look: every route in the build output should be marked static. The 
 prerenders all nine — `/`, `/_not-found`, `/amendments`, `/apple-icon.png`, `/badge.svg`,
 `/coverage`, `/icon.png`, `/reviews`, `/runs`. A route that turns dynamic is a route that
 grew a server, which is the read-only guarantee of Requirement 8.4 slipping.
+
+### Measured on the live deployment
+
+Run against `https://withkept.vercel.app` after the first successful deploy.
+
+Every route answers, and the two icon routes confirm the build served the branding
+artefacts rather than a placeholder — `/icon.png` comes back at 15,649 bytes, which is the
+favicon as built:
+
+| Route | Status | Bytes | Content type |
+|---|---|---|---|
+| `/` | 200 | 105,920 | `text/html` |
+| `/amendments` | 200 | 22,578 | `text/html` |
+| `/coverage` | 200 | 31,594 | `text/html` |
+| `/reviews` | 200 | 12,131 | `text/html` |
+| `/runs` | 200 | 203,269 | `text/html` |
+| `/badge.svg` | 200 | 569 | `image/svg+xml` |
+| `/icon.png` | 200 | 15,649 | `image/png` |
+| `/apple-icon.png` | 200 | 8,981 | `image/png` |
+| a path that does not exist | 404 | 11,026 | `text/html` |
+
+**Public, and static rather than server-rendered.** The response headers on `/` carry
+`x-nextjs-prerender: 1` and `x-vercel-cache: HIT`, with no `set-cookie` and no `location`
+redirect — so there is no Deployment Protection interstitial and no session to acquire. The
+prerender header is the one that matters for Requirement 8.4: it is the host stating the
+page was built ahead of the request, not rendered for it.
+
+**The page agrees with the committed file.** Rendered text off the live landing view:
+8 promises with the red one first, `p_45ccecba7aa5` at `apps/fixture/README.md:20` — the
+10-percent-discount claim that was never true — then seven proven. The rail reads
+`baseline data only` where proven coverage would go and `100 %` for designed coverage,
+which is `provenCoverage: null` and `designedCoverage: 1` in
+`apps/ledger/data/ledger.snapshot.json` rendered honestly: the withheld figure is a phrase
+rather than a zero.
+
+One thing that looks like a bug and is not: the freshness chip reads a fixed relative age
+rather than counting up as the page ages. `app/page.tsx` passes `snapshot.generatedAt` as
+`now`, not the wall clock, so the chip states the gap between the run and the snapshot —
+a fact about the artefact, true for as long as the artefact is. Reading the real clock on a
+prerendered page would make one snapshot render as two different pages, and the exact
+instant is on the chip's `title` either way.

@@ -14,10 +14,8 @@
 
 ## Start here
 
-- **Live Ledger** — `LEDGER_URL_PENDING_DEPLOY`
+- **Live Ledger** — [withkept.vercel.app](https://withkept.vercel.app)
 - **Or run it yourself** — `npm run demo`, then open `http://localhost:3000`
-
-<!-- DEPLOY, one edit: on line 17, replace `LEDGER_URL_PENDING_DEPLOY` — backticks included — with the HTTPS URL Vercel gives you. Nothing else in this file changes. Settings, in order: docs/deploy-ledger.md -->
 
 `npm run demo` is the whole judge path. It boots the Ledger and the fixture application from
 a snapshot committed in this repository: **Kane is invoked zero times, zero credits are spent,
