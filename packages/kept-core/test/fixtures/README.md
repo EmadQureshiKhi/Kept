@@ -58,7 +58,9 @@ nowhere here. Progress events are the untyped `{step, status, remark}` objects.
 | `assurance-cover-refused.ndjson` | **CAPTURED** | The verified no-context-store refusal envelope of design §5.3.1, byte-identical to the recorded stdout of a real `cover --mode agent` run in a directory with no `.context/` store. Two lines, verbatim, never paraphrased. A refusal is a **complete** stream, not a crashed one. | 2.16 (regression) |
 | `assurance-cover-done.ndjson` | SYNTHETIC | The success path of the Ledger's data source: one `coverage` payload event carrying the `--json` document, then `done` with status `complete` and event `exit_code` 0. | 2.13, 5.3 enrichment, stage 5 |
 | `assurance-paused.ndjson` | SYNTHETIC | A paused, resumable `maintain reconcile`: `done` with status `paused` and event `exit_code` **3**. For the Assurance family exit 3 means paused and resumable — **never** a failure. Misreading it is the one mistake that corrupts ledger state. | 2.13, stage 5/8 (R5.4) |
-| `context-list-sources.ndjson` | SYNTHETIC | The source listing `resolveSourceId` resolves against (§13.2.2): one progress line, one payload event carrying seven entries, then `done` with status `complete`. Shaped so every rung of the four-rung match ladder and every failure rung is reachable from committed bytes. | 12.1, 12.2, 12.5 |
+| `context-list-sources.jsonl` | SYNTHETIC | The source listing `resolveSourceId` resolves against (§13.2.2), in the shape `context list --json` actually emits: one plain JSON object per line, no envelope and no terminal event, behind the observed `Update available` advisory so the prefix-skip rule is exercised. Shaped so every rung of the five-rung match ladder and every failure rung is reachable from committed bytes. Replaced `context-list-sources.ndjson`, which wrapped the entries in an Assurance envelope Kane never emits for this command. | 12.1, 12.2, 12.5, 15.4 |
+| `context-list-live.jsonl` | REAL, verbatim | The **one line the live store prints** for its only source: `id`, `cid`, `label`, `title`, `trust`, `fresh`. No path key, and `cid` is not one of `digest \| sha256 \| hash \| content_hash` — which is why the ladder needs a fifth `basename-slug` rung to match `apps/fixture/README.md` at all. | 15.4 |
+| `context-list-no-store.txt` | REAL, verbatim | The whole stdout of `context list --type source --json` in a directory with no `.context/`: `error: no context store here (run \`kane-cli context ingest <files>\` first)`, at exit **2**, as plain text rather than in an envelope. This is what `reason: 'no-store'` is pinned to. | 15.4 |
 
 ### Promoted in task 6.4 — real bytes, verbatim
 
@@ -208,7 +210,7 @@ Two further facts about the real packs, neither of which any fixture can carry:
   That residue is the documentation's problem, which is exactly why the
   assertion class routes to `docs-lie`.
 
-## `context-list-sources.ndjson` — the seven entries, and why each is shaped that way
+## `context-list-sources.jsonl` — the seven entries, and why each is shaped that way
 
 The listing is what makes `kane-cli maintain reconcile --source-id <id>` possible
 at all: `--from` and `--source-id` are **both** mandatory, and the id can only be
@@ -216,13 +218,18 @@ built from the `ok: true` arm of `SourceResolution`, so an unresolved source is 
 structural no-op rather than a spawn that exits 2 (§13.2, §13.2.2). This file is
 therefore the input to the branch that would otherwise have been silently dead.
 
-Two things about it are **unobserved assumptions**, and the projection is built so
-that neither can matter: the payload event's `type` (`sources`) and the `verb`
-string (`context list`). The store's internal schema is not pinned by observation,
-so `projectSourceListing` keys off **neither** — it walks every event of the stream
-for any array of objects, exactly as the `coverage` payload is walked (§5.3). If a
-release renames the event or wraps the array one level deeper, this fixture stops
-being representative but the projection keeps working.
+The **shape** is observed and the **entries** are synthetic. `context list --json`
+prints one plain JSON object per line — no `{type,v,verb}` envelope, no `done` — and
+this file matches that, with the real `Update available: 0.8.4 \u2192 0.8.5` advisory
+line ahead of the JSON because that was observed on stdout too (R3.23's prefix skip
+earns its keep here). The seven entries themselves are shaped by hand so every rung
+is reachable; the live store carries exactly one source, and it is committed
+separately as `context-list-live.jsonl`.
+
+The projection does not depend on the flat shape either. `projectSourceListing`
+walks for **any array of objects**, exactly as the `coverage` payload is walked
+(§5.3), and the parsed lines are handed to it as one array — so a release that wraps
+them in an envelope stops matching this fixture and keeps projecting.
 
 | # | id | Shape | Reachable outcome |
 |---|---|---|---|
@@ -256,6 +263,11 @@ being representative but the projection keeps working.
   on it and nothing else. `page.tsx`, by contrast, is the basename of entries 4, 5
   and 6, so any query that reached rung 4 with that basename is `ambiguous` —
   which is the correct answer and not a shortcoming of the fixture.
+- **No entry here reaches the fifth rung, and that is deliberate.** Every id in
+  this file is an opaque `src_…` token, so `basename-slug` can never fire over it
+  and cannot mask a bug in the four rungs above. The slug rung is exercised over
+  `context-list-live.jsonl`, whose id is the real `readme` Kane minted from
+  `README.md` — the one case where no path and no comparable digest exists.
 - **Titles and use-case names are present on purpose.** Entries 1, 4 and 7 carry a
   `title` and entries 2 and 5 a `use_case`, none of which the ladder may ever
   consult. They are here so a "helpful" fallback that reads them can be caught by
