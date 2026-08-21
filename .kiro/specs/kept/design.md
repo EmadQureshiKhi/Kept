@@ -1740,7 +1740,8 @@ export interface StoreSource {
 }
 
 export type SourceResolution =
-  | { ok: true;  source: StoreSource; via: 'cache' | 'exact-path' | 'abs-path' | 'digest' | 'unique-basename' }
+  | { ok: true;  source: StoreSource;
+      via: 'cache' | 'exact-path' | 'abs-path' | 'digest' | 'unique-basename' | 'basename-slug' }
   | { ok: false; reason: 'no-store' | 'listing-unreadable' | 'crashed-stream'
                         | 'no-match' | 'ambiguous' | 'retired'; diagnostic: Diagnostic };
 
@@ -1749,7 +1750,7 @@ export async function resolveSourceId(args: {
 }): Promise<SourceResolution>;
 ```
 
-**Listing invocation.** `kane-cli context list --type source --json`, Assurance family, invoker appends `--mode agent`, 60 s budget. The source array is projected **tolerantly**, exactly as the `coverage` payload is (§5.3): walk the payload for any array of objects and accept an entry carrying a recognisable id (`source_id` | `id` | `sourceId`) plus optionally a path (`path` | `file` | `uri` | `source_path`), a digest (`digest` | `sha256` | `hash` | `content_hash`) and a lifecycle marker (`retired` | `status`). The store's internal schema is not pinned by observation, so it is not assumed.
+**Listing invocation.** `kane-cli context list --type source --json`, **no family and no enabler**, 60 s budget. *Corrected against the installed 0.8.4 — observed, not assumed:* `context list` takes `--type`, `--inferred`, `--stale`, `--all`, `--json` and **no `--mode` flag at all**, so appending the Assurance enabler exits 1 with an empty stdout and `error: unknown option '--mode'`; its `--json` output is one plain JSON object per line rather than the `{type,v,verb}` envelope, and it never emits `done`. It is therefore not in `kane/family.ts`'s contract table and is invoked through `KaneInvoker.invokePlain`, which appends nothing and returns lines. A storeless directory answers on **stdout** with `error: no context store here (run `kane-cli context ingest <files>` first)` at exit 2, which is what `reason: 'no-store'` reads. Recorded at `docs/kane/reconcile/`. The source array is projected **tolerantly**, exactly as the `coverage` payload is (§5.3): walk the payload for any array of objects and accept an entry carrying a recognisable id (`source_id` | `id` | `sourceId`) plus optionally a path (`path` | `file` | `uri` | `source_path`), a digest (`digest` | `sha256` | `hash` | `content_hash`) and a lifecycle marker (`retired` | `status`). The store's internal schema is not pinned by observation, so it is not assumed.
 
 **Match ladder, first hit wins, no fuzzy matching at any rung:**
 
@@ -1759,6 +1760,9 @@ export async function resolveSourceId(args: {
 | 2 | `abs-path` | Absolute-path equality after resolving both sides against `repoRoot` |
 | 3 | `digest` | sha256 of the file's current bytes equals the entry's recorded digest |
 | 4 | `unique-basename` | Basename equality **and exactly one candidate matches** |
+| 5 | `basename-slug` | The file's slugified basename equals the slugified source id **and exactly one candidate matches** |
+
+Rung 5 exists because Kane keys sources by content and slug, not by repository path — *observed*: the live listing publishes `id, cid, label, title, trust, fresh`, so there is no path key to compare, `cid` is not one of the digest spellings, and `apps/fixture/README.md` is reachable only through the `readme` id it minted at ingest. It is **last** so it can never shadow a stronger match, and it carries its own `via` string so the Ledger and the diagnostics never report a slug match as a path match.
 
 Two or more candidates tying at the same rung is `ambiguous` — **not** a coin flip. Titles, use-case names and ordinal position are never used. A matched entry that is retired resolves to `reason: 'retired'` rather than being handed to Kane, so the fail-fast check below is never reached in the normal path.
 
@@ -1910,7 +1914,9 @@ packages/kept-core/test/
     assurance-cover-done.ndjson
     assurance-cover-refused.ndjson ← the verbatim two-line no-context-store refusal (§5.3.1)
     assurance-paused.ndjson        ← done status paused, exit_code 3
-    context-list-sources.ndjson    ← source listing: exact-path, digest-only, retired, duplicate
+    context-list-sources.jsonl     ← source listing, JSON lines: exact-path, digest-only, retired, duplicate
+    context-list-live.jsonl        ← the live store's one line: id + cid, no path — the slug rung
+    context-list-no-store.txt      ← `error: no context store here (…)`, verbatim, exit 2
     failure-*.yaml
   arbitraries.ts                   ← shared fast-check generators (see below)
   *.prop.test.ts                   ← one file per property, tagged

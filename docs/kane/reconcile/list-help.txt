@@ -1,0 +1,11 @@
+Usage: kane-cli context list [options]
+
+List context graph nodes
+
+Options:
+  --type <t>  Filter by node label (source | usecase)
+  --inferred  Only derived (unreviewed) nodes
+  --stale     Only stale/orphaned nodes
+  --all       Include superseded node versions
+  --json      JSON output
+  -h, --help  display help for command

@@ -1,0 +1,19 @@
+Usage: kane-cli maintain reconcile [options]
+
+Reconcile a changed source: the head lands, extraction runs over the change,
+and every proposed change HOLDS as a review card — approve / reject / defer,
+nothing commits without your verdict (the in-chat review is the TTY default)
+
+Options:
+  --from <file>     The NEW version of the source document (a file path)
+  --source-id <id>  The EXISTING source this file succeeds — its head moves;
+                    see `kane-cli context list --type source`
+  --plan            Preview: the head-move lands (the change fact), everything
+                    else is STAGED into the stored plan — nothing suite-side
+                    commits
+  --apply [path]    Walk a STORED plan (REMOVE stays plan-only). Bare = the
+                    latest plan behind an approval prompt; a path picks one;
+                    with --from it recomputes live
+  --mode <mode>     interactive | agent | ci | override — TTY defaults to the
+                    in-chat card review; headless requires one
+  -h, --help        display help for command

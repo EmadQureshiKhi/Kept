@@ -1,0 +1,115 @@
+{
+  "label": "plan",
+  "changed": [
+    "apps/fixture/README.md"
+  ],
+  "spawns": [
+    [
+      "context",
+      "list",
+      "--type",
+      "source",
+      "--json"
+    ],
+    [
+      "maintain",
+      "reconcile",
+      "--from",
+      "apps/fixture/README.md",
+      "--source-id",
+      "readme",
+      "--plan",
+      "--mode",
+      "agent"
+    ]
+  ],
+  "invocations": 1,
+  "rebuilt": false,
+  "reviewCards": null,
+  "docs": [
+    {
+      "file": "apps/fixture/README.md",
+      "sourceId": "readme",
+      "via": "basename-slug",
+      "refusal": null,
+      "argv": [
+        "maintain",
+        "reconcile",
+        "--from",
+        "apps/fixture/README.md",
+        "--source-id",
+        "readme",
+        "--plan",
+        "--mode",
+        "agent"
+      ],
+      "invoked": true,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "terminalSeen": true,
+      "status": "error",
+      "accepted": false,
+      "paused": false,
+      "headMoved": false,
+      "stagedCount": 0,
+      "staged": [],
+      "message": "error: agent failed for readme: graph data plane failed: graph_query search_similar_batch: no reply (timeout or cancelled)",
+      "runId": "kept-reconcile:2026-08-21T00:59:40.618Z#0"
+    }
+  ],
+  "freshness": {
+    "terminalEventAt": null,
+    "terminalEventType": null,
+    "commandFamily": null
+  },
+  "diagnostics": [
+    {
+      "code": "reconcile-started",
+      "severity": "info",
+      "message": "kept reconcile --changed: 1 saved path(s), 1 documentation file(s) inside the hook's pattern set, budget 300000 ms",
+      "file": null
+    },
+    {
+      "code": "reconcile-source-listing-read",
+      "severity": "info",
+      "message": "`context list --type source --json` listed 1 source (0 retired, 1 live).",
+      "file": null
+    },
+    {
+      "code": "reconcile-source-resolved",
+      "severity": "info",
+      "message": "apps/fixture/README.md resolves to source readme via basename-slug. The match is on the slug 'readme' Kane derived at ingest, not on a path: this listing publishes none.",
+      "file": "apps/fixture/README.md"
+    },
+    {
+      "code": "sources-cache-refreshed",
+      "severity": "info",
+      "message": ".kept/sources.json was refreshed from a listing of 1 source (.kept/sources.json is absent), signature sha256:b74c2a6728c86a02534b5ebd37f17e848bf192054316a7d4a246a6aa9a74c3fc.",
+      "file": ".kept/sources.json"
+    },
+    {
+      "code": "reconcile-refused",
+      "severity": "warn",
+      "message": "reconciliation of apps/fixture/README.md finished with status 'error' (exit 1), so nothing was consumed: the graph was not rebuilt and every verdict stands. Kane reported: error: agent failed for readme: graph data plane failed: graph_query search_similar_batch: no reply (timeout or cancelled)",
+      "file": "apps/fixture/README.md"
+    },
+    {
+      "code": "reconcile-graph-rebuild-held",
+      "severity": "info",
+      "message": "no reconciliation reached an accepted terminal 'done' event, so the promise graph was not rebuilt and .kept/state.json was left exactly as it was: every verdict and the freshness triple stand at never verified.",
+      "file": null
+    },
+    {
+      "code": "snapshot-written",
+      "severity": "info",
+      "message": "kept snapshot: wrote 646 bytes carrying 0 promises",
+      "file": null
+    },
+    {
+      "code": "reconcile-completed",
+      "severity": "info",
+      "message": "kept reconcile --changed: 1 document(s), 1 invocation(s), 0 refusal(s), 0 staged item(s), no review card created and no verdict written",
+      "file": null
+    }
+  ]
+}

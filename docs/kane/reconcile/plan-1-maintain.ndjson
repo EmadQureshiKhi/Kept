@@ -1,0 +1,11 @@
+{"type":"run_start","v":1,"verb":"reconcile","session":"as-20260821T0059-7dj302yx"}
+{"type":"corpus","v":1,"verb":"reconcile","sources":[{"source_id":"readme","cid":"sha256:39fab750f4e1771c819f274a0f4dfadf467c6a4e28f3e5976fc987a03b31212e"}],"skipped":[]}
+{"type":"source_start","v":1,"verb":"reconcile","source_id":"readme","cid":"sha256:39fab750f4e1771c819f274a0f4dfadf467c6a4e28f3e5976fc987a03b31212e","index":1,"total":1,"resumed":false}
+{"type":"agent_activity","v":1,"verb":"reconcile","kind":"thinking_done","label":"thought for 6.1s"}
+{"type":"agent_activity","v":1,"verb":"reconcile","kind":"tool","label":"→ search graph…"}
+{"type":"agent_activity","v":1,"verb":"reconcile","kind":"tool","label":"→ trace provenance…"}
+{"type":"usage","v":1,"verb":"reconcile","credits":3.88,"total_credits":3.88}
+{"type":"agent_activity","v":1,"verb":"reconcile","kind":"decision","label":"checking a possible duplicate"}
+{"type":"error","v":1,"verb":"reconcile","source_id":"readme","message":"error: agent failed for readme: graph data plane failed: graph_query search_similar_batch: no reply (timeout or cancelled)"}
+{"type":"error","v":1,"verb":"reconcile","message":"error: reconcile failed: reconcile: re-extract of readme failed (exit 1)"}
+{"type":"done","v":1,"verb":"reconcile","status":"error","exit_code":1}

@@ -1,0 +1,6 @@
+[
+  "cover",
+  "--json",
+  "--mode",
+  "agent"
+]

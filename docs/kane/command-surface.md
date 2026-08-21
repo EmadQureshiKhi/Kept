@@ -25,7 +25,31 @@ getting it wrong silently breaks the loop.
 |---|---|---|
 | `run`, `testmd run` | `run_end` | `--agent` |
 | `testrun run` | **`testrun_done`** | **automatic when stdout is piped — there is NO `--agent` flag** |
-| `context extract`, `design tests`, `maintain reconcile`, `cover`, `cover gaps` | **`done`** | `--mode agent` |
+| `context extract`, `design tests`, `maintain reconcile`, `maintain evolve`, `cover`, `cover gaps` | **`done`** | `--mode agent` |
+| `context list` | **none** | **not addressable this way — see the correction below** |
+
+**Correction, observed 2026-08-21 against this same 0.8.4.** An earlier reading of
+this table put `context list` in the `--mode agent` row. It does not belong there,
+and the mistake was load-bearing: `resolveSourceId` issued
+`context list --type source --json --mode agent` and got
+
+```
+exit 1, stdout empty, stderr: error: unknown option '--mode'
+```
+
+`kane-cli context list --help` lists `--type <t>`, `--inferred`, `--stale`,
+`--all`, `--json` and nothing else — there is **no `--mode` flag on this command at
+all**. Its `--json` output is one plain JSON object per line, not the
+`{type,v,verb}` envelope, and it never emits `done`, so it carries none of the four
+family-dependent facts. `maintain reconcile --help` even points at it in the bare
+form: *"see `kane-cli context list --type source`"*. In a directory with no
+`.context/` it prints `error: no context store here (run `kane-cli context ingest
+<files>` first)` on **stdout** and exits 2 — plain text again, not a refusal
+envelope. Both streams are committed under `docs/kane/reconcile/`.
+
+`packages/kept-core/src/kane/family.ts`'s `CONTRACTS` table listed it under
+Assurance for the same reason; that entry is gone, `familyForArgv` answers `null`
+for it, and it is invoked through `KaneInvoker.invokePlain`, which appends nothing.
 
 Consequences for KEPT: blast-radius verification uses `testrun run`, so it must
 parse `testrun_done`. The Ledger's data source is `cover`, so it must parse
@@ -43,6 +67,7 @@ would hang or silently report nothing on both of our real paths.
 | Command | Verified signature |
 |---|---|
 | `context` | `ingest \| extract \| list \| review \| sessions \| …` |
+| `context list` | `[--type <t>] [--inferred] [--stale] [--all] [--json]` — **no `--mode`**; `--json` is JSON lines, one object per line. `--all` is what includes superseded versions, so the default listing is the live one |
 | `design tests` | `--use-case <ref>` |
 | `cover` | `[--from <pack>] [--json] [--mode interactive\|agent\|ci]` |
 | `cover gaps` | `[uc]` — dual-axis ribbon, designed × proven, from the live graph |
@@ -88,6 +113,9 @@ Flags confirmed from the installed CLI's own `--help`:
 
 ## Assurance stream (`--mode agent`)
 
+Note this section describes the commands that *are* in the family: `context list`
+is not one of them, whatever an earlier version of the table above said.
+
 Envelope: `{"type": …, "v": 1, "verb": "extract"|"design"|"reconcile"|"cover"|"gaps", …}`.
 Terminates with exactly one `{"type":"done","status":…,"exit_code":…}` where
 `status` ∈ `complete|paused|error|refused|interrupted|aborted`. A stream ending
@@ -96,6 +124,43 @@ Terminates with exactly one `{"type":"done","status":…,"exit_code":…}` where
 `cover` emits one `coverage` payload event carrying the full `--json` document,
 then `done`. `cover gaps` emits `gaps`, then `done`, with ready-to-run commands
 in `next[]`.
+
+### `maintain reconcile --plan` stages into `reconcile_plan.rows[]`, not `review_card`
+
+**Correction, observed 2026-08-21 against 0.8.4.** A live
+`maintain reconcile --from apps/fixture/README.md --source-id readme --plan --mode agent`
+that staged five changes emitted **no `review_card` event at all**. It carried one
+`reconcile_plan` event whose `rows[]` held all five:
+
+```json
+{"type":"reconcile_plan","v":1,"verb":"reconcile","source_id":"readme",
+ "plan_path":"…/.context/reconcile/plans/2026-08-21T01-03-07-214Z-readme.json",
+ "rows":[{"kind":"ADD","ref":"uc-6","why":"new use-case extracted from readme"},
+         {"kind":"ADD","ref":"uc-7","why":"…"},{"kind":"ADD","ref":"uc-8","why":"…"},
+         {"kind":"ADD","ref":"uc-10","why":"…"},
+         {"kind":"MODIFY","ref":"uc-4","why":"updated: description, value, criteria (staged — commits on approval)"}],
+ "archive":[]}
+```
+
+One event, many rows: a **row** is what corresponds to one held change, so five
+rows are five review cards, not one. `plan_path` names the stored plan that holds
+them and is the only thing that makes them walkable with `kept reconcile apply`;
+it is `null` on a run that staged nothing. `rows: []` is normal — a trivial edit
+produced `done: complete` with an empty `rows[]` and a null `plan_path`.
+
+KEPT read only the `review_card` spelling (which the recorded `maintain evolve`
+stream does use), so it reported **zero staged items for a run that staged five**
+and wrote no card at all. Both spellings are now read; a `reconcile_plan` row is
+lifted into one held card each, `status: 'open'`, and nothing is ever applied.
+`ref` names a node in *Kane's* graph (`uc-10`), not a KEPT promise, so the card's
+attribution comes from the changed document rather than from the row.
+
+The recordings are committed under `docs/kane/reconcile/`: `plan3-*` is the
+five-row success, `plan2-*` the empty-rows trivial edit, and `plan-1-*` a genuine
+Kane-side failure (`graph_query search_similar_batch: no reply`) that ended
+`done: {status: "error", exit_code: 1}`. The `plan*-summary.json` files are the
+verbatim output of those runs and therefore predate this correction — they report
+`stagedCount: 0` for the five-row run, which is the defect itself, preserved.
 
 Defensive parse rule that is correct on all versions: skip any non-JSON prefix
 lines and start at the first line beginning with `{`.

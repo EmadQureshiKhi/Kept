@@ -1,0 +1,319 @@
+{
+  "label": "plan3",
+  "changed": [
+    "apps/fixture/README.md"
+  ],
+  "spawns": [
+    [
+      "context",
+      "list",
+      "--type",
+      "source",
+      "--json"
+    ],
+    [
+      "maintain",
+      "reconcile",
+      "--from",
+      "apps/fixture/README.md",
+      "--source-id",
+      "readme",
+      "--plan",
+      "--mode",
+      "agent"
+    ],
+    [
+      "cover",
+      "--json",
+      "--mode",
+      "agent"
+    ]
+  ],
+  "invocations": 1,
+  "rebuilt": true,
+  "reviewCards": null,
+  "docs": [
+    {
+      "file": "apps/fixture/README.md",
+      "sourceId": "readme",
+      "via": "basename-slug",
+      "refusal": null,
+      "argv": [
+        "maintain",
+        "reconcile",
+        "--from",
+        "apps/fixture/README.md",
+        "--source-id",
+        "readme",
+        "--plan",
+        "--mode",
+        "agent"
+      ],
+      "invoked": true,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "terminalSeen": true,
+      "status": "complete",
+      "accepted": true,
+      "paused": false,
+      "headMoved": true,
+      "stagedCount": 0,
+      "staged": [],
+      "message": null,
+      "runId": "kept-reconcile:2026-08-21T01:01:54.341Z#0"
+    }
+  ],
+  "freshness": {
+    "terminalEventAt": null,
+    "terminalEventType": null,
+    "commandFamily": null
+  },
+  "diagnostics": [
+    {
+      "code": "reconcile-started",
+      "severity": "info",
+      "message": "kept reconcile --changed: 1 saved path(s), 1 documentation file(s) inside the hook's pattern set, budget 300000 ms",
+      "file": null
+    },
+    {
+      "code": "reconcile-source-listing-read",
+      "severity": "info",
+      "message": "`context list --type source --json` listed 1 source (0 retired, 1 live).",
+      "file": null
+    },
+    {
+      "code": "reconcile-source-resolved",
+      "severity": "info",
+      "message": "apps/fixture/README.md resolves to source readme via basename-slug. The match is on the slug 'readme' Kane derived at ingest, not on a path: this listing publishes none.",
+      "file": "apps/fixture/README.md"
+    },
+    {
+      "code": "sources-cache-refreshed",
+      "severity": "info",
+      "message": ".kept/sources.json was refreshed from a listing of 1 source (.kept/sources.json is absent), signature sha256:b74c2a6728c86a02534b5ebd37f17e848bf192054316a7d4a246a6aa9a74c3fc.",
+      "file": ".kept/sources.json"
+    },
+    {
+      "code": "reconcile-head-moved",
+      "severity": "info",
+      "message": "apps/fixture/README.md is now the head of source readme (resolved via basename-slug). Under `--plan` the head move lands inside Kane's context store and every other change is staged into its stored plan; nothing in this repository was committed.",
+      "file": "apps/fixture/README.md"
+    },
+    {
+      "code": "build-started",
+      "severity": "info",
+      "message": "kept build: baseline scan over /Users/nokitha/Desktop/KEPT, enrichment budget 60000 ms, router 'resultCode740'",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[0].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[0].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[0].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[1].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[1].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[1].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[2].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[2].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[2].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[3] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[4] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[5] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[6] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[7] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[8] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[8].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[8].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[8].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[9] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[9].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[9].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[9].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[10] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[11] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-entry-refused",
+      "severity": "info",
+      "message": "The coverage payload entry at completeness[12] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
+      "file": null
+    },
+    {
+      "code": "enrichment-coverage-unprojectable",
+      "severity": "warn",
+      "message": "The coverage payload projected no usable entries (28 objects examined across 6 arrays), so the assurance axes were discarded: a visibly baseline-only ledger is better than a silently wrong proven figure (§5.3).",
+      "file": null
+    },
+    {
+      "code": "merge-degraded",
+      "severity": "warn",
+      "message": "The enrichment axis was discarded (coverage-payload-unreadable), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
+      "file": null
+    },
+    {
+      "code": "build-freshness-held",
+      "severity": "info",
+      "message": "No terminal event was consumed into the graph (coverage-payload-unreadable), so the freshness triple stands at never verified and every prior verdict is preserved",
+      "file": null
+    },
+    {
+      "code": "build-completed",
+      "severity": "info",
+      "message": "kept build: 8 promises, 16 edges, degraded=true (coverage-payload-unreadable)",
+      "file": null
+    },
+    {
+      "code": "reconcile-graph-rebuilt",
+      "severity": "info",
+      "message": "the promise graph was rebuilt from both providers after 1 terminal 'done' event(s): 8 promise(s), of which 0 are undesigned — the outstanding suite debt the ledger reports (R5.5, R5.8).",
+      "file": null
+    },
+    {
+      "code": "snapshot-written",
+      "severity": "info",
+      "message": "kept snapshot: wrote 17901 bytes carrying 8 promises",
+      "file": null
+    },
+    {
+      "code": "reconcile-completed",
+      "severity": "info",
+      "message": "kept reconcile --changed: 1 document(s), 1 invocation(s), 0 refusal(s), 0 staged item(s), no review card created and no verdict written",
+      "file": null
+    }
+  ]
+}

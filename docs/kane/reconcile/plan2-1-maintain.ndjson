@@ -1,0 +1,4 @@
+{"type":"run_start","v":1,"verb":"reconcile","session":"as-20260821T0100-61i2h1iw"}
+{"type":"reconcile_plan","v":1,"verb":"reconcile","source_id":"readme","plan_path":null,"rows":[],"archive":[]}
+{"type":"reconcile_summary","v":1,"verb":"reconcile","applied":0,"skipped":0,"deferred":0,"plan_only":0,"failed":0,"paused":0,"stale_created":0}
+{"type":"done","v":1,"verb":"reconcile","status":"complete","exit_code":0}

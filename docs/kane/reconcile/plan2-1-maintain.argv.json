@@ -1,0 +1,11 @@
+[
+  "maintain",
+  "reconcile",
+  "--from",
+  "apps/fixture/README.md",
+  "--source-id",
+  "readme",
+  "--plan",
+  "--mode",
+  "agent"
+]
