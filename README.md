@@ -28,6 +28,13 @@ failure verdict picks between them:
 
 That third branch is the interesting one.
 
+## Documents
+
+- [docs/submission-summary.md](docs/submission-summary.md) — the project in 120
+  words or fewer, which is the count the test suite holds it to.
+- [docs/judge-path.md](docs/judge-path.md) — the measured time from `npm run demo`
+  to the rendered landing view, and what the judge path does not spend.
+
 ## Status
 
 Setting up. Nothing to run yet.
