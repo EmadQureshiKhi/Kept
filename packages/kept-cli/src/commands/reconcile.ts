@@ -101,16 +101,21 @@
  *
  * ## What this file deliberately does not do
  *
- * It creates **no review card**. R5.7 and Property 20 hold every change
- * reconciliation produces as a held card, and Kane's `--plan` staging is the
- * mechanism; mirroring the staged items into `.kept/review-cards/` is task 14.1's
- * `repair/reviewCard.ts`, which is being built alongside this. The seam is
- * {@link ReconcileDoc.staged} — the `review_card` events the stream carried, kept
- * verbatim — plus {@link ReconcileResult.reviewCards}, which is `null` until 14.1
- * lands. A diagnostic names the count so the staging is visible on `/runs` in the
- * meantime.
+ * It **applies nothing**. R5.7 and Property 20 hold every change reconciliation
+ * produces as a held card, and Kane's `--plan` staging is the mechanism: the staged
+ * items are kept verbatim on {@link ReconcileDoc.staged} and mirrored into
+ * `.kept/review-cards/` through `repair/reviewCard.ts`, whose outcome gate is what
+ * keeps a crashed or paused stream from producing a card (R5.3, R5.4). There is no
+ * apply path in this function — not guarded, not flagged, none.
  *
- * It also writes **no verdict**. Reconciliation moves no verdict directly: what
+ * The spelling of a staged change is **observed, not assumed**. A live
+ * `maintain reconcile --plan` that staged five changes emitted no `review_card`
+ * event at all; it carried one `reconcile_plan` event with five `rows[]`. Reading
+ * only the first spelling reported "0 staged items" for that run, which is the
+ * silent nothing R5.7 exists to prevent, so both are read — see
+ * {@link RECONCILE_PLAN_EVENT_TYPE} and `docs/kane/reconcile/`.
+ *
+ * It writes **no verdict**. Reconciliation moves no verdict directly: what
  * it can do is change the *graph*, and R5.2 says how — the promise graph is
  * rebuilt from **both providers** after the terminal `done` is observed, which is
  * `runBuild`, and it is gated on that event. A crashed stream and a paused run
@@ -132,6 +137,7 @@ import type {
   KaneInvoker,
   KeptState,
   ParsedStream,
+  ReviewCard,
   RunOutcome,
   SourceMtimeReader,
   SourceResolution,
@@ -151,11 +157,13 @@ import {
   createStateStore,
   forkGuard,
   matchesAnyGlob,
+  mirrorReconcileStagedChanges,
   normaliseAssuranceStatus,
   normaliseChangedPath,
   parseStream,
   resolveSourceIdCached,
   writeHandoff,
+  writeReviewCard,
 } from '@kept/core';
 
 import type { ParsedArgv } from '../args.js';
@@ -305,6 +313,42 @@ export const RECONCILE_HOOK: HandoffHook = 'kept-docs-reconcile';
  * staged nothing is a normal stream.
  */
 export const STAGED_ITEM_EVENT_TYPE = 'review_card';
+
+/**
+ * The event `maintain reconcile --plan` actually carries its staged changes on
+ * (observed against 0.8.4, recorded at `docs/kane/reconcile/`):
+ *
+ * ```json
+ * {"type":"reconcile_plan","v":1,"verb":"reconcile","source_id":"readme",
+ *  "plan_path":"…/.context/reconcile/plans/2026-08-21T01-03-07-214Z-readme.json",
+ *  "rows":[{"kind":"ADD","ref":"uc-10","why":"new use-case extracted from readme"},
+ *          {"kind":"MODIFY","ref":"uc-4","why":"updated: description, value, criteria (staged — commits on approval)"}],
+ *  "archive":[]}
+ * ```
+ *
+ * A live run that staged five changes emitted **no `review_card` event at all**, so
+ * a reader that only knew that spelling reported "0 staged items" for a
+ * reconciliation that had staged five — the silent nothing R5.7 exists to prevent.
+ * Both spellings are read: `review_card` because the recorded `maintain evolve`
+ * stream uses it, and `reconcile_plan.rows[]` because this verb does.
+ */
+export const RECONCILE_PLAN_EVENT_TYPE = 'reconcile_plan';
+
+/**
+ * The `type` given to a staged item KEPT lifted out of `reconcile_plan.rows[]`.
+ *
+ * Prefixed, so nobody reads it as one of Kane's own event types: Kane emitted one
+ * event carrying five rows, and a *row* is what corresponds to one held change.
+ */
+export const STAGED_PLAN_ROW_TYPE = 'kept:reconcile_plan_row';
+
+/** Row keys read for a card's summary, in the spellings the live stream used. */
+export const PLAN_ROW_KIND_KEYS: readonly string[] = Object.freeze(['kind', 'op', 'action']);
+export const PLAN_ROW_REF_KEYS: readonly string[] = Object.freeze(['ref', 'logical_id', 'id']);
+export const PLAN_ROW_WHY_KEYS: readonly string[] = Object.freeze(['why', 'reason', 'summary']);
+
+/** The strategy a reconcile card records. Read from the config, never invented. */
+export type ReconcileCardStrategy = KeptConfig['verdictRouter'];
 
 // ---------------------------------------------------------------------------
 // The argv — the whole point of §13.2
@@ -536,15 +580,16 @@ export interface ReconcileResult {
   readonly rebuilt: boolean;
   readonly build: BuildResult | null;
   /**
-   * The seam for task 14.1's `repair/reviewCard.ts`.
+   * Every held change this run mirrored into `.kept/review-cards/` (R5.7, §8.2).
    *
-   * Always `null` in this build, and deliberately typed as `null` rather than as
-   * an empty array: this command produces no card, and an empty list would read
-   * as "we looked and there were none". The staged items are on each
-   * {@link ReconcileDoc.staged}, which is what 14.1 mirrors into
-   * `.kept/review-cards/`.
+   * One card per staged change, `status: 'open'`, and **nothing is ever applied** —
+   * `kept reconcile apply` is the only walk of a stored plan and no hook invokes it.
+   * Empty for a run that staged nothing, and empty for a run whose terminal `done`
+   * did not accept: `mirrorReconcileStagedChanges` gates on that (R5.3, R5.4), so a
+   * crashed or paused stream cannot produce a card from items it may never have
+   * finished staging.
    */
-  readonly reviewCards: null;
+  readonly reviewCards: readonly ReviewCard[];
   /** Every handoff written by this run. One per doc, or one for a no-doc run. */
   readonly handoffs: readonly WriteHandoffResult[];
   readonly snapshot: SnapshotResult;
@@ -622,16 +667,119 @@ function kaneMessage(
   return null;
 }
 
-/** Every `review_card` event a stream carried, verbatim. */
+/** The first present key of a family, as a non-empty trimmed string, or null. */
+function firstString(source: Record<string, unknown>, keys: readonly string[]): string | null {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return null;
+}
+
+/**
+ * Lift one `reconcile_plan` event's `rows[]` into one staged item each.
+ *
+ * The row is carried **verbatim** and two fields are added, both documented
+ * fallbacks rather than inventions:
+ *
+ * - `plan_path` and `source_id`, copied off the enclosing event, because a row on
+ *   its own does not say which stored plan holds it and that is the one thing a
+ *   reviewer needs in order to walk it with `kept reconcile apply`.
+ * - `proposed_changes`, naming the **changed document**. A row names a graph node
+ *   (`uc-10`), and a card's proposed change has to name a repository-relative path
+ *   or the snapshot rejects it; the document whose head moved is the honest path,
+ *   and the row's own words are what the summary quotes. Nothing is applied to it.
+ *
+ * `file` is null on the apply path, where there is no changed document at all — a
+ * human walking a stored plan named a plan, not a save. The field is then left off
+ * rather than filled with the plan's own path: that path is not a document this
+ * change is proposed against, and writing it there would put a `.context/` file in
+ * front of a reviewer as though KEPT proposed editing it. The apply path counts its
+ * rows and mirrors none, so nothing is lost by the omission.
+ */
+function planRowItems(
+  event: Record<string, unknown>,
+  file: string | null,
+): readonly Record<string, unknown>[] {
+  const rows = event['rows'];
+  if (!Array.isArray(rows)) return Object.freeze([]);
+  const planPath = readString(event, 'plan_path');
+  const sourceId = readString(event, 'source_id');
+  const items: Record<string, unknown>[] = [];
+  for (const row of rows) {
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) continue;
+    const record = row as Record<string, unknown>;
+    const kind = firstString(record, PLAN_ROW_KIND_KEYS);
+    const ref = firstString(record, PLAN_ROW_REF_KEYS);
+    const why = firstString(record, PLAN_ROW_WHY_KEYS);
+    const summary = [kind, ref].filter((part) => part !== null).join(' ');
+    items.push({
+      ...record,
+      type: STAGED_PLAN_ROW_TYPE,
+      plan_path: planPath,
+      source_id: sourceId,
+      ...(file === null
+        ? {}
+        : {
+            proposed_changes: [
+              {
+                file,
+                summary:
+                  summary.length === 0
+                    ? (why ?? '')
+                    : `${summary}${why === null ? '' : ` — ${why}`}`,
+                diff: '',
+              },
+            ],
+          }),
+    });
+  }
+  return Object.freeze(items);
+}
+
+/**
+ * Every staged change a stream carried, verbatim — under both spellings.
+ *
+ * One `review_card` event is one held change; one `reconcile_plan` event is *many*,
+ * one per row, which is the spelling the live `--plan` run used.
+ */
 function stagedItems(
   stream: ParsedStream<typeof RECONCILE_FAMILY> | null,
+  file: string | null,
 ): readonly Record<string, unknown>[] {
   if (stream === null) return Object.freeze([]);
-  return Object.freeze(
-    stream.events
-      .filter((event) => event['type'] === STAGED_ITEM_EVENT_TYPE)
-      .map((event) => event as Record<string, unknown>),
+  const items: Record<string, unknown>[] = [];
+  for (const event of stream.events) {
+    const record = event as Record<string, unknown>;
+    if (record['type'] === STAGED_ITEM_EVENT_TYPE) items.push(record);
+    else if (record['type'] === RECONCILE_PLAN_EVENT_TYPE) {
+      items.push(...planRowItems(record, file));
+    }
+  }
+  return Object.freeze(items);
+}
+
+/**
+ * The promise a reconcile card is attributed to: the **first**, in the graph's own
+ * canonical id order, whose citation names the changed document.
+ *
+ * A card has to point at a real `p_` id or the snapshot rejects it, and Kane's rows
+ * name use-case ids (`uc-10`) which are nodes in *its* graph rather than promises in
+ * this one — so the attribution has to come from KEPT. The changed document is the
+ * one thing the two graphs share: every promise cited to it is a claim this
+ * reconciliation is about.
+ *
+ * "First in canonical order" rather than "all of them" or "whichever was walked
+ * first": `createPromiseGraph` sorts by id, so this resolves to the same promise on
+ * every machine, and one card per staged change is what R5.7 asks for — five rows
+ * fanned out across eight promises would be forty cards for five changes.
+ */
+export function promiseForDocument(state: KeptState, file: string): string | null {
+  const normalised = normaliseChangedPath(file);
+  const found = state.graph.promises.find(
+    (promise) => promise.citation.file === normalised,
   );
+  return found?.id ?? null;
 }
 
 /**
@@ -814,7 +962,7 @@ async function reconcileOneDoc(options: {
   const accepted = status === ACCEPTED_ASSURANCE_STATUS;
   const paused = status === 'paused';
   const message = kaneMessage(stream, terminal);
-  const staged = stagedItems(stream);
+  const staged = stagedItems(stream, file);
   const kaneRunId = readString(terminal, 'run_id') ?? runId;
 
   if (stream.kind === 'crashed') {
@@ -883,8 +1031,7 @@ async function reconcileOneDoc(options: {
         `reconciliation of ${file} staged ${staged.length} item${
           staged.length === 1 ? '' : 's'
         } into Kane's stored plan. Nothing is applied: R5.7 holds every change as a review card, ` +
-        `and \`kept reconcile apply\` is the only way to walk the plan. Mirroring these into ` +
-        `.kept/review-cards/ is task 14.1's; this run created none.`,
+        `and \`kept reconcile apply\` is the only way to walk the plan.`,
       file,
     });
   }
@@ -1029,6 +1176,43 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
   // stream, a refusal and a pause all leave `.kept/state.json` untouched — not
   // rewritten byte-identically, untouched — which is what §14.1's "nothing
   // mutated" says literally.
+  // ── R5.7: every change Kane staged becomes a held card, and none is applied ──
+  //
+  // Kane's `--plan` staging *is* the holding mechanism (§13.2.3); this mirrors what
+  // it staged into `.kept/review-cards/` so `/reviews` can render it, and there is
+  // no apply path here — not guarded, not flagged, none. The outcome gate lives in
+  // `mirrorReconcileStagedChanges` rather than in an `if` at this call site, so a
+  // crashed or paused stream cannot reach a card (R5.3, R5.4).
+  const reviewCards: ReviewCard[] = [];
+  for (const doc of docs) {
+    if (doc.staged.length === 0) continue;
+    const mirrored = mirrorReconcileStagedChanges({
+      accepted: doc.accepted,
+      staged: doc.staged,
+      outcome: doc.terminalSeen ? (doc.status ?? 'without a status') : 'without its done event',
+      context: {
+        // An unattributed change is refused with a diagnostic rather than given an
+        // invented id (§8.2); `promiseForDocument` answers null when the graph
+        // carries no promise cited to this document, and the empty string is not a
+        // `p_` id, so the refusal is structural.
+        promiseId: promiseForDocument(prior, doc.file) ?? '',
+        createdAt: at,
+        strategy: request.config.verdictRouter,
+        evidenceRef: null,
+        diagnostics: sink,
+      },
+    });
+    for (const card of mirrored.cards) {
+      writeReviewCard({
+        repoRoot: request.repoRoot,
+        card,
+        diagnostics: sink,
+        ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+      });
+      reviewCards.push(card);
+    }
+  }
+
   const accepted = docs.filter((doc) => doc.accepted);
   let state: KeptState = prior;
   let build: BuildResult | null = null;
@@ -1094,7 +1278,7 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
     statePath: store.path,
     rebuilt: build !== null,
     build,
-    reviewCards: null,
+    reviewCards: Object.freeze(reviewCards),
     handoffs: Object.freeze(handoffs),
     snapshot,
     diagnostics: sink.entries,
@@ -1199,7 +1383,8 @@ export async function runReconcileApply(
   const accepted = status === ACCEPTED_ASSURANCE_STATUS;
   const paused = status === 'paused';
   const message = kaneMessage(stream, terminal);
-  const staged = stagedItems(stream);
+  // `null`: an apply names a stored plan, not a saved document (see `planRowItems`).
+  const staged = stagedItems(stream, null);
 
   if (stream !== null && stream.kind === 'crashed') {
     sink.report({

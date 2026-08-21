@@ -105,7 +105,9 @@ function fixtureLines(name: string): readonly string[] {
 }
 
 /** The committed listing: seven entries, `apps/fixture/README.md` among them. */
-const LISTING = fixtureLines('context-list-sources.ndjson');
+const LISTING = fixtureLines('context-list-sources.jsonl');
+/** The verbatim stdout of a `context list` in a directory with no `.context/`. */
+const NO_STORE = fixtureLines('context-list-no-store.txt');
 /** The verified refusal envelope: a **complete** stream, not a crash (§5.3.1). */
 const REFUSED = fixtureLines('assurance-cover-refused.ndjson');
 /** A reconcile that paused with a staged card and exit 3 (R5.4). */
@@ -113,18 +115,19 @@ const PAUSED = fixtureLines('assurance-paused.ndjson');
 /** `cover --json`, so the gated graph rebuild has something to consume. */
 const COVER_DONE = fixtureLines('assurance-cover-done.ndjson');
 
-/** The listing fixture truncated before its `done` event. */
-const LISTING_CRASHED = [LISTING[0] as string, LISTING[1] as string];
+/**
+ * A listing cut off mid-flight. `context list` has no terminal event to be missing
+ * — it is a JSON-lines listing — so a truncated one is a *signalled* death, and the
+ * stub spells that as a `null` exit code.
+ */
+const LISTING_CRASHED = LISTING.slice(0, 3);
 
 /**
- * An empty store: it *said* something, so the honest answer is `no-match` and the
- * `context ingest` remedy. Composed here rather than committed because there is
- * no capture of an empty store and inventing a file would imply there is.
+ * An empty store: no lines at all, exit 0. The honest answer is `no-match` and the
+ * `context ingest` remedy, which is a different fact from a listing we could not
+ * read.
  */
-const EMPTY_STORE = [
-  '{"type":"sources","v":1,"verb":"context list","total":0,"sources":[]}',
-  '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-];
+const EMPTY_STORE: readonly string[] = [];
 
 /** One listing entry, as the wire spells it. */
 function entry(parts: {
@@ -139,14 +142,12 @@ function entry(parts: {
   });
 }
 
-/** A listing carrying exactly these entries, in the committed envelope's shape. */
+/**
+ * A listing carrying exactly these entries — one JSON object per line, which is
+ * what `context list --json` actually emits.
+ */
 function listingOf(entries: readonly string[]): readonly string[] {
-  return [
-    `{"type":"sources","v":1,"verb":"context list","total":${entries.length},"sources":[${entries.join(
-      ',',
-    )}]}`,
-    '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-  ];
+  return [...entries];
 }
 
 /** Two live sources for one document: the ladder cannot choose, so `ambiguous`. */
@@ -328,7 +329,8 @@ function stub(options: StubOptions = {}): Stub {
           ? (options.cover ?? COVER_DONE)
           : (options.reconcile ?? RECONCILE_DONE);
       const code = isListing
-        ? (options.listingExit ?? 0)
+        ? // `null` is a signalled death, which is a different fact from exit 0.
+          (options.listingExit === undefined ? 0 : options.listingExit)
         : isCover
           ? 0
           : (options.reconcileExit ?? 0);
@@ -671,11 +673,15 @@ const FAILURE_RUNGS: readonly FailureRung[] = [
     // The live path in this repository today: there is no `.context/` store yet,
     // and a refusal is a *complete* stream carrying its own remedy (§5.3.1).
     reason: 'no-store',
-    stub: { listing: REFUSED, listingExit: 2 },
+    stub: { listing: NO_STORE, listingExit: 2 },
     listingSpawns: 1,
   },
   { reason: 'listing-unreadable', stub: { binary: null }, listingSpawns: 0 },
-  { reason: 'crashed-stream', stub: { listing: LISTING_CRASHED }, listingSpawns: 1 },
+  {
+    reason: 'crashed-stream',
+    stub: { listing: LISTING_CRASHED, listingExit: null },
+    listingSpawns: 1,
+  },
   { reason: 'no-match', stub: { listing: EMPTY_STORE }, listingSpawns: 1 },
   { reason: 'ambiguous', stub: { listing: AMBIGUOUS_LISTING }, listingSpawns: 1 },
   { reason: 'retired', stub: { listing: RETIRED_LISTING }, listingSpawns: 1 },
@@ -733,7 +739,7 @@ for (const rung of FAILURE_RUNGS) {
 
     it('creates no review card, and leaves the review-card directory absent', async () => {
       const run = await reconcile(rung.stub);
-      expect(run.result.reviewCards).toBeNull();
+      expect(run.result.reviewCards).toEqual([]);
       expect(run.result.docs[0]?.staged).toEqual([]);
       // The third assertion only a command can make. Nothing under
       // `.kept/review-cards/` was created, by this command or by anything it called.
@@ -795,13 +801,17 @@ describe('a completed reconciliation (§13.2.3, R5.2, R5.7)', () => {
     expect(headMove?.message).toContain('--plan');
   });
 
-  it('holds every staged change and creates no review card of its own (R5.7)', async () => {
+  it('holds every staged change as an open card and applies none (R5.7)', async () => {
     const run = await reconcile();
-    // Kane staged one item; KEPT records it and applies nothing. Mirroring these
-    // into `.kept/review-cards/` is task 14.1's, so the directory stays absent.
+    // Kane staged one item; KEPT mirrors it into `.kept/review-cards/` as a held
+    // card and applies nothing. `status: 'open'` is the held state — the only other
+    // one a card can carry is `dismissed`, and neither is "applied".
     expect(run.result.docs[0]?.staged).toHaveLength(1);
-    expect(run.result.reviewCards).toBeNull();
-    expect([...run.files.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR))).toEqual([]);
+    expect(run.result.reviewCards).toHaveLength(1);
+    expect(run.result.reviewCards[0]?.kind).toBe('reconcile');
+    expect(run.result.reviewCards[0]?.status).toBe('open');
+    const written = [...run.files.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR));
+    expect(written).toHaveLength(1);
     expect(run.result.diagnostics.map((entry) => entry.code)).toContain(
       RECONCILE_DIAGNOSTIC_CODES.staged,
     );
@@ -877,5 +887,91 @@ describe('a reconciliation that did not complete leaves the graph alone', () => 
     expect(refusal).toBeDefined();
     expect(refusal?.message).toContain('context ingest');
     expect(run.result.rebuilt).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The spelling a live `--plan` actually used (R5.7, `docs/kane/reconcile/`)
+// ---------------------------------------------------------------------------
+
+/**
+ * The correction these tests carry.
+ *
+ * A live `maintain reconcile --from … --source-id readme --plan --mode agent` that
+ * staged five changes emitted **no `review_card` event at all**. It carried one
+ * `reconcile_plan` event with five `rows[]`, and the reader that only knew the
+ * first spelling reported "0 staged items" for it — a reconciliation whose whole
+ * output was silently dropped, which is precisely the nothing R5.7 exists to
+ * prevent. Both streams are recorded under `docs/kane/reconcile/`; these tests
+ * drive the shape, and `reconcile-recorded.test.ts` drives the recording itself.
+ */
+const PLAN_ROWS_DONE = [
+  '{"type":"run_start","v":1,"verb":"reconcile","session":"as-20260821T0101-mnzeh7w5"}',
+  '{"type":"reconcile_plan","v":1,"verb":"reconcile","source_id":"readme",' +
+    '"plan_path":"/repo/.context/reconcile/plans/2026-08-21T01-03-07-214Z-readme.json",' +
+    '"rows":[{"kind":"ADD","ref":"uc-10","why":"new use-case extracted from readme"},' +
+    '{"kind":"MODIFY","ref":"uc-4","why":"updated: description, value, criteria"}],"archive":[]}',
+  '{"type":"reconcile_summary","v":1,"verb":"reconcile","applied":0,"skipped":0,"deferred":0,' +
+    '"plan_only":0,"failed":0,"paused":0,"stale_created":0}',
+  '{"type":"done","v":1,"verb":"reconcile","status":"complete","exit_code":0}',
+];
+
+/** The empty-rows spelling: a trivial edit Kane found nothing to stage for. */
+const PLAN_ROWS_EMPTY = [
+  '{"type":"reconcile_plan","v":1,"verb":"reconcile","source_id":"readme","plan_path":null,' +
+    '"rows":[],"archive":[]}',
+  '{"type":"reconcile_summary","v":1,"verb":"reconcile","applied":0,"skipped":0,"deferred":0,' +
+    '"plan_only":0,"failed":0,"paused":0,"stale_created":0}',
+  '{"type":"done","v":1,"verb":"reconcile","status":"complete","exit_code":0}',
+];
+
+describe('reconcile_plan.rows[] is one held change per row (R5.7)', () => {
+  it('lifts every row into its own held card, and applies none', async () => {
+    const run = await reconcile({ reconcile: PLAN_ROWS_DONE });
+    const doc = run.result.docs[0];
+
+    expect(doc?.accepted).toBe(true);
+    // Two rows on one event, so two staged changes — not one, and never zero.
+    expect(doc?.staged).toHaveLength(2);
+    expect(run.result.reviewCards).toHaveLength(2);
+    for (const card of run.result.reviewCards) {
+      expect(card.kind).toBe('reconcile');
+      // Held. The only other status a card can carry is `dismissed`, and the
+      // vocabulary has no third value that would mean applied.
+      expect(card.status).toBe('open');
+      expect(card.proposedChanges.map((change) => change.file)).toEqual([README]);
+    }
+    // The row's own words, and the stored plan that holds it, both survive.
+    const summaries = run.result.reviewCards.flatMap((card) =>
+      card.proposedChanges.map((change) => change.summary),
+    );
+    expect(summaries.some((text) => text.includes('ADD uc-10'))).toBe(true);
+    expect(summaries.some((text) => text.includes('MODIFY uc-4'))).toBe(true);
+    expect(doc?.staged.map((item) => item['plan_path'])).toEqual([
+      '/repo/.context/reconcile/plans/2026-08-21T01-03-07-214Z-readme.json',
+      '/repo/.context/reconcile/plans/2026-08-21T01-03-07-214Z-readme.json',
+    ]);
+    // One file per card under `.kept/`, and nothing anywhere else.
+    const written = [...run.files.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR));
+    expect(written).toHaveLength(2);
+  });
+
+  it('reads an empty rows[] as a run that staged nothing, not as a failure', async () => {
+    const run = await reconcile({ reconcile: PLAN_ROWS_EMPTY });
+    expect(run.result.docs[0]?.accepted).toBe(true);
+    expect(run.result.docs[0]?.staged).toEqual([]);
+    expect(run.result.reviewCards).toEqual([]);
+    expect([...run.files.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR))).toEqual([]);
+  });
+
+  it('creates no card from rows on a stream that never reached done (R5.3)', async () => {
+    const run = await reconcile({ reconcile: PLAN_ROWS_DONE.slice(0, 2) });
+    const doc = run.result.docs[0];
+    expect(doc?.terminalSeen).toBe(false);
+    // The rows arrived. Whether Kane *finished* staging them did not, so the
+    // outcome gate refuses them and says so rather than dropping them silently.
+    expect(doc?.staged).toHaveLength(2);
+    expect(run.result.reviewCards).toEqual([]);
+    expect([...run.files.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR))).toEqual([]);
   });
 });
