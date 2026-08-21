@@ -44,10 +44,15 @@ import { z } from 'zod';
 
 import { DIAGNOSTIC_SEVERITIES } from '../diagnostics.js';
 import { MEMBER_END_STATUSES } from '../kane/events.js';
-import { ARTIFACT_KINDS } from '../kane/evidence.js';
 import { EXIT_MEANINGS } from '../kane/exit.js';
 import { COMMAND_FAMILIES, contractFor } from '../kane/family.js';
-import { SEALED_PACK_SUFFIX } from '../kane/packTriage.js';
+/* `kane/vocabulary.js`, not `kane/evidence.js` and `kane/packTriage.js`, and the
+   indirection is load-bearing rather than tidy: both of those modules walk
+   directories, and this schema is what `apps/ledger` reaches through `parseSnapshot`.
+   Importing the constants from their old homes put a filesystem walker in the
+   read-only deployed bundle and produced four tracing warnings on every build. The
+   vocabulary is still declared exactly once. See `kane/vocabulary.ts`. */
+import { ARTIFACT_KINDS, SEALED_PACK_SUFFIX } from '../kane/vocabulary.js';
 import { designedTestId, evidenceId, isNodeId } from './ids.js';
 import {
   GRAPH_EDGE_KINDS,

@@ -76,9 +76,10 @@ import type { DiagnosticSink } from '../diagnostics.js';
 
 import type { EvidenceDirEntry, EvidenceStat } from './evidence.js';
 import { PackFormatError, readPackEntries, type PackEntry } from './packArchive.js';
-
-/** The suffix Kane gives a sealed pack. The execution id is the name before it. */
-export const SEALED_PACK_SUFFIX = '.evidence';
+/* The suffix used to be declared here and is now in `./vocabulary.js`, which imports
+   nothing, so the snapshot schema can name what a pack is called without importing the
+   archive reader below. One declaration, published by the barrel from there. */
+import { SEALED_PACK_SUFFIX } from './vocabulary.js';
 
 /** The per-test manifest inside a pack, which carries the member's `test_id`. */
 export const PACK_RESULT_FILENAME = 'result.yaml';

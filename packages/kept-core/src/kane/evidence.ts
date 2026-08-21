@@ -47,7 +47,7 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import type { DiagnosticSink } from '../diagnostics.js';
 
 import { contractFor, type CommandFamily } from './family.js';
-import { SEALED_PACK_SUFFIX } from './packTriage.js';
+import { SEALED_PACK_SUFFIX, type ArtifactKind } from './vocabulary.js';
 
 /** Directory name Kane seals packs into, under a session directory. */
 export const EVIDENCE_DIR_NAME = 'evidence';
@@ -55,30 +55,11 @@ export const EVIDENCE_DIR_NAME = 'evidence';
 /** Kane's per-project working directory, holding `testrun` suite packs. */
 export const TESTMUAI_DIR_NAME = '.testmuai';
 
-/**
- * How an artefact inside a pack is classified. Same vocabulary as
- * `LedgerSnapshot.evidence[].artifacts[].kind` (design §9.1), so a listing
- * serialises into the snapshot without a translation table.
- */
-export type ArtifactKind =
-  | 'annotated'
-  | 'screenshot'
-  | 'har'
-  | 'console'
-  | 'log'
-  | 'failure-yaml'
-  | 'other';
-
-/** The kinds, in snapshot order. Lets tests and generators enumerate. */
-export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
-  'annotated',
-  'screenshot',
-  'har',
-  'console',
-  'log',
-  'failure-yaml',
-  'other',
-];
+/* `ArtifactKind` and `ARTIFACT_KINDS` used to be declared here and are now in
+   `./vocabulary.js`, which imports nothing. The barrel publishes them from there, so
+   there is one declaration and one publication path. The move exists so the snapshot
+   schema — and therefore the read-only Ledger — can reach the vocabulary without
+   reaching the directory walker below it. See `vocabulary.ts` for the measurement. */
 
 /** One file inside a pack. */
 export interface EvidenceArtifact {

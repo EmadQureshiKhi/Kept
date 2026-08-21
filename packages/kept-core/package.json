@@ -5,6 +5,7 @@
   "description": "KEPT core — promise model, Kane NDJSON parser, verdict router, snapshot contract.",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

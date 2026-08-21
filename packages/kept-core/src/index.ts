@@ -69,7 +69,6 @@ export {
 // evidence path and `run_dir` is legacy and no longer created (design §4.6, A12,
 // R3.19). Every path returned is absolute.
 export type {
-  ArtifactKind,
   EvidenceArtifact,
   EvidenceDirEntry,
   EvidenceDirRequest,
@@ -80,7 +79,6 @@ export type {
   ListArtifactsRequest,
 } from './kane/evidence.js';
 export {
-  ARTIFACT_KINDS,
   EVIDENCE_DIR_NAME,
   TESTMUAI_DIR_NAME,
   classifyArtifact,
@@ -88,6 +86,22 @@ export {
   nodeEvidenceFileSystem,
   resolveEvidenceDir,
 } from './kane/evidence.js';
+
+// The vocabulary with no filesystem behind it — `kane/vocabulary.ts`, which imports
+// nothing at all.
+//
+// `ArtifactKind`, `ARTIFACT_KINDS` and `SEALED_PACK_SUFFIX` are plain data that the
+// snapshot schema states once by importing rather than restating (design §9.1). They
+// were declared in `kane/evidence.ts` and `kane/packTriage.ts`, both of which walk
+// directories — so `model/snapshot.ts` importing a frozen array of seven strings pulled
+// `node:fs`, `readdirSync` and run-time `join()` into the graph with it, and from there
+// into the read-only deployed Ledger by way of `parseSnapshot`. `next build` reported it
+// as four `Dynamic filesystem access causes tracing of the whole project` warnings.
+//
+// The public surface is unchanged — same three names, same shape — so no consumer moved.
+// What changed is that reaching them no longer reaches a directory walker.
+export type { ArtifactKind } from './kane/vocabulary.js';
+export { ARTIFACT_KINDS, SEALED_PACK_SUFFIX } from './kane/vocabulary.js';
 
 // The Kane process boundary (2.20) — the one place a Kane process is started.
 // `applyNdjsonEnabler` is the per-family argv contract (`--agent` / nothing /
@@ -1479,7 +1493,6 @@ export type {
 export {
   PACK_RESULT_FILENAME,
   PACK_TESTS_PREFIX,
-  SEALED_PACK_SUFFIX,
   SEALED_TRIAGE_DIAGNOSTIC_CODES,
   SEALED_TRIAGE_DIAGNOSTIC_CODE_VALUES,
   nodeSealedPackFileSystem,
@@ -1543,7 +1556,7 @@ export {
 // `execution_id` and Kane names the archive after it, so "this run's pack" is
 // available where only "the newest pack present" was being used. A mismatch is
 // diagnosed rather than silently accepted.
-// `SEALED_PACK_SUFFIX` is already published above, from `kane/packTriage.ts`, which is
-// the module that reads an archive; `kane/evidence.ts` imports it from there so the two
-// cannot disagree about what a pack is called.
+// `SEALED_PACK_SUFFIX` is already published above, from `kane/vocabulary.ts`. Both
+// `kane/packTriage.ts`, which reads an archive, and `kane/evidence.ts`, which lists one,
+// import it from there, so the two cannot disagree about what a pack is called.
 export { isSyncConflictCopy } from './kane/evidence.js';

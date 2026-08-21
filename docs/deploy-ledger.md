@@ -121,7 +121,6 @@ $ tsc -b packages/kept-core && node node_modules/next/dist/bin/next build apps/l
 ✓ Compiled successfully in 2.8s
   Skipping validation of types
 ✓ Generating static pages using 7 workers (10/10) in 239ms
-Turbopack build encountered 4 warnings:
 ```
 
 Exit 0. Nine routes, every one marked `○ (Static)` and prerendered — `/`, `/_not-found`,
@@ -132,19 +131,87 @@ output directory — is present.
 `Skipping validation of types` is `next.config.mjs` doing what its comment says; the type
 check ran locally under `npm run check`.
 
-**The four warnings are expected and not a failure.** They are output-tracing notices
-against `packages/kept-core/dist/kane/evidence.js`, which calls `resolve()` and `join()` on
-paths the tracer cannot statically scope, so the tracer widens what it includes in the
-server bundle. That module is on the import graph because `lib/snapshot.ts` pulls the
-snapshot model through the `@kept/core` barrel, and it is never *called* on any route: the
-Ledger reads evidence through the committed `publicPath` values, which is the whole point
-of R13.4. The cost is a larger traced bundle, not a behaviour change. Removing them means
-splitting the barrel so the browser half never reaches the filesystem half, which is a
-change to design §2.1's single-entry-point rule and wants its own decision.
+**The build used to report four warnings here. It now reports none** — see
+[the tracing warnings](#the-four-tracing-warnings-and-what-fixing-them-took) below for what
+they were, what they cost, and the two changes that removed them.
 
 Deleting `dist/` and re-running is also the check that the first line of the build command
 is load-bearing: without it, the same command fails with three
 `Module not found: Can't resolve '@kept/core'` errors.
+
+## The four tracing warnings, and what fixing them took
+
+The first successful deploy built cleanly and printed
+`Turbopack build encountered 4 warnings`, all four reading
+`Dynamic filesystem access causes tracing of the whole project` and all four pointing into
+`packages/kept-core/dist/kane/evidence.js` — at `resolve(cleaned)` and at three
+`join(dir, …)` calls whose paths a tracer cannot statically scope.
+
+**They were warnings, not errors, and the harm was real but bounded.** Measured over every
+`*.nft.json` the build emitted: 1181 traced files, 52.6 MB. Vercel's limit is far above
+that, and every route is static, so nothing was at risk. But the widening the warning
+predicted had happened — the trace had pulled in all 9.8 MB of `apps/ledger/public` and,
+worse, `apps/ledger/test`. **Test files were being deployed as server code.**
+
+The deeper problem is the one the numbers do not show. `apps/ledger/lib/snapshot.ts` imports
+`parseSnapshot`, which reached the snapshot schema, which reached `kane/evidence.js` — so the
+**read-only Ledger carried a directory walker in its bundle.** It never called it: every
+evidence path the page renders is a committed `publicPath` string (R13.4), and
+`scripts/check-readonly.mjs` proves the app opens nothing itself. But "in the bundle and
+never called" is a weaker sentence than "not in the bundle", and this repository's whole
+argument is that structural claims should be mechanical rather than trusted.
+
+### Two edges, two different fixes, both required
+
+There were two ways the filesystem half of `@kept/core` reached the Ledger, and they are
+different in kind, which is why neither fix alone was enough.
+
+**The incidental edge: the barrel.** `index.ts` re-exports `listArtifacts`,
+`resolveEvidenceDir`, `nodeEvidenceFileSystem` and the rest from `kane/evidence.js`. Nothing
+in the Ledger asks for any of them, but a bundler may only drop an unused re-export if it
+knows importing the module has no side effect — and `packages/kept-core/package.json` never
+said so. It is true of every module in the package: none of them runs a statement at load.
+Declaring `"sideEffects": false` states the fact.
+
+**The real edge: a constant in the wrong house.** `model/snapshot.ts` built its zod schema
+from `ARTIFACT_KINDS` and `SEALED_PACK_SUFFIX`, stating each vocabulary once by importing it
+rather than restating it — which is the right rule and stays. The problem was where those
+constants lived: `kane/evidence.ts` and `kane/packTriage.ts`, both of which walk directories.
+Importing a frozen array of seven strings pulled `node:fs` in with it. **No flag fixes this
+one**, because the dependency is genuinely used and tree shaking is not entitled to remove
+it. The three declarations moved to `kane/vocabulary.ts`, a module that imports nothing at
+all — the barrel publishes them from there, so there is still exactly one declaration of
+each and no consumer changed a line.
+
+### The 2×2, measured rather than assumed
+
+| | without `sideEffects` | with `sideEffects: false` |
+|---|---|---|
+| schema imports from `kane/evidence.js` | 4 warnings | 4 warnings |
+| schema imports from `kane/vocabulary.js` | 4 warnings | **0 warnings** |
+
+Both changes were necessary and neither was sufficient. The bottom-left cell is the one worth
+noticing: moving the constants alone changed *which* import trace the build reported and
+removed none of the warnings, because the barrel promptly supplied the same module by another
+route.
+
+### After
+
+| | before | after |
+|---|---|---|
+| warnings | 4 | **0** |
+| traced files | 1181 | 985 |
+| traced bytes | 52.6 MB | **41.9 MB** |
+| traced buckets | `node_modules`, `public`, `test`, `styles`, `components`, `lib`, `app`, `data` | `node_modules`, `.next` |
+
+`grep -rl "readdirSync\|statSync" apps/ledger/.next/server` returns nothing. The directory
+walkers are absent from the deployed artefact rather than merely unused in it, which is a
+claim worth one small module.
+
+**If they ever come back**, the cause is almost certainly an import added to
+`kane/vocabulary.ts`. That file is documented as having to import nothing: the moment it
+imports a sibling, it stops being the safe end of the dependency and the edge re-forms
+through it.
 
 **What this does not prove.** The install, the framework detection and the output pickup
 are the host's, and the only way to measure those is to deploy. The root-directory
