@@ -336,11 +336,12 @@ describe('PromisePanel — the way out (§10.8)', () => {
 
 describe('PromisePanel — against the committed snapshot, verdicts and all', () => {
   it('renders every promise with the run that verified it, and says why nothing is sealed', () => {
-    // The snapshot has verdicts now — the whole-suite replay of 15.3 wrote eight —
-    // but no curated evidence pack, which lands in 15.7. So each panel shows the
-    // verdict source and *still* explains the empty artefact list rather than
-    // rendering a dead link.
-    expect(snapshot.evidence, 'the committed snapshot has grown evidence packs').toEqual([]);
+    // The snapshot has verdicts *and* curated evidence now, and the two cases have
+    // to render differently: a promise whose pack was curated shows real artefact
+    // links, and one whose pack was not shows the sentence explaining the absence.
+    // Which promises fall on which side moves with what the last verification
+    // sealed, so the panel is asserted against each promise's own state rather than
+    // against a snapshot that is assumed to be empty.
     for (const promise of snapshot.promises) {
       const pack =
         promise.evidencePackId === null
@@ -352,7 +353,20 @@ describe('PromisePanel — against the committed snapshot, verdicts and all', ()
         expect(text).toContain(promise.claim);
         expect(text).toContain(promise.citation.text);
         expect(text).toContain(promise.verdict);
-        expect(text).toContain(PANEL_WORDS.noEvidence);
+        if (pack === null) {
+          // No pack: the panel says so in words rather than rendering nothing.
+          expect(text).toContain(PANEL_WORDS.noEvidence);
+        } else {
+          // A pack: every artefact it lists is linked, and the explanation is gone.
+          expect(text).not.toContain(PANEL_WORDS.noEvidence);
+          const hrefs = [...container.querySelectorAll('a[href]')].map((a) =>
+            a.getAttribute('href'),
+          );
+          expect(hrefs.length).toBeGreaterThan(0);
+          for (const artifact of pack.artifacts) {
+            expect(hrefs).toContain(artifact.publicPath);
+          }
+        }
 
         const source = promise.verdictSource;
         expect(source, `${promise.id} carries a verdict with no source`).not.toBeNull();

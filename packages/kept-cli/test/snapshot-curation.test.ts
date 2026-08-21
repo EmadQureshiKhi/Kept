@@ -182,7 +182,20 @@ describe('curating a referenced pack into the committed public directory', () =>
   it('finds the archive under the bare execution id as well as the prefixed one', () => {
     // The snapshot's id rule is `^ev_…`; the file Kane seals is named for the
     // execution id with no prefix. Both spellings resolve to the same pack.
-    expect(archiveNamesFor('ev_73c1df17')).toEqual(['ev_73c1df17.evidence', '73c1df17.evidence']);
+    expect(archiveNamesFor('ev_73c1df17')).toEqual([
+      'ev_73c1df17',
+      'ev_73c1df17.evidence',
+      '73c1df17',
+      '73c1df17.evidence',
+    ]);
+    // The case that mattered and was missing: `listArtifacts` names a pack by its
+    // entry name, so a real id already ends in `.evidence` — and appending the
+    // suffix again looked for `<id>.evidence.evidence`. Nothing was ever curated.
+    expect(archiveNamesFor('f2cac6b7.evidence')).toEqual(['f2cac6b7.evidence']);
+    expect(archiveNamesFor('ev_f2cac6b7.evidence')).toEqual([
+      'ev_f2cac6b7.evidence',
+      'f2cac6b7.evidence',
+    ]);
     const fs = curationFs({ [sealedAt('73c1df17.evidence')]: realisticPack() });
     const curated = curateEvidencePacks({
       repoRoot: REPO,

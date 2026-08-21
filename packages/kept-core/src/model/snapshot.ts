@@ -47,7 +47,8 @@ import { MEMBER_END_STATUSES } from '../kane/events.js';
 import { ARTIFACT_KINDS } from '../kane/evidence.js';
 import { EXIT_MEANINGS } from '../kane/exit.js';
 import { COMMAND_FAMILIES, contractFor } from '../kane/family.js';
-import { designedTestId, isNodeId } from './ids.js';
+import { SEALED_PACK_SUFFIX } from '../kane/packTriage.js';
+import { designedTestId, evidenceId, isNodeId } from './ids.js';
 import {
   GRAPH_EDGE_KINDS,
   PROVIDER_NAMES,
@@ -253,6 +254,21 @@ export const SnapshotArtifactSchema = z.strictObject({
 /** A sealed evidence pack: paths only, never the evidence (design §9.3). */
 export const SnapshotEvidenceSchema = z.strictObject({
   id: evidenceIdField,
+  /**
+   * Kane's own name for the archive — a bare `execution_id` with a `.evidence`
+   * suffix — beside the `ev_` node id KEPT mints from it.
+   *
+   * Both, because they answer different questions and conflating them cost this
+   * project every evidence link it had. `id` has to match `^ev_[A-Za-z0-9._-]+$`
+   * so the graph can lane a node by its prefix; Kane's name cannot satisfy that,
+   * so a projection comparing raw pack ids against minted ones matched nothing and
+   * dropped all of them silently. Keeping Kane's name means the snapshot still says
+   * which archive a link came from rather than only what KEPT renamed it to.
+   *
+   * Nullable for a pack that reached the snapshot without one, and absent in
+   * snapshots written before the field existed.
+   */
+  packId: z.string().min(1).nullable().optional(),
   kind: z.enum(EVIDENCE_KINDS),
   sealedAt: isoTimestamp.nullable(),
   publicPath: publicPathField,
@@ -438,17 +454,40 @@ export type LedgerSnapshotShape = z.infer<typeof LedgerSnapshotShape>;
 const COVERAGE_TOLERANCE = 1e-12;
 
 /**
- * The pack a repo-relative evidence reference names, or null.
+ * The **node id** a repo-relative evidence reference names, or null.
  *
- * References look like `evidence/ev_20260820T184011Z/failure.yaml`, so the pack
- * is the first path segment carrying the `ev_` prefix. Resolution is at pack
- * granularity because that is what §9.1 asks for ("resolves to an entry in
- * `evidence`"); whether the *file* exists in the committed tree is Property 22's
- * business, and it needs a filesystem this module must not have.
+ * Two spellings reach this, and for a long time only one was recognised.
+ *
+ * A reference minted inside the snapshot names an `ev_`-prefixed segment:
+ * `evidence/ev_20260820T184011Z/failure.yaml`. Every fixture in the suite was
+ * written that way, so the rule looked right.
+ *
+ * A reference the **verdict router** wrote names the archive Kane actually sealed:
+ * `.testmuai/evidence/<execution_id>.evidence`, where the pack is the segment
+ * carrying the suffix and there is no `ev_` anywhere. Those were reported as naming
+ * "no evidence pack segment", which failed the whole snapshot's schema check — so on
+ * the first run that produced a real `evidenceRef`, `kept snapshot` refused to write
+ * and the previously committed file stood. Silently, from a judge's point of view:
+ * the Ledger simply went on showing an older state.
+ *
+ * The archive spelling is mapped through {@link evidenceId}, so both spellings
+ * answer the same node id and a caller can compare the result against
+ * `evidence[].id` without knowing which shape it started from. `evidenceId` is
+ * idempotent, so an already-minted id passes through unchanged.
+ *
+ * Resolution is at pack granularity because that is what §9.1 asks for ("resolves to
+ * an entry in `evidence`"); whether the *file* exists in the committed tree is
+ * Property 28's business, and it needs a filesystem this module must not have.
  */
 export function evidencePackIdFromRef(ref: string): string | null {
-  for (const segment of ref.split('/')) {
+  const segments = ref.split('/');
+  for (const segment of segments) {
     if (segment.startsWith('ev_') && segment.length > 3) return segment;
+  }
+  for (const segment of segments) {
+    if (segment.endsWith(SEALED_PACK_SUFFIX) && segment.length > SEALED_PACK_SUFFIX.length) {
+      return evidenceId(segment);
+    }
   }
   return null;
 }

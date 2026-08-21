@@ -1,0 +1,13 @@
+generated: 2026-08-21T03:47:44.589Z
+totals:
+  failures: 1
+  triaged: 1
+  untriaged: 0
+failures:
+  - test: cart-discount-27eaa1da
+    ordinal: 15
+    step: 4-1
+    status: failed
+    path: tests/cart-discount-27eaa1da/steps/15-4-1/failure.yaml
+    title: Cart total omits automatic 10% discount above $50
+    triage_status: triaged

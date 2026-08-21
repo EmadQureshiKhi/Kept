@@ -37,7 +37,7 @@
  * generated tree and the integrity suite supply git's own index.
  */
 
-import type { LedgerSnapshot } from '@kept/core';
+import { evidenceId, type LedgerSnapshot } from '@kept/core';
 
 /** Where curated packs are committed, relative to the repository root. */
 export const CURATED_EVIDENCE_DIR = 'apps/ledger/public/evidence';
@@ -119,6 +119,32 @@ export function publicPathToRepoPath(publicPath: string): string | null {
 export function refToRepoPath(ref: string): string | null {
   if (ref.startsWith(`${CURATED_EVIDENCE_DIR}/`)) return ref;
   if (ref.startsWith('evidence/')) return `${CURATED_EVIDENCE_DIR}/${ref.slice('evidence/'.length)}`;
+  // A reference the **verdict router** wrote names the archive Kane sealed, under
+  // the gitignored `.testmuai/evidence/`: `.testmuai/evidence/<execution_id>.evidence`.
+  // That is deliberate provenance — R6.11 wants a real resolved path or null, and
+  // the archive is where the triage note that decided the branch actually lives — so
+  // the ref is *not* rewritten in the snapshot. What has to resolve for a judge is
+  // the curated copy, which is named by the minted node id, so that is what this
+  // maps to. Without it, the first run to produce a real `evidenceRef` reported it
+  // as resolving nowhere.
+  const packId = packIdOfSealedRef(ref);
+  return packId === null ? null : `${CURATED_EVIDENCE_DIR}/${packId}/`;
+}
+
+/**
+ * The node id a sealed-archive reference names, or null.
+ *
+ * Kept beside {@link packIdOfRef} rather than folded into it: that function answers
+ * "what does the schema's rule see", and this one answers "which curated directory
+ * would this have to land in". The two are different questions, and this module
+ * exists to check them against each other.
+ */
+export function packIdOfSealedRef(ref: string): string | null {
+  for (const segment of ref.split('/')) {
+    if (segment.endsWith('.evidence') && segment.length > '.evidence'.length) {
+      return evidenceId(segment);
+    }
+  }
   return null;
 }
 

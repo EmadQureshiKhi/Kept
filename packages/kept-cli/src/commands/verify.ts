@@ -675,6 +675,12 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
       : listArtifacts({
           family: VERIFY_FAMILY,
           cwd: request.repoRoot,
+          // This run's own pack, not whatever sealed last. `testrun_done` carries
+          // `execution_id` and Kane names the archive after it, so the promise's
+          // `evidencePackId` names a file that exists — which is what lets
+          // `kept snapshot` curate it and a judge click a real artefact.
+          executionId:
+            readString(terminal, 'execution_id') ?? readString(terminal, 'run_id'),
           diagnostics: sink,
           ...(request.evidenceFileSystem === undefined
             ? {}

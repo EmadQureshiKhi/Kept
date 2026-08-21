@@ -177,7 +177,7 @@ const arbEvidenceListing: fc.Arbitrary<EvidenceListing> = fc
     }));
     return {
       dir,
-      pack: { id: packId, dir: packDir, sealedAt: null, artifacts },
+      pack: { id: packId, dir: packDir, sealedAt: null, artifacts, archive: false },
       packIds: [packId],
     };
   });

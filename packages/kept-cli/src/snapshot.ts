@@ -55,6 +55,8 @@ import {
   computeMetrics,
   createDiagnosticSink,
   designedTestId,
+  SEALED_PACK_SUFFIX,
+  evidenceId,
   evidencePackIdFromRef,
   isNodeId,
   parseSnapshot,
@@ -141,9 +143,29 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
   const packs = new Set(evidence.map((pack) => pack.id));
   const documents = deriveDocuments(graph.promises);
 
+  /**
+   * The node id a graph pack reference resolves to.
+   *
+   * The graph carries **Kane's** name for a pack — a bare `execution_id` with a
+   * `.evidence` suffix — and the snapshot's node ids are `ev_`-prefixed by §9.1's
+   * `evidenceIdField`, because the Ledger lanes a node by its prefix. Comparing the
+   * two spellings directly matched nothing, so every reference in this projection
+   * was cleared as a dead link on a repository whose archives were on disk and
+   * whose curated artefacts had just been written. `evidenceId` is the one minter,
+   * and it is idempotent, so an id that is already a node id passes through.
+   */
+  const nodeIdOf = (packId: string): string => evidenceId(packId);
+
+  // `evidencePackIdFromRef` now recognises both spellings — the `ev_` segment a
+  // snapshot-minted reference carries, and the sealed `<execution_id>.evidence`
+  // segment the router writes — and returns the node id either way. One function,
+  // in core, used by this projection and by the schema's own rule, so the rule that
+  // rejects a reference and the code that clears one cannot disagree.
+  const packIdFromEvidenceRef = evidencePackIdFromRef;
+
   // ── promises, with unresolvable evidence references cleared and named ──────
   const promises: SnapshotPromise[] = graph.promises.map((promise) => {
-    let evidencePackId = promise.evidencePackId;
+    let evidencePackId = promise.evidencePackId === null ? null : nodeIdOf(promise.evidencePackId);
     if (evidencePackId !== null && !packs.has(evidencePackId)) {
       report({
         code: SNAPSHOT_DIAGNOSTIC_CODES.evidenceUnresolved,
@@ -160,7 +182,7 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
 
     let repair = promise.repair;
     if (repair !== null && repair.evidenceRef !== null) {
-      const packId = evidencePackIdFromRef(repair.evidenceRef);
+      const packId = packIdFromEvidenceRef(repair.evidenceRef);
       if (packId === null || !packs.has(packId)) {
         report({
           code: SNAPSHOT_DIAGNOSTIC_CODES.repairEvidenceUnresolved,
@@ -202,11 +224,18 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     // this module checks against and the one the schema builds cannot disagree.
     if (promise.designedTest !== null) nodes.add(designedTestId(promise.designedTest.path));
   }
-  const edges = graph.edges.filter((edge) => {
-    const bad = ([edge.from, edge.to] as const).filter(
+  const edges = graph.edges.flatMap((edge) => {
+    // An `evidence` edge's `to` endpoint is Kane's own pack name, because that is
+    // what the graph records; the node this snapshot declares is the minted `ev_`
+    // id. Mapping the endpoint is the same correction the promise, run and
+    // amendment projections make, and without it every evidence edge was dropped
+    // as "an edge to nothing" — on a snapshot that had just published the node.
+    const to = edge.kind === 'evidence' ? nodeIdOf(edge.to) : edge.to;
+    const mapped = to === edge.to ? edge : { ...edge, to };
+    const bad = ([mapped.from, mapped.to] as const).filter(
       (end) => !isNodeId(end) || !nodes.has(end),
     );
-    if (bad.length === 0) return true;
+    if (bad.length === 0) return [mapped];
     report({
       code: SNAPSHOT_DIAGNOSTIC_CODES.edgeUnresolved,
       severity: 'warn',
@@ -216,7 +245,7 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
         `for, so the edge was dropped rather than published as an edge to nothing.`,
       file: null,
     });
-    return false;
+    return [];
   });
 
   // ── runs, under the same rule-3 clearing the promises just went through ────
@@ -228,7 +257,9 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
   // rule that catches a dead link should be the rule that reports it, and a run
   // whose pack was not curated is still a terminal event worth publishing.
   const allRuns = (request.runs ?? []).map((run) => {
-    if (run.evidencePackId === null || packs.has(run.evidencePackId)) return run;
+    if (run.evidencePackId === null) return run;
+    const nodeId = nodeIdOf(run.evidencePackId);
+    if (packs.has(nodeId)) return { ...run, evidencePackId: nodeId };
     report({
       code: SNAPSHOT_DIAGNOSTIC_CODES.evidenceUnresolved,
       severity: 'warn',
@@ -254,7 +285,7 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     kind: string,
   ): T => {
     if (entry.evidenceRef === null) return entry;
-    const packId = evidencePackIdFromRef(entry.evidenceRef);
+    const packId = packIdFromEvidenceRef(entry.evidenceRef);
     if (packId !== null && packs.has(packId)) return entry;
     report({
       code: SNAPSHOT_DIAGNOSTIC_CODES.repairEvidenceUnresolved,

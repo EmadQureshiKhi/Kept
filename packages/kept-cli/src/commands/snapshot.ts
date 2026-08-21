@@ -71,6 +71,7 @@ import type {
 import {
   HANDOFF_DIRECTORY_RELATIVE_PATH,
   SEALED_PACK_SUFFIX,
+  evidenceId,
   classifyArtifact,
   createDiagnosticSink,
   createStateStore,
@@ -138,10 +139,27 @@ export { SEALED_PACK_SUFFIX } from '@kept/core';
  * one and reporting "no pack" for the other would hide committed evidence.
  */
 export function archiveNamesFor(packId: string): readonly string[] {
+  const names: string[] = [];
+  const add = (name: string): void => {
+    if (name.length > 0 && !names.includes(name)) names.push(name);
+  };
+
+  // A pack id **already carrying the suffix** is the common case, and it was the
+  // one this function got wrong: `listArtifacts` names a pack by its entry name, so
+  // an id is `<execution_id>.evidence`, and appending the suffix again looked for
+  // `<execution_id>.evidence.evidence`. Nothing was ever curated, and the doubled
+  // spelling was visible in the diagnostic the whole time.
+  add(packId);
+  if (!packId.endsWith(SEALED_PACK_SUFFIX)) add(`${packId}${SEALED_PACK_SUFFIX}`);
+
+  // A snapshot id is `ev_`-prefixed by schema (`evidenceIdField`), while the sealed
+  // file is named for the bare execution id, so both spellings are tried.
   const bare = packId.startsWith('ev_') ? packId.slice(3) : packId;
-  const names = [`${packId}${SEALED_PACK_SUFFIX}`];
-  if (bare !== packId && bare.length > 0) names.push(`${bare}${SEALED_PACK_SUFFIX}`);
-  return names;
+  if (bare !== packId) {
+    add(bare);
+    if (!bare.endsWith(SEALED_PACK_SUFFIX)) add(`${bare}${SEALED_PACK_SUFFIX}`);
+  }
+  return Object.freeze(names);
 }
 
 /**
@@ -266,6 +284,8 @@ export function curateEvidencePacks(request: CurateEvidenceRequest): CurateEvide
   let totalBytes = 0;
 
   for (const packId of [...new Set(request.packIds)].sort()) {
+    // Kane's name finds the archive; the node id names everything KEPT publishes.
+    const nodeId = evidenceId(packId);
     const candidates = archiveNamesFor(packId).map((name) => joinPath(sealedDir, name));
     let archive: Uint8Array | null = null;
     for (const candidate of candidates) {
@@ -314,14 +334,18 @@ export function curateEvidencePacks(request: CurateEvidenceRequest): CurateEvide
         skipped += 1;
         continue;
       }
-      const destination = joinPath(curatedRoot, `${packId}/${entry.name}`);
+      // Named by the **node id**, not by Kane's archive name. It is what the
+      // snapshot declares as `evidence[].id`, what §15.3's `/evidence/ev_…/`
+      // convention documents, and what Property 28 resolves a link against — so a
+      // directory named anything else is a link a judge clicks and gets a 404 from.
+      const destination = joinPath(curatedRoot, `${nodeId}/${entry.name}`);
       fs.ensureDir(destination.slice(0, destination.lastIndexOf('/')));
       fs.writeBinary(destination, entry.bytes);
       packBytes += entry.bytes.length;
       artifacts.push({
         kind: classifyArtifact(entry.name),
         name: entry.name,
-        publicPath: publicPathFor(packId, entry.name),
+        publicPath: publicPathFor(nodeId, entry.name),
         bytes: entry.bytes.length,
       });
     }
@@ -355,7 +379,17 @@ export function curateEvidencePacks(request: CurateEvidenceRequest): CurateEvide
 
     totalBytes += packBytes;
     evidence.push({
-      id: packId,
+      // The snapshot's node id, minted from Kane's pack name — `ev_` prefixed and
+      // path-safe, because §9.1's `evidenceIdField` is `^ev_[A-Za-z0-9._-]+$` and
+      // the graph lanes nodes by prefix. Kane's own name is a bare execution UUID
+      // with a `.evidence` suffix, which can never satisfy that pattern, so every
+      // reference used to be dropped by the projection without a word: eight
+      // promises with `evidencePackId: null` and an empty `evidence` array, on a
+      // repository that had the archives on disk the whole time.
+      id: nodeId,
+      // And Kane's own name, kept beside it, so the record still says which
+      // archive this came from rather than only what KEPT renamed it to.
+      packId,
       // Every pack in this repository was sealed by `testmd run`, which is the
       // ExecutionRun family. `testrun` is the suite spelling and nothing here
       // has used it, so claiming it would be a guess.
@@ -364,7 +398,7 @@ export function curateEvidencePacks(request: CurateEvidenceRequest): CurateEvide
       // own timestamps are local to the machine that sealed it, and a snapshot
       // whose bytes change with the clone's filesystem is not a contract.
       sealedAt: null,
-      publicPath: publicPathFor(packId),
+      publicPath: publicPathFor(nodeId),
       artifacts,
     });
   }
@@ -386,11 +420,31 @@ export function curateEvidencePacks(request: CurateEvidenceRequest): CurateEvide
   return { evidence, bytes: totalBytes };
 }
 
-/** Every pack id the graph references, in first-seen order. */
+/**
+ * Every pack the graph references, in first-seen order, **one entry per pack**.
+ *
+ * Deduplication is by minted node id rather than by the string, because one pack
+ * reaches here under two spellings: `promise.evidencePackId` is Kane's own archive
+ * name, and `evidencePackIdFromRef` resolves a `repair.evidenceRef` to the `ev_`
+ * node id. Both find the same archive — `archiveNamesFor` tries the prefixed and bare
+ * forms — so treating them as distinct curated the same pack twice and published two
+ * `evidence` entries sharing one id.
+ *
+ * Kane's own spelling wins when both are seen, so the curated directory is named
+ * after the archive rather than after KEPT's rename of it.
+ */
 export function referencedPackIds(state: KeptState): readonly string[] {
-  const ids: string[] = [];
+  const byNode = new Map<string, string>();
   const add = (id: string | null): void => {
-    if (id !== null && id.length > 0 && !ids.includes(id)) ids.push(id);
+    if (id === null || id.length === 0) return;
+    const node = evidenceId(id);
+    const existing = byNode.get(node);
+    if (existing === undefined) {
+      byNode.set(node, id);
+      return;
+    }
+    // Prefer the spelling that is not already a node id: it is Kane's.
+    if (existing.startsWith('ev_') && !id.startsWith('ev_')) byNode.set(node, id);
   };
   for (const promise of state.graph.promises) {
     add(promise.evidencePackId);
@@ -398,7 +452,7 @@ export function referencedPackIds(state: KeptState): readonly string[] {
       add(evidencePackIdFromRef(promise.repair.evidenceRef));
     }
   }
-  return ids;
+  return Object.freeze([...byNode.values()]);
 }
 
 /* ─────────────────────── runs and amendments, off the disk ───────────────────

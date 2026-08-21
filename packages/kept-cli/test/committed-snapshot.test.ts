@@ -175,7 +175,17 @@ describe('the committed snapshot — eight promises, cited verbatim', () => {
     const kinds = SNAPSHOT.edges.map((edge) => edge.kind);
     expect(kinds.filter((kind) => kind === 'cites')).toHaveLength(CLAIM_LINES.length);
     expect(kinds.filter((kind) => kind === 'designed')).toHaveLength(CLAIM_LINES.length);
-    expect(SNAPSHOT.edges).toHaveLength(2 * CLAIM_LINES.length);
+
+    // `cites` and `designed` are one per promise and always present. `evidence` is
+    // one per promise whose pack was curated, which is a count that moves with what
+    // the last verification sealed — so it is bounded and cross-checked against the
+    // promises rather than pinned to a number this commit happens to have.
+    const evidenceEdges = kinds.filter((kind) => kind === 'evidence');
+    expect(evidenceEdges.length).toBeLessThanOrEqual(CLAIM_LINES.length);
+    expect(SNAPSHOT.edges).toHaveLength(2 * CLAIM_LINES.length + evidenceEdges.length);
+    expect(evidenceEdges).toHaveLength(
+      SNAPSHOT.promises.filter((promise) => promise.evidencePackId !== null).length,
+    );
 
     const documentId = SNAPSHOT.documents[0]?.id;
     for (const promise of SNAPSHOT.promises) {
@@ -256,9 +266,14 @@ describe('the committed snapshot — the honest degraded state', () => {
       // R4.9: the wire status survives, so `failed` never reads as `broken`.
       expect(source.memberStatus).toBe(promise.verdict === 'proven' ? 'passed' : 'failed');
       expect(promise.providers).toEqual(['baseline']);
-      // Curated packs land in stage 15.7; until then a reference would be a dead
-      // link, and the snapshot clears it rather than publishing one.
-      expect(promise.evidencePackId).toBeNull();
+      // A pack reference is present only when the pack was curated into the
+      // repository, and then it names a pack this snapshot declares. Which promises
+      // have one moves with what the last verification sealed, so the assertion is
+      // the closure rather than the count: a reference is either resolvable or
+      // absent, and never a dead link.
+      if (promise.evidencePackId !== null) {
+        expect(SNAPSHOT.evidence.map((entry) => entry.id)).toContain(promise.evidencePackId);
+      }
     }
     expect(runIds.size, 'Every verdict names a run.').toBeGreaterThan(0);
     // The newest instant any promise carries is exactly the freshness triple's.
@@ -283,9 +298,29 @@ describe('the committed snapshot — the honest degraded state', () => {
     expect(Number.isFinite(Date.parse(SNAPSHOT.freshness.terminalEventAt ?? ''))).toBe(true);
   });
 
-  it('still claims no evidence and no review card it has not earned', () => {
-    expect(SNAPSHOT.evidence).toEqual([]);
+  it('claims no evidence and no review card it has not earned', () => {
+    // Review cards are still empty: `test-drift` is held for a human and nothing
+    // has produced one, so an entry here would be a card nobody wrote.
     expect(SNAPSHOT.reviewCards).toEqual([]);
+
+    // Evidence is no longer empty, and what replaces `toEqual([])` is the property
+    // that mattered all along: every pack the snapshot declares is a pack the
+    // repository actually contains, named by the node id the artefact links use, and
+    // carrying Kane's own archive name beside it as provenance. The count moves with
+    // what the last verification sealed and is deliberately not pinned.
+    for (const entry of SNAPSHOT.evidence) {
+      expect(entry.id.startsWith('ev_')).toBe(true);
+      expect(entry.publicPath).toBe(`/evidence/${entry.id}/`);
+      expect(entry.artifacts.length).toBeGreaterThan(0);
+      for (const artifact of entry.artifacts) {
+        expect(artifact.publicPath.startsWith(`/evidence/${entry.id}/`)).toBe(true);
+      }
+      // Kane's own name for the archive, which cannot itself be a node id — the
+      // whole reason both fields exist (§9.3).
+      if (entry.packId !== undefined && entry.packId !== null) {
+        expect(entry.packId.startsWith('ev_')).toBe(false);
+      }
+    }
     // Credits are reported only where a figure was measured. A passing replay costs
     // nothing and reports nothing; the failing member's judgement has a real price,
     // read off its own `run_end` on the `[member]` stream (R4.12, R14.7).

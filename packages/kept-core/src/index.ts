@@ -1523,3 +1523,27 @@ export {
   fenceForResults,
   grantsAutomaticRepair,
 } from './handoff/handoff.js';
+
+// What Kane actually seals, and what a sync client leaves beside it (§4.6, R4.13).
+//
+// A pack is a single `<execution_id>.evidence` **archive file** — two to eleven
+// megabytes of zip — not a directory. `listArtifacts` considered only directories, so
+// the only packs it could ever see were leftover extractions and iCloud conflict
+// copies, and every evidence reference the snapshot published was therefore cleared as
+// a dead link. `apps/ledger/public/evidence/` stayed empty for the same reason.
+//
+// `isSyncConflictCopy` names the second half of that: iCloud Drive resolves a write
+// collision by keeping both sides and appending a space and an ordinal, and the copy
+// sorts *newest* because the sync wrote it last. Selecting it attributed a run's
+// evidence to an id no archive is named after. It is rejected by name, because a
+// conflict copy is a fact about the filesystem and the pack it shadows is still there
+// under its real name.
+//
+// `ListArtifactsRequest.executionId` closes the third: `testrun_done` carries
+// `execution_id` and Kane names the archive after it, so "this run's pack" is
+// available where only "the newest pack present" was being used. A mismatch is
+// diagnosed rather than silently accepted.
+// `SEALED_PACK_SUFFIX` is already published above, from `kane/packTriage.ts`, which is
+// the module that reads an archive; `kane/evidence.ts` imports it from there so the two
+// cannot disagree about what a pack is called.
+export { isSyncConflictCopy } from './kane/evidence.js';

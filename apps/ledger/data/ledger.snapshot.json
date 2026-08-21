@@ -22,387 +22,171 @@
   ],
   "degraded": true,
   "degradedReasons": [
-    "coverage-payload-unreadable"
+    "assurance-status:refused"
   ],
   "diagnostics": [
     {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
+      "at": "2026-08-21T09:05:54.706Z",
+      "code": "enrichment-assurance-status",
       "file": null,
       "line": null,
-      "message": "The coverage payload entry at completeness[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[0].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[0].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[0].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[1].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[1].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[1].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[2].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[2].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[2].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[3] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[4] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[5] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[6] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[7] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[8] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[8].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[8].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[8].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[9] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[9].question.options[0] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[9].question.options[1] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[9].question.options[2] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[10] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[11] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-entry-refused",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload entry at completeness[12] carried neither a test identity nor a path, so it could not be keyed to a promise and was skipped.",
-      "severity": "info"
-    },
-    {
-      "at": "2026-08-21T05:43:53.269Z",
-      "code": "enrichment-coverage-unprojectable",
-      "file": null,
-      "line": null,
-      "message": "The coverage payload projected no usable entries (28 objects examined across 6 arrays), so the assurance axes were discarded: a visibly baseline-only ledger is better than a silently wrong proven figure (§5.3).",
+      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.271Z",
+      "at": "2026-08-21T09:05:54.707Z",
       "code": "merge-degraded",
       "file": null,
       "line": null,
-      "message": "The enrichment axis was discarded (coverage-payload-unreadable), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
+      "message": "The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 19,
-      "message": "Promise 'p_177308118beb' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_177308118beb' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 18,
-      "message": "Promise 'p_365815f2bcca' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_365815f2bcca' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
-      "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 20,
-      "message": "Promise 'p_45ccecba7aa5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T05:43:53.370Z",
-      "code": "snapshot-repair-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 20,
-      "message": "Promise 'p_45ccecba7aa5' has a repair annotation referencing '.testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 14,
-      "message": "Promise 'p_6ca9700b8471' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_6ca9700b8471' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
-      "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 16,
-      "message": "Promise 'p_8d965c2fae07' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 15,
-      "message": "Promise 'p_a972e6fcb195' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_a972e6fcb195' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 13,
-      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.370Z",
+      "at": "2026-08-21T09:05:54.839Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 17,
-      "message": "Promise 'p_eb071a709ed0' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "message": "Promise 'p_eb071a709ed0' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_45ccecba7aa5 → dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence names 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_8d965c2fae07 → dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence names 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
-      "code": "snapshot-edge-unresolved",
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "Run '58fb2dfa-94f1-4190-8922-cd8e2079bfe6' references evidence pack '58fb2dfa-94f1-4190-8922-cd8e2079bfe6.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
-      "code": "snapshot-edge-unresolved",
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "Run 'f4cc8633-43cb-4799-95b2-000093f3cffd' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run 'defd438c-8f4d-4768-87c8-3cff627a2443' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '1307e6b6-5008-430a-855f-913d39dc659e' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '5c2b8c30-98a3-4406-ad0f-6216dac2c5e5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T09:05:54.840Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '73ab6abb-4729-4b2b-ad47-53c8be339991' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -410,7 +194,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -418,7 +202,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -426,7 +210,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -434,7 +218,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -442,7 +226,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -450,7 +234,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -458,7 +242,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -466,11 +250,11 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T05:43:53.371Z",
+      "at": "2026-08-21T09:05:54.840Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": null,
       "line": null,
-      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared rather than published as a dead link.",
+      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence' in this snapshot, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     }
   ],
@@ -561,15 +345,257 @@
       "from": "p_eb071a709ed0",
       "kind": "designed",
       "to": "t_50f823f3d211"
+    },
+    {
+      "from": "p_45ccecba7aa5",
+      "kind": "evidence",
+      "to": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence"
+    },
+    {
+      "from": "p_8d965c2fae07",
+      "kind": "evidence",
+      "to": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence"
     }
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "artifacts": [
+        {
+          "bytes": 495232,
+          "kind": "annotated",
+          "name": "tests/cart-discount-27eaa1da/steps/8-2-3/annotated.png",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/annotated.png"
+        },
+        {
+          "bytes": 340,
+          "kind": "failure-yaml",
+          "name": "failure.yaml",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/failure.yaml"
+        },
+        {
+          "bytes": 975,
+          "kind": "failure-yaml",
+          "name": "tests/cart-discount-27eaa1da/steps/16-4-2/failure.yaml",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/16-4-2/failure.yaml"
+        },
+        {
+          "bytes": 64161,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/1-0-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/1-0-1/screenshot.jpg"
+        },
+        {
+          "bytes": 160868,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/10-3-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/10-3-1/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/11-3-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/11-3-2/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/12-3-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/12-3-3/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/13-3-4/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/13-3-4/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/14-3-5/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/14-3-5/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/15-4-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/15-4-1/screenshot.jpg"
+        },
+        {
+          "bytes": 93777,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/16-4-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/16-4-2/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/2-0-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/2-0-2/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/3-0-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/3-0-3/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/4-1-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/4-1-1/screenshot.jpg"
+        },
+        {
+          "bytes": 65242,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/5-1-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/5-1-2/screenshot.jpg"
+        },
+        {
+          "bytes": 65242,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/6-2-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/6-2-1/screenshot.jpg"
+        },
+        {
+          "bytes": 146541,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/7-2-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/7-2-2/screenshot.jpg"
+        },
+        {
+          "bytes": 146541,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/8-2-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/screenshot.jpg"
+        },
+        {
+          "bytes": 146653,
+          "kind": "screenshot",
+          "name": "tests/cart-discount-27eaa1da/steps/9-2-4/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/9-2-4/screenshot.jpg"
+        },
+        {
+          "bytes": 64161,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/1-0-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/1-0-1/screenshot.jpg"
+        },
+        {
+          "bytes": 94210,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/10-3-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/10-3-2/screenshot.jpg"
+        },
+        {
+          "bytes": 94210,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/11-3-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/11-3-3/screenshot.jpg"
+        },
+        {
+          "bytes": 94210,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/12-3-4/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/12-3-4/screenshot.jpg"
+        },
+        {
+          "bytes": 94210,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/13-4-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/13-4-1/screenshot.jpg"
+        },
+        {
+          "bytes": 94837,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/14-4-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/14-4-2/screenshot.jpg"
+        },
+        {
+          "bytes": 94837,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/15-4-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/15-4-3/screenshot.jpg"
+        },
+        {
+          "bytes": 94837,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/16-5-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/16-5-1/screenshot.jpg"
+        },
+        {
+          "bytes": 94837,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/17-5-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/17-5-2/screenshot.jpg"
+        },
+        {
+          "bytes": 94837,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/18-5-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/18-5-3/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/2-0-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/2-0-2/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/3-0-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/3-0-3/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/4-0-4/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/4-0-4/screenshot.jpg"
+        },
+        {
+          "bytes": 119699,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/5-1-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/5-1-1/screenshot.jpg"
+        },
+        {
+          "bytes": 65242,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/6-1-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/6-1-2/screenshot.jpg"
+        },
+        {
+          "bytes": 65242,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/7-2-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/7-2-1/screenshot.jpg"
+        },
+        {
+          "bytes": 156228,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/8-2-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/8-2-2/screenshot.jpg"
+        },
+        {
+          "bytes": 170114,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-d5ba3490/steps/9-3-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/9-3-1/screenshot.jpg"
+        }
+      ],
+      "id": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "kind": "run",
+      "packId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/",
+      "sealedAt": null
+    }
+  ],
   "freshness": {
     "commandFamily": "ExecutionTestrun",
-    "terminalEventAt": "2026-08-21T05:34:51.562Z",
+    "terminalEventAt": "2026-08-21T08:44:01.085Z",
     "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-21T05:43:53.362Z",
+  "generatedAt": "2026-08-21T09:05:54.797Z",
   "generator": {
     "kaneCli": null,
     "kept": "0.0.0"
@@ -648,12 +674,12 @@
         "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
       },
       "claim": "The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
-      "credits": 4.147365,
+      "credits": 13.50176,
       "designedTest": {
         "path": "tests/cart_discount_test.md",
         "testId": "T-7"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
       "id": "p_45ccecba7aa5",
       "providers": [
         "baseline"
@@ -661,19 +687,19 @@
       "repair": {
         "branch": "test-drift",
         "category": "ui_data_defect",
-        "confidence": 0.89,
-        "evidenceRef": null,
-        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The cart showed the full $72.00 total instead of reducing it to $64.80 after the subtotal went over $50.\".",
+        "confidence": 0.79,
+        "evidenceRef": ".testmuai/evidence/f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The cart showed a subtotal of $72.00 but kept the total at $72.00 instead of automatically reducing it to $64.80.\".",
         "severity": "major",
         "strategy": "resultCode740"
       },
       "verdict": "red",
       "verdictSource": {
-        "at": "2026-08-21T05:34:51.562Z",
+        "at": "2026-08-21T08:44:01.085Z",
         "memberStatus": "failed",
-        "reasonCode": "assertion_error.final_verification",
-        "resultCode": 710,
-        "runId": "57591bff-4480-455e-9ab7-c92263ff58ac",
+        "reasonCode": "stuck.ap_stuck",
+        "resultCode": 330,
+        "runId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497",
         "terminalEventType": "testrun_done"
       }
     },
@@ -717,7 +743,7 @@
         "path": "tests/cart_subtotal_test.md",
         "testId": "T-3"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
       "id": "p_8d965c2fae07",
       "providers": [
         "baseline"
@@ -725,11 +751,11 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T05:34:51.562Z",
+        "at": "2026-08-21T08:44:01.085Z",
         "memberStatus": "passed",
         "reasonCode": "success.complete",
         "resultCode": 100,
-        "runId": "57591bff-4480-455e-9ab7-c92263ff58ac",
+        "runId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497",
         "terminalEventType": "testrun_done"
       }
     },
@@ -820,6 +846,327 @@
   ],
   "reviewCards": [],
   "runs": [
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": 105014,
+      "endedAt": "2026-08-21T08:44:01.085Z",
+      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.79,
+        "confirmed": false,
+        "family": "application_issue",
+        "one_liner": "The cart showed a subtotal of $72.00 but kept the total at $72.00 instead of automatically reducing it to $64.80.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T08:42:27.750Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T08:43:38.581Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it — though another promise in this radius was proven, so the run does carry a write fence.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 70805,
+      "endedAt": "2026-08-21T08:42:27.483Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "58fb2dfa-94f1-4190-8922-cd8e2079bfe6",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": 144563,
+      "endedAt": "2026-08-21T08:18:44.397Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "f4cc8633-43cb-4799-95b2-000093f3cffd",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.84,
+        "confirmed": false,
+        "family": "application_issue",
+        "one_liner": "The run stalled because the cart never showed the automatic 10% discount after the subtotal went over $50.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T08:18:23.547Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it — though another promise in this radius was proven, so the run does carry a write fence.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 73092,
+      "endedAt": "2026-08-21T08:17:03.488Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "defd438c-8f4d-4768-87c8-3cff627a2443",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T08:13:18.827Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 137951,
+      "endedAt": "2026-08-21T08:13:18.571Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "1307e6b6-5008-430a-855f-913d39dc659e",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T08:10:14.927Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T08:10:14.927Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 16,
+          "message": "promise p_8d965c2fae07 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 99409,
+      "endedAt": "2026-08-21T08:08:35.488Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "5c2b8c30-98a3-4406-ad0f-6216dac2c5e5",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.86,
+        "confirmed": true,
+        "family": "application_issue",
+        "one_liner": "The cart shows the full $72.00 as the Total instead of automatically discounting it to $64.80 when the subtotal is over $50.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T08:02:19.976Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T08:03:47.532Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it — though another promise in this radius was proven, so the run does carry a write fence.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 87515,
+      "endedAt": "2026-08-21T08:02:19.686Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "73ab6abb-4729-4b2b-ad47-53c8be339991",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
     {
       "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
       "credits": null,

@@ -8,6 +8,7 @@ import {
   ARTIFACT_KINDS,
   classifyArtifact,
   createDiagnosticSink,
+  isSyncConflictCopy,
   listArtifacts,
   resolveEvidenceDir,
   type ArtifactKind,
@@ -248,5 +249,133 @@ describe('listArtifacts — the newest pack, whole', () => {
     expect(listing.pack?.id).toBe('evidence');
     expect(listing.pack?.artifacts.map((a) => a.kind)).toEqual(['failure-yaml']);
     expect(sink.has('evidence-pack-absent')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// What Kane actually seals, and what a sync client leaves behind
+// ---------------------------------------------------------------------------
+
+/** Write a sealed pack: a single `<id>.evidence` file, which is what Kane writes. */
+function seedArchive(evidenceDir: string, id: string, mtime: Date): string {
+  mkdirSync(evidenceDir, { recursive: true });
+  const path = join(evidenceDir, `${id}.evidence`);
+  // Real packs are zips of two to eleven megabytes; the bytes are irrelevant here
+  // because this module never inflates one — that is `kane/packArchive.ts`.
+  writeFileSync(path, 'PK\u0003\u0004 sealed pack bytes');
+  utimesSync(path, mtime, mtime);
+  return path;
+}
+
+describe('listArtifacts resolves the pack Kane sealed (§4.6, R4.13)', () => {
+  const evidenceDir = () => join(root, '.testmuai', 'evidence');
+
+  it('finds a sealed .evidence archive, which is a file and not a directory', () => {
+    // The defect this closes: a resolver that considered only directories could
+    // never see a pack, because `testrun run` writes one archive file. The only
+    // directories under `.testmuai/evidence/` are extractions and conflict copies,
+    // so every evidence reference the snapshot published was a dead link.
+    seedArchive(evidenceDir(), 'defd438c', new Date('2026-08-21T13:18:00Z'));
+    const listing = listArtifacts({ family: 'ExecutionTestrun', cwd: root, diagnostics: sink });
+
+    expect(listing.pack?.id).toBe('defd438c.evidence');
+    expect(listing.pack?.dir).toBe(join(evidenceDir(), 'defd438c.evidence'));
+    expect(listing.pack?.archive).toBe(true);
+    // Its members are inside the zip, and this module does not inflate. Naming
+    // paths into an archive it had not read would be fabricating them (R6.11).
+    expect(listing.pack?.artifacts).toEqual([]);
+  });
+
+  it('ignores an iCloud sync conflict copy, and resolves the pack it shadows', () => {
+    // Measured on this repository: iCloud Drive resolves a write collision by
+    // keeping both sides and appending an ordinal. The copy sorts *newest* because
+    // the sync wrote it last, so newest-wins selected `<uuid> 2.evidence` — an id no
+    // archive Kane wrote is named after, which cleared every reference downstream.
+    seedArchive(evidenceDir(), 'defd438c', new Date('2026-08-21T13:18:00Z'));
+    seedPack(evidenceDir(), 'defd438c 2.evidence', ['run.yaml'], new Date('2026-08-21T13:25:00Z'));
+
+    const listing = listArtifacts({ family: 'ExecutionTestrun', cwd: root, diagnostics: sink });
+
+    expect(listing.pack?.id).toBe('defd438c.evidence');
+    expect(listing.packIds).toEqual(['defd438c.evidence']);
+    const noted = sink.withCode('evidence-pack-conflict-copy');
+    expect(noted).toHaveLength(1);
+    expect(noted[0]?.message).toContain('defd438c 2.evidence');
+    expect(noted[0]?.severity).toBe('info');
+  });
+
+  it('names conflict copies by shape, at every ordinal and with or without a suffix', () => {
+    for (const name of ['pack 2.evidence', 'pack 3.evidence', 'pack 10', 'a b 2.evidence']) {
+      expect(isSyncConflictCopy(name), name).toBe(true);
+    }
+    for (const name of [
+      'defd438c-8f4d-4768-87c8-3cff627a2443.evidence',
+      'ev_20260820T184011Z',
+      'pack2.evidence',
+      'pack-2.evidence',
+      'v1.2.evidence',
+    ]) {
+      expect(isSyncConflictCopy(name), name).toBe(false);
+    }
+  });
+
+  it('prefers this run own pack over whatever sealed last', () => {
+    // Without the execution id, a run's evidence reference points at whatever
+    // happened to seal most recently — which on a machine that has run the suite
+    // several times is another run's pack. `testrun_done` carries `execution_id`
+    // and Kane names the archive after it, so the right answer is available.
+    seedArchive(evidenceDir(), 'mine', new Date('2026-08-21T13:00:00Z'));
+    seedArchive(evidenceDir(), 'someone-elses', new Date('2026-08-21T13:30:00Z'));
+
+    const newest = listArtifacts({ family: 'ExecutionTestrun', cwd: root, diagnostics: sink });
+    expect(newest.pack?.id).toBe('someone-elses.evidence');
+
+    const own = listArtifacts({
+      family: 'ExecutionTestrun',
+      cwd: root,
+      executionId: 'mine',
+      diagnostics: sink,
+    });
+    expect(own.pack?.id).toBe('mine.evidence');
+    expect(sink.withCode('evidence-pack-not-this-run')).toHaveLength(0);
+  });
+
+  it('falls back to the newest pack and says so when this run sealed none', () => {
+    seedArchive(evidenceDir(), 'somebody-else', new Date('2026-08-21T13:30:00Z'));
+    const listing = listArtifacts({
+      family: 'ExecutionTestrun',
+      cwd: root,
+      executionId: 'never-sealed',
+      diagnostics: sink,
+    });
+    expect(listing.pack?.id).toBe('somebody-else.evidence');
+    const warned = sink.withCode('evidence-pack-not-this-run');
+    expect(warned).toHaveLength(1);
+    expect(warned[0]?.message).toContain('never-sealed');
+    expect(warned[0]?.severity).toBe('warn');
+  });
+
+  it('prefers the archive over an extraction of the same age', () => {
+    // A directory beside an archive of the same name is an extraction of it. The
+    // archive is the thing Kane wrote, so it wins the tie.
+    const stamp = new Date('2026-08-21T13:18:00Z');
+    seedArchive(evidenceDir(), 'both', stamp);
+    seedPack(evidenceDir(), 'both', ['run.yaml'], stamp);
+    const listing = listArtifacts({ family: 'ExecutionTestrun', cwd: root, diagnostics: sink });
+    expect(listing.pack?.archive).toBe(true);
+    expect(listing.pack?.id).toBe('both.evidence');
+  });
+
+  it('still reads an extracted pack directory, and reports it as not an archive', () => {
+    // The older shape, and the one every in-memory fixture in this suite uses. It
+    // keeps working: reading evidence that exists on disk beats reporting none.
+    seedPack(evidenceDir(), 'ev_20260820T184011Z', ['failure.yaml', 'steps/step-3.png'],
+      new Date('2026-08-20T18:40:40Z'));
+    const listing = listArtifacts({ family: 'ExecutionTestrun', cwd: root, diagnostics: sink });
+    expect(listing.pack?.archive).toBe(false);
+    expect(listing.pack?.artifacts.map((a) => a.name)).toEqual([
+      'failure.yaml',
+      'steps/step-3.png',
+    ]);
   });
 });

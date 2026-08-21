@@ -129,6 +129,7 @@ const LISTING: EvidenceListing = {
     id: 'ev_20260820T184011Z',
     dir: '/repo/.testmuai/evidence/ev_20260820T184011Z',
     sealedAt: '2026-08-20T18:40:40.000Z',
+    archive: false,
     artifacts: [
       {
         kind: 'annotated',
@@ -404,6 +405,55 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
     expect(UNPROVEN_CODE_BREAK_FENCE.allowedPaths).not.toContain(
       UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths[0],
     );
+  });
+
+  it('does not resurrect a branch for a promise that just passed', () => {
+    // Found the first time `code-break` fired live. `applyRun` clears `repair` on a
+    // proven verdict, but the record handed to the builder is the *pre-run* one and
+    // still carries the annotation — so `input.repair ?? promise.repair` put the
+    // previous run's branch on a member that had just gone green, and the handoff,
+    // which is an instruction, said "repair this" about a promise that was fixed.
+    // Absent and `null` are therefore different: `null` is this run's answer.
+    const wasRed = promiseOf({ verdict: 'red' });
+    const repaired = buildHandoff({
+      runId: 'tr_now_green',
+      at: AT,
+      run: testrunOutcome(),
+      results: [
+        {
+          promise: { ...wasRed, repair: repairOf('code-break') },
+          memberStatus: 'passed',
+          verdict: 'proven',
+          previousVerdict: 'red',
+          repair: null,
+        },
+      ],
+    });
+    expect(repaired.results[0]?.verdict).toBe('proven');
+    expect(repaired.results[0]?.repair).toBeNull();
+    expect(repaired.nextAction.branch).toBeNull();
+    expect(
+      repaired.diagnostics.map((entry) => entry.code),
+    ).not.toContain(HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven);
+
+    // Omitting the key still defers to the record, which is what the doc promises
+    // and what a caller with no router answer of its own relies on.
+    const deferred = buildHandoff({
+      runId: 'tr_deferred',
+      at: AT,
+      run: testrunOutcome(),
+      results: [
+        {
+          promise: { ...wasRed, repair: repairOf('code-break') },
+          memberStatus: 'failed',
+          verdict: 'red',
+          previousVerdict: 'proven',
+        },
+      ],
+    });
+    expect(deferred.results[0]?.repair?.branch).toBe('code-break');
+    expect(deferred.nextAction.branch).toBe('code-break');
+    expect(deferred.nextAction.autonomy).toBe('apply');
   });
 
   it('names the prior verdict that earns the grant, once', () => {

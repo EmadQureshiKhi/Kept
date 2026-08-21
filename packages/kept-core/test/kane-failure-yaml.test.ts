@@ -377,6 +377,7 @@ describe('composing with the evidence resolver', () => {
       id: 'ev_1',
       dir: '/pack',
       sealedAt: null,
+      archive: false,
       artifacts: [
         {
           kind: 'failure-yaml',

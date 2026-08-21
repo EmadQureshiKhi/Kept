@@ -16,6 +16,7 @@ import {
   orphanCommittedFiles,
   packIdOfCommittedPath,
   packIdOfRef,
+  packIdOfSealedRef,
   publicPathToRepoPath,
   refToRepoPath,
   unsafeLinks,
@@ -413,6 +414,27 @@ describe('the integrity rules are proven to fire on a broken tree', () => {
 
   it('refuses to resolve a link that names nothing under the curated directory', () => {
     expect(publicPathToRepoPath('/promises/p_000000000000')).toBeNull();
-    expect(refToRepoPath('.testmuai/evidence/73c1df17.evidence')).toBeNull();
+    // Not an evidence reference at all: no `evidence/` prefix and no sealed suffix.
+    expect(refToRepoPath('.testmuai/tests/whatever.md')).toBeNull();
+    expect(refToRepoPath('apps/fixture/README.md')).toBeNull();
+  });
+
+  it('resolves a sealed-archive reference to the curated copy of that pack', () => {
+    // The router writes the archive Kane sealed, under the gitignored
+    // `.testmuai/evidence/` — deliberate provenance, because that is where the
+    // triage note which decided the branch actually lives (R6.11). What has to
+    // resolve for a judge is the *curated* copy, named by the minted node id. This
+    // rule said "resolves nowhere" for every real `evidenceRef`, so the first run
+    // that produced one failed the guard on a pack that was correctly committed.
+    expect(refToRepoPath('.testmuai/evidence/73c1df17.evidence')).toBe(
+      `${CURATED_EVIDENCE_DIR}/ev_73c1df17.evidence/`,
+    );
+    expect(packIdOfSealedRef('.testmuai/evidence/73c1df17.evidence')).toBe(
+      'ev_73c1df17.evidence',
+    );
+    // And it is still the curated directory it maps into, never the sealed one.
+    expect(refToRepoPath('.testmuai/evidence/73c1df17.evidence')).toContain(
+      CURATED_EVIDENCE_DIR,
+    );
   });
 });

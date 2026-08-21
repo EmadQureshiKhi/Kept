@@ -47,6 +47,7 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import type { DiagnosticSink } from '../diagnostics.js';
 
 import { contractFor, type CommandFamily } from './family.js';
+import { SEALED_PACK_SUFFIX } from './packTriage.js';
 
 /** Directory name Kane seals packs into, under a session directory. */
 export const EVIDENCE_DIR_NAME = 'evidence';
@@ -92,16 +93,27 @@ export interface EvidenceArtifact {
   readonly modifiedAt: string | null;
 }
 
-/** The newest sealed pack in a resolved evidence directory. */
+/** The sealed pack this run resolved, in a resolved evidence directory. */
 export interface EvidencePack {
-  /** The pack directory's own name, e.g. `ev_20260820T184011Z`. */
+  /** The pack's own entry name, e.g. `defd438c-….evidence`. */
   readonly id: string;
-  /** Absolute path to the pack directory. */
+  /** Absolute path to the pack — the archive file, or an extracted directory. */
   readonly dir: string;
-  /** ISO 8601 mtime of the pack directory — when it was sealed, as far as disk knows. */
+  /** ISO 8601 mtime — when it was sealed, as far as disk knows. */
   readonly sealedAt: string | null;
-  /** Every file in the pack, `name`-sorted. Nothing is ever omitted. */
+  /**
+   * Every file in the pack, `name`-sorted. Nothing is ever omitted.
+   *
+   * **Empty for a sealed archive**, whose members are inside the zip: this module
+   * walks a filesystem and does not inflate, and composing paths into an archive it
+   * had not read would be fabricating them (R6.11). The two callers that need the
+   * contents have the reader — `kane/packTriage.ts` for the triage note and
+   * `kept snapshot`'s curation for the artefacts a judge clicks — and both go through
+   * `kane/packArchive.ts`. {@link EvidencePack.archive} says which shape this is.
+   */
   readonly artifacts: readonly EvidenceArtifact[];
+  /** True when the pack is a sealed `.evidence` archive rather than a directory. */
+  readonly archive: boolean;
 }
 
 /** What {@link listArtifacts} answers. */
@@ -179,7 +191,52 @@ export const nodeEvidenceFileSystem: EvidenceFileSystem = {
 /** {@link listArtifacts} input: the resolver's input plus the filesystem. */
 export interface ListArtifactsRequest extends EvidenceDirRequest {
   readonly fs?: EvidenceFileSystem;
+  /**
+   * This run's own `execution_id`, when the terminal event carried one.
+   *
+   * Kane names the sealed pack after it, so supplying it turns "the newest pack in
+   * the directory" into "**this run's** pack" — which is the difference between an
+   * evidence reference a judge can click and one that points at whatever happened to
+   * seal last. Without it the newest-wins heuristic is kept, and a mismatch is
+   * diagnosed rather than silently accepted.
+   */
+  readonly executionId?: string | null;
 }
+
+/**
+ * A filesystem sync conflict copy: `<name> 2.evidence`, `<name> 3.evidence`.
+ *
+ * iCloud Drive — and Dropbox, and OneDrive — resolve a write collision by keeping
+ * both sides and appending a space and an ordinal to one of them. This repository
+ * lives on an iCloud-synced path, and the copies it produced were being selected as
+ * packs: they sort newest because the sync wrote them last, and they are usually a
+ * *directory* holding a partial extraction rather than a sealed archive. The
+ * consequence was a promise carrying `evidencePackId: '<uuid> 2.evidence'`, which
+ * names no archive Kane ever wrote, so every evidence reference in the snapshot was
+ * cleared as a dead link and `apps/ledger/public/evidence/` stayed empty.
+ *
+ * They are rejected by name rather than by content, deliberately: a conflict copy is
+ * a fact about the filesystem, and the pack it shadows is still there under its real
+ * name. Rejecting the copy is what lets the real one be found.
+ */
+const SYNC_CONFLICT_COPY = /\s\d+(?:\.[A-Za-z0-9]+)?$/;
+
+/** Whether an entry name is a sync conflict copy rather than a pack Kane sealed. */
+export function isSyncConflictCopy(name: string): boolean {
+  return SYNC_CONFLICT_COPY.test(name.trim());
+}
+
+/**
+ * The suffix Kane gives a sealed evidence pack, from the module that reads one.
+ *
+ * A pack is a **single archive file**, not a directory — `<execution_id>.evidence`,
+ * a zip of two to eleven megabytes. That is what `testrun run` writes, and it is why
+ * a resolver that considered only directories could never find one: the only
+ * directories in `.testmuai/evidence/` are extractions somebody left behind, or the
+ * conflict copies above. Imported from the module that reads one rather than
+ * restated, so the two modules that care about the shape of a pack cannot disagree
+ * about its name. The barrel publishes it from there.
+ */
 
 /**
  * How deep inside a pack the walk goes. Kane's packs are one or two levels;
@@ -397,12 +454,17 @@ function buildPack(
   dir: string,
   id: string,
   sink: DiagnosticSink | undefined,
+  archive = false,
 ): EvidencePack {
   return {
     id,
     dir,
     sealedAt: isoOrNull(statSafely(fs, dir, sink)?.mtimeMs),
-    artifacts: collectArtifacts(fs, dir, sink),
+    // A sealed archive's members are inside the zip. This module walks a filesystem;
+    // inflating is `kane/packArchive.ts`'s job, and inventing paths into an archive
+    // nothing here read would be fabricating them (R6.11).
+    artifacts: archive ? Object.freeze([]) : collectArtifacts(fs, dir, sink),
+    archive,
   };
 }
 
@@ -432,16 +494,79 @@ export function listArtifacts(request: ListArtifactsRequest): EvidenceListing {
   const entries = readDirectorySafely(fs, dir, sink, 'evidence-dir-unreadable');
   if (entries === null) return { dir, pack: null, packIds: [] };
 
+  // A pack is a sealed `.evidence` **archive** or an extracted directory. Archives
+  // were invisible here until the closed loop was driven live, and they are what
+  // Kane actually writes — so the only packs this function could see were leftover
+  // extractions and sync conflict copies, and every evidence reference in the
+  // snapshot was therefore a dead link.
+  const rejected: string[] = [];
   const packs = entries
-    .filter((entry) => entry.isDirectory)
+    .filter((entry) => {
+      if (!entry.isDirectory && !(entry.isFile && entry.name.endsWith(SEALED_PACK_SUFFIX))) {
+        return false;
+      }
+      if (isSyncConflictCopy(entry.name)) {
+        rejected.push(entry.name);
+        return false;
+      }
+      return true;
+    })
     .map((entry) => ({
       name: entry.name,
+      archive: entry.isFile === true,
       mtimeMs: statSafely(fs, join(dir, entry.name), sink)?.mtimeMs ?? 0,
     }))
-    .sort((a, b) => (b.mtimeMs - a.mtimeMs) || (a.name < b.name ? 1 : a.name > b.name ? -1 : 0));
+    // Newest first, tie-broken by descending name so two packs sealing inside one
+    // filesystem tick still order deterministically. An archive outranks a directory
+    // of the same age: the archive is what Kane sealed, a directory of the same name
+    // is an extraction of it.
+    .sort(
+      (a, b) =>
+        b.mtimeMs - a.mtimeMs ||
+        Number(b.archive) - Number(a.archive) ||
+        (a.name < b.name ? 1 : a.name > b.name ? -1 : 0),
+    );
 
-  const newest = packs[0];
-  if (newest === undefined) {
+  for (const name of rejected.sort()) {
+    sink?.report({
+      code: 'evidence-pack-conflict-copy',
+      severity: 'info',
+      message:
+        `'${name}' in ${dir} is a filesystem sync conflict copy, not a pack Kane sealed — ` +
+        `iCloud Drive resolves a write collision by keeping both sides and appending an ` +
+        `ordinal. It sorts newest because the sync wrote it last, so selecting it would ` +
+        `attribute this run's evidence to an id no archive is named after. It is ignored ` +
+        `and the pack it shadows is resolved under its real name.`,
+      file: join(dir, name),
+    });
+  }
+
+  // This run's own pack, when the terminal event named one. Matching on the id with
+  // and without the suffix, because the entry carries it and `execution_id` does not.
+  const wanted = cleanPath(request.executionId);
+  const own =
+    wanted === null
+      ? undefined
+      : packs.find(
+          (pack) => pack.name === wanted || pack.name === `${wanted}${SEALED_PACK_SUFFIX}`,
+        );
+  if (wanted !== null && own === undefined && packs.length > 0) {
+    sink?.report({
+      code: 'evidence-pack-not-this-run',
+      severity: 'warn',
+      message:
+        `No pack in ${dir} is named after this run's execution id '${wanted}', so the newest ` +
+        `pack present is reported instead. Sealed packs are gitignored and regenerated per ` +
+        `run, so a fresh clone reaching this state is expected; on a machine that just ran ` +
+        `the suite it means the upload or the seal did not land.`,
+      file: dir,
+    });
+  }
+
+  const selected = own ?? packs[0];
+  if (selected === undefined) {
+    // A directory holding files but no pack entry is itself the pack. That is the
+    // shape an already-extracted `testrun` pack takes.
     if (entries.some((entry) => entry.isFile)) {
       const id = basename(dir);
       return { dir, pack: buildPack(fs, dir, id, sink), packIds: [id] };
@@ -457,7 +582,7 @@ export function listArtifacts(request: ListArtifactsRequest): EvidenceListing {
 
   return {
     dir,
-    pack: buildPack(fs, join(dir, newest.name), newest.name, sink),
+    pack: buildPack(fs, join(dir, selected.name), selected.name, sink, selected.archive),
     packIds: packs.map((pack) => pack.name),
   };
 }
