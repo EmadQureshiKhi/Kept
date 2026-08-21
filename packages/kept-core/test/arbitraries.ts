@@ -31,6 +31,12 @@
  * | 11 | a doc with no trailing newline | {@link arbDoc} `trailingNewline: false` |
  * | 12 | `session_dir` absent from `run_end` | {@link arbTerminalEvent} `sessionDir: null` |
  *
+ * Section 10 adds five more, named by the plan rather than by the design's list,
+ * for the referential closure of committed evidence: the empty graph again, an
+ * absent pack whose reference must be cleared, a pack referenced by two promises,
+ * a `repair.evidenceRef` pointing into a pack, and an orphan pack. They are
+ * tabulated on {@link arbClosureCase}.
+ *
  * ## Two rules the generators here obey, and why
  *
  * **No generated terminal event carries a `step` key.** Classification in
@@ -2204,3 +2210,362 @@ export const arbStoreSourceListing: fc.Arbitrary<StoreSourceListingCase> = fc
 
     return { payload, entries, features };
   });
+
+// ---------------------------------------------------------------------------
+// 10. Referential closure of committed evidence (Property 28, R13.4, R13.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * A snapshot **and the committed tree beside it**, generated together.
+ *
+ * Property 28 is not a statement about a snapshot alone. It is a statement about
+ * two artefacts agreeing: what the snapshot links, and what a clone actually has
+ * under `apps/ledger/public/evidence/`. Generating one and assuming the other
+ * would test nothing, so every case below carries both.
+ *
+ * The five named cases the plan asks for, each weighted rather than left to
+ * chance, and each asserted reachable by `evidence-closure.prop.test.ts`:
+ *
+ * | label | what it is |
+ * |---|---|
+ * | `empty-graph` | zero promises, zero packs, an empty tree — closure is vacuous and must still hold |
+ * | `pack-absent` | a promise whose pack never curated: the reference is **cleared**, not left dangling |
+ * | `shared-pack` | one pack referenced by two promises, so a single tree explains both |
+ * | `repair-ref` | a `repair.evidenceRef` pointing at a real artefact inside a committed pack |
+ * | `orphan-pack` | a committed pack nothing references — the one case closure must **report** |
+ *
+ * `closed` is the sixth arm: an ordinary snapshot with the tree curation would
+ * have written for it.
+ */
+export type ClosureLabel =
+  | 'closed'
+  | 'empty-graph'
+  | 'pack-absent'
+  | 'shared-pack'
+  | 'repair-ref'
+  | 'orphan-pack';
+
+export interface ClosureCase {
+  readonly label: ClosureLabel;
+  /** Schema-valid, and honest about what curated: see {@link curatable}. */
+  readonly snapshot: LedgerSnapshot;
+  /** Committed files under the curated directory, repo-relative and sorted. */
+  readonly committed: readonly string[];
+  /** Pack ids the backward direction must report, id-sorted. Usually empty. */
+  readonly orphanPackIds: readonly string[];
+  /** A pack id the snapshot must carry no reference to at all, or null. */
+  readonly clearedPackId: string | null;
+}
+
+/** Where curated packs are committed. One spelling, shared with the checker. */
+export const CURATED_EVIDENCE_DIR = 'apps/ledger/public/evidence';
+
+/** The one committed file under it that is not an artefact. */
+const CURATED_README_PATH = `${CURATED_EVIDENCE_DIR}/README.md`;
+
+/**
+ * The pack ids a **reader** can reach: from a promise, a run, a review card or an
+ * amendment.
+ *
+ * Implemented here rather than imported from `evidence-links.ts` on purpose. That
+ * module is the thing under test; a generator that asked it what counts as
+ * referenced would agree with it by construction, including when both are wrong.
+ * The property suite cross-checks the two, so a divergence fails loudly instead of
+ * making the property vacuous.
+ */
+export function readerPackIds(snapshot: LedgerSnapshot): ReadonlySet<string> {
+  const ids = new Set<string>();
+  const fromRef = (ref: string | null): void => {
+    if (ref === null) return;
+    for (const segment of ref.split('/')) {
+      if (segment.startsWith('ev_') && segment.length > 3) {
+        ids.add(segment);
+        return;
+      }
+    }
+  };
+  for (const promise of snapshot.promises) {
+    if (promise.evidencePackId !== null) ids.add(promise.evidencePackId);
+    fromRef(promise.repair?.evidenceRef ?? null);
+  }
+  for (const run of snapshot.runs) {
+    if (run.evidencePackId !== null) ids.add(run.evidencePackId);
+  }
+  for (const card of snapshot.reviewCards) fromRef(card.evidenceRef);
+  for (const amendment of snapshot.amendments) {
+    fromRef(amendment.evidenceRef);
+    for (const publicPath of Object.values(amendment.artifacts)) fromRef(publicPath);
+  }
+  return ids;
+}
+
+/** Drop a pack from `evidence`, clearing every reference to it (§9.1 rule 3). */
+export function withoutPack(snapshot: LedgerSnapshot, packId: string): LedgerSnapshot {
+  const namesPack = (ref: string | null): boolean =>
+    ref !== null && ref.split('/').includes(packId);
+  return {
+    ...snapshot,
+    evidence: snapshot.evidence.filter((pack) => pack.id !== packId),
+    promises: snapshot.promises.map((promise) => ({
+      ...promise,
+      evidencePackId: promise.evidencePackId === packId ? null : promise.evidencePackId,
+      repair:
+        promise.repair === null
+          ? null
+          : {
+              ...promise.repair,
+              evidenceRef: namesPack(promise.repair.evidenceRef)
+                ? null
+                : promise.repair.evidenceRef,
+            },
+    })),
+    edges: snapshot.edges.filter((edge) => edge.from !== packId && edge.to !== packId),
+  };
+}
+
+/**
+ * Remove every pack no reader references.
+ *
+ * This is what `kept snapshot` does by construction rather than by correction:
+ * curation is driven by the ids the graph carries, so a pack nothing references is
+ * never curated and never appears in `evidence`. Modelling it here is what makes
+ * the `closed` arm a real snapshot instead of one carrying an orphan by accident.
+ */
+export function withOnlyReferencedPacks(snapshot: LedgerSnapshot): LedgerSnapshot {
+  const referenced = readerPackIds(snapshot);
+  let result = snapshot;
+  for (const pack of snapshot.evidence) {
+    if (!referenced.has(pack.id)) result = withoutPack(result, pack.id);
+  }
+  return result;
+}
+
+/**
+ * Give every pack at least one artefact.
+ *
+ * A pack that curated to nothing a reviewer could open is diagnosed and omitted
+ * rather than published, so "in `evidence` with an empty artefact list" is a state
+ * the pipeline does not produce — and a generator that produced it would report a
+ * dangling pack link that no real snapshot can have.
+ */
+export function withCuratedArtifacts(snapshot: LedgerSnapshot): LedgerSnapshot {
+  return {
+    ...snapshot,
+    evidence: snapshot.evidence.map((pack) =>
+      pack.artifacts.length > 0
+        ? pack
+        : {
+            ...pack,
+            artifacts: [
+              {
+                kind: 'annotated' as const,
+                name: 'annotated.png',
+                publicPath: `/evidence/${pack.id}/annotated.png`,
+                bytes: null,
+              },
+            ],
+          },
+    ),
+  };
+}
+
+/**
+ * Aim every `repair.evidenceRef` at an artefact its pack actually carries.
+ *
+ * The plain snapshot generators write `evidence/<packId>/failure.yaml` for any
+ * repair, which was harmless while nothing checked the *file* — it named the right
+ * pack, which is all §9.1 rule 3 asks. Closure asks more: the reference is a link
+ * a reviewer follows from a repair to the triage note behind it, so it has to name
+ * a file curation committed. A triage note is preferred when the pack has one,
+ * since that is what a repair reference means; otherwise any curated artefact of
+ * that pack is a truthful target.
+ */
+export function withResolvableRepairRefs(snapshot: LedgerSnapshot): LedgerSnapshot {
+  const packOf = (ref: string): SnapshotEvidencePack | undefined => {
+    for (const segment of ref.split('/')) {
+      if (segment.startsWith('ev_') && segment.length > 3) {
+        return snapshot.evidence.find((entry) => entry.id === segment);
+      }
+    }
+    return undefined;
+  };
+  return {
+    ...snapshot,
+    promises: snapshot.promises.map((promise) => {
+      const repair = promise.repair;
+      if (repair === null || repair.evidenceRef === null) return promise;
+      const pack = packOf(repair.evidenceRef);
+      const name =
+        pack?.artifacts.find((artifact) => artifact.kind === 'failure-yaml')?.name ??
+        pack?.artifacts[0]?.name;
+      return {
+        ...promise,
+        repair: {
+          ...repair,
+          evidenceRef:
+            pack === undefined || name === undefined ? null : `evidence/${pack.id}/${name}`,
+        },
+      };
+    }),
+  };
+}
+
+/**
+ * A snapshot in the shape the pipeline actually writes: no pack nothing
+ * references, no pack that curated to nothing, and every repair reference naming a
+ * file its pack carries.
+ */
+export function curatable(snapshot: LedgerSnapshot): LedgerSnapshot {
+  return withResolvableRepairRefs(withCuratedArtifacts(withOnlyReferencedPacks(snapshot)));
+}
+
+/**
+ * The committed tree curation would write for a snapshot: one file per artefact,
+ * plus the README that explains the directory.
+ *
+ * Derived from each artefact's `name` under its pack, which is the same path the
+ * artefact's `publicPath` points at — the checker walks in from the link, this
+ * walks out from the pack, so the two meet rather than sharing an assumption.
+ */
+export function curatedTreeFor(snapshot: LedgerSnapshot): readonly string[] {
+  const paths = new Set<string>([CURATED_README_PATH]);
+  for (const pack of snapshot.evidence) {
+    for (const artifact of pack.artifacts) {
+      paths.add(`${CURATED_EVIDENCE_DIR}/${pack.id}/${artifact.name}`);
+    }
+  }
+  return [...paths].sort();
+}
+
+/** Point the first two promises at one pack, so a single tree explains both. */
+export function withSharedPack(snapshot: LedgerSnapshot): LedgerSnapshot {
+  const packId = snapshot.evidence[0]?.id;
+  if (packId === undefined || snapshot.promises.length < 2) return snapshot;
+  const promises = snapshot.promises.map((promise, index) =>
+    index < 2 ? { ...promise, evidencePackId: packId } : promise,
+  );
+  const edges = dedupeBy(
+    [
+      ...snapshot.edges,
+      ...promises
+        .slice(0, 2)
+        .map((promise) => ({ from: promise.id, to: packId, kind: 'evidence' as const })),
+    ],
+    (edge) => `${edge.kind}\u0000${edge.from}\u0000${edge.to}`,
+  ).sort(compareGraphEdges);
+  // Re-normalise: a promise that pointed elsewhere may have left a pack behind.
+  return withOnlyReferencedPacks({ ...snapshot, promises, edges });
+}
+
+/** Aim a promise's `repair.evidenceRef` at a real artefact inside its pack. */
+export function withRepairRef(snapshot: LedgerSnapshot): LedgerSnapshot {
+  const index = snapshot.promises.findIndex(
+    (promise) =>
+      promise.evidencePackId !== null &&
+      (snapshot.evidence.find((pack) => pack.id === promise.evidencePackId)?.artifacts.length ?? 0) >
+        0,
+  );
+  if (index < 0) return snapshot;
+  const promise = snapshot.promises[index];
+  if (promise === undefined) return snapshot;
+  const pack = snapshot.evidence.find((entry) => entry.id === promise.evidencePackId);
+  const name = pack?.artifacts[0]?.name;
+  if (pack === undefined || name === undefined) return snapshot;
+  const repair = {
+    branch: promise.repair?.branch ?? REPAIR_BRANCHES[0] ?? 'code-break',
+    strategy: promise.repair?.strategy ?? REPAIR_STRATEGIES[0] ?? 'resultCode740',
+    severity: promise.repair?.severity ?? 'high',
+    category: promise.repair?.category ?? 'functional',
+    confidence: promise.repair?.confidence ?? 0.9,
+    evidenceRef: `evidence/${pack.id}/${name}`,
+    rationale: promise.repair?.rationale ?? 'generated',
+  };
+  return {
+    ...snapshot,
+    promises: snapshot.promises.map((entry, at) => (at === index ? { ...entry, repair } : entry)),
+  };
+}
+
+/** Pack ids nothing in a generated snapshot can reference. */
+const arbOrphanPackId: fc.Arbitrary<string> = fc.constantFrom(
+  'ev_20260101T000000Z',
+  'ev_fossil',
+  'ev_20251231T235959Z',
+);
+
+const arbCuratableSnapshot: fc.Arbitrary<LedgerSnapshot> = arbSnapshot.map(curatable);
+
+/** Curatable, and carrying at least one pack — the arms that perturb one. */
+const arbPackedSnapshot: fc.Arbitrary<LedgerSnapshot> = arbCuratableSnapshot.filter(
+  (snapshot) => snapshot.evidence.length > 0,
+);
+
+function closedCase(snapshot: LedgerSnapshot, label: ClosureLabel): ClosureCase {
+  return {
+    label,
+    snapshot,
+    committed: curatedTreeFor(snapshot),
+    orphanPackIds: [],
+    clearedPackId: null,
+  };
+}
+
+/**
+ * A snapshot and its committed tree, with every named case weighted in.
+ *
+ * Every arm produces a schema-valid snapshot — the property asserts that rather
+ * than trusting it, because a generator that mostly produced invalid snapshots
+ * would be testing the schema's rejection path under the name of closure.
+ */
+export const arbClosureCase: fc.Arbitrary<ClosureCase> = fc.oneof(
+  { weight: 5, arbitrary: arbCuratableSnapshot.map((snapshot) => closedCase(snapshot, 'closed')) },
+  {
+    weight: 2,
+    arbitrary: arbEmptySnapshot
+      .map(curatable)
+      .map((snapshot) => closedCase(snapshot, 'empty-graph')),
+  },
+  {
+    weight: 3,
+    arbitrary: arbPackedSnapshot.map((snapshot): ClosureCase => {
+      // The pack the loop referenced and that never curated: `buildSnapshot`
+      // clears the reference rather than publishing a link to a file no clone has.
+      const packId = snapshot.evidence[0]?.id ?? '';
+      const cleared = withoutPack(snapshot, packId);
+      return {
+        label: 'pack-absent',
+        snapshot: cleared,
+        committed: curatedTreeFor(cleared),
+        orphanPackIds: [],
+        clearedPackId: packId,
+      };
+    }),
+  },
+  {
+    weight: 3,
+    arbitrary: arbPackedSnapshot
+      .filter((snapshot) => snapshot.promises.length >= 2)
+      .map((snapshot) => closedCase(withSharedPack(snapshot), 'shared-pack')),
+  },
+  {
+    weight: 3,
+    arbitrary: arbPackedSnapshot.map((snapshot) =>
+      closedCase(withRepairRef(snapshot), 'repair-ref'),
+    ),
+  },
+  {
+    weight: 3,
+    arbitrary: fc
+      .tuple(arbCuratableSnapshot, arbOrphanPackId, fc.constantFrom('annotated.png', 'steps/1-0-1/screenshot.jpg'))
+      .map(([snapshot, orphanId, name]): ClosureCase => {
+        const orphan = `${CURATED_EVIDENCE_DIR}/${orphanId}/${name}`;
+        return {
+          label: 'orphan-pack',
+          snapshot,
+          committed: [...new Set([...curatedTreeFor(snapshot), orphan])].sort(),
+          orphanPackIds: [orphanId],
+          clearedPackId: null,
+        };
+      }),
+  },
+);
