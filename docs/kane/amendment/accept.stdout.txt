@@ -1,0 +1,9 @@
+kept amend accept
+  repository   /Users/nokitha/Desktop/KEPT/.tmp/amend-accept-demo
+  am_57fdcb99   accepted  apps/fixture/README.md:20
+    was        - The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.
+    proposed   - The Cart screen shows the order total with no automatic discounts.
+  outcome      applied, one line written
+  successor    p_ef77c08130a4
+  graph        rebuilt
+  snapshot     written

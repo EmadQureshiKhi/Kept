@@ -1,5 +1,25 @@
 {
-  "amendments": [],
+  "amendments": [
+    {
+      "appliedAt": null,
+      "artifacts": {},
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 20,
+        "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+      },
+      "createdAt": "2026-08-21T04:55:58.756Z",
+      "currentText": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
+      "evidenceRef": null,
+      "expectedSha256": "1c7787fbfaba2e89da402864bad8efa73ea5e411e30cd9561e3aebc8740b039a",
+      "id": "am_57fdcb99",
+      "promiseId": "p_45ccecba7aa5",
+      "proposedText": "- The Cart screen shows the order total with no automatic discounts.",
+      "rationale": "Run 108dbb62-4f20-46ec-abbd-3b8be6c6e13c reported failed for tests/cart_discount_test.md and the failureYamlTriage router settled it as docs-lie. No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt.",
+      "status": "pending",
+      "strategy": "failureYamlTriage"
+    }
+  ],
   "degraded": true,
   "degradedReasons": [
     "assurance-status:refused"
@@ -22,7 +42,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 19,
@@ -30,7 +50,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 18,
@@ -38,7 +58,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 20,
@@ -46,7 +66,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 20,
@@ -54,7 +74,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 14,
@@ -62,7 +82,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 16,
@@ -70,7 +90,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 15,
@@ -78,7 +98,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 13,
@@ -86,7 +106,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-evidence-unresolved",
       "file": "apps/fixture/README.md",
       "line": 17,
@@ -94,7 +114,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -102,7 +122,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -110,7 +130,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -118,7 +138,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.993Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -126,7 +146,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.994Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -134,7 +154,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.994Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -142,7 +162,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.994Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
@@ -150,11 +170,35 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T03:58:40.994Z",
+      "at": "2026-08-21T05:02:28.550Z",
       "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
       "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:02:28.550Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run '108dbb62-4f20-46ec-abbd-3b8be6c6e13c' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:02:28.550Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Run 'kept-verify:2026-08-21T03:38:59.518Z' references evidence pack 'ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T05:02:28.550Z",
+      "code": "snapshot-repair-evidence-unresolved",
+      "file": null,
+      "line": null,
+      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     }
   ],
@@ -253,7 +297,7 @@
     "terminalEventAt": "2026-08-21T03:52:23.744Z",
     "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-21T03:58:40.990Z",
+  "generatedAt": "2026-08-21T05:02:28.544Z",
   "generator": {
     "kaneCli": null,
     "kept": "0.0.0"
@@ -503,6 +547,259 @@
     }
   ],
   "reviewCards": [],
-  "runs": [],
+  "runs": [
+    {
+      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T03:52:24.102Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:52:24.103Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:52:24.103Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:52:24.103Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+          "line": null,
+          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:52:24.103Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:56:03.081Z",
+          "code": "verify-member-unattributed",
+          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+          "line": null,
+          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:56:03.081Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": null,
+      "endedAt": "2026-08-21T03:52:23.744Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/checkout_validation_test.md",
+          "status": "passed",
+          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/orders_persist_test.md",
+          "status": "passed",
+          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/product_currency_test.md",
+          "status": "passed",
+          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/settings_currency_test.md",
+          "status": "passed",
+          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": null,
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T03:39:00.320Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:39:00.323Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:39:00.323Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:39:00.323Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+          "line": null,
+          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:39:00.323Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:42:34.472Z",
+          "code": "verify-member-unattributed",
+          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+          "line": null,
+          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T03:42:34.473Z",
+          "code": "failure-yaml-absent",
+          "file": null,
+          "line": null,
+          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": null,
+      "endedAt": "2026-08-21T03:38:59.518Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "kept-verify:2026-08-21T03:38:59.518Z",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/checkout_validation_test.md",
+          "status": "passed",
+          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/orders_persist_test.md",
+          "status": "passed",
+          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/product_currency_test.md",
+          "status": "passed",
+          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/settings_currency_test.md",
+          "status": "passed",
+          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": null,
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    }
+  ],
   "schemaVersion": 1
 }

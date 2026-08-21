@@ -1,0 +1,2 @@
+  warn enrichment-assurance-status: `cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: no context store here (run `kane-cli context ingest <files>` first)
+  warn merge-degraded: The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).

@@ -1,0 +1,11 @@
+--- apps/fixture/README.md	2026-08-20 18:18:49
++++ .tmp/amend-accept-demo/apps/fixture/README.md	2026-08-21 09:57:54
+@@ -17,7 +17,7 @@
+ - The Checkout screen refuses to submit while the email field is empty and names the offending field.
+ - The Orders screen lists every completed order and still lists them after a full page reload.
+ - The Settings screen keeps the selected currency after a full page reload.
+-- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.
++- The Cart screen shows the order total with no automatic discounts.
+ 
+ Eight claims, one per line, so a citation line number identifies exactly one claim: line
+ 13 is the Home promise and line 20 the Cart discount promise. Promise identity is keyed

@@ -1,0 +1,19 @@
+{
+  "id": "am_57fdcb99",
+  "createdAt": "2026-08-21T04:55:58.756Z",
+  "status": "pending",
+  "promiseId": "p_45ccecba7aa5",
+  "citation": {
+    "file": "apps/fixture/README.md",
+    "line": 20,
+    "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+  },
+  "currentText": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
+  "proposedText": "- The Cart screen shows the order total with no automatic discounts.",
+  "expectedSha256": "1c7787fbfaba2e89da402864bad8efa73ea5e411e30cd9561e3aebc8740b039a",
+  "rationale": "Run 108dbb62-4f20-46ec-abbd-3b8be6c6e13c reported failed for tests/cart_discount_test.md and the failureYamlTriage router settled it as docs-lie. No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt.",
+  "evidenceRef": ".testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence",
+  "artifacts": {},
+  "strategy": "failureYamlTriage",
+  "appliedAt": null
+}

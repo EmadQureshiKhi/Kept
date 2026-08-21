@@ -321,3 +321,226 @@ describe('the kept snapshot command', () => {
     expect(sink.has(SNAPSHOT_DIAGNOSTIC_CODES.invalid)).toBe(true);
   });
 });
+
+/**
+ * The terminal-event log and the amendment surface, projected off `.kept/` (15.6).
+ *
+ * Both fields existed and nothing ever filled them, so `/runs` and `/amendments`
+ * published their empty states on a repository that had recorded a red verdict and
+ * a routed docs-lie. These assertions are about the projection being a projection:
+ * it reads records `kept verify` and `kept amend propose` already wrote, it leaves
+ * out a handoff that is not a run, and it reports rather than invents a figure the
+ * handoff never carried.
+ */
+describe('runs and amendments, projected off the persisted records', () => {
+  const RUN_ID = '108dbb62-4f20-46ec-abbd-3b8be6c6e13c';
+
+  function handoffOf(
+    overrides: Record<string, unknown> = {},
+    outcomeOverrides: Record<string, unknown> = {},
+  ): string {
+    const { outcome: _ignored, ...rest } = overrides;
+    return `${JSON.stringify({
+      schemaVersion: 1,
+      runId: RUN_ID,
+      writtenAt: AT,
+      trigger: { hook: 'kept-code-verify', event: 'fileEdited', paths: ['apps/fixture/lib/cart.ts'] },
+      command: {
+        family: 'ExecutionTestrun',
+        argv: ['testrun', 'run', 'tests/cart_subtotal_test.md', '--on-failure', 'continue'],
+        ndjsonEnabledBy: 'piped-stdout',
+        invoked: true,
+      },
+      outcome: {
+        terminalSeen: true,
+        terminalEventType: 'testrun_done',
+        exitCode: 1,
+        exitMeaning: 'failure',
+        timedOut: false,
+        resumable: false,
+        verdictsPermitted: true,
+        status: 'failed',
+        resultCode: 740,
+        reasonCode: 'assertion_error.confirmed_product_bug',
+        credits: 10.84068,
+        durationMs: 113_402,
+        ...outcomeOverrides,
+      },
+      blastRadius: { testIds: ['T-3'], promiseIds: [], unmatchedPaths: [], skippedNoTestId: [] },
+      results: [
+        {
+          promiseId: 'p_45ccecba7aa5',
+          testId: 'T-3',
+          designedTest: 'tests/cart_subtotal_test.md',
+          memberStatus: 'failed',
+          verdict: 'red',
+          citation: { file: DOC, line: 20, text: '- a claim' },
+          repair: null,
+          verdictObject: null,
+          evidenceDir: null,
+          evidencePackId: null,
+          artifacts: { annotated: null, failureYaml: null, screenshots: [], other: [] },
+        },
+      ],
+      nextAction: {
+        branch: 'code-break',
+        autonomy: 'auto',
+        artefact: 'patch',
+        instruction: 'fix the product code',
+        allowedPaths: ['apps/fixture/lib/**'],
+        forbiddenPaths: ['tests/**'],
+        command: null,
+      },
+      diagnostics: [
+        { code: 'verify-started', severity: 'info', message: 'started', file: null, line: null, at: AT },
+        { code: 'verify-member-unattributed', severity: 'warn', message: 'no promise', file: null, line: null, at: AT },
+      ],
+      ...rest,
+    })}\n`;
+  }
+
+  function projected(files: Record<string, string>) {
+    const fileSystem = inMemoryStateFileSystem(files);
+    const sink = createDiagnosticSink();
+    const result = runSnapshot({
+      repoRoot: REPO,
+      fileSystem,
+      state: stateOf([promise()]),
+      generatedAt: AT,
+      evidence: [],
+      readDirectory: (path: string): readonly string[] => {
+        const prefix = path.endsWith('/') ? path : `${path}/`;
+        return Object.keys(files)
+          .filter((key) => key.startsWith(prefix) && !key.slice(prefix.length).includes('/'))
+          .map((key) => key.slice(prefix.length));
+      },
+      diagnostics: sink,
+    });
+    return { result, sink };
+  }
+
+  it('publishes one run entry per invoked handoff, newest first', () => {
+    const older = handoffOf({ runId: 'run_older', writtenAt: '2026-08-20T09:00:00.000Z' });
+    const { result } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf(),
+      [`${REPO}/.kept/handoff/run_older.json`]: older,
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.snapshot.runs.map((run) => run.id)).toEqual([RUN_ID, 'run_older']);
+    const run = result.snapshot.runs[0];
+    expect(run?.family).toBe('ExecutionTestrun');
+    expect(run?.command).toBe('testrun run tests/cart_subtotal_test.md --on-failure continue');
+    expect(run?.terminalEventType).toBe('testrun_done');
+    expect(run?.resultCode).toBe(740);
+    expect(run?.credits).toBe(10.84068);
+    expect(run?.durationMs).toBe(113_402);
+    // Verbatim from the wire, so `failed` never reads as `broken` (R4.9).
+    expect(run?.members).toEqual([
+      {
+        path: 'tests/cart_subtotal_test.md',
+        testId: 'T-3',
+        status: 'failed',
+        verdict: 'red',
+      },
+    ]);
+    // `/runs` heads this section "reasons and diagnostics", and an info progress
+    // note is neither.
+    expect(run?.diagnostics.map((entry) => entry.code)).toEqual(['verify-member-unattributed']);
+  });
+
+  it('reports a duration the handoff never measured rather than calling it zero', () => {
+    const { result } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf({}, { durationMs: undefined }),
+    });
+    expect(result.snapshot.runs[0]?.durationMs).toBeNull();
+    // And it never derives a start instant from an end instant minus a duration.
+    expect(result.snapshot.runs[0]?.startedAt).toBeNull();
+    expect(result.snapshot.runs[0]?.endedAt).toBe(AT);
+  });
+
+  it('leaves out a handoff that is not a run, and says nothing about it', () => {
+    // An empty blast radius writes a handoff and starts no process (R4.5). It is
+    // not a terminal event, so the terminal-event log does not carry it.
+    const { result } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf({
+        command: {
+          family: null,
+          argv: [],
+          ndjsonEnabledBy: null,
+          invoked: false,
+        },
+        nextAction: {
+          branch: null,
+          autonomy: 'hold',
+          artefact: 'none',
+          instruction: 'nothing to repair',
+          allowedPaths: [],
+          forbiddenPaths: [],
+          command: null,
+        },
+      }),
+    });
+    expect(result.snapshot.runs).toEqual([]);
+  });
+
+  it('skips a file it cannot read as a handoff and keeps the rest of the log', () => {
+    const { result, sink } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf(),
+      [`${REPO}/.kept/handoff/broken.json`]: '{ not json',
+    });
+    expect(result.snapshot.runs.map((run) => run.id)).toEqual([RUN_ID]);
+    expect(sink.has(SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.runUnreadable)).toBe(true);
+  });
+
+  it('clears a run reference to a pack that is not committed', () => {
+    // The id Kane sealed on this machine is `… 2.evidence`, an iCloud duplicate with
+    // a literal space in it: not committed, and not even spellable as a snapshot
+    // evidence id. Publishing it would be a dead link.
+    const { result, sink } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf({
+        results: [
+          {
+            promiseId: 'p_45ccecba7aa5',
+            testId: 'T-3',
+            designedTest: 'tests/cart_subtotal_test.md',
+            memberStatus: 'failed',
+            verdict: 'red',
+            citation: { file: DOC, line: 20, text: '- a claim' },
+            repair: null,
+            verdictObject: null,
+            evidenceDir: null,
+            evidencePackId: 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence',
+            artifacts: { annotated: null, failureYaml: null, screenshots: [], other: [] },
+          },
+        ],
+      }),
+    });
+    expect(result.valid).toBe(true);
+    expect(result.snapshot.runs[0]?.evidencePackId).toBeNull();
+    expect(sink.has(SNAPSHOT_DIAGNOSTIC_CODES.evidenceUnresolved)).toBe(true);
+  });
+
+  it('projects the staged amendments too, and reads neither directory when told not to', () => {
+    const { result } = projected({
+      [`${REPO}/.kept/handoff/${RUN_ID}.json`]: handoffOf(),
+    });
+    expect(result.snapshot.amendments).toEqual([]);
+
+    const fileSystem = inMemoryStateFileSystem();
+    const passed = runSnapshot({
+      repoRoot: REPO,
+      fileSystem,
+      state: stateOf([promise()]),
+      generatedAt: AT,
+      evidence: [],
+      runs: [],
+      amendments: [],
+      readDirectory: () => {
+        throw new Error('the projection read a directory it was handed the answer for');
+      },
+    });
+    expect(passed.valid).toBe(true);
+    expect(passed.snapshot.runs).toEqual([]);
+  });
+});

@@ -219,8 +219,58 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     return false;
   });
 
-  const allRuns = request.runs ?? [];
+  // ── runs, under the same rule-3 clearing the promises just went through ────
+  //
+  // A run entry names the pack the invocation sealed, and that id arrives from
+  // Kane: on this machine it is `a1039478-… 2.evidence`, an iCloud duplicate with a
+  // literal space, which is neither committed nor even spellable as a snapshot
+  // evidence id. Clearing it here rather than at the schema is deliberate — the
+  // rule that catches a dead link should be the rule that reports it, and a run
+  // whose pack was not curated is still a terminal event worth publishing.
+  const allRuns = (request.runs ?? []).map((run) => {
+    if (run.evidencePackId === null || packs.has(run.evidencePackId)) return run;
+    report({
+      code: SNAPSHOT_DIAGNOSTIC_CODES.evidenceUnresolved,
+      severity: 'warn',
+      message:
+        `Run '${run.id}' references evidence pack '${run.evidencePackId}', which is not ` +
+        `committed under apps/ledger/public/evidence/, so the reference was cleared rather ` +
+        `than published as a dead link.`,
+      file: null,
+    });
+    return { ...run, evidencePackId: null };
+  });
   const runs = allRuns.slice(0, MAX_SNAPSHOT_RUNS);
+
+  // ── amendments and review cards, under the same rule ──────────────────────
+  //
+  // An amendment carries the evidence reference the router settled the branch
+  // from, and a review card carries one too. Neither is exempt from rule 3: a
+  // reference nothing committed is a link a judge clicks and lands nowhere, and the
+  // rest of the record — the diff, the rationale, the interlock — is unaffected by
+  // clearing it.
+  const clearRef = <T extends { readonly id: string; readonly evidenceRef: string | null }>(
+    entry: T,
+    kind: string,
+  ): T => {
+    if (entry.evidenceRef === null) return entry;
+    const packId = evidencePackIdFromRef(entry.evidenceRef);
+    if (packId !== null && packs.has(packId)) return entry;
+    report({
+      code: SNAPSHOT_DIAGNOSTIC_CODES.repairEvidenceUnresolved,
+      severity: 'warn',
+      message:
+        `${kind} '${entry.id}' references '${entry.evidenceRef}', which resolves to ` +
+        `${packId === null ? 'no evidence pack' : `pack '${packId}'`} in this snapshot, so the ` +
+        `reference was cleared rather than published as a dead link.`,
+      file: null,
+    });
+    return { ...entry, evidenceRef: null };
+  };
+  const amendments = (request.amendments ?? []).map((amendment) =>
+    clearRef(amendment, 'Amendment'),
+  );
+  const reviewCards = (request.reviewCards ?? []).map((card) => clearRef(card, 'Review card'));
   if (allRuns.length > runs.length) {
     report({
       code: SNAPSHOT_DIAGNOSTIC_CODES.runsTruncated,
@@ -245,8 +295,8 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     documents: [...documents],
     evidence: [...evidence],
     runs: [...runs],
-    reviewCards: [...(request.reviewCards ?? [])],
-    amendments: [...(request.amendments ?? [])],
+    reviewCards,
+    amendments,
     // The graph's own diagnostics first — they happened first — then this
     // module's, so `/runs` reads in the order the build discovered things.
     diagnostics: [...graph.diagnostics, ...sink.entries],

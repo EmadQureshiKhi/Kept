@@ -331,6 +331,16 @@ export interface HandoffOutcome {
   readonly reasonCode: string | null;
   /** Through `credits()`, which prefers `credits_consumed` (§4.4, R14.7). */
   readonly credits: number | null;
+  /**
+   * Wall-clock milliseconds the invocation took, as the invoker measured it.
+   *
+   * Optional, and the only optional field in the file: handoffs written before
+   * this field existed carry no key, and `/runs` renders that as `not reported`
+   * rather than as a zero — a zero is a number a run produced, and those runs
+   * produced none. A present value is always a measurement; nothing here derives
+   * one from two timestamps.
+   */
+  readonly durationMs?: number | null;
 }
 
 /** The radius the run was scoped to (§7.3, R4.5). Empty lists, never absent. */
@@ -491,6 +501,8 @@ export interface BuildHandoffRequest<F extends CommandFamily = CommandFamily> {
   };
   /** The raw process exit code, from the invoker. */
   readonly exitCode?: number | null;
+  /** Wall-clock milliseconds the invoker measured. Absent means unmeasured. */
+  readonly durationMs?: number | null;
   /** Triage reason code, when one was read. Defaults to the terminal's own. */
   readonly reasonCode?: string | null;
   readonly radius?: BlastRadius | null;
@@ -671,10 +683,17 @@ export function buildHandoff<F extends CommandFamily = CommandFamily>(
     timedOut: exitMeaning !== null && TIMED_OUT_MEANINGS.has(exitMeaning),
     resumable: exitMeaning === 'paused-resumable',
     verdictsPermitted: run !== null && mayWriteVerdicts(run),
-    status: readString(terminal, 'status'),
+    // `status` on the two other families; `overall_status` on `testrun_done`, which
+    // is `{type, execution_id, overall_status}` and carries no `status` key at all
+    // (observed on the live stream, recorded in `docs/kane/command-surface.md`).
+    // Reading only the first spelling made `/runs` publish `not reported` for a
+    // status Kane had reported one key over — the exact silent wrong answer the
+    // three-terminal-contract table exists to prevent.
+    status: readString(terminal, 'status') ?? readString(terminal, 'overall_status'),
     resultCode: terminal === null ? null : resultCode(terminal),
     reasonCode: request.reasonCode ?? readString(terminal, 'reason_code'),
     credits: terminal === null ? null : credits(terminal),
+    durationMs: request.durationMs ?? null,
   };
 
   const radius = request.radius ?? null;

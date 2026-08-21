@@ -255,11 +255,60 @@ describe('the committed snapshot — the honest degraded state', () => {
     expect(Number.isFinite(Date.parse(SNAPSHOT.freshness.terminalEventAt ?? ''))).toBe(true);
   });
 
-  it('still claims no evidence, no run entry and no amendment it has not earned', () => {
+  it('still claims no evidence and no review card it has not earned', () => {
     expect(SNAPSHOT.evidence).toEqual([]);
-    expect(SNAPSHOT.runs).toEqual([]);
     expect(SNAPSHOT.reviewCards).toEqual([]);
-    expect(SNAPSHOT.amendments).toEqual([]);
     for (const promise of SNAPSHOT.promises) expect(promise.credits).toBeNull();
+  });
+
+  /**
+   * The terminal-event log, projected off `.kept/handoff/` (15.6). Every field here
+   * is either a figure Kane reported or an explicit null, and the nulls are the
+   * interesting half: this family's terminal event carries no result code and no
+   * credit figure at all, and publishing a zero for either would be a claim about
+   * what the run cost.
+   */
+  it('publishes the runs it recorded, with the figures Kane did not report left null', () => {
+    expect(SNAPSHOT.runs.length).toBeGreaterThan(0);
+    for (const run of SNAPSHOT.runs) {
+      expect(run.family).toBe('ExecutionTestrun');
+      expect(run.command.startsWith('testrun run')).toBe(true);
+      // No `--agent` on this family, and no `--from-context` in either scope.
+      expect(run.command).not.toContain('--agent');
+      expect(run.command).not.toContain('--from-context');
+      expect(run.terminalEventType).toBe('testrun_done');
+      // A pack reference is published only when the pack is committed (§9.1 rule 3).
+      if (run.evidencePackId !== null) {
+        expect(SNAPSHOT.evidence.map((pack) => pack.id)).toContain(run.evidencePackId);
+      }
+      // `startedAt` is never derived from `endedAt` minus a duration.
+      expect(run.startedAt).toBeNull();
+      for (const member of run.members) {
+        expect(['passed', 'failed', 'broken', 'interrupted']).toContain(member.status);
+      }
+    }
+  });
+
+  /**
+   * The docs-lie amendment (15.5). It is `pending` in the committed file and the
+   * cited line still makes the claim it proposes to replace — those two facts
+   * together are R7.4: nothing was written until a human accepted, and no human
+   * has.
+   */
+  it('publishes the staged docs-lie amendment, pending and unapplied', () => {
+    expect(SNAPSHOT.amendments).toHaveLength(1);
+    const amendment = SNAPSHOT.amendments[0];
+    expect(amendment?.status).toBe('pending');
+    expect(amendment?.appliedAt).toBeNull();
+    expect(amendment?.citation.file).toBe(README);
+    expect(amendment?.citation.line).toBe(DISCOUNT_CLAIM_LINE);
+    expect(amendment?.expectedSha256).toMatch(/^[0-9a-f]{64}$/);
+    // The amendment names the red promise, and the red promise is the docs-lie.
+    const red = SNAPSHOT.promises.find((promise) => promise.verdict === 'red');
+    expect(amendment?.promiseId).toBe(red?.id);
+    expect(red?.repair?.branch).toBe('docs-lie');
+    // The claim it replaces is still the claim the file makes.
+    expect(amendment?.currentText).toBe(red?.citation.text);
+    expect(amendment?.proposedText).not.toBe(amendment?.currentText);
   });
 });

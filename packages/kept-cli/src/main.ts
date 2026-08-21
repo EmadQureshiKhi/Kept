@@ -32,9 +32,10 @@ import { KaneInvoker, createDiagnosticSink } from '@kept/core';
 import { nodeStateFileSystem, type StateFileSystem } from '@kept/core';
 
 import type { ParsedArgv } from './args.js';
-import { EXIT_OK, EXIT_USAGE, parseArgv, readList } from './args.js';
+import { EXIT_OK, EXIT_USAGE, parseArgv, readList, readString } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
+import { runAmend } from './commands/amend.js';
 import { runBuild } from './commands/build.js';
 import type { EvolveHelpProbe } from './commands/evolve.js';
 import { runEvolve } from './commands/evolve.js';
@@ -57,6 +58,12 @@ export interface CliIo {
   readonly env: Record<string, string | undefined>;
   /** State and snapshot reads and writes. Defaults to `node:fs`. */
   readonly fileSystem?: StateFileSystem | undefined;
+  /**
+   * Directory listings — `.kept/amendments/` and `.kept/handoff/`. Defaults to
+   * `node:fs`. Injected so a test that seeds an in-memory filesystem can also be
+   * seen by the two projections that enumerate a directory rather than read a path.
+   */
+  readonly readDirectory?: ((path: string) => readonly string[]) | undefined;
   /** Fixed instant, so a test can assert the snapshot's `generatedAt`. */
   readonly now?: (() => Date) | undefined;
   /**
@@ -87,11 +94,11 @@ export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze([
   'verify',
   'reconcile',
   'evolve',
+  'amend',
 ]);
 
 /** Which task lands each unimplemented command, so the message can say so. */
 const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
-  amend: 'task 14.5',
   handoff: 'task 12.11',
   doctor: 'task 16.2',
   watch: 'task 16.4',
@@ -157,6 +164,8 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
       return await dispatchReconcile(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'evolve':
       return await dispatchEvolve(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'amend':
+      return await dispatchAmend(parsed, { repoRoot, config, fileSystem, sink, at, io });
     default:
       return reportPending(parsed, { repoRoot, config, sink, io });
   }
@@ -644,12 +653,138 @@ async function dispatchEvolve(
   return EXIT_OK;
 }
 
+/**
+ * `kept amend propose | list | show | accept | reject` (design §8.3, §8.4, §13.1).
+ *
+ * The verb arrives as `subcommand` and the id as `positionals[0]`, the same shape
+ * `kept reconcile apply` and `kept evolve` use. Exit code zero for every outcome,
+ * including the two refusals worth naming: a document that moved under a proposal
+ * (`stale` — the interlock did its job, and no byte was written) and a `docs-lie`
+ * with no `--text` (KEPT does not write documentation prose). Both are states of the
+ * world, not failures of KEPT (§14.2).
+ */
+async function dispatchAmend(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const result = await runAmend({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    subcommand: parsed.subcommand,
+    id: parsed.positionals[0] ?? null,
+    runId: readString(parsed.flags, 'run'),
+    text: readString(parsed.flags, 'text'),
+    fileSystem: context.fileSystem,
+    ...(context.io.readDirectory === undefined
+      ? {}
+      : { readDirectory: context.io.readDirectory }),
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'amend',
+          subcommand: result.subcommand,
+          implemented: true,
+          repoRoot: context.repoRoot,
+          runId: result.runId,
+          amendments: result.amendments,
+          proposals: result.proposals.map((proposal) =>
+            proposal.ok
+              ? {
+                  ok: true,
+                  id: proposal.amendment.id,
+                  path: proposal.path,
+                  wrote: proposal.wrote,
+                  existed: proposal.existed,
+                }
+              : { ok: false, reason: proposal.reason },
+          ),
+          pending: result.pending.map((entry) => ({
+            promiseId: entry.promiseId,
+            citation: entry.citation,
+            branch: entry.repair?.branch ?? null,
+            rationale: entry.repair?.rationale ?? null,
+          })),
+          accepted:
+            result.accepted === null
+              ? null
+              : {
+                  outcome: result.accepted.outcome,
+                  applied: result.accepted.applied,
+                  successorPromiseId: result.accepted.successorPromiseId,
+                  rebuildRequired: result.accepted.rebuildRequired,
+                },
+          rejected: result.rejected === null ? null : { outcome: result.rejected.outcome },
+          rebuilt: result.rebuilt,
+          snapshot:
+            result.snapshot === null
+              ? null
+              : { path: result.snapshot.path, written: result.snapshot.written },
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept amend ${result.subcommand ?? '(no verb)'}`,
+        `  repository   ${context.repoRoot}`,
+        ...(result.runId === null ? [] : [`  run          ${result.runId}`]),
+        ...(result.pending.length === 0
+          ? []
+          : [`  docs-lie     ${result.pending.length} claim(s) the router settled`]),
+        ...result.amendments.map(
+          (amendment) =>
+            `  ${amendment.id}   ${amendment.status}  ` +
+            `${amendment.citation.file}:${amendment.citation.line}\n` +
+            `    was        ${amendment.currentText}\n` +
+            `    proposed   ${amendment.proposedText}`,
+        ),
+        ...(result.accepted === null
+          ? []
+          : [
+              `  outcome      ${result.accepted.outcome}` +
+                `${result.accepted.applied ? ', one line written' : ', no document byte written'}`,
+              `  successor    ${result.accepted.successorPromiseId ?? 'none'}`,
+              `  graph        ${result.rebuilt ? 'rebuilt' : 'unchanged'}`,
+            ]),
+        ...(result.rejected === null ? [] : [`  outcome      ${result.rejected.outcome}`]),
+        ...(result.snapshot === null
+          ? []
+          : [
+              `  snapshot     ${
+                result.snapshot.written ? 'written' : 'unchanged, already byte-identical'
+              }`,
+            ]),
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // A stale interlock, a missing run, a claim with no replacement: all data (§14.2).
+  return EXIT_OK;
+}
+
 function dispatchSnapshot(parsed: ParsedArgv, context: Dispatch): number {
   const result = runSnapshot({
     repoRoot: context.repoRoot,
     fileSystem: context.fileSystem,
     diagnostics: context.sink,
     generatedAt: context.at,
+    ...(context.io.readDirectory === undefined
+      ? {}
+      : { readDirectory: context.io.readDirectory }),
   });
 
   if (parsed.options.json) {
@@ -773,7 +908,8 @@ export const USAGE = [
   '  reconcile --changed <p…>   stage documentation reconciliation (--plan)',
   '  reconcile apply [plan]     walk a stored plan (human-only, never a hook)',
   '  evolve <testPath>          propose a test-drift repair',
-  '  amend propose|list|show|accept|reject   documentation amendments',
+  '  amend propose --run <id> --text <s>     stage a docs-lie amendment',
+  '  amend list|show|accept|reject <id>      review, apply or decline one',
   '  handoff [--run <id>]       print the agent handoff for a run',
   '  doctor                     report the environment, including kane-cli',
   '  watch                      tail NDJSON and listen for loopback accepts',

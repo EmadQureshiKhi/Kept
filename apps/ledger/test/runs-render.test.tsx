@@ -29,7 +29,7 @@ import { SnapshotRunSchema, contractFor } from '@kept/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DiagnosticBlock } from '../app/runs/DiagnosticBlock.js';
-import { RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
+import { NOT_REPORTED, RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
 import RunsPage from '../app/runs/page.js';
 import {
   NO_RUNS_DETAIL,
@@ -105,20 +105,27 @@ function renderRow(run: SnapshotRun) {
   );
 }
 
-/* ───────────────────────────── the empty log, today ────────────────────────── */
+/* ─────────────────────── the log, now that it has entries ──────────────────── */
 
-describe('/runs — the empty state says something true and specific', () => {
-  it('names the fact rather than shrugging, and connects it to the withheld figure', () => {
+describe('/runs — the recorded terminal events', () => {
+  it('renders one row per recorded run, with the empty state gone', () => {
+    // The invitation the previous version of this test left — "the committed
+    // snapshot has gained runs — good, widen this" — was taken up in 15.6, when
+    // `kept snapshot` began projecting `/runs` off the persisted handoffs.
+    expect(snapshot.runs.length).toBeGreaterThan(0);
     const { container, unmount } = render(<RunsPage />);
     const text = container.textContent ?? '';
 
-    expect(snapshot.runs.length, 'the committed snapshot has gained runs — good, widen this').toBe(
-      0,
-    );
-    expect(text).toContain(NO_RUNS_HEADLINE);
-    expect(text).toContain(NO_RUNS_DETAIL);
-    expect(text).toContain('Terminal events (0)');
-    expect(container.querySelector('.runs-table'), 'no table for an empty log').toBeNull();
+    expect(text).not.toContain(NO_RUNS_HEADLINE);
+    expect(text).not.toContain(NO_RUNS_DETAIL);
+    expect(text).toContain(`Terminal events (${snapshot.runs.length})`);
+    expect(container.querySelector('.runs-table'), 'a table for a populated log').not.toBeNull();
+    expect(container.querySelectorAll('.runs-table__row')).toHaveLength(snapshot.runs.length);
+    for (const run of snapshot.runs) {
+      expect(text, `${run.id} is not on the page`).toContain(run.command);
+      // A figure the run never reported reads `not reported`, never `0`.
+      if (run.durationMs === null) expect(text).toContain(NOT_REPORTED);
+    }
     unmount();
   });
 

@@ -277,14 +277,25 @@ export const SnapshotRunMemberSchema = z.strictObject({
   verdict: z.enum(VERDICTS),
 });
 
-/** One Kane invocation, as `/runs` renders it. Newest first, capped at 20. */
+/**
+ * One Kane invocation, as `/runs` renders it. Newest first, capped at 20.
+ *
+ * The three timing fields are nullable for the same reason `credits` is: a run
+ * entry is projected from the persisted handoff (R11.7), and a handoff written
+ * before the invoker's measurement was carried into it has no duration to report.
+ * `/runs` renders that as `not reported`, never as `0 ms` — a zero is a figure a
+ * run produced, and those runs produced none. `startedAt` is never *derived* from
+ * `endedAt` minus a duration either: two of the three present and one null is a
+ * more useful file than three fields where one is arithmetic dressed as a
+ * measurement.
+ */
 export const SnapshotRunSchema = z.strictObject({
   id: z.string().min(1),
   family: z.enum(COMMAND_FAMILIES),
   command: z.string().min(1),
-  startedAt: isoTimestamp,
-  endedAt: isoTimestamp,
-  durationMs: nonNegativeInt,
+  startedAt: isoTimestamp.nullable(),
+  endedAt: isoTimestamp.nullable(),
+  durationMs: nonNegativeInt.nullable(),
   exitCode: z.number().int().nullable(),
   exitMeaning: z.enum(EXIT_MEANINGS),
   terminalSeen: z.boolean(),

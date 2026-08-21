@@ -86,21 +86,38 @@ function amendment(
   });
 }
 
-/* ────────────────────────── the live path: nothing on file ─────────────────── */
+/* ──────────────── the live path: the real docs-lie, staged (15.5) ──────────── */
 
-describe('/amendments states the empty case rather than showing a blank', () => {
-  it('renders the committed snapshot, which carries no amendment yet', () => {
-    expect(snapshot.amendments).toEqual([]);
-    const { container } = render(<AmendmentsPage />);
-    expect(container.textContent).toContain(AMENDMENTS_EMPTY);
-    // It says what would put one here, in prose, rather than shrugging.
+describe('/amendments renders the amendment the committed snapshot carries', () => {
+  it('shows the staged docs-lie as a pending card, one per amendment', () => {
+    // Stage 15.5 proposed this off T-7's real red verdict. Until then the page had
+    // only its empty state to render, and `AMENDMENTS_EMPTY` still says what would
+    // put a card here in prose rather than shrugging.
+    expect(snapshot.amendments).toHaveLength(1);
     expect(AMENDMENTS_EMPTY).toContain('docs-lie');
-    expect(container.querySelectorAll('.amendment-card')).toHaveLength(0);
+
+    const { container } = render(<AmendmentsPage />);
+    expect(container.textContent).not.toContain(AMENDMENTS_EMPTY);
+    expect(container.querySelectorAll('.amendment-card')).toHaveLength(1);
+    const amendment = snapshot.amendments[0];
+    expect(container.textContent).toContain(amendment?.id ?? 'no amendment');
+    // The claim and the replacement, both verbatim, which is the whole card.
+    expect(container.textContent).toContain(amendment?.proposedText ?? '');
+    expect(container.textContent).toContain(
+      `${amendment?.citation.file ?? ''}:${amendment?.citation.line ?? 0}`,
+    );
+    // The accept control names the command rather than performing it: the Ledger
+    // still exposes no non-GET handler (§8.5, R8.4).
+    expect(container.textContent).toContain(`kept amend accept ${amendment?.id ?? ''}`);
   });
 
   it('counts what it is showing, so the count is checkable against the list', () => {
     const { container } = render(<AmendmentsPage />);
-    expect(container.textContent).toContain('0 amendments on file, 0 pending');
+    const pending = snapshot.amendments.filter((entry) => entry.status === 'pending').length;
+    expect(container.textContent).toContain(
+      `${snapshot.amendments.length} amendment${snapshot.amendments.length === 1 ? '' : 's'} ` +
+        `on file, ${pending} pending`,
+    );
     expect(container.textContent).toContain(snapshot.generatedAt);
   });
 });

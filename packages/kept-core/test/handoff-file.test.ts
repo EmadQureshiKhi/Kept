@@ -462,6 +462,33 @@ describe('a proven failing run produces the instruction of design §11.2', () =>
     expect(handoff.outcome.verdictsPermitted).toBe(true);
   });
 
+  it('reads the status `testrun_done` actually carries, which is `overall_status`', () => {
+    // The live terminal event is `{type, execution_id, overall_status}` and carries
+    // no `status` key at all — observed, and recorded in
+    // `docs/kane/command-surface.md`. Reading only `status` published
+    // `not reported` for a status Kane had reported one key over.
+    const live = buildHandoff({
+      runId: 'a1039478-409c-4213-a5e8-fcf8480a56f8',
+      run: testrunOutcome([
+        JSON.stringify({ type: 'testrun_plan', valid: true, members: [] }),
+        JSON.stringify({
+          type: 'testrun_done',
+          execution_id: 'a1039478-409c-4213-a5e8-fcf8480a56f8',
+          overall_status: 'failed',
+        }),
+      ]),
+      exitCode: 1,
+      durationMs: 240_712,
+      at: AT,
+    });
+    expect(live.outcome.status).toBe('failed');
+    // And the invoker's measurement is carried rather than derived from two
+    // timestamps, so `/runs` can publish a duration it did not compute.
+    expect(live.outcome.durationMs).toBe(240_712);
+    // Absent when nothing measured it: a zero would be a figure the run produced.
+    expect(handoff.outcome.durationMs).toBeNull();
+  });
+
   it('carries the citation verbatim, which is the specification the agent repairs against', () => {
     const result = handoff.results[0];
     expect(result?.citation).toEqual({ file: 'apps/fixture/README.md', line: 16, text: CLAIM });

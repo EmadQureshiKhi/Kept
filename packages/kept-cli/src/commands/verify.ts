@@ -741,6 +741,9 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     runId,
     run: outcome,
     exitCode: invocation?.exitCode ?? null,
+    // Measured by the invoker, carried rather than derived: `/runs` publishes a
+    // duration only when a process was actually timed (§10.1).
+    durationMs: invocation?.durationMs ?? null,
     radius,
     results,
     trigger: request.trigger ?? { hook: null, event: null, paths: changed },

@@ -1,0 +1,242 @@
+{
+  "command": "amend",
+  "subcommand": "propose",
+  "implemented": true,
+  "repoRoot": "/Users/nokitha/Desktop/KEPT",
+  "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+  "amendments": [
+    {
+      "id": "am_57fdcb99",
+      "createdAt": "2026-08-21T04:55:58.756Z",
+      "status": "pending",
+      "promiseId": "p_45ccecba7aa5",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 20,
+        "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+      },
+      "currentText": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
+      "proposedText": "- The Cart screen shows the order total with no automatic discounts.",
+      "expectedSha256": "1c7787fbfaba2e89da402864bad8efa73ea5e411e30cd9561e3aebc8740b039a",
+      "rationale": "Run 108dbb62-4f20-46ec-abbd-3b8be6c6e13c reported failed for tests/cart_discount_test.md and the failureYamlTriage router settled it as docs-lie. No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt.",
+      "evidenceRef": ".testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence",
+      "artifacts": {},
+      "strategy": "failureYamlTriage",
+      "appliedAt": null
+    }
+  ],
+  "proposals": [
+    {
+      "ok": true,
+      "id": "am_57fdcb99",
+      "path": "/Users/nokitha/Desktop/KEPT/.kept/amendments/am_57fdcb99.json",
+      "wrote": true,
+      "existed": false
+    }
+  ],
+  "pending": [
+    {
+      "promiseId": "p_45ccecba7aa5",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 20,
+        "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
+      },
+      "branch": "docs-lie",
+      "rationale": "No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt."
+    }
+  ],
+  "accepted": null,
+  "rejected": null,
+  "rebuilt": false,
+  "snapshot": {
+    "path": "/Users/nokitha/Desktop/KEPT/apps/ledger/data/ledger.snapshot.json",
+    "written": true
+  },
+  "diagnostics": [
+    {
+      "code": "amendment-proposed",
+      "severity": "info",
+      "message": ".kept/amendments/am_57fdcb99.json proposes replacing apps/fixture/README.md:20. No documentation byte was written: run `kept amend accept am_57fdcb99` to apply it, and the interlock refuses if that line has changed in the meantime.",
+      "file": ".kept/amendments/am_57fdcb99.json",
+      "line": null,
+      "at": "2026-08-21T04:55:58.776Z"
+    },
+    {
+      "code": "snapshot-evidence-pack-absent",
+      "severity": "warn",
+      "message": "The graph references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', and no readable archive exists at /Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence.evidence. Sealed packs are gitignored and regenerated per run, so a fresh clone reaching this state is expected; nothing was curated for it and the reference will be cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.778Z"
+    },
+    {
+      "code": "snapshot-records-projected",
+      "severity": "info",
+      "message": "kept snapshot: projected 2 terminal events from .kept/handoff/ and 1 amendment from .kept/amendments/. Both are projections of persisted records; neither is a source of truth this command invents.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.782Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_177308118beb' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 19,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_365815f2bcca' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 18,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_45ccecba7aa5' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 20,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-repair-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_45ccecba7aa5' has a repair annotation referencing '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared.",
+      "file": "apps/fixture/README.md",
+      "line": 20,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_6ca9700b8471' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 14,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_8d965c2fae07' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 16,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_a972e6fcb195' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 15,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 13,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_eb071a709ed0' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 17,
+      "at": "2026-08-21T04:55:58.783Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_45ccecba7aa5 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_8d965c2fae07 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '108dbb62-4f20-46ec-abbd-3b8be6c6e13c' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'kept-verify:2026-08-21T03:38:59.518Z' references evidence pack 'ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.784Z"
+    },
+    {
+      "code": "snapshot-written",
+      "severity": "info",
+      "message": "kept snapshot: wrote 31826 bytes carrying 8 promises",
+      "file": null,
+      "line": null,
+      "at": "2026-08-21T04:55:58.798Z"
+    }
+  ]
+}

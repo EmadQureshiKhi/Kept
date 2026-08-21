@@ -265,6 +265,10 @@ function isKnownValueFlag(name: string): boolean {
     name === 'repo' ||
     name === 'router' ||
     name === 'run' ||
+    // `kept amend propose --text '<sentence>'` — the replacement KEPT will not
+    // invent for itself (§8.3, R7.3). A value flag, and never a boolean, so a
+    // sentence beginning with a dash is still refused rather than half-parsed.
+    name === 'text' ||
     name === 'from' ||
     name === 'source-id' ||
     VARIADIC_FLAGS.includes(name)

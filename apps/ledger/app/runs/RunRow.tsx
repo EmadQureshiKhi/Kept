@@ -111,7 +111,9 @@ export function RunRow({ run }: RunRowProps) {
         <td className="runs-table__cell credits-column">
           {run.credits === null ? <Absent /> : String(run.credits)}
         </td>
-        <td className="runs-table__cell run-duration">{`${run.durationMs} ms`}</td>
+        <td className="runs-table__cell run-duration">
+          {run.durationMs === null ? <Absent /> : `${run.durationMs} ms`}
+        </td>
         <td className="runs-table__cell">
           <span className="run-outcome" data-tone={outcome.tone}>
             <span className="run-outcome__label">{outcome.label}</span>

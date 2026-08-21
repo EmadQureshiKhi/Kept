@@ -73,6 +73,7 @@ describe('help and usage', () => {
       'verify',
       'reconcile',
       'evolve',
+      'amend',
     ]);
     for (const command of IMPLEMENTED_COMMANDS) expect(USAGE).toContain(command);
   });

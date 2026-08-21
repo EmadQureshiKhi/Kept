@@ -48,13 +48,14 @@
  */
 
 import { inflateRawSync } from 'node:zlib';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 import type {
   ArtifactKind,
   CollectingDiagnosticSink,
   Diagnostic,
   DiagnosticSink,
+  HandoffFile,
   KeptState,
   LedgerSnapshot,
   SnapshotAmendment,
@@ -62,14 +63,20 @@ import type {
   SnapshotEvidence,
   SnapshotReviewCard,
   SnapshotRun,
+  SnapshotRunMember,
   StateFileSystem,
 } from '@kept/core';
 import {
+  HANDOFF_DIRECTORY_RELATIVE_PATH,
   classifyArtifact,
   createDiagnosticSink,
   createStateStore,
   evidencePackIdFromRef,
+  isMemberStatus,
+  listAmendments,
   nodeStateFileSystem,
+  parseHandoff,
+  toSnapshotAmendment,
 } from '@kept/core';
 
 import { joinPath } from '../config.js';
@@ -89,6 +96,10 @@ export const SNAPSHOT_COMMAND_DIAGNOSTIC_CODES = Object.freeze({
   evidencePackUnreadable: 'snapshot-evidence-pack-unreadable',
   evidencePackEmpty: 'snapshot-evidence-pack-empty',
   evidencePackOversize: 'snapshot-evidence-pack-oversize',
+  /** A file under `.kept/handoff/` this version cannot read. The rest still load. */
+  runUnreadable: 'snapshot-run-unreadable',
+  /** How many terminal events and amendments the projection found on disk. */
+  recordsProjected: 'snapshot-records-projected',
 } as const);
 
 /** The codes as a list, so a test can enumerate them. */
@@ -484,6 +495,172 @@ export function referencedPackIds(state: KeptState): readonly string[] {
   return ids;
 }
 
+/* ─────────────────────── runs and amendments, off the disk ───────────────────
+ *
+ * `/runs` is the terminal-event log and `/amendments` is the docs-lie surface, and
+ * until now both were rendered from fields nothing ever filled: every caller of
+ * `buildSnapshot` left `runs` and `amendments` at their defaults, so the two pages
+ * published their empty states on a repository that had recorded nine members and a
+ * red verdict. The record already existed on disk — `.kept/handoff/<runId>.json` is
+ * written for **every** run (R11.7) and `.kept/amendments/<id>.json` for every
+ * proposal (§8.3) — so this is a projection of persisted state, not a new source of
+ * truth, and it stays exactly as much of one as the evidence curation above.
+ *
+ * Two rules keep it honest. A handoff that **invoked nothing** is not a terminal
+ * event and is left out: an empty blast radius and a missing binary both write a
+ * handoff, and neither is a run. And only `warn` and `error` diagnostics are
+ * carried, because the `/runs` detail row is headed *reasons and diagnostics* and an
+ * `info` progress note is neither.
+ */
+
+/** The directory seam, so these collectors can be tested without a disk. */
+export type DirectoryReader = (path: string) => readonly string[];
+
+/** The production reader: `node:fs`, answering `[]` for an absent directory. */
+export const nodeDirectoryReader: DirectoryReader = (path: string): readonly string[] => {
+  try {
+    return readdirSync(path);
+  } catch {
+    return [];
+  }
+};
+
+/** The members one handoff reported on, deduped, in the order they were recorded. */
+function runMembersOf(handoff: HandoffFile): readonly SnapshotRunMember[] {
+  const members: SnapshotRunMember[] = [];
+  const seen = new Set<string>();
+  for (const result of handoff.results) {
+    // Verbatim from the wire, so `broken` stays distinguishable from `failed`
+    // (R4.9). A result whose member status never arrived has no member row.
+    if (result.designedTest === null || result.memberStatus === null) continue;
+    if (!isMemberStatus(result.memberStatus)) continue;
+    const key = `${result.designedTest}\u0000${result.testId ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    members.push({
+      path: result.designedTest,
+      testId: result.testId,
+      status: result.memberStatus,
+      verdict: result.verdict,
+    });
+  }
+  return members;
+}
+
+/** One run entry, projected from one handoff. Null when it is not a run. */
+export function runFromHandoff(handoff: HandoffFile): SnapshotRun | null {
+  if (!handoff.command.invoked) return null;
+  if (handoff.command.family === null) return null;
+  // `exitMeaning` is how §14.1 names what happened, and every invocation has one.
+  // A handoff that claims a process ran and reports no meaning for its exit is not
+  // a run this log can describe, so it is left out rather than given a default.
+  if (handoff.outcome.exitMeaning === null) return null;
+  const command = handoff.command.argv.join(' ');
+  if (command.length === 0) return null;
+
+  const duration = handoff.outcome.durationMs ?? null;
+  const verdictObject =
+    handoff.results.find((result) => result.verdictObject !== null)?.verdictObject ?? null;
+
+  return {
+    id: handoff.runId,
+    family: handoff.command.family,
+    command,
+    // The handoff records one instant — when it was written, which is the instant
+    // the terminal event was consumed. A `startedAt` would be that minus a
+    // duration, which is arithmetic rather than a measurement, so it stays null.
+    startedAt: null,
+    endedAt: handoff.writtenAt,
+    durationMs: duration === null ? null : Math.max(0, Math.round(duration)),
+    exitCode: handoff.outcome.exitCode,
+    exitMeaning: handoff.outcome.exitMeaning,
+    terminalSeen: handoff.outcome.terminalSeen,
+    terminalEventType: handoff.outcome.terminalEventType,
+    status: handoff.outcome.status,
+    resultCode: handoff.outcome.resultCode,
+    reasonCode: handoff.outcome.reasonCode,
+    credits: handoff.outcome.credits,
+    verdictObject: verdictObject === null ? null : { ...verdictObject },
+    evidencePackId:
+      handoff.results.find((result) => result.evidencePackId !== null)?.evidencePackId ?? null,
+    members: [...runMembersOf(handoff)],
+    diagnostics: handoff.diagnostics
+      .filter((entry) => entry.severity !== 'info')
+      .map((entry) => ({ ...entry })),
+  };
+}
+
+/**
+ * Every run the repository has persisted, newest first.
+ *
+ * Sorted on the handoff's own `writtenAt` rather than on a file mtime, because a
+ * clone's mtimes are a fact about the clone and the instant the terminal event was
+ * consumed is a fact about the run.
+ */
+export function collectRuns(request: {
+  readonly repoRoot: string;
+  readonly fileSystem?: StateFileSystem | undefined;
+  readonly readDirectory?: DirectoryReader | undefined;
+  readonly diagnostics?: DiagnosticSink | undefined;
+}): readonly SnapshotRun[] {
+  const fileSystem = request.fileSystem ?? nodeStateFileSystem();
+  const readDirectory = request.readDirectory ?? nodeDirectoryReader;
+  const directory = joinPath(request.repoRoot, HANDOFF_DIRECTORY_RELATIVE_PATH);
+
+  const runs: SnapshotRun[] = [];
+  for (const name of [...readDirectory(directory)].sort()) {
+    if (!name.endsWith('.json')) continue;
+    let text: string | null;
+    try {
+      text = fileSystem.readFile(`${directory}/${name}`);
+    } catch {
+      text = null;
+    }
+    const handoff = text === null ? null : parseHandoff(text);
+    if (handoff === null) {
+      request.diagnostics?.report({
+        code: SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.runUnreadable,
+        severity: 'warn',
+        message:
+          `${HANDOFF_DIRECTORY_RELATIVE_PATH}/${name} is not a handoff this version can read, ` +
+          `so it contributes no run entry. The rest of the log is unaffected.`,
+        file: `${HANDOFF_DIRECTORY_RELATIVE_PATH}/${name}`,
+      });
+      continue;
+    }
+    const run = runFromHandoff(handoff);
+    if (run !== null) runs.push(run);
+  }
+
+  return Object.freeze(
+    runs.sort((left, right) => {
+      const l = Date.parse(left.endedAt ?? '');
+      const r = Date.parse(right.endedAt ?? '');
+      if (Number.isNaN(l) || Number.isNaN(r) || l === r) {
+        return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+      }
+      return r - l;
+    }),
+  );
+}
+
+/** Every staged amendment, in the shape the snapshot carries (§8.3, R7.5). */
+export function collectAmendments(request: {
+  readonly repoRoot: string;
+  readonly fileSystem?: StateFileSystem | undefined;
+  readonly readDirectory?: DirectoryReader | undefined;
+  readonly diagnostics?: DiagnosticSink | undefined;
+}): readonly SnapshotAmendment[] {
+  const amendments = listAmendments(request.repoRoot, {
+    ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+    ...(request.readDirectory === undefined
+      ? {}
+      : { readDirectory: request.readDirectory as (path: string) => readonly string[] }),
+    ...(request.diagnostics === undefined ? {} : { diagnostics: request.diagnostics }),
+  });
+  return Object.freeze(amendments.map(toSnapshotAmendment));
+}
+
 /* ──────────────────────────────── the command ──────────────────────────────── */
 
 /** {@link runSnapshot}'s input. Every seam has a production default. */
@@ -509,9 +686,17 @@ export interface SnapshotRequest {
   readonly sealedEvidenceDir?: string | undefined;
   /** The curation filesystem. Defaults to `node:fs`. */
   readonly curationFileSystem?: CurationFileSystem | undefined;
+  /**
+   * The terminal-event log. Omit it and the command projects it from
+   * `.kept/handoff/`, which is the normal path; pass it — even as `[]` — to project
+   * a state without reading the persisted handoffs.
+   */
   readonly runs?: readonly SnapshotRun[] | undefined;
   readonly reviewCards?: readonly SnapshotReviewCard[] | undefined;
+  /** Staged amendments. Omit it and the command reads `.kept/amendments/`. */
   readonly amendments?: readonly SnapshotAmendment[] | undefined;
+  /** Directory listing for both projections above. Defaults to `node:fs`. */
+  readonly readDirectory?: DirectoryReader | undefined;
   readonly diagnostics?: CollectingDiagnosticSink | undefined;
 }
 
@@ -567,15 +752,50 @@ export function runSnapshot(request: SnapshotRequest): SnapshotResult {
     curatedBytes = curated.bytes;
   }
 
+  // The terminal-event log and the amendment surface, projected off the records
+  // `kept verify` and `kept amend propose` already persisted. Omitting either
+  // discovers it; passing one — even as `[]` — projects a state without reading
+  // `.kept/handoff/` or `.kept/amendments/` at all, which is what every unit test
+  // of this command wants.
+  const runs =
+    request.runs ??
+    collectRuns({
+      repoRoot: request.repoRoot,
+      fileSystem,
+      diagnostics: sink,
+      ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
+    });
+  const amendments =
+    request.amendments ??
+    collectAmendments({
+      repoRoot: request.repoRoot,
+      fileSystem,
+      diagnostics: sink,
+      ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
+    });
+  if (request.runs === undefined || request.amendments === undefined) {
+    sink.report({
+      code: SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.recordsProjected,
+      severity: 'info',
+      message:
+        `kept snapshot: projected ${runs.length} terminal event` +
+        `${runs.length === 1 ? '' : 's'} from ${HANDOFF_DIRECTORY_RELATIVE_PATH}/ and ` +
+        `${amendments.length} amendment${amendments.length === 1 ? '' : 's'} from ` +
+        `.kept/amendments/. Both are projections of persisted records; neither is a source ` +
+        `of truth this command invents.`,
+      file: null,
+    });
+  }
+
   const built = buildSnapshot({
     state,
     diagnostics: sink,
     evidence,
+    runs,
+    amendments,
     ...(request.generatedAt === undefined ? {} : { generatedAt: request.generatedAt }),
     ...(request.kaneCliVersion === undefined ? {} : { kaneCliVersion: request.kaneCliVersion }),
-    ...(request.runs === undefined ? {} : { runs: request.runs }),
     ...(request.reviewCards === undefined ? {} : { reviewCards: request.reviewCards }),
-    ...(request.amendments === undefined ? {} : { amendments: request.amendments }),
   });
 
   if (!built.valid) {
