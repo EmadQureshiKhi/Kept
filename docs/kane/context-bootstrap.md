@@ -198,6 +198,41 @@ not compute the same way. The only thread that survives is the slug: `id: readme
 plainly derived from `README.md`. Matching on that would be a new rung with a
 basename-slug rule, which is a design change and needs the user, not a patch.
 
+## `design tests` wrote four Kane-format `_test.md` files, and they answer follow-up 4
+
+Unannounced by any event field, the design step wrote its four tests to disk at
+`.testmuai/tests/*_test.md`. `.gitignore` ignores `.testmuai/evidence/` and
+`.testmuai/variables/` but not `.testmuai/tests/`, so they are committed here. The
+BaselineProvider skips `.testmuai` when scanning `**/*_test.md`, so they mint no promise and
+change no graph — `npm run check` is green with them present.
+
+They matter because they are **Kane's own canonical `_test.md`, written by Kane**, which is
+the missing half of the corpus-format collision recorded as follow-up 4 in
+`docs/kane/verdict-spike.md`:
+
+```yaml
+---
+assurance:
+  id: t-4
+  base: sha256:ce82c727fdff767577bf3b47fde75466e6a2820424d3e271c192f2bdee9fbf04
+---
+# Recalculate the subtotal correctly after a below-threshold quantity change
+
+> Prove that changing a cart quantity updates the displayed subtotal correctly …
+
+## Step 1
+…
+## Step 6 — assert @verifies ac-3, ac-2, ac-4
+```
+
+Three things to note for that follow-up. The logical id lives under `assurance.id` and is
+spelled `t-4`, lower case, so nothing here is a home for KEPT's `test_id: T-3`. Steps are
+`## Step N` headings, confirming that a numbered prose list under an `# H1` parses to zero
+steps. And Kane puts a `@verifies` clause **in a step heading**, pointing at its own AC ids
+rather than at a source line — the same word KEPT uses for `file:line` citations, with a
+different referent. Any reconciliation has to disambiguate those two spellings rather than
+assume they are one tag.
+
 ## Corrections this bootstrap makes to `docs/kane/command-surface.md`
 
 1. **`context list` has no `--mode` flag.** It is `--json`, and it is not addressable
