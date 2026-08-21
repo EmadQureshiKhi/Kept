@@ -620,7 +620,12 @@ export interface HandoffResultInput {
    * caller that has already mutated its copy.
    */
   readonly previousVerdict?: Verdict;
-  /** The router's answer. Defaults to the record's existing annotation. */
+  /**
+   * The router's answer for this promise. **Absent and `null` mean different
+   * things**: absent defers to the record's existing annotation, `null` states that
+   * this run routed nothing — which is what a member that *passed* reports, and
+   * which must not be overwritten by the branch the promise carried before.
+   */
   readonly repair?: RoutedRepair | null;
   /** The raw wire `verdict` object; normalised here. Absent is fine. */
   readonly verdictObject?: unknown;
@@ -736,7 +741,14 @@ function resultOf(input: HandoffResultInput): HandoffResult {
     // The record is the pre-run one, so its own verdict is the previous verdict.
     previousVerdict: input.previousVerdict ?? promise.verdict,
     citation: promise.citation,
-    repair: input.repair ?? promise.repair ?? null,
+    // `undefined` means "the caller has no opinion, use the record's annotation";
+    // `null` means "this run routed nothing for this promise". `??` conflated them,
+    // and the consequence was visible the first time `code-break` fired live: a
+    // member that *passed* carried the previous run's branch into the handoff,
+    // because `applyRun` clears `repair` on a proven verdict but the pre-run record
+    // handed to this builder still had it. The handoff is an instruction, so that
+    // read as "repair this promise" about a promise that had just gone green.
+    repair: input.repair !== undefined ? input.repair : promise.repair ?? null,
     verdictObject: verdictObjectOf(input.verdictObject),
     evidenceDir: input.evidence?.dir ?? null,
     evidencePackId: input.evidence?.pack?.id ?? promise.evidencePackId ?? null,

@@ -1,0 +1,34 @@
+step: 3-5
+status: broken
+error:
+  message: 'assertion_failed: @ step 5'
+  type: replay_failure
+page_state:
+  url: http://localhost:3100/cart
+  screenshot: steps/14-3-5/screenshot.jpg
+locator_context:
+  replay_reason: 'assertion_failed: @ step 5'
+console_at_failure:
+  ref: logs/3-console.ndjson
+  step: 3-5
+network_at_failure:
+  ref: logs/3-network.har
+  step: 3-5
+title: Cart subtotal ignores item quantity
+triage:
+  status: triaged
+  by:
+    kind: agent
+    id: v16-investigation/replay
+    at: '2026-08-21T08:43:04.742761+00:00'
+  rca:
+    root_cause: The order summary is showing the price for one bag instead of the
+      full amount for all three bags in the cart.
+    category: application_issue/ui_data_defect
+    confidence: 0.95
+  verification:
+    status: not_verified
+  severity: major
+  suggested_fix:
+    summary: Check the cart summary math so Subtotal and Total use the full quantity
+      in the cart, then add a regression test for quantity 3.

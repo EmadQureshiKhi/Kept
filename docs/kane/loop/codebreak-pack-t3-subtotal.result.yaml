@@ -1,0 +1,143 @@
+evidence: '0.1'
+test: cart-subtotal-d5ba3490
+status: broken
+duration_ms: 23204
+definition:
+  path: test.md
+  sha256: sha256:feef2e0a1b0e89ee6e6fa5493815ca446e19d9802cd0b9c197b7e8c9775ba8b5
+definition_id: sha256:06af203a713d139d1faae35e6b25e7c012ebbcdfb7a1f88a2de12405c4455b15
+external_id:
+  execution_id: 58fb2dfa-94f1-4190-8922-cd8e2079bfe6
+  session_id: 7fabd07a-4cde-4519-8816-c608cad3cef9
+  commit_id: 1bcf2ed3-337c-4d9f-9de0-ee16ce08d073
+  test_id: 1c4fff07-a0da-495b-8471-26d45b4a1441
+  testcase_id: 01M0GY7Q7PX16VY5W79RNSX4AE
+  project_id: 01M0E80FB9PQ3DCXR1FT5Q0V1M
+  folder_id: 01M0E80FYRHKR7HS51MZ582PY7
+  org_id: '3281604'
+  session_name: cart_subtotal
+  user_name: emadqureshi965
+  user_email: emadqureshi965@gmail.com
+tags:
+  - cart
+  - subtotal
+  - breakable
+environment:
+  model: v16-alpha
+  os: macOS
+  browser: Chrome
+  browser_version: '151'
+  resolution: 1440x788
+  platform: Desktop
+  platform_type: web
+  run_kind: replay
+  os_version: 14.6.1
+steps:
+  - id: 0-1
+    ordinal: 1
+    status: passed
+    kind: navigate
+    duration_ms: 200
+    action_id: 3a70901d-0184-4b54-a379-bb722bcf9318
+  - id: 0-2
+    ordinal: 2
+    status: passed
+    kind: wait
+    duration_ms: 700
+    action_id: 477f513f-4cb6-47f4-9a3e-d6f729149ec8
+  - id: 0-3
+    ordinal: 3
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: a9109ced-22d2-4a19-b92e-9921bb720915
+  - id: 0-4
+    ordinal: 4
+    status: passed
+    kind: assert
+    duration_ms: 100
+    action_id: 9146d419-d3b1-4c19-9bf5-19fa1a73f91c
+  - id: 1-1
+    ordinal: 5
+    status: passed
+    kind: navigate
+    duration_ms: 200
+    action_id: 4f0a75cf-29f1-42eb-99b2-de2f06cf8c14
+  - id: 1-2
+    ordinal: 6
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: ef1ef632-8c2e-46b8-8e2f-f4f462ad2d55
+  - id: 2-1
+    ordinal: 7
+    status: passed
+    kind: navigate
+    duration_ms: 200
+    action_id: 3926192f-e58d-42ae-b3c6-9da8664852fa
+  - id: 2-2
+    ordinal: 8
+    status: passed
+    kind: click
+    duration_ms: 600
+    action_id: 0e59a77b-1547-464d-9ab0-6d69ee793f96
+  - id: 3-1
+    ordinal: 9
+    status: passed
+    kind: navigate
+    duration_ms: 200
+    action_id: f182ea90-028b-45a1-9a22-4dc5fe69d405
+  - id: 3-2
+    ordinal: 10
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: 8b50a09f-d65b-4b17-ac8e-32e176e42dc2
+  - id: 3-3
+    ordinal: 11
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: a8f8e4ed-45d6-45bc-8daa-34149e3cbcfa
+  - id: 3-4
+    ordinal: 12
+    status: passed
+    kind: assert
+    duration_ms: 100
+    action_id: dd78028e-924c-4ad3-bc9b-dff658714f92
+  - id: 4-1
+    ordinal: 13
+    status: passed
+    kind: click
+    duration_ms: 600
+    action_id: afab23ec-f3a6-481f-9849-64eb4cea0ee1
+  - id: 4-2
+    ordinal: 14
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: f8a51934-013b-4403-aaca-bbabfd7a0d54
+  - id: 4-3
+    ordinal: 15
+    status: passed
+    kind: assert
+    duration_ms: 0
+    action_id: 943a5777-88f6-4a03-a935-3724236a7f63
+  - id: 5-1
+    ordinal: 16
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: f2e6ff33-1a1e-4f90-8669-08fc7d7c122d
+  - id: 5-2
+    ordinal: 17
+    status: passed
+    kind: analyze
+    duration_ms: 100
+    action_id: 9548ea40-46db-4575-821d-9ff8aa986783
+  - id: 5-3
+    ordinal: 18
+    status: failed
+    kind: assert
+    duration_ms: 100
+    action_id: 5b70f58b-18d0-4fdb-8669-30ae867c757a

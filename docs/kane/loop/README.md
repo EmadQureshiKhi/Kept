@@ -1,202 +1,262 @@
-# The closed loop, driven live — and the one clause it does not yet satisfy
+# The closed loop, driven live — and the `code-break` branch, finally firing
 
-`apps/fixture/lib/cart.ts` was broken on its one-line `subtotal` body, the fixture
-was rebuilt and reserved, `kept verify --changed` was fired twice, and the subtotal
-promise moved **red → proven**. Both handoffs, both captured `[member]` streams and
-the snapshot carrying both terminal events are committed here.
+`apps/fixture/lib/cart.ts` was broken on its one-line `subtotal` body, `kept verify
+--changed` was fired, the branch came back **`code-break`** with a fixture-source write
+fence, the line was repaired inside that fence, and the second verification landed the
+promise on **`proven`**. Both handoffs, both captured `[member]` streams, both sealed
+triage notes and the four balance readings are committed here.
 
-One clause of the task is **not** met, and it is not met for a measured reason rather
-than an unfinished one: the red run's repair branch is `docs-lie`, not `code-break`.
-Everything below is the evidence for why, because that gap is the most interesting
-thing this run produced.
+**This is the first time `code-break` has ever fired in this project.** Everything
+before it routed `docs-lie` — including, twice, a deliberately broken `subtotal`. The
+first half of this document is the run; the second half is why it took three findings
+and one specification decision to get there, because that is the more useful half.
 
 | file | what it is |
 |---|---|
 | `the-one-line.txt` | the break and the repair, one line each |
-| `verify-red.*` | `kept verify --changed apps/fixture/lib/cart.ts --member-debug`, broken build |
-| `red-0944d075.handoff.json` | the handoff that run wrote (`.kept/` is gitignored) |
-| `red-0944d075.member.ndjson` | the `[member]` stream it captured — 10 step groups, 2 members |
-| `verify-green.*` | the same command against the repaired build |
-| `green-57591bff.handoff.json` / `.member.ndjson` | the same two records for the green run |
-| `pack-failure-yaml-index.yaml` | the sealed pack's top-level triage index |
-| `pack-failure-yaml-cart-subtotal.yaml` | the per-step triage note for the broken subtotal |
-| `balance-*.txt` | `kane-cli balance` either side of each run |
+| `codebreak-verify-red.*` | `kept verify --changed apps/fixture/lib/cart.ts --member-debug`, broken build |
+| `codebreak-red-defd438c.handoff.json` | the handoff that run wrote (`.kept/` is gitignored) |
+| `codebreak-red-defd438c.member.ndjson` | the `[member]` stream it captured |
+| `codebreak-verify-green.*` / `codebreak-green-f4cc8633.*` | the same four records for the repaired build |
+| `codebreak-pack-t3-subtotal.failure.yaml` | the sealed triage note that decided the branch |
+| `codebreak-pack-t3-subtotal.result.yaml` | the `external_id` block that attributed it to a member |
+| `codebreak-pack-t7-discount.*` | the same two files for the never-true claim, which is the counter-example |
+| `codebreak-balance-*.txt` | `kane-cli balance` either side of each run |
+| `pack-failure-yaml-*.yaml`, `red-0944d075.*`, `green-57591bff.*`, `verify-red.*`, `verify-green.*` | the earlier `docs-lie` pair, kept as the evidence for findings 1 to 4 |
 
-## The verdict transition, which is the thing being demonstrated
+## The run
 
-| run | `tests/cart_subtotal_test.md` | promise `p_8d965c2fae07` |
+Two members in the radius, because `apps/fixture/lib/cart.ts` is covered by both the
+subtotal test and the discount test.
+
+### Red — `defd438c-8f4d-4768-87c8-3cff627a2443`
+
+| member | verdict | Kane's sealed category | branch |
+|---|---|---|---|
+| `cart_subtotal_test.md` (T-3) | **`proven` → `red`** | `application_issue/ui_data_defect` 0.96 | `code-break` |
+| `cart_discount_test.md` (T-7) | `red` → `red` | `application_issue/ui_data_defect` 0.97 | `code-break` |
+
+```
+next action  code-break
+autonomy     apply
+allowedPaths apps/fixture/app/** apps/fixture/components/** apps/fixture/lib/**
+```
+
+The fence was granted **because T-3 was `proven` before this run** — §8.1.1. T-7 was
+not, and the handoff says so rather than leaving it to be noticed:
+
+```
+warn handoff-code-break-unproven
+  promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict
+  before this run was 'red', not 'proven'. There is no observed earlier state to
+  restore, so an automatic patch would implement the claim rather than repair a
+  regression, and no path is authorised for it — though another promise in this radius
+  was proven, so the run does carry a write fence.        (apps/fixture/README.md:20)
+```
+
+### Green — `f4cc8633-43cb-4799-95b2-000093f3cffd`
+
+| member | verdict | branch |
 |---|---|---|
-| `0944d075-8dab-4683-a59f-96e51308697c` | `failed` | **red** |
-| `57591bff-4480-455e-9ab7-c92263ff58ac` | `passed` | **proven** |
+| `cart_subtotal_test.md` (T-3) | **`red` → `proven`** | none — it passed |
+| `cart_discount_test.md` (T-7) | `red` → `red` | `test-drift` |
 
-Same command, same argv, same recording. The only thing that changed between them is
-one line of application source. Seven promises are proven and the eighth is the
-designed never-true discount claim, exactly as before the break — so the loop moved a
-verdict and moved nothing else (R4.15).
-
-Both runs went through `mayWriteVerdicts`: `testrun_done` arrived, exit meaning
-`failure`, so the guard admitted them. Neither was widened to make that true.
+Same command, same argv, same recordings. One line of application source changed
+between them. Seven promises proven and the eighth still the designed never-true claim,
+so the loop moved one verdict and moved nothing else (R4.15). Both runs went through
+`mayWriteVerdicts` on a real `testrun_done` at exit meaning `failure`; neither guard was
+widened.
 
 Measured cost, from `kane-cli balance` either side:
 
 | run | delta |
 |---|---|
-| red | 7.76 |
-| green | 10.26 |
+| red | 4.99 |
+| green | 14.99 |
 
-A replay is free where it passes and costs a judgement where it fails, which is what
-15.3 measured over the whole suite and what holds here over two members.
+A replay is free where it passes and costs a judgement where it fails.
 
-## Blocker resolved: `kept verify --changed` could not run at all
+## Why it took this long
 
-R4.2 specifies the save-hook replay as `testrun run --from-context <ids>`. Against
-0.8.4 that argv **exits 2**: the flag resolves ids against the assurance graph and a
-plan member's `test_id` is a testcase UUID that does not live there. So every
-save-triggered verification would have failed before this task, and the closed loop
-could not fire. The argv now names the plan's member **paths**, exactly as `--all`
-already did; the radius is still computed from plan identifiers and nothing else
-(R4.4, Property 16). The observed error text is in `docs/kane/command-surface.md`.
+### Finding 1: `testrun_member_end` carries no classification signal at all
 
-## Finding 1: `testrun_member_end` carries no classification signal at all
+`path`, `test_id`, `status`. **That is all** — no `result_code`, no `reason_code`, no
+`verdict` object, across six live runs, and `verdictSource.resultCode` is `null` in
+every committed run entry. Design §6.2's ladder reads the verdict object first and the
+coerced code second; neither had anything to read, so every failure fell to the triage
+rung — and the note was inside a sealed zip nothing opened.
 
-The event carries `path`, `test_id` and `status`. **That is all.** No `result_code`,
-no `reason_code`, no `verdict` object — verified across six live runs and visible in
-every committed run entry, where `verdictSource.resultCode` is `null`.
+R4.12 is the fix. Under `KANE_TESTRUN_MEMBER_DEBUG=1` each member's own `testmd` stream
+is echoed on stderr prefixed `[member] `, `KaneInvoker` has an `onStderrLine` seam, and
+`kane/memberDebug.ts` cuts the stream into one segment per member at `test_md_done`.
+The stream is persisted to `.kept/diagnostics/<runId>.member.ndjson`.
 
-Design §6.2's ladder reads the verdict object first (rules 1 and 2) and the coerced
-code next (rule 3). Neither had anything to read, so every failure fell to rule 4,
-delegated to the triage note — and the note lives inside a sealed `.evidence`
-**zip** that `listArtifacts` does not open, so `failure-yaml-absent` was reported and
-the answer was `docs-lie`. **Every failure this project has ever routed was routed
-`docs-lie`, including a deliberately broken `subtotal`.** The three-way branch was a
-one-way branch that looked like it was working, because the one failure anyone had
-looked at closely was a genuine docs-lie.
+`--member-debug` is therefore **not a debugging flag.** It decides the repair branch.
 
-R4.12 is the fix and it was recorded as unimplemented in 15.3. Under
-`KANE_TESTRUN_MEMBER_DEBUG=1` each member's own `testmd` stream is echoed on stderr
-prefixed `[member] `, and the failing step group's `run_end` carries all three
-signals. `KaneInvoker` now has an `onStderrLine` seam — `stderrTail` keeps fifty
-lines and a two-member run produces two hundred — and `kane/memberDebug.ts` parses
-and attributes them. The stream is persisted to
-`.kept/diagnostics/<runId>.member.ndjson`, which is R4.12's second clause and the
-only reason the rest of this document could be written.
+Attribution is by **segment**, not by `run_id`: pairing `run_end` one-to-one gave forty
+terminals for nine members, because Kane replays a document as `run-0`, `run-1`, … per
+step group and restarts the numbering per member. Pairing refuses on any disagreement
+and attributes nothing rather than something wrong.
 
-`--member-debug` is therefore **not a debugging flag**. It decides the repair branch,
-and the code hook's prompt now says so and passes it.
+### Finding 2: `--bug-detection` is a profile setting, so the argv states it
 
-### Attribution is by segment, not by `run_id`
+`kane-cli config show` reports `"bug_detection":"off"` on this machine. Kane's
+investigation is what produces the code and the verdict object, so the branch depended
+on ambient state in another tool's config — changeable by anyone, invisible in the
+argv, absent from every recording. `--bug-detection continue` is now on every replay,
+for the same reason `--on-failure continue` is: the contract is the argv.
 
-The first attempt paired `run_end` events one-to-one with `testrun_member_end` and
-got **forty terminals for nine members**. Kane replays a `*_test.md` as a series of
-runs — `run-0`, `run-1`, … — one per step group, restarting the numbering for each
-member, and `run_id` names no member. The per-member boundary is `test_md_done`
-(`{type, overall_status, duration_s, session_id}`), of which there are exactly nine
-for nine members. So the stream is cut into **segments** at `test_md_done`, and each
-segment's signal is the step group that failed.
+### Finding 3: Kane's judgement of one unchanged failure is not stable
 
-Pairing then refuses on any disagreement — a length mismatch, or a status that
-contradicts the member event — and attributes nothing rather than something wrong. A
-verdict object on the wrong failure would authorise an automatic source patch against
-a promise nobody tested.
+`tests/cart_discount_test.md` asserts a claim that is false by construction and fails
+identically every time. What Kane has concluded about that one failure:
 
-## Finding 2: `--bug-detection` is a profile setting, so the argv now states it
-
-`kane-cli config show` on this machine reports `"bug_detection":"off"`. Kane's
-investigation is what produces the code and the verdict object, so the branch KEPT
-chooses depended on ambient state in another tool's config file — changeable by
-anyone, invisible in the argv, absent from every recording. `--bug-detection
-continue` is now on every replay for the same reason `--on-failure continue` is: the
-contract is the argv (R3.4, §4.7).
-
-It is not sufficient, which is finding 3.
-
-## Finding 3: Kane's own judgement of one unchanged failure is not stable
-
-The never-true discount claim, `tests/cart_discount_test.md`, fails identically every
-time. Kane's conclusion about that identical failure, read off the `[member]` stream:
-
-| run | `result_code` | `verdict` object | branch KEPT derives |
+| source | `result_code` | verdict object / category | branch it implies |
 |---|---|---|---|
-| 15.3's suite replay | `740` | `confirmed: true`, `application_issue`, confidence **0.95** | `code-break`, overridden to `docs-lie` |
-| `f4726521`, `f0d80fd8`, `0944d075` | *absent* | *absent* | `docs-lie` (residue) |
-| `57591bff` | `710` | `confirmed: false`, `ui_data_defect`, confidence **0.89** | `test-drift` |
+| 15.3's suite replay | `740` | `confirmed: true`, `application_issue`, 0.95 | `code-break` |
+| `f4726521`, `f0d80fd8`, `0944d075` | absent | absent | `docs-lie` residue |
+| `57591bff` | `710` | `confirmed: false`, `ui_data_defect`, 0.89 | `test-drift` |
+| pack `57591bff` | — | `application_issue/ui_data_defect` 0.89 | `code-break` |
+| pack `108dbb62` | — | `automation_bug/state_transition_bug` 0.91 | `test-drift` |
+| this document's green run | — | `ui_data_defect` 0.84 | `test-drift` |
 
-Three different branches for one unchanged failure, from one unchanged test, against
-one unchanged application. Kane sometimes investigates a replay failure and sometimes
-does not, and when it does it has said both *confirmed* and *not confirmed* about the
-same disagreement.
+Six samples, three branches, one unchanged failure against one unchanged application.
+Re-running until it says something convenient would be a coin flip presented as a
+demonstration, so that was never done.
 
-**This is why the red run reports `docs-lie` rather than `code-break`.** Rule 2 fires
-when Kane says `confirmed: true`; on the run that was committed here Kane said nothing
-at all. Re-running until it says the convenient thing would be a coin flip presented
-as a demonstration, so it was not done.
+### Finding 4: the conclusion KEPT needs was in a place nothing read
 
-## Finding 4: the conclusion KEPT needs exists, in a place nothing reads
-
-The investigation *did* run on the replay failures — it just wrote its answer into the
-sealed pack rather than onto the stream. `pack-failure-yaml-cart-subtotal.yaml` is the
-note for the broken subtotal, extracted from
-`.testmuai/evidence/0944d075-….evidence`:
+The investigation *did* run — it wrote its answer into the sealed pack rather than onto
+the stream. `codebreak-pack-t3-subtotal.failure.yaml`, from this run's own archive:
 
 ```yaml
-title: Cart summary totals stay at $18.00 while line total is $36.00
+title: Cart summary totals remain $18.00 while cart line total is $36.00
 triage:
   by: { kind: agent, id: v16-investigation/replay }
   rca:
-    root_cause: The cart summary is using the wrong amount. It is not matching the
-      item's quantity and line total…
+    root_cause: The cart summary is still showing the old amount instead of adding
+      up what is currently in the cart.
     category: application_issue/ui_data_defect
-    confidence: 0.96
+    confidence: 0.98
   severity: major
 ```
 
-`category: application_issue/ui_data_defect`, confidence 0.96, on the *first*
-attempt — a product fault, which is §6.3 row 1 and therefore `code-break`. Kane knew.
-Three things stand between that file and the branch, and each is a real change with a
-real decision in it:
+Three things stood between that file and the branch, and all three are now closed:
 
-1. **The note is inside a zip.** `listArtifacts` resolves a pack *directory*; Kane
-   seals a single `.evidence` archive. The CLI already has a zip reader (evidence
-   curation), so this is a matter of where the reader belongs, not whether one exists.
-2. **The category is nested one level deeper than the alias list reads.**
-   `TRIAGE_SIGNAL_FIELDS` tries `triage.category`; the real file spells it
-   `triage.rca.category`.
-3. **`application_issue` is not in `CODE_BREAK_SIGNALS`.** That list is deliberately
-   closed, because `code-break` is the one branch whose repair is applied
-   automatically. Adding Kane's own product-fault family to it is defensible and it is
-   not a change to make silently.
+1. **The note is inside a zip.** `listArtifacts` resolved a pack *directory*; Kane
+   seals a single `.evidence` archive. `kane/packArchive.ts` is the reader —
+   `node:zlib` `inflateRawSync`, no dependency added, no `unzip` spawned — shared with
+   the evidence curation that built it first.
+2. **The category is nested one level deeper than the alias list read.**
+   `triage.rca.category`, not `triage.category`, with `confidence` beside it and
+   `severity` one level up. The deeper spelling now leads the precedence list.
+3. **`application_issue` was missing from `CODE_BREAK_SIGNALS`.** The seven tokens
+   beside it were authored from Kane's documented vocabulary before any pack had been
+   opened. Without Kane's own product-fault family, a note reading
+   `application_issue/ui_data_defect` at 0.96 routed `docs-lie`.
 
-There is a fourth, and it is the one that needs a decision rather than an
-implementation: **the note is per failing step, under
-`tests/<slug>/steps/<n>/failure.yaml`, and nothing ties a slug to a member.** The
-top-level index names `test: cart-subtotal-d5ba3490` — a slug derived from the test
-document's title, not its path. Attributing a triage note to a member would mean
-inferring identity from a name, which is the one thing §7.1 and §4.6 exist to forbid,
-and the alternative — one note for the whole pack — would give two members in one
-radius the same branch. That is a specification question, so it was left as one.
+**And the fourth, which needed a decision rather than an implementation, is answered by
+the pack itself.** The note is per failing step, under
+`tests/<slug>/steps/<n-a-b>/failure.yaml`, where the slug derives from the document's
+*title* — `cart-subtotal-d5ba3490`. Matching a slug to a member path would infer
+identity from a name, which §7.1 and §4.6 exist to forbid. But each
+`tests/<slug>/result.yaml` carries an `external_id` block, and in it the member's own
+`test_id`:
+
+```yaml
+external_id:
+  execution_id: defd438c-8f4d-4768-87c8-3cff627a2443
+  test_id: 1c4fff07-a0da-495b-8471-26d45b4a1441      # cart_subtotal_test.md
+```
+
+```yaml
+external_id:
+  execution_id: defd438c-8f4d-4768-87c8-3cff627a2443
+  test_id: 4be09740-bce4-483f-ad83-9e6cc24bd421      # cart_discount_test.md
+```
+
+Those are the same UUIDs `testrun_member_end` reports and the same ones the blast radius
+selected. So identity is **read, not guessed**: `kane/packTriage.ts` keys notes by that
+`test_id`, locates the archive by this run's own `execution_id` so a previous or
+parallel run's pack is never opened, and attributes nothing to a member the pack does
+not name. No slug is ever compared to a path.
+
+## The decision: what Kane's vocabulary cannot say
+
+Closing findings 1 to 4 makes `code-break` reachable. It does not make it *safe*, and
+the reason is structural rather than a gap in a list.
+
+**Kane treats the designed test as the specification.** So for the never-true discount
+claim, `codebreak-pack-t7-discount.failure.yaml` reads
+`application_issue/ui_data_defect` at **0.97** — with, on the earlier `57591bff` pack,
+`suggested_fix: Check the cart's discount calculation … verify the total updates to 10%
+below the subtotal`. That is a correct description, on Kane's own terms, of a discount
+the cart never applies, written with no way to know the sentence was invented to be
+false. The genuinely broken `subtotal` earns the **same** category at 0.96.
+
+One token, two opposite meanings, and there is no third token meaning *the claim itself
+is false* — because from where Kane stands, the claim cannot be false. No widening of
+`CODE_BREAK_SIGNALS` fixes that.
+
+Had the branch alone been trusted, the red run above would have handed an agent
+`allowedPaths: apps/fixture/**` and the instruction *"restore the behaviour the cited
+claim describes"* for a claim describing a feature that has never existed. It would have
+set about **implementing a ten-percent discount nobody designed**. That is a worse
+failure than the routing bug it would be fixing: the system rewriting the product to
+match a lie.
+
+**So the distinction is made one layer up, on evidence Kane does not have: the promise's
+own prior verdict.** `proven` means KEPT itself witnessed the behaviour, with a terminal
+event and a sealed pack behind it — red after that is a regression, and restoring it is
+exactly what `code-break` is for. A promise never `proven` has no such witness.
+
+> **You cannot break what was never proven to work.**
+
+Design §8.1.1, R7.8, R7.9. It is a condition on §8.1's *autonomy* column, not on the
+branch: the router keeps returning what R6.3, R6.4 and R6.5 require, and the snapshot,
+`/runs` and the Ledger keep publishing Kane's real conclusion, which is the honest thing
+to show. Only the write path is withheld, and the withheld fence forbids every glob the
+granted one allowed — so it narrows, and Property 26's containment holds more strictly
+than before.
+
+That is visible in the two runs above. The red run granted the fence for T-3 and named
+T-7 as not having earned it. The green run's only failing member is T-7, and it carries
+no write path at all.
+
+## One defect this run found
+
+The first green handoff listed T-3 under `code-break` **after it had passed.**
+`applyRun` clears `repair` on a proven verdict, but the record handed to the handoff
+builder is the *pre-run* one and still carried the annotation, and
+`input.repair ?? promise.repair` could not tell "this run routed nothing" from "the
+caller has no opinion". A handoff is an instruction, so it was telling an agent to
+repair a promise that had just gone green. Absent and `null` are now different values,
+and `handoff-file.test.ts` pins both directions. The pair committed here was re-driven
+after the fix so that both records come from the shipped code.
 
 ## What was and was not obeyed
 
-The `code-break` fence authorises editing fixture source; `docs-lie` forbids it. The
-red run reported `docs-lie`, so **no agent repaired anything from that handoff.** The
-break was mine, made deliberately to drive the loop, and I reverted my own edit — the
-fence was not widened, and no repair was performed under an instruction that forbade
-it. `git diff` on `apps/fixture/lib/cart.ts` is empty.
+The break was made deliberately to drive the loop and the repair was the exact inverse
+of it, inside `nextAction.allowedPaths` and nowhere else. `git diff` on
+`apps/fixture/lib/cart.ts` is empty, and `apps/fixture/README.md` is unchanged at
+sha256 `b2118de7aef19263a2d6fb18eba0778e4120b5521077e6de4ed0d26383efadef`.
 
-`mayWriteVerdicts` is unchanged. `BRANCH_FENCES` is unchanged. The radius is still
-derived from `testrun_plan.members[].test_id` and from nothing else.
+`mayWriteVerdicts` is unchanged. `BRANCH_FENCES` is unchanged, and `fenceFor` still
+answers §8.1's table unconditionally — the new row is a separate constant applied at a
+single site. The radius is still derived from `testrun_plan.members[].test_id` and from
+nothing else.
 
 ## The stale-build trap, since it cost this project two spurious failures
 
-`next start` serves a prebuilt `.next`. Both runs here followed the full sequence —
-stop the server, `rm -rf apps/fixture/.next`, rebuild, restart, then **verify the
-served chunk** before spending a credit:
+`next start` serves a prebuilt `.next`. Every rebuild in this run followed the whole
+sequence — kill the server, `rm -rf apps/fixture/.next`, rebuild, restart, then **read
+the served chunk back over HTTP** and refuse to spend a credit unless it carries the
+intended form:
 
 ```
 broken:   function f(e){return a(e[0]?.price??0)}
 repaired: function f(e){return a(e.reduce((e,t)=>e+t.price*t.qty,0))}
 ```
 
-Both were confirmed by `curl` against `/_next/static/chunks/` before either
-verification ran. The `reduce` that remains in the broken bundle is `itemCount`, which
-is a different function and correct in both.
+The check is a hard gate in the driving script, not a habit. The `reduce` that remains
+in the broken bundle is `itemCount`, a different function, correct in both.

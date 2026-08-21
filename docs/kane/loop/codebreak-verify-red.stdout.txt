@@ -1,0 +1,8 @@
+kept verify --changed
+  repository   /Users/nokitha/Desktop/KEPT
+  radius       1c4fff07-a0da-495b-8471-26d45b4a1441, 4be09740-bce4-483f-ad83-9e6cc24bd421
+  command      testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue
+  outcome      failure, testrun_done seen
+  verdicts     2 written
+  next action  code-break
+  handoff      /Users/nokitha/Desktop/KEPT/.kept/handoff.json
