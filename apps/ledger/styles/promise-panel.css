@@ -21,8 +21,9 @@
  * argument for the verbatim quote being *source* and not commentary.
  *
  * Motion is one container transition on `opacity` and `transform` (§10.6.3), both on
- * the compositor. The staggered section reveal that sits over it belongs to stage 17
- * and needs no change here.
+ * the compositor. It stays a transition: M3, the staggered section reveal in
+ * `components/PanelStagger.tsx`, layers over it and touches only the sections, so
+ * dropping that flourish (§18.1) leaves the rule below sliding the panel as one unit.
  */
 
 .promise-panel {

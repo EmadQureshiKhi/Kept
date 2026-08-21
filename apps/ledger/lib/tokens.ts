@@ -99,6 +99,7 @@ export const TOKENS = {
   '--dur-slow': '420ms',
   '--dur-figure': '760ms',
   '--stagger-node': '24ms',
+  '--stagger-panel': '40ms',
   '--ease-out': 'cubic-bezier(.16, .84, .28, 1)',
   '--ease-in-out': 'cubic-bezier(.50, .00, .20, 1)',
   '--ease-emphasis': 'cubic-bezier(.20, .90, .10, 1)',

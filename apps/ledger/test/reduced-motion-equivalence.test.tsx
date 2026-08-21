@@ -64,6 +64,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 
 import LedgerPage from '../app/page.js';
 import { playGraphEntrance } from '../components/GraphEntrance.js';
+import { playPanelStagger } from '../components/PanelStagger.js';
+import { PromisePanel } from '../components/PromisePanel.js';
 import { playVerdictFlip } from '../components/VerdictFlip.js';
 import { VERDICT_RANK } from '../components/VerdictTag.js';
 import {
@@ -275,6 +277,29 @@ const ORCHESTRATIONS: readonly Orchestration[] = [
       expect(nodes.length, 'no promise node to enter, so M4 was not driven at all')
         .toBeGreaterThan(0);
       await playGraphEntrance(container);
+    },
+  },
+  {
+    /**
+     * M3 — the panel section cascade (§10.6.3). Driven on a panel rendered beside the
+     * page rather than on one inside it, and that is a statement about `/` rather than a
+     * convenience: `/` opens no panel, because a panel is what `?p=<id>` or a selection
+     * opens (§10.8). Opening one *inside* the compared container would make the two
+     * renders differ by a whole panel, which is a difference this file would report and
+     * be right to. So the orchestration runs over a real `PromisePanel` over a real
+     * promise, and the page comparison keeps comparing the page.
+     */
+    site: 'apps/ledger/components/PanelStagger.tsx',
+    drive: async () => {
+      const promise = snapshot.promises[0];
+      expect(promise, 'the snapshot carries no promise, so M3 was not driven at all')
+        .toBeDefined();
+      if (promise === undefined) return;
+      const beside = render(<PromisePanel promise={promise} />).container;
+      const panel = beside.querySelector<HTMLElement>('[data-promise-panel]');
+      expect(panel, 'no panel was rendered, so M3 was not driven at all').not.toBeNull();
+      if (panel === null) return;
+      await playPanelStagger(panel);
     },
   },
   {

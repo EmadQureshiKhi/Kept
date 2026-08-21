@@ -32,15 +32,22 @@
  * Mono is texture (§10.7): ids, `path:line`, test ids, result and reason codes, member
  * statuses, credit figures and artefact names. The claim, the rationale and every
  * empty-state sentence are prose, in `--font-ui`.
+ *
+ * **Motion (§10.6.3, task 17.6).** The panel's own slide and fade is the plain CSS
+ * transition on `.promise-panel`; M3 adds only the section cascade, through
+ * `usePanelStagger`. So the claim is on the page before its evidence is, and deleting
+ * `PanelStagger.tsx` leaves this component rendering exactly what it renders today.
  */
 
 'use client';
 
 import clsx from 'clsx';
 import type { SnapshotEvidence, SnapshotPromise } from '@kept/core';
+import { useRef } from 'react';
 
 import { citationLabel, designedTestLabel } from '../lib/citation.js';
 
+import { usePanelStagger } from './PanelStagger.js';
 import { VerdictTag } from './VerdictTag.js';
 
 import '../styles/promise-panel.css';
@@ -104,11 +111,18 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
   const source = promise.verdictSource;
   const repair = promise.repair;
 
+  /* M3 (§10.6.3): the container's slide and fade stay the CSS transition below; the
+     sections cascade one `--stagger-panel` step behind it. The ref exists for that and
+     for nothing else. */
+  const panel = useRef<HTMLElement | null>(null);
+  usePanelStagger(panel, promise.id);
+
   return (
     <aside
       aria-labelledby={claimId}
       className={clsx('promise-panel', 'surface-raised-2', className)}
       data-promise-panel={promise.id}
+      ref={panel}
     >
       <div className="promise-panel__head">
         <span className="promise-panel__id">{promise.id}</span>

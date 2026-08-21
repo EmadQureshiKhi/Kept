@@ -106,6 +106,7 @@
   --dur-slow: 420ms;      /* verdict flip, edge draw          */
   --dur-figure: 760ms;    /* metric count-up                  */
   --stagger-node: 24ms;   /* per-node entrance offset         */
+  --stagger-panel: 40ms;  /* panel sections, behind the container */
 
   --ease-out: cubic-bezier(.16, .84, .28, 1);       /* settle: the default    */
   --ease-in-out: cubic-bezier(.50, .00, .20, 1);    /* move between two rests */
