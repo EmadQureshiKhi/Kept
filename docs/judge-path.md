@@ -59,13 +59,25 @@ It invokes Kane zero times, spends zero credits, reads no credential, and reache
 beyond localhost. The live Kane loop is a separate command, `npm run loop`, documented in the
 README with its prerequisites of a local Chrome installation and Kane CLI credentials.
 
+"Reaches nothing" is about what the page loads, and it is worth saying exactly where the line
+falls, because the colophon at the foot of every route carries two outbound links — the
+repository and the documents. Neither is a request. No font, script, image, stylesheet or
+`fetch` names a host other than localhost, so a Ledger sitting open on a laptop with the
+network unplugged renders identically; the two links do nothing at all until a person clicks
+one, and clicking one leaves the Ledger. The suite below holds precisely that distinction: an
+absolute URL is allowed in an anchor's `href` and nowhere else.
+
 ## How these claims are held
 
 Two suites keep the figures and the guarantee from drifting apart once they are written down:
 
 - **`packages/kept-core/test/judge-path.test.ts`** scans `scripts/demo.mjs` and everything it
   transitively spawns for a Kane invocation, a subprocess, a credential read or an origin
-  beyond localhost. It then reads the figures back out of *this file* and checks them against
+  beyond localhost. The origin rule reads *position* as well as host: a remote `src`,
+  `srcSet`, `url()`, `@import`, `<link>` href, `<script src>`, font, `next/image` loader or
+  domain, or argument to `fetch` fails it, and a URL in an anchor's `href` does not — the one
+  case where naming a host loads nothing. Both directions are planted and asserted, so the
+  allowance cannot widen quietly. It then reads the figures back out of *this file* and checks them against
   Requirement 13.1's thirty-second ceiling — so editing a number here re-checks it, and
   deleting the line fails the suite. Every one of its rules is also proven to fire against a
   planted violation, because a scan that cannot fail is not a scan.

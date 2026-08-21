@@ -40,8 +40,29 @@ import { SERVICES, assertNoKaneInvocation, nextArgv } from '../../../scripts/dem
  *   2. `subprocess`         — any way for an app to start a process at all
  *   3. `kane-environment`   — a `KANE_*` variable read
  *   4. `credential-read`    — a key, token or secret pulled from the environment
- *   5. `off-origin`         — an absolute URL whose host is not localhost
+ *   5. `off-origin`         — an absolute URL the page itself would dereference
  *   6. `network-api`        — a request made by API rather than by URL literal
+ *
+ * ── Why rule 5 reads position and not only host ──────────────────────────────
+ *
+ * R13.3 is a claim about what the deployed page *does*: no remote font, no remote
+ * script, no remote image, no stylesheet pulled from anywhere, no request made by
+ * API. An `<a href>` does none of that. It is inert until a person clicks it, and
+ * clicking it leaves the Ledger, so a page carrying the colophon's two outbound
+ * links still reaches nothing for as long as it is open. Every other place a URL
+ * can sit — `src`, `srcSet`, a `url()`, an `@import`, a `<link>`'s own href, a
+ * `next/image` loader or domain, an argument to `fetch` — is dereferenced by the
+ * page, and those are what the rule fails on. So rule 5 asks where the URL is, not
+ * only whose host it names, and passes for exactly one position: an anchor's href.
+ *
+ * That narrowing is by position rather than by allowlist deliberately. An
+ * allowlisted URL is excused *wherever it is written*, so the two entries that
+ * would have turned this build green would equally have excused the first
+ * `<img src>` aimed at the same host — a hole opened by an edit that looks like it
+ * only moved a link. A URL reached through a named constant is held to the same
+ * standard: the constant earns the allowance only if **every** use of it in the
+ * tree is an anchor's href, so a single `src={REPOSITORY_HREF}` anywhere puts the
+ * URL straight back into the report.
  *
  * The quiet direction is not decoration. The Ledger quotes Kane's refusal message
  * verbatim, including the `kane-cli context ingest` command inside it, because a
@@ -282,6 +303,11 @@ function formatOffences(offences: readonly Offence[]): string {
  * `http://www.w3.org/2000/svg` is an XML namespace identifier on the badge's root
  * element. Nothing resolves it — it is a name that happens to be spelled as a URL,
  * and omitting it would make the badge invalid SVG rather than make it offline.
+ *
+ * It is a set of one and it stays a set of one. The colophon's two outbound links
+ * are pointedly *not* in here: an allowlist entry excuses a URL in every position,
+ * and what makes those two safe is the one position they occupy. That is
+ * {@link anchorHrefOnly}'s job, decided per occurrence.
  */
 const ALLOWED_ABSOLUTE_URLS = new Set(['http://www.w3.org/2000/svg']);
 
@@ -296,12 +322,15 @@ interface Origin {
   readonly host: string;
   /** Prose rather than program text. See {@link isCommentLine}. */
   readonly comment: boolean;
+  /** Character offset of the URL in the file's text, for the position read. */
+  readonly offset: number;
 }
 
-/** Every absolute URL in a file set, with its host split out. */
+/** Every absolute URL in a file set, with its host and its offset split out. */
 function originsIn(files: readonly ScannedFile[]): Origin[] {
   const found: Origin[] = [];
   for (const file of files) {
+    let lineStart = 0;
     file.lines.forEach((line, index) => {
       for (const match of line.matchAll(ABSOLUTE_URL)) {
         const url = match[0];
@@ -312,8 +341,10 @@ function originsIn(files: readonly ScannedFile[]): Origin[] {
           url,
           host: authority.split(':')[0] ?? '',
           comment: isCommentLine(line),
+          offset: lineStart + (match.index ?? 0),
         });
       }
+      lineStart += line.length + 1;
     });
   }
   return found;
@@ -340,12 +371,116 @@ function isCommentLine(line: string): boolean {
   );
 }
 
+/* ─────────────────── linked rather than fetched: the position ───────────────── */
+
+/**
+ * `href` `=`, an optional JSX brace and an optional quote, and then nothing — the
+ * text immediately before a URL that is being given to an `href` attribute.
+ *
+ * Anchored at the end so it reads what precedes *this* occurrence rather than
+ * anywhere on the line: `<a href="/docs">https://cdn.example.com/x.png</a>` puts a
+ * remote URL in element content, an `href` is on the same line, and the two have
+ * nothing to do with each other.
+ */
+const HREF_ASSIGNMENT = /href\s*=\s*\{?\s*['"`]?$/;
+
+/** A whole-line `const NAME = '<absolute url>'`, which is the only binding shape read. */
+const URL_CONSTANT =
+  /^\s*(?:export\s+)?const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*(?::\s*[^=]+)?=\s*(['"`])(https?:\/\/[^'"`]+)\2\s*(?:as\s+const\s*)?;?\s*$/;
+
+/** An `import`/`export` specifier line: moving a name is not using it. */
+const NAME_MOVED = /^\s*(?:import|export)\s*[{*]/;
+
+/** `NAME as OTHER` — a rename, which is how a tracked name stops being tracked. */
+const RENAMED = /^\s+as\s+[A-Za-z_$]/;
+
+/**
+ * The element an attribute belongs to: the nearest tag name opened before it.
+ *
+ * This is what separates the two `href`s that matter. `<a href="…">` navigates when
+ * a person clicks it; `<link rel="stylesheet" href="…">` is fetched by the document
+ * before anything is rendered, and both spell the attribute identically. Reading
+ * the owning tag is the only way to tell them apart, which is why the rule is not
+ * simply "an href is fine".
+ */
+function owningTag(before: string): string | null {
+  const openers = [...before.matchAll(/<\s*([A-Za-z][A-Za-z0-9.:_-]*)/g)];
+  return openers[openers.length - 1]?.[1] ?? null;
+}
+
+/**
+ * `true` when the text at `offset` is the value of an anchor's own `href`.
+ *
+ * The tag name is compared case-sensitively and the attribute is the lowercase
+ * `href`, because that pair is the element. A capitalised `<Link>` or `<A>` is a
+ * component whose behaviour belongs to whatever renders it — Next's router prefetch,
+ * say — and this suite reads text, so a component gets no allowance it cannot prove.
+ */
+function isAnchorHref(text: string, offset: number): boolean {
+  const before = text.slice(0, offset);
+  return HREF_ASSIGNMENT.test(before) && owningTag(before) === 'a';
+}
+
+/** Every whole-word occurrence of `name` in a file, as offsets. */
+function occurrencesOf(name: string, text: string): number[] {
+  const pattern = new RegExp(`(?<![\\w$])${name}(?![\\w$])`, 'g');
+  return [...text.matchAll(pattern)].map((match) => match.index ?? 0);
+}
+
+/**
+ * `true` when a name bound to a URL is used, and used *only*, as an anchor's href.
+ *
+ * Requires at least one such use: a constant holding a remote URL that nothing
+ * links is dead weight aimed at a host, and the next edit to reach for it is as
+ * likely to be an `<img src>` as an anchor. Import and export specifier lines are
+ * passed over — they move the name without dereferencing it, and any use at the far
+ * end is read where it happens. A rename is not passed over: `export { NAME as SRC }`
+ * would carry the URL out under a name this function is no longer following, and the
+ * whole allowance rests on having followed every use.
+ */
+function usedOnlyAsAnchorHref(name: string, files: readonly ScannedFile[]): boolean {
+  let anchored = 0;
+  for (const file of files) {
+    for (const offset of occurrencesOf(name, file.text)) {
+      const before = file.text.slice(0, offset);
+      const line = file.lines[before.split('\n').length - 1] ?? '';
+      /* the declaration is where the URL is written, not a place it is used */
+      if (URL_CONSTANT.exec(line)?.[1] === name) continue;
+      if (RENAMED.test(file.text.slice(offset + name.length))) return false;
+      if (NAME_MOVED.test(line)) continue;
+      if (!isAnchorHref(file.text, offset)) return false;
+      anchored += 1;
+    }
+  }
+  return anchored > 0;
+}
+
+/**
+ * `true` when this occurrence is a *linked* URL rather than a *fetched* one.
+ *
+ * Two shapes qualify and no others: the URL written straight into an anchor's
+ * `href`, and the URL bound to a constant every one of whose uses is an anchor's
+ * `href`. The second exists because the colophon names its two addresses at module
+ * scope so a render test can assert the words instead of reading them back off the
+ * DOM, and a rule that only understood the inline form would push that into the
+ * markup to satisfy a scan.
+ */
+function anchorHrefOnly(origin: Origin, files: readonly ScannedFile[]): boolean {
+  const file = files.find((candidate) => candidate.path === origin.path);
+  if (file === undefined) return false;
+  if (isAnchorHref(file.text, origin.offset)) return true;
+  const declaration = URL_CONSTANT.exec(file.lines[origin.line - 1] ?? '');
+  if (declaration === null || declaration[3] !== origin.url) return false;
+  return usedOnlyAsAnchorHref(declaration[1] ?? '', files);
+}
+
 function offOrigin(files: readonly ScannedFile[]): Origin[] {
   return originsIn(files).filter(
     (origin) =>
       !LOCAL_HOSTS.has(origin.host) &&
       !ALLOWED_ABSOLUTE_URLS.has(origin.url) &&
-      !origin.comment,
+      !origin.comment &&
+      !anchorHrefOnly(origin, files),
   );
 }
 
@@ -531,6 +666,20 @@ describe('every judge-path rule is proven to fire', () => {
     ).toBe(1);
   });
 
+  it('catches a remote image source, planted where the colophon lives', () => {
+    /* The edit rule 5's position read has to survive: someone adds a logo to the file
+       that already carries two allowed links, and reaches for a CDN. */
+    const lines = ['<img src="https://cdn.example.com/mark.png" alt="" />'];
+    const found = offOrigin([{ path: 'apps/ledger/app/layout.tsx', text: lines[0] ?? '', lines }]);
+    expect(found.map((origin) => origin.url)).toEqual(['https://cdn.example.com/mark.png']);
+  });
+
+  it('catches a remote url() in the stylesheet the colophon is painted by', () => {
+    const lines = ['  background-image: url(https://cdn.example.com/paper.png);'];
+    const found = offOrigin([{ path: 'apps/ledger/styles/shell.css', text: lines[0] ?? '', lines }]);
+    expect(found.map((origin) => origin.host)).toEqual(['cdn.example.com']);
+  });
+
   it('catches a request whose URL is only in the comment beside it', () => {
     const line = 'const res = await fetch(REMOTE); // https://kept.vercel.app/api';
     expect(
@@ -575,6 +724,204 @@ describe('the judge-path rules stay quiet on legitimate content', () => {
       expect(offOrigin([planted])).toEqual([]);
     });
   }
+});
+
+/* ──────────────── rule 5 reads position: both directions, planted ──────────── */
+
+/**
+ * The allowance is one position wide, and both edges of it are proven here.
+ *
+ * The first table is every way a page can be made to dereference a host. Each entry
+ * is a real edit someone could plausibly make to the Ledger, and each has to stay
+ * caught — that is the guarantee, and narrowing rule 5 by position is only honest if
+ * none of them slipped through the narrowing. The second table is the position that
+ * is now allowed, in the spellings the shell actually uses. The third is the pair of
+ * cases where a URL touches an anchor and still is not safe.
+ */
+describe('rule 5 distinguishes a fetched URL from a linked one', () => {
+  function plant(path: string, lines: readonly string[]): ScannedFile {
+    return { path, text: lines.join('\n'), lines };
+  }
+
+  const REMOTE = 'https://cdn.example.com';
+
+  const fetched: readonly {
+    readonly what: string;
+    readonly path: string;
+    readonly lines: readonly string[];
+  }[] = [
+    {
+      what: 'a remote src on an image',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<img className="hero" src="${REMOTE}/hero.png" alt="" />`],
+    },
+    {
+      what: 'a remote src on any other element',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<video src="${REMOTE}/tour.mp4" />`],
+    },
+    {
+      what: 'a remote srcSet',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<img src="/hero.png" srcSet="${REMOTE}/hero@2x.png 2x" alt="" />`],
+    },
+    {
+      what: 'a remote script',
+      path: 'apps/ledger/app/layout.tsx',
+      lines: [`<script src="${REMOTE}/analytics.js" />`],
+    },
+    {
+      what: 'a remote stylesheet link, whose attribute is also called href',
+      path: 'apps/ledger/app/layout.tsx',
+      lines: [`<link rel="stylesheet" href="${REMOTE}/reset.css" />`],
+    },
+    {
+      what: 'a remote url() in CSS',
+      path: 'apps/ledger/styles/shell.css',
+      lines: [`  background-image: url(${REMOTE}/paper.png);`],
+    },
+    {
+      what: 'an @import',
+      path: 'apps/ledger/styles/shell.css',
+      lines: ["@import url('https://fonts.googleapis.com/css2?family=Inter');"],
+    },
+    {
+      what: 'a remote font face',
+      path: 'apps/ledger/styles/tokens.css',
+      lines: [
+        '@font-face {',
+        '  font-family: "Inter";',
+        '  src: url("https://fonts.gstatic.com/s/inter/v13/inter.woff2") format("woff2");',
+        '}',
+      ],
+    },
+    {
+      what: 'a fetch to a remote host',
+      path: 'apps/ledger/lib/runs.ts',
+      lines: [`const res = await fetch('${REMOTE}/runs.json');`],
+    },
+    {
+      what: 'an XMLHttpRequest to a remote host',
+      path: 'apps/ledger/lib/runs.ts',
+      lines: ['const request = new XMLHttpRequest();', `request.open('GET', '${REMOTE}/runs.json');`],
+    },
+    {
+      what: 'a next/image loader that builds a remote URL',
+      path: 'apps/ledger/next.config.mjs',
+      lines: [
+        '  images: {',
+        `    loader: ({ src }) => '${REMOTE}/_image?u=' + encodeURIComponent(src),`,
+        '  },',
+      ],
+    },
+    {
+      what: 'a next/image remote domain',
+      path: 'apps/ledger/next.config.mjs',
+      lines: [`  images: { domains: ['${REMOTE}'] },`],
+    },
+    {
+      what: 'a remote URL in the content of an anchor rather than its href',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<a href="/docs">${REMOTE}/hero.png</a>`],
+    },
+    {
+      what: 'an anchor ping, which is a request the click really does make',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<a href="/docs" ping="${REMOTE}/click">Docs</a>`],
+    },
+    {
+      what: 'a component that claims to render an anchor, whose behaviour is not this repository\u2019s',
+      path: 'apps/ledger/app/page.tsx',
+      lines: [`<Link href="${REMOTE}/docs">Docs</Link>`],
+    },
+  ];
+
+  for (const entry of fetched) {
+    it(`still reports ${entry.what}`, () => {
+      const found = offOrigin([plant(entry.path, entry.lines)]);
+      expect(
+        found.map((origin) => origin.url),
+        `narrowing rule 5 to an anchor href let through ${entry.what}, which the page ` +
+          `dereferences itself: ${entry.lines.join(' / ')}`,
+      ).not.toEqual([]);
+    });
+  }
+
+  const linked: readonly { readonly what: string; readonly lines: readonly string[] }[] = [
+    {
+      what: 'a URL written straight into an anchor href',
+      lines: ['<a className="page-footer__link" href="https://github.com/EmadQureshiKhi/Kept">Repository</a>'],
+    },
+    {
+      what: 'a URL in JSX braces on an anchor href',
+      lines: ["<a href={'https://github.com/EmadQureshiKhi/Kept'}>Repository</a>"],
+    },
+    {
+      what: 'an anchor whose href is on its own line',
+      lines: [
+        '<a',
+        '  className="page-footer__link"',
+        '  href="https://github.com/EmadQureshiKhi/Kept/tree/main/docs"',
+        '>',
+        '  Docs',
+        '</a>',
+      ],
+    },
+    {
+      what: 'the colophon\u2019s shape: a named constant used only as an anchor href',
+      lines: [
+        "export const REPOSITORY_HREF = 'https://github.com/EmadQureshiKhi/Kept';",
+        '<a className="page-footer__link" href={REPOSITORY_HREF}>Repository</a>',
+      ],
+    },
+  ];
+
+  for (const entry of linked) {
+    it(`allows ${entry.what}`, () => {
+      const planted = plant('apps/ledger/app/layout.tsx', entry.lines);
+      expect(
+        offOrigin([planted]),
+        `${entry.what} is a link, not a request: nothing is loaded until a person clicks ` +
+          `it and clicking it leaves the Ledger`,
+      ).toEqual([]);
+      expect(findOffences([planted]), 'and no other rule should mind it either').toEqual([]);
+    });
+  }
+
+  it('reports a constant that is linked and also fetched', () => {
+    const planted = plant('apps/ledger/app/layout.tsx', [
+      "export const REPOSITORY_HREF = 'https://github.com/EmadQureshiKhi/Kept';",
+      '<a href={REPOSITORY_HREF}>Repository</a>',
+      '<img src={REPOSITORY_HREF} alt="" />',
+    ]);
+    expect(
+      offOrigin([planted]).map((origin) => origin.line),
+      'one anchor does not buy the constant a second position',
+    ).toEqual([1]);
+  });
+
+  it('reports a constant carried out of its file under another name', () => {
+    const planted = plant('apps/ledger/app/layout.tsx', [
+      "export const REPOSITORY_HREF = 'https://github.com/EmadQureshiKhi/Kept';",
+      '<a href={REPOSITORY_HREF}>Repository</a>',
+      'export { REPOSITORY_HREF as MARK_SRC };',
+    ]);
+    expect(
+      offOrigin([planted]).length,
+      'a rename walks the URL out under a name nothing here is following, and every use ' +
+        'is what the allowance rests on',
+    ).toBe(1);
+  });
+
+  it('reports a constant holding a remote URL that nothing links', () => {
+    const planted = plant('apps/ledger/lib/links.ts', [
+      "export const REPOSITORY_HREF = 'https://github.com/EmadQureshiKhi/Kept';",
+    ]);
+    expect(
+      offOrigin([planted]).length,
+      'a remote address no anchor uses is a host waiting for its first caller',
+    ).toBe(1);
+  });
 });
 
 /* ───────────────────────── the closure as it ships ─────────────────────────── */
@@ -639,14 +986,15 @@ describe('npm run demo spawns no Kane and needs no credentials', () => {
 });
 
 describe('the Ledger reaches nothing beyond localhost (R13.3)', () => {
-  it('names no absolute URL outside localhost and the XML namespace', () => {
+  it('dereferences no absolute URL outside localhost and the XML namespace', () => {
     const found = offOrigin(LEDGER_TEXT);
     expect(
       found,
       found.length === 0
         ? ''
         : `every figure the Ledger renders comes from the committed snapshot, so it has ` +
-          `no reason to name a remote host:\n` +
+          `no reason to reach a remote host. A URL a person can click is a link and is ` +
+          `allowed in an anchor href; anything else here is loaded by the page:\n` +
           found.map((origin) => `${origin.path}:${origin.line}  ${origin.url}`).join('\n'),
     ).toEqual([]);
   });
@@ -657,6 +1005,29 @@ describe('the Ledger reaches nothing beyond localhost (R13.3)', () => {
       0,
     );
     expect(all.some((origin) => ALLOWED_ABSOLUTE_URLS.has(origin.url))).toBe(true);
+  });
+
+  it('exercises the anchor-href position on the tree as it ships', () => {
+    /* The position read is only worth having if the shipped tree uses it. If the
+       colophon's links ever come off, this fails and the narrowing in `anchorHrefOnly`
+       should come off with them rather than sit there excusing nothing. */
+    const remote = originsIn(LEDGER_TEXT).filter(
+      (origin) =>
+        !LOCAL_HOSTS.has(origin.host) &&
+        !ALLOWED_ABSOLUTE_URLS.has(origin.url) &&
+        !origin.comment,
+    );
+    expect(
+      remote.length,
+      'no remote URL is allowed by position any more, so the position rule is dead code',
+    ).toBeGreaterThan(0);
+    for (const origin of remote) {
+      expect(
+        anchorHrefOnly(origin, LEDGER_TEXT),
+        `${origin.path}:${origin.line} names ${origin.url} somewhere other than an ` +
+          `anchor href`,
+      ).toBe(true);
+    }
   });
 });
 
