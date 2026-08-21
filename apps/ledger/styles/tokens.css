@@ -105,6 +105,7 @@
   --dur-base: 240ms;      /* panel, verdict colour            */
   --dur-slow: 420ms;      /* verdict flip, edge draw          */
   --dur-figure: 760ms;    /* metric count-up                  */
+  --dur-pulse: 1400ms;    /* the one edge pulse, start to rest, once */
   --stagger-node: 24ms;   /* per-node entrance offset         */
   --stagger-panel: 40ms;  /* panel sections, behind the container */
 

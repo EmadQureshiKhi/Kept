@@ -63,6 +63,11 @@ import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import LedgerPage from '../app/page.js';
+import {
+  EDGE_DRAW_ATTRIBUTES,
+  playEdgeDraw,
+  verdictEdgePaths,
+} from '../components/EdgeDraw.js';
 import { playGraphEntrance } from '../components/GraphEntrance.js';
 import { countUpDigitRun, playMetricCountUp } from '../components/MetricCountUp.js';
 import { countDigits } from '../components/MetricFigure.js';
@@ -237,6 +242,33 @@ function differences(
   return found;
 }
 
+/* ─────────────────────── an edge, since jsdom paints none ──────────────────── */
+
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+/**
+ * A real `<path>` inside a real React Flow edge wrapper, appended beside the page.
+ *
+ * Not a mock of anything this repository wrote: the element, the drawable the engine builds
+ * over it and the attributes it writes are all real. It exists because jsdom does no layout,
+ * so React Flow renders no edge to draw — the same standing `matchMedia` has above, a
+ * browser capability supplied rather than a behaviour replaced. It is appended to
+ * `document.body` and removed after use, so it is never inside the container being compared.
+ */
+function syntheticEdge(promiseId: string): SVGSVGElement {
+  const root = document.createElementNS(SVG_NAMESPACE, 'svg');
+  const wrapper = document.createElementNS(SVG_NAMESPACE, 'g');
+  wrapper.setAttribute('class', 'react-flow__edge');
+  wrapper.setAttribute('data-id', `designed:${promiseId}->t_synthetic`);
+  const path = document.createElementNS(SVG_NAMESPACE, 'path');
+  path.setAttribute('class', 'react-flow__edge-path');
+  path.setAttribute('d', 'M0 0 L 240 0');
+  wrapper.append(path);
+  root.append(wrapper);
+  document.body.append(root);
+  return root;
+}
+
 /* ───────────────── the orchestration registry, and its tripwire ────────────── */
 
 interface Orchestration {
@@ -264,6 +296,51 @@ interface Orchestration {
  * motion that never moved.
  */
 const ORCHESTRATIONS: readonly Orchestration[] = [
+  {
+    /**
+     * M1 — the edge draw (§10.6.3). **jsdom paints no React Flow edge**, because it does no
+     * layout: the pane measures zero, so no `.react-flow__edge-path` exists on the page
+     * above and the orchestration over the real container is a no-op by construction. Both
+     * halves are driven anyway, and each says something:
+     *
+     *   - over the page, which asserts the *absence* rather than assuming it, so this entry
+     *     starts failing the day React Flow paints an edge in jsdom and the real assertion
+     *     becomes available;
+     *   - over a synthetic edge beside the page — a real `<path>` inside a real
+     *     `data-id="designed:…"` wrapper — so the gate, the drawable and the release
+     *     genuinely run, and the reduced-motion end state is compared against something.
+     *
+     * The visual result, a line wiping in from its source end, is unverifiable here and is
+     * checked by eye in a browser. See the header of `components/EdgeDraw.tsx`.
+     */
+    site: 'apps/ledger/components/EdgeDraw.tsx',
+    drive: async (container) => {
+      const promise = snapshot.promises[0];
+      expect(promise, 'the snapshot carries no promise, so M1 was not driven at all')
+        .toBeDefined();
+      if (promise === undefined) return;
+
+      expect(
+        verdictEdgePaths(container, promise.id),
+        'React Flow painted an edge under jsdom. The M1 clause of this file was written ' +
+          'around the absence of one — replace the synthetic edge below with the real path.',
+      ).toEqual([]);
+      await playEdgeDraw(container, promise.id);
+
+      const beside = syntheticEdge(promise.id);
+      const paths = verdictEdgePaths(beside, promise.id);
+      expect(paths.length, 'the synthetic edge carries no path, so M1 was not driven').toBe(1);
+      await playEdgeDraw(beside, promise.id);
+      for (const attribute of EDGE_DRAW_ATTRIBUTES) {
+        expect(
+          paths[0]?.hasAttribute(attribute),
+          `the drawable's ${attribute} outlived the pulse, so a drawn edge is not the same ` +
+            `bytes as one that never animated (§18.1)`,
+        ).toBe(false);
+      }
+      beside.remove();
+    },
+  },
   {
     /**
      * M4 — the graph entrance (§10.6.1). Driven explicitly rather than left to the

@@ -62,7 +62,7 @@
  * when it is open. The canvas is the column that yields, so between 1280 and 1920 the
  * page has nothing to overflow — asserted in `test/promise-graph-density.test.ts`.
  *
- * ## Motion (§10.6.1, task 17.5)
+ * ## Motion (§10.6.1, §10.6.3, tasks 17.5 and 17.8)
  *
  * The canvas holds a ref, and `useGraphEntrance` plays the staggered entrance over the
  * promise nodes inside it once per session. Nothing else changes: the coordinates are
@@ -70,6 +70,11 @@
  * those coordinates, and it releases both when it lands — so this tree renders
  * identically with motion on, with motion off, and on the second visit of a session
  * when the flourish does not run at all.
+ *
+ * `useEdgeDraw` watches the same lane for a *verdict change* and draws the edge to the
+ * designed test that carried it (M1, §10.6.3). Both hooks read the painted graph and write
+ * nothing back into the layout, and both are one line to delete — which is what §18.1's
+ * drop order asks of them.
  */
 
 'use client';
@@ -106,6 +111,7 @@ import {
   selectionFromSearch,
 } from '../lib/graphNav.js';
 
+import { useEdgeDraw } from './EdgeDraw.js';
 import { useGraphEntrance } from './GraphEntrance.js';
 import { LaneNode } from './LaneNode.js';
 import { PromiseList } from './PromiseList.js';
@@ -240,9 +246,12 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     resolveSelection(order, initialSelectedId ?? null),
   );
 
-  /** The canvas, for the entrance of §10.6.1 — the only reason this ref exists. */
+  /** The canvas, for the two orchestrations of §10.6 that read the painted graph. */
   const canvas = useRef<HTMLDivElement | null>(null);
   useGraphEntrance(canvas, promises.length);
+  /* M1 (§10.6.3): when a promise's verdict moves, the edge to the test that moved it draws
+     itself, once. The hook watches the lane's verdicts and animates nothing on first mount. */
+  useEdgeDraw(canvas, promises);
 
   /** Live node elements, so the keyboard model has something to focus. */
   const elements = useRef(new Map<string, HTMLElement>());
