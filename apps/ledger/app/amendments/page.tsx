@@ -41,8 +41,9 @@ import '../../styles/amendments.css';
  */
 export const dynamic = 'force-static';
 
+/** The short name only; the root layout's template composes `KEPT · Amendments`. */
 export const metadata: Metadata = {
-  title: 'Amendments — KEPT',
+  title: 'Amendments',
   description:
     'Documentation claims this repository can no longer keep, each with the exact ' +
     'replacement proposed for the cited line and the command that applies it.',
@@ -54,6 +55,21 @@ export const AMENDMENTS_EMPTY =
   'that the documentation, rather than the code, is what is wrong — the router settles that ' +
   'on the docs-lie branch, and `kept amend propose` records the proposed replacement without ' +
   'writing a single byte of the document.';
+
+/**
+ * The empty state, split into the line that states the fact and the line that explains
+ * it — a lead line alone is a shrug, and a detail line alone buries the answer.
+ *
+ * Split at render time rather than authored as two constants, so `AMENDMENTS_EMPTY`
+ * stays the one place the words live. The cut keeps the space at the head of the
+ * remainder, which is what makes the two elements' combined `textContent`
+ * character-identical to the constant.
+ */
+export function splitEmptyState(text: string): readonly [string, string] {
+  const boundary = text.indexOf('. ');
+  if (boundary < 0) return [text, ''];
+  return [text.slice(0, boundary + 1), text.slice(boundary + 1)];
+}
 
 /** The lede, in prose, so the page explains its own autonomy rule (§8.1). */
 export const AMENDMENTS_LEDE =
@@ -86,12 +102,18 @@ export function amendmentOrder(
 export default function AmendmentsPage() {
   const pendingFirst = amendmentOrder(snapshot.amendments);
   const pending = pendingFirst.filter((amendment) => amendment.status === PENDING_STATUS).length;
+  const [emptyLead, emptyDetail] = splitEmptyState(AMENDMENTS_EMPTY);
 
   return (
     <div className="amendments-page">
       <header>
-        <h1 className="amendments-page__title">Amendments</h1>
-        <p className="amendments-page__lede">{AMENDMENTS_LEDE}</p>
+        {/* The title in its solid ink slab — the plane from `.surface-slab-ink`, the box
+            from `.page-title__slab`, the type from `shell.css`'s `h1` clamp — over the
+            shared `.page-standfirst`. */}
+        <h1 className="amendments-page__title">
+          <span className="page-title__slab surface-slab-ink">Amendments</span>
+        </h1>
+        <p className="page-standfirst">{AMENDMENTS_LEDE}</p>
       </header>
 
       <p className="amendments-page__measured">
@@ -102,7 +124,13 @@ export default function AmendmentsPage() {
       </p>
 
       {pendingFirst.length === 0 ? (
-        <p className="amendments-page__empty surface-well">{AMENDMENTS_EMPTY}</p>
+        /* No `.surface-well` here: an empty region is marked by the one dashed border
+           in the system rather than by depth, so "specified and holding nothing" looks
+           the same on every page (§10.10). */
+        <div className="amendments-page__empty">
+          <p className="amendments-page__empty-lead">{emptyLead}</p>
+          <p className="amendments-page__empty-detail">{emptyDetail}</p>
+        </div>
       ) : (
         <ul className="amendments-page__list">
           {pendingFirst.map((amendment) => (

@@ -1,6 +1,6 @@
 /**
  * The verdict tag — design §10.4.1 (tags at `--fs-micro`), §10.4.3 (a tag border
- * may carry a `--wash-*` at 1px and nothing else), §10.6.3 (verdict colour over
+ * may carry a `--wash-*` and nothing else), §10.6.3 (verdict colour over
  * `--dur-base`), §10.7 (mono is texture, and tracked open below `--fs-sm`),
  * R10.2, R10.3, R10.5.
  *
@@ -24,10 +24,35 @@
  * and it is the exclusion Property 22's contrast clause rests on, since a wash that
  * never shares a rule with text contributes no foreground/background pair.
  *
+ * ## Why this badge is edged rather than filled
+ *
+ * The Ledger's badge grammar distinguishes states by **fill and border weight**
+ * rather than by hue, so that a reader who cannot separate the four verdict hues
+ * still sees three distinct badge shapes. The run outcomes and member statuses in
+ * `runs.css` take the filled and heavy-edged ends of that grammar, because they are
+ * achromatic by decision (§10.4.3 spends colour on verdicts and nothing else) and
+ * have nothing but shape to distinguish them.
+ *
+ * A verdict tag takes the paper end of it: a `--line` edge on the raised paper fill,
+ * with the wash on the edge and the hue on the word. It does not take the ink fill,
+ * and that is a constraint rather than a preference — the edge's colour is the
+ * verdict's own wash, one rule per verdict carrying `border-color` and nothing else,
+ * and an ink border would have to overwrite the very declaration the wash arrives
+ * through. The word already carries the verdict in text and in hue, which is the
+ * two channels R10.5 asks for; the badge does not need a third.
+ *
+ * The fill is `--ink-100`, so the tag reads as a chip lifted off the page on
+ * `/coverage` and as a chip cut level with the panel on `--ink-150`. Both are paper
+ * surfaces from the four-step ramp, which is the only thing a fill in this system is
+ * allowed to be.
+ *
  * `word` is a single lower-case token, so it is set in `--font-mono` alongside the
  * member statuses and result codes it reads like, at `--fs-micro` with `--tr-mono`
- * to open the counters at 11px (§10.7). Prose is never mono, and a verdict is not
- * prose.
+ * to open the counters at 11px (§10.7). It is bumped to weight 700 because at 11px
+ * inside a bordered box the regular weight reads as a caption rather than a state.
+ * Prose is never mono, and a verdict is not prose — and the word is never
+ * abbreviated, never truncated and never replaced by a glyph, which is the whole of
+ * R10.5.
  */
 
 /* ── the box: geometry and the edge's width, with no hue of its own ─────────── */
@@ -36,9 +61,11 @@
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
-  padding: 0 var(--s-1);
-  border: 1px solid transparent;
+  padding: 0 var(--s-2);
+  border: var(--line) solid transparent;
   border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  white-space: nowrap;
 }
 
 /* ── the word: the label R10.5 requires, always present, never a decoration ─── */
@@ -52,12 +79,13 @@
 .verdict-tag__word {
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
+  font-weight: 700;
   line-height: var(--s-4);
   letter-spacing: var(--tr-mono);
   transition: color var(--dur-base) var(--ease-out);
 }
 
-/* ── the edge: a 1px wash, on the box, in rules that carry no text ──────────── */
+/* ── the edge: a --line wash, on the box, in rules that carry no text ────────── */
 
 .verdict-tag[data-verdict='proven'] {
   border-color: var(--wash-proven);

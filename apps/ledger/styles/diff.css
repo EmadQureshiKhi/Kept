@@ -1,7 +1,7 @@
 /**
  * The diff — design §10.9, §10.5 (a well reads as cut into the card), §10.7 (mono is
  * texture, and diff bodies are one of the places it belongs), §10.4.3 (a verdict wash
- * is permitted on a 3px left edge and nowhere near text), R7.5, R10.1, R10.5.
+ * is permitted on a 3px left edge and nowhere near text), R7.5, R10.1, R10.5, R10.8.
  *
  * Namespaced `diff-*`, like `graph-list__*` and `promise-node__*` before it, because
  * every Ledger stylesheet is global — there is no CSS module here and no scoping, so the
@@ -15,6 +15,12 @@
  * is the whole reason `font-variant-numeric: tabular-nums lining-nums` is declared here
  * rather than left to the browser's defaults (§10.7, non-negotiable).
  *
+ * The gutters and the marker are separated from the bytes by a 2px ink rule down the
+ * marker column's right edge, so the numbering reads as a margin on the page rather
+ * than as three more words at the start of every line. Each row carries a 1px bottom
+ * rule at ink's lowest alpha, and the last row drops it — the same ruled-sheet grammar
+ * `/runs` uses, at the density a diff needs.
+ *
  * ## The wash and the hue are on different elements, and no rule can hold both
  *
  * §10.9 asks for two things at once: `--wash-red` / `--wash-proven` on each changed
@@ -23,8 +29,9 @@
  * facts live in two rules and neither rule can declare the other's property. That is the
  * same structural split `verdict-tag.css` makes, and it is what keeps the exclusion
  * Property 22's contrast clause rests on: a wash contributes no foreground/background
- * pair, because no rule that sets one sets a `color`. `typography-discipline.test.ts`
- * fails on the merged spelling, so the split cannot quietly be undone.
+ * pair, because no rule that sets one sets a `color`.
+ * `typography-discipline.test.ts` fails on the merged spelling, so the split cannot
+ * quietly be undone.
  *
  * The hue itself makes `.diff-text` the **third** consumer of a `--verdict-*` token in
  * the whole Ledger, after the tag's word and the freshness chip's ochre.
@@ -39,6 +46,16 @@
  * the row's accessible name says `removed`, `added` or `unchanged`. Strip every
  * stylesheet and the diff still reads as a diff.
  *
+ * ## Bytes wrap; they do not scroll
+ *
+ * This is the one place in the Ledger where the long-value rule is deliberately
+ * inverted. An id gets a scroll box because it is a single value and a wrapped id is two
+ * fragments that are not the value. A diff line is *content* — a sentence out of a
+ * README, often the whole reason the amendment exists — and a sentence a reader has to
+ * scroll sideways through is a sentence nobody reads. So `.diff-text` is `pre-wrap` with
+ * `break-word`, no trimming anywhere, and the view itself scrolls only if the gutters
+ * and the marker cannot fit, which on a 320px screen they still can.
+ *
  * No `box-shadow` here — depth is picked from `surfaces.css` by adding `.surface-well`
  * and never authored (§10.5). No `@keyframes`, no transition: a static diff has nothing
  * to animate, and animating a deletion would dramatise the one thing on the page that
@@ -48,22 +65,26 @@
 .diff-view {
   display: grid;
   min-width: 0;
-  padding: var(--s-2) 0;
+  padding: 0;
   border-radius: var(--r-card);
   overflow-x: auto;
 }
 
 .diff-row {
   display: grid;
-  grid-template-columns: 4ch 4ch 1.5ch minmax(0, 1fr);
+  grid-template-columns: 3.5ch 3.5ch 2ch minmax(0, 1fr);
   gap: var(--s-2);
   align-items: baseline;
   min-width: 0;
-  padding-right: var(--s-3);
-  padding-left: var(--s-3);
+  padding: var(--s-1) var(--s-3);
+  border-bottom: 1px solid var(--hairline);
   /* The edge exists on every row so a changed row does not shift its own text by
      three pixels; only the colour changes. */
   border-left: 3px solid transparent;
+}
+
+.diff-row:last-child {
+  border-bottom-width: 0;
 }
 
 /* Both gutters. Tabular, lining numerals — §10.7 names the diff gutter explicitly,
@@ -76,11 +97,17 @@
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--text-200);
   text-align: right;
+  user-select: none;
 }
 
+/* The marker closes the margin: a 2px ink rule down its right edge is what makes the
+   numbering read as a gutter rather than as three more words per line. */
 .diff-marker {
+  padding-right: var(--s-2);
+  border-right: var(--line) solid var(--text-000);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  font-weight: 700;
   line-height: var(--lh-mono);
   color: var(--text-200);
   text-align: center;
@@ -97,7 +124,7 @@
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* ── the wash: a 3px left edge, in rules that carry no text (§10.4.3) ────────── */
@@ -130,11 +157,11 @@
 
 /* An unchanged or unrendered diff states which it is, in prose (§10.10). */
 .diff-view__note {
+  max-width: 68ch;
   margin: 0;
-  padding: var(--s-1) var(--s-3);
+  padding: var(--s-3);
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
 }

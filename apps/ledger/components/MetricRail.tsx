@@ -21,9 +21,12 @@
  * `assurance-status:refused`, so this branch is what a judge sees first.
  *
  * `<ul>`/`<li>` because the rail is a list of figures, and `.metric-rail` already
- * removes the markers and lays the row out with `flex` and a `--s-3` gap. Tiles are
- * `flex: 1 1 0` with `min-width: 0`, so the rail yields rather than overflowing
- * between 1280 and 1920 (R10.8) — no `min-width` is set anywhere in the chain.
+ * removes the markers and lays the row out as a grid of
+ * `repeat(auto-fit, minmax(10rem, 1fr))` at a `--s-4` gutter. That is what makes the
+ * rail work from 320px to a wide monitor without a breakpoint anywhere: the container
+ * decides how many tiles fit — four on a laptop, two on a tablet, one on a phone —
+ * rather than a media query guessing at it, and `min-width: 0` on the tiles means no
+ * figure can force the grid wider than the column it sits in (R10.8).
  *
  * Server component: no hooks, no handlers, no client boundary. Task 17.7 layers the
  * count-up of §10.6.2 over `MetricFigure`'s digit run without changing this markup.

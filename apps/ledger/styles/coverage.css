@@ -1,22 +1,57 @@
 /**
- * The shareable coverage page — design §10.1 (`/coverage`), §10.7, §10.10, R9.8.
+ * The shareable coverage page — design §10.1 (`/coverage`), §10.7, §10.10, R9.8,
+ * R10.8.
  *
  * The page a maintainer links to from a README and a judge opens without
  * credentials: both coverage figures, how fresh they are, and every promise with
  * its verdict. It reuses `MetricRail` and `VerdictTag` wholesale, so this
- * stylesheet owns only what those two do not — the page's heading block and the
- * promise list beneath the rail.
+ * stylesheet owns only what those two do not — the page's heading block, the
+ * degraded note, and the promise list beneath the rail.
  *
- * No token is declared here, no depth is authored here, and every length is `0`,
- * `1px` or a `--s-*` step.
+ * No token is declared here, no depth is authored here, and every structural length
+ * is `0`, `1px` or a `--s-*` step.
  *
- * The promise list is a `<ul>` rather than a table, and that is a claim about the
- * content rather than a preference: a promise is a sentence with a citation, not a
- * row of aligned facts, and the one thing a reader compares across promises is the
- * verdict — which is a tag at a fixed position, in a fixed column, without needing
- * a table to put it there. The claim reads as prose in `--font-ui` at 72ch, its
- * `path:line` citation is mono because it is an identifier, and the two never
- * swap.
+ * ## The promise list is a list, not a table — and it sits on a solid sheet
+ *
+ * That is a claim about the content rather than a preference: a promise is a
+ * sentence with a citation, not a row of aligned facts, and the one thing a reader
+ * compares across promises is the verdict — which is a tag at a fixed position, in a
+ * fixed column, without needing a table to put it there. The claim reads as prose in
+ * `--font-ui` at 68ch, its `path:line` citation is mono because it is an identifier,
+ * and the two never swap.
+ *
+ * The list is wrapped in one `.surface-raised` container, and that is a readability
+ * fix rather than a decoration: the rows had no fill, so the page's 28px ruling showed
+ * through every claim and every identifier. See the note over `.promise-list-frame`.
+ *
+ * The column is a **grid** rather than a fixed-basis flex item, and that is the
+ * responsive fix rather than a tidy-up: `flex: 0 0 var(--s-16)` pinned the verdict
+ * gutter to 64px, which the word `undesigned` inside a bordered badge does not fit
+ * in. A `minmax(6rem, max-content)` track is as wide as the widest verdict word and
+ * no wider, so the tags still form a column and none of them is clipped. Below 40rem
+ * the grid collapses to one column and the tag sits above its claim, because a 64px
+ * gutter on a 320px screen is a quarter of the reading measure spent on one word.
+ *
+ * ## Long identifiers get a line of their own, and keep it
+ *
+ * A promise id, a `path:line` citation and a designed-test id are single values. The
+ * old rule wrapped them with `overflow-wrap: anywhere`, which breaks
+ * `p_177308118beb` into `p_1773081` / `18beb` across a line boundary — two fragments
+ * that are not the value and cannot be read back as it. Each one therefore sits in
+ * its own horizontally scrollable box with a slim scrollbar: the whole value stays on
+ * one line, stays selectable, and the box rather than the page absorbs the width.
+ * The box is on the value, never on the row, so nothing interactive is trapped
+ * inside a scroller.
+ *
+ * ## The degraded note is the first thing a judge reads
+ *
+ * The committed snapshot is degraded, the proven figure is `null`, and the rail has
+ * already replaced its tile with `baseline data only`. The note below says *why*, in
+ * the upstream tool's own reason code, and it is styled as a deliberate statement:
+ * cut into the sheet with `.surface-well` and marked with a 3px ink rule down its
+ * left edge, the same weight the standfirst uses. It is not a warning and carries no
+ * verdict hue — nothing is broken, a figure is withheld, and those must not look the
+ * same.
  */
 
 /* ── the heading block ──────────────────────────────────────────────────────── */
@@ -25,42 +60,51 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-6);
+  min-width: 0;
 }
 
+/* Placement only. The plane, the inverted ink and the offset slab arrive from
+   `.surface-slab-ink`; the box from `.page-title__slab`; the size, case and tracking
+   from `shell.css`'s `h1`, which is a `clamp` across the whole viewport range. Three
+   files, three concerns, and no restatement — see the note over `.page-title__slab`.
+   The standfirst under it is the shared `.page-standfirst`, so the pair reads the same
+   on all five routes. */
 .coverage-page__title {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
-  color: var(--text-000);
+  margin: 0 0 var(--s-4);
 }
 
-.coverage-page__lede {
+/* The measured line: the two counts behind the figures and the instant they were taken
+   at. Named in the brief as copy that "is just there", and the reason it read that way
+   is that a sentence which is 40% numerals was set as undifferentiated label-tone prose
+   — so the numbers a reader is checking had no more presence than the words between
+   them.
+ *
+ * It is now a *statement block*: a 2px ink rule above it, the prose at body tone rather
+ * than label tone, and each figure lifted into its own run (`.coverage-page__figure`)
+ * with tabular numerals. The rule above is what separates it from the rail's tiles, so
+ * it reads as the sentence that accounts for them rather than as a caption stuck to the
+ * last one. */
+.coverage-page__measured {
   max-width: 72ch;
   margin: 0;
+  padding-top: var(--s-3);
+  border-top: var(--line) solid var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   line-height: var(--lh-body);
   color: var(--text-100);
 }
 
-.coverage-page__section-title {
-  margin: 0 0 var(--s-3);
-  font-family: var(--font-ui);
-  font-size: var(--fs-md);
-  line-height: var(--lh-tight);
+/* A count inside that sentence. Mono and tabular because it is a figure, bold and in
+   full ink because it is the part being checked — but still inline in the sentence, so
+   nothing here is a badge and the line still reads as a line. */
+.coverage-page__figure {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
   color: var(--text-000);
-}
-
-/* The instant the figures were measured at, and the two counts behind them. A
-   coverage figure without its denominator is a number a reader has to trust. */
-.coverage-page__measured {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-body);
-  color: var(--text-200);
 }
 
 .coverage-page__instant {
@@ -68,76 +112,174 @@
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: var(--tr-mono);
-  color: var(--text-100);
+  color: var(--text-000);
+  white-space: nowrap;
 }
 
 /* The degraded sentence: which axis was discarded, and the reason verbatim. The
    rail already replaces the proven tile with its chip; this says why. */
 .coverage-page__degraded {
-  max-width: 72ch;
+  max-width: 68ch;
   margin: 0;
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-6);
+  border-left: var(--line-heavy) solid var(--text-000);
   border-radius: var(--r-card);
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-100);
 }
 
+/* The reason code, verbatim from the upstream tool. An identifier, so it is mono and
+   it is boxed the way every other identifier on the page is. */
 .coverage-page__reason {
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-000);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  font-weight: 700;
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
+  white-space: nowrap;
 }
 
-/* ── the promise list ───────────────────────────────────────────────────────── */
+/* The rail carries its own bottom margin for the pages that stack it against plain
+   flow. Here the page column is a flex stack with its own gap, so the two would add
+   up to 56px of nothing. The gap wins: spacing between blocks belongs to the
+   container that owns the blocks. */
+.coverage-page > .metric-rail {
+  margin-bottom: 0;
+}
+
+/* ── the promise list, inside one solid container ───────────────────────────── */
+
+/**
+ * The named complaint, and the fix.
+ *
+ * The rows used to sit directly on the page: no fill of their own, so the 28px ruling
+ * `shell.css` pins behind the sheet showed *through* eight rows of claims and
+ * identifiers. A 1px ink rule crossing a line of 12px mono every 28px is not a
+ * background, it is interference, and it made the most information-dense list in the
+ * product the hardest thing on the site to read.
+ *
+ * So the list is now inside one container: `.surface-raised` in the markup, which fills
+ * `--ink-100` opaquely, closes the plane with a 2px ink border and lands the whole block
+ * on the offset slab. One container rather than a card per row, deliberately — eight
+ * slabs would be eight shadows and a list that reads as a stack of unrelated cards,
+ * where this is one list a reader scans down. The ruling is behind the sheet; the sheet
+ * is now opaque where the reading happens.
+ *
+ * `overflow: hidden` is what keeps the top and bottom rows' own fills inside the
+ * container's 6px radius, so a banded first row cannot square off its corners.
+ */
+.promise-list-frame {
+  min-width: 0;
+  overflow: hidden;
+}
 
 .promise-list {
+  display: grid;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  min-width: 0;
 }
 
+/* Two tracks: the verdict column, as wide as the widest verdict word and no wider,
+   and the claim. The 1px rule is the row division; the last row drops it, because
+   the container's own 2px edge is already there and a doubled edge reads as a
+   mistake. The padding is the row's, not the container's, so a band fills the whole
+   width of the frame rather than a column inset from it. */
 .promise-list__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
+  gap: var(--s-2) var(--s-4);
   align-items: baseline;
-  gap: var(--s-4);
-  padding: var(--s-3) 0;
+  min-width: 0;
+  padding: var(--s-3) var(--s-4);
   border-bottom: 1px solid var(--hairline);
 }
 
-/* Fixed width, so the tags form a column without a table doing it for them. */
+.promise-list__item:last-child {
+  border-bottom-width: 0;
+}
+
+/* Banding, so eight rows are countable without being counted. `--ink-050` is the
+   recess of the paper ramp, which is the darkest of the four and therefore the worst
+   case for every foreground in the row — all of them are measured against it in
+   `lib/tokens.ts` already. The rule carries no `color`, so it adds no pair of its own.
+   The verdict tag's `--ink-100` fill lifts against a banded row, which is a second
+   place the column of tags becomes a column. */
+.promise-list__item:nth-child(even) {
+  background-color: var(--ink-050);
+}
+
+/* Later than the banding rule on purpose: equal specificity, so source order is what
+   makes the pointed-at row win over a banded one. It rises toward white rather than
+   darkening, because on this ramp elevation reads brighter as it climbs. */
+.promise-list__item:hover {
+  background-color: var(--ink-150);
+}
+
 .promise-list__verdict {
-  flex: 0 0 var(--s-16);
+  min-width: 0;
 }
 
 .promise-list__body {
-  flex: 1 1 0;
+  display: grid;
+  gap: var(--s-2);
   min-width: 0;
 }
 
 .promise-list__claim {
-  max-width: 72ch;
+  max-width: 68ch;
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
+  font-weight: 500;
   line-height: var(--lh-body);
   color: var(--text-000);
 }
 
+/* The identifier row beneath the claim. A flex line rather than a paragraph, so each
+   value is its own box and can scroll on its own without dragging its neighbours. */
 .promise-list__meta {
-  margin: var(--s-1) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  align-items: baseline;
+  margin: 0;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   color: var(--text-200);
-  overflow-wrap: anywhere;
 }
 
+/* One identifier, one line, one scroll box. `white-space: nowrap` is what keeps the
+   value whole; `overflow-x: auto` is what stops it widening the page. */
+.promise-list__id,
+.promise-list__citation,
+.promise-list__test {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-mono);
+  white-space: nowrap;
+}
+
+/* The promise's own id is the strongest of the three, because it is the handle every
+   other surface refers to the promise by. */
 .promise-list__id {
-  color: var(--text-100);
+  color: var(--text-000);
 }
 
 /* A `path:line` citation and a designed-test id, separated so a reader can see
@@ -147,17 +289,56 @@
   color: var(--text-200);
 }
 
+/* The separator between the three identifiers. `--text-200`, the label tone, and not
+   `--hairline-strong`: a hairline is a rule and never carries text, which is the
+   exclusion that keeps the contrast matrix finite (§10.4.3). It is rendered text, so
+   it is held to the body floor like any other glyph on the page. */
 .promise-list__separator {
-  padding: 0 var(--s-1);
+  color: var(--text-200);
+  user-select: none;
+}
+
+/* ── the empty state: the one dashed border in the system (§10.10) ──────────── */
+
+/* Dashed, and dashed nowhere else, so a reader who has met one already knows this
+   region is specified and holding nothing rather than failing to load. */
+.promise-list__empty {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-6);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.promise-list__empty-lead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+.promise-list__empty-detail {
+  max-width: 62ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
   color: var(--text-200);
 }
 
-.promise-list__empty {
-  margin: 0;
-  padding: var(--s-6);
-  border-radius: var(--r-card);
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
-  color: var(--text-100);
+/* ── narrow viewports: the verdict gutter folds above the claim ─────────────── */
+
+@media (max-width: 40rem) {
+  .promise-list__item {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--s-3);
+  }
+
+  .promise-list__empty {
+    padding: var(--s-4);
+  }
 }

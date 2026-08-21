@@ -37,8 +37,9 @@ import '../../styles/reviews.css';
 /** Statically rendered, stated rather than inferred (§10.1). */
 export const dynamic = 'force-static';
 
+/** The short name only; the root layout's template composes `KEPT · Reviews`. */
 export const metadata: Metadata = {
-  title: 'Reviews — KEPT',
+  title: 'Reviews',
   description:
     'Every change reconciliation and evolution proposed, held for a human decision, with ' +
     'the promise it is about, its repair branch and its evidence reference.',
@@ -52,6 +53,23 @@ export const REVIEWS_EMPTY =
   'No review card is on file. One appears here when a documentation reconciliation stages a ' +
   'change into Kane\u2019s stored plan, or when an evolution proposes a repair to a designed ' +
   'test — both of which are held rather than applied, so a card is the whole of what lands.';
+
+/**
+ * The empty state, split into the line that states the fact and the line that explains
+ * it — a lead line alone is a shrug, and a detail line alone buries the answer.
+ *
+ * Split at render time rather than authored as two constants, so `REVIEWS_EMPTY` stays
+ * the one place the words live and the two halves cannot drift out of one sentence. The
+ * cut keeps the space at the head of the remainder, which is what makes the rendered
+ * `textContent` of the two elements character-identical to the constant: an empty state
+ * that quietly lost a space between its halves would still look right and would no
+ * longer be the copy anybody reviewed.
+ */
+export function splitEmptyState(text: string): readonly [string, string] {
+  const boundary = text.indexOf('. ');
+  if (boundary < 0) return [text, ''];
+  return [text.slice(0, boundary + 1), text.slice(boundary + 1)];
+}
 
 /** The lede, in prose, stating the autonomy rule the page embodies (§8.1). */
 export const REVIEWS_LEDE =
@@ -83,12 +101,18 @@ export function reviewOrder(
 export default function ReviewsPage() {
   const openFirst = reviewOrder(snapshot.reviewCards);
   const open = openFirst.filter((card) => card.status === OPEN_STATUS).length;
+  const [emptyLead, emptyDetail] = splitEmptyState(REVIEWS_EMPTY);
 
   return (
     <div className="reviews-page">
       <header>
-        <h1 className="reviews-page__title">Reviews</h1>
-        <p className="reviews-page__lede">{REVIEWS_LEDE}</p>
+        {/* The title in its solid ink slab — the plane from `.surface-slab-ink`, the box
+            from `.page-title__slab`, the type from `shell.css`'s `h1` clamp — over the
+            shared `.page-standfirst`. */}
+        <h1 className="reviews-page__title">
+          <span className="page-title__slab surface-slab-ink">Reviews</span>
+        </h1>
+        <p className="page-standfirst">{REVIEWS_LEDE}</p>
       </header>
 
       <p className="reviews-page__measured">
@@ -99,7 +123,14 @@ export default function ReviewsPage() {
       </p>
 
       {openFirst.length === 0 ? (
-        <p className="reviews-page__empty surface-well">{REVIEWS_EMPTY}</p>
+        /* No `.surface-well` here: an empty region is marked by the one dashed border
+           in the system rather than by depth, so "specified and holding nothing" looks
+           the same on every page (§10.10). This is the live path today, so it is the
+           first thing a judge sees on this route. */
+        <div className="reviews-page__empty">
+          <p className="reviews-page__empty-lead">{emptyLead}</p>
+          <p className="reviews-page__empty-detail">{emptyDetail}</p>
+        </div>
       ) : (
         <ul className="reviews-page__list">
           {openFirst.map((card) => (

@@ -1,14 +1,14 @@
 /**
  * Optical alignment of the metric rail — design §10.7 ("Optical alignment on the
- * metric rail"), §10.10, R9.3, R10.1.
+ * metric rail"), §10.10, R9.3, R10.1, R10.8.
  *
- * This file is geometry only. It authors no depth and no fill: a tile picks
- * `.surface-raised` from `styles/surfaces.css` (§10.5) and every colour and length
- * below resolves through a token from `styles/tokens.css`. Nothing here declares a
- * token of its own, so token parity keeps its single declaration site.
+ * This file is geometry only. It authors no depth and no fill of its own beyond the
+ * hover tint: a tile picks `.surface-raised` from `styles/surfaces.css` (§10.5) and
+ * every colour and length below resolves through a token from `styles/tokens.css`.
+ * Nothing here declares a token, so token parity keeps its single declaration site.
  *
  * The rail carries four tiles and, when the snapshot is degraded, a chip standing
- * in for one of them. Three problems, and the one mechanism that solves all three:
+ * in for one of them. Four problems, and the mechanisms that solve them:
  *
  * 1. **The digits, not the glyph run, align.** A figure is two runs — the digits at
  *    `--fs-metric` and the `%` at `--fs-lg`. Left to itself the `%` contributes its
@@ -32,18 +32,36 @@
  *    once, in a rule that names the tile and the chip together. They cannot drift
  *    apart, because there is nothing to drift.
  *
- * The 4px grid: every length below is `0` or a `--s-*` token, and the two line
- * heights resolve to 48px and 16px. The single exception is the `-0.06em` above,
- * which is optical rather than structural and is deliberately sub-grid — the
+ * 4. **The rail reflows rather than crushing.** It is a grid of
+ *    `repeat(auto-fit, minmax(10rem, 1fr))` at a `--s-4` gutter, so the four slabs
+ *    sit in one row on a laptop, two on a tablet and one on a 320px phone — chosen
+ *    by the container's own width rather than by a breakpoint guessing at it. That
+ *    is why there is no `@media` block in this file, and the alignment test asserts
+ *    there is none: a rail with a breakpoint is a rail with a width it is wrong at.
+ *    A 10rem minimum is the widest a three-digit figure at `--fs-metric` needs, so
+ *    the track never has to be narrower than its content.
+ *
+ * **The hover lift is a `transform` and nothing else.** §10.5 keeps every shadow in
+ * `surfaces.css` and the forbidden-palette scan makes a `box-shadow` here a failing
+ * test, so a slab cannot raise its own elevation ramp on hover. It translates two
+ * pixels and rises to `--ink-150` instead — the fill the palette already names as
+ * the hover surface — which reads as the slab lifting off the ruling without any
+ * file but `surfaces.css` knowing what a shadow is. Both properties are on the
+ * closed motion allowlist of §10.6.4.
+ *
+ * The 4px grid: every structural length below is `0` or a `--s-*` token, and the two
+ * line heights resolve to 48px and 16px. The single exception is the `-0.06em`
+ * above, which is optical rather than structural and is deliberately sub-grid — the
  * alignment test asserts it is the only one.
  */
 
 /* ── the rail ───────────────────────────────────────────────────────────────── */
 
 .metric-rail {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   align-items: stretch;
-  gap: var(--s-3);
+  gap: var(--s-4);
   margin: 0 0 var(--s-8);
   padding: 0;
   list-style: none;
@@ -54,10 +72,19 @@
 .metric-tile,
 .metric-rail__chip {
   box-sizing: border-box;
-  flex: 1 1 0;
   min-width: 0;
   padding: var(--s-4);
   border-radius: var(--r-card);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* The lift. A settle curve, no overshoot, and nothing that could loop. */
+.metric-tile:hover,
+.metric-rail__chip:hover {
+  transform: translateY(-2px);
+  background-color: var(--ink-150);
 }
 
 /* ── the figure row: one strut, one baseline ────────────────────────────────── */
@@ -67,8 +94,9 @@
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-metric);
+  font-weight: 800;
   line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--text-000);
   white-space: nowrap;
@@ -108,20 +136,31 @@
   font-family: var(--font-mono);
 }
 
-/* The chip's word is prose, so it is `--font-ui` and untracked (§10.7). */
+/* The chip's word is prose, so it is `--font-ui` and untracked (§10.7). It wraps:
+   `baseline data only` is three words, and a 10rem track is narrower than they are
+   on one line. The strut above fixes the first line's baseline either way. */
 .metric-figure__word {
   font-family: var(--font-ui);
+  font-weight: 700;
   letter-spacing: normal;
+  white-space: normal;
 }
 
 /* ── the label, on the grid the digits sit on ───────────────────────────────── */
 
+/* Small caps at `--fs-micro`, tracked open to `0.1em` — the tracking inversion
+   §10.7 lives on, read at the bottom of the ramp: at 11px the counters are not
+   open on their own, so the letterspacing does it. The label is the tile's name
+   and the figure is its value, so the two are as far apart in weight, size and
+   case as the type ramp allows. */
 .metric-tile__label {
   display: block;
-  margin: var(--s-1) 0 0;
+  margin: var(--s-2) 0 0;
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-micro);
+  font-weight: 700;
   line-height: var(--s-4);
-  letter-spacing: normal;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }

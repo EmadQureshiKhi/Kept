@@ -54,17 +54,31 @@ import '../../styles/coverage.css';
  */
 export const dynamic = 'force-static';
 
+/**
+ * The short name only. The root layout's `title.template` composes it into
+ * `KEPT · Coverage`, so repeating the product name here would produce it twice, and
+ * the descriptive sentence belongs to `description` rather than to the tab.
+ */
 export const metadata: Metadata = {
-  title: 'Coverage — KEPT',
+  title: 'Coverage',
   description:
     'Proven and designed coverage for every promise this repository states, with the ' +
     'freshness of the run behind them.',
 };
 
-/** What the page says when the repository states no promises at all (§10.10). */
-const NO_PROMISES =
-  'This repository states no promises yet, so both figures read n/a and no division was ' +
-  'performed. A promise enters the ledger by being cited to a file and a line.';
+/**
+ * What the page says when the repository states no promises at all (§10.10).
+ *
+ * Two lines, because an empty state has two jobs: state the fact, then say what would
+ * change it. The lead line is the answer and the detail line is the reason, and a
+ * reader who only takes in the bold line has still taken in the fact.
+ */
+export const NO_PROMISES_LEAD = 'This repository states no promises yet.';
+
+export const NO_PROMISES_DETAIL =
+  'Both figures read n/a and no division was performed \u2014 a percentage over zero promises ' +
+  'is a number nobody computed. A promise enters the ledger by being cited to a file and a ' +
+  'line, so the first one appears here as soon as one is.';
 
 export default function CoveragePage() {
   const { metrics, degraded, degradedReasons, freshness } = snapshot;
@@ -74,8 +88,14 @@ export default function CoveragePage() {
   return (
     <div className="coverage-page">
       <header>
-        <h1 className="coverage-page__title">Coverage</h1>
-        <p className="coverage-page__lede">
+        {/* The page title, set in a solid ink slab: the plane and its offset shadow come
+            from `.surface-slab-ink` (surfaces.css, the one file that may declare a
+            shadow), the box from `.page-title__slab`, and the size, case and tracking
+            from the `h1` clamp in `shell.css`. */}
+        <h1 className="coverage-page__title">
+          <span className="page-title__slab surface-slab-ink">Coverage</span>
+        </h1>
+        <p className="page-standfirst">
           Every promise this repository states, the designed test bound to it, and the verdict of
           the last verification run that reached its terminal event. Proven coverage is withheld
           rather than estimated whenever the run behind it did not prove anything.
@@ -92,10 +112,19 @@ export default function CoveragePage() {
         metrics={metrics}
       />
 
+      {/* The measured line. Every figure in it is lifted into its own tabular run so the
+          numbers a reader is checking carry more weight than the words between them; the
+          string the sentence spells out is unchanged, which is what
+          `coverage-render.test.tsx` reads. */}
       <p className="coverage-page__measured">
-        {`${metrics.provenCount} of ${metrics.totalPromises} promises proven, `}
-        {`${metrics.designedCount} designed, ${metrics.undesignedCount} with no designed test. `}
-        {'Measured from the snapshot generated at '}
+        <span className="coverage-page__figure">{metrics.provenCount}</span>
+        {' of '}
+        <span className="coverage-page__figure">{metrics.totalPromises}</span>
+        {' promises proven, '}
+        <span className="coverage-page__figure">{metrics.designedCount}</span>
+        {' designed, '}
+        <span className="coverage-page__figure">{metrics.undesignedCount}</span>
+        {' with no designed test. Measured from the snapshot generated at '}
         <span className="coverage-page__instant">{snapshot.generatedAt}</span>
         {'.'}
       </p>
@@ -117,17 +146,34 @@ export default function CoveragePage() {
       ) : null}
 
       <section>
-        <h2 className="coverage-page__section-title">
+        {/* `.section-head` is the shared strip in `shell.css`: small caps over a 3px ink
+            rule, so the heading opens a block instead of being one more line of text on a
+            ruled page. The count stays inside the heading's own string, because the count
+            is what makes the heading checkable against the list below it. */}
+        <h2 className="section-head">
           {`Promises (${metrics.totalPromises}), attention first`}
         </h2>
         {promises.length === 0 ? (
-          <p className="promise-list__empty surface-well">{NO_PROMISES}</p>
+          /* No `.surface-well` here: an empty region is marked by the one dashed
+             border in the system rather than by depth, so "specified and empty"
+             looks the same on every page (§10.10). */
+          <div className="promise-list__empty">
+            <p className="promise-list__empty-lead">{NO_PROMISES_LEAD}</p>
+            <p className="promise-list__empty-detail">{NO_PROMISES_DETAIL}</p>
+          </div>
         ) : (
-          <ul className="promise-list">
-            {promises.map((promise) => (
-              <PromiseRow key={promise.id} promise={promise} />
-            ))}
-          </ul>
+          /* One solid container around the whole list. The rows carried no fill of their
+             own, so the shell's 28px ruling showed through every claim and every
+             identifier — see the note over `.promise-list-frame` in `coverage.css`. One
+             frame rather than a card per row: this is one list a reader scans, not eight
+             unrelated cards. */
+          <div className="promise-list-frame surface-raised">
+            <ul className="promise-list">
+              {promises.map((promise) => (
+                <PromiseRow key={promise.id} promise={promise} />
+              ))}
+            </ul>
+          </div>
         )}
       </section>
     </div>

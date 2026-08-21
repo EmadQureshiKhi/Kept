@@ -140,7 +140,7 @@ describe('VerdictTag — the token mapping is one-to-one and neutral where it mu
 
   it('gives undesigned the neutral stone-sage, the same value the labels use (R10.3)', () => {
     expect(TOKENS[VERDICT_TOKENS.undesigned]).toBe(TOKENS['--text-200']);
-    expect(TOKENS[VERDICT_TOKENS.undesigned]).toBe('#9A9184');
+    expect(TOKENS[VERDICT_TOKENS.undesigned]).toBe('#55555A');
   });
 });
 
@@ -150,16 +150,23 @@ describe('VerdictTag — the stylesheet keeps the wash and the hue apart', () =>
     expect(RULES.every((rule) => rule.ancestors.length === 0)).toBe(true);
   });
 
-  it('draws the edge at 1px and leaves the box without a hue', () => {
+  it('draws the edge at the structural weight and leaves the box without a hue', () => {
     const base = rulesFor('.verdict-tag');
     expect(base.length).toBe(1);
     const declared = declarationsOf(base[0] as CssRule);
-    expect(declared.get('border')).toBe('1px solid transparent');
+    /* `--line`, the structural border weight of §10.4.1, rather than a bare 1px: the
+       badge grammar distinguishes states by fill and border weight, so the weight is
+       the token every other structural edge in the system uses. */
+    expect(declared.get('border')).toBe('var(--line) solid transparent');
     expect(declared.get('border-radius')).toBe('var(--r-chip)');
     expect(
       declared.has('color'),
       `§10.4.3: the box carries the wash, so it must never carry text colour`,
     ).toBe(false);
+    /* the fill is a paper surface from the four-step ramp, never ink and never a hue */
+    expect(declared.get('background-color')).toBe('var(--ink-100)');
+    /* a verdict word is one token and is never broken across lines (R10.5) */
+    expect(declared.get('white-space')).toBe('nowrap');
   });
 
   it('sets the word in mono at --fs-micro, tracked open (§10.7)', () => {
@@ -169,6 +176,9 @@ describe('VerdictTag — the stylesheet keeps the wash and the hue apart', () =>
     expect(declared.get('font-family')).toBe('var(--font-mono)');
     expect(declared.get('font-size')).toBe('var(--fs-micro)');
     expect(declared.get('letter-spacing')).toBe('var(--tr-mono)');
+    /* at 11px inside a bordered box, the regular weight reads as a caption rather
+       than as a state */
+    expect(declared.get('font-weight')).toBe('700');
     /* the verdict-colour row of §10.6.3, and `color` is on the motion allowlist */
     expect(declared.get('transition')).toBe('color var(--dur-base) var(--ease-out)');
   });

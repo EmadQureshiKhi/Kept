@@ -77,7 +77,17 @@ function Fact({
     <>
       <dt className="review-card__term">{term}</dt>
       <dd className="review-card__value">
-        {href === undefined ? value : <a className="review-card__link" href={href}>{value}</a>}
+        {/* The scroll box is on the `dd`'s child, never on the `dd` itself: an evidence
+            reference belongs on one line, and a scroller wrapped around the cell would
+            swallow the link inside it. On the child, the link stays a link and the value
+            stays whole and selectable. */}
+        {href === undefined ? (
+          <span className="review-card__value-inner">{value}</span>
+        ) : (
+          <a className="review-card__link review-card__value-inner" href={href}>
+            {value}
+          </a>
+        )}
       </dd>
     </>
   );
@@ -93,6 +103,7 @@ export function ReviewCardView({ card, className }: ReviewCardViewProps) {
       data-branch={card.branch}
       data-kind={card.kind}
       data-review-card={card.id}
+      data-status={card.status}
       id={card.id}
     >
       <div className="review-card__head">

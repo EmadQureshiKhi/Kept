@@ -308,7 +308,7 @@ describe('motion off is a state, not a fallback', () => {
 
     /* asserted before the await: the claim is that there is no interval */
     expect(playback, 'a timeline was built under reduced motion').toBeNull();
-    expect(word?.style.color).toBe('rgb(111, 184, 148)');
+    expect(word?.style.color).toBe('rgb(31, 111, 74)');
     expect(pendingMotion()).toBe(0);
 
     await settled;

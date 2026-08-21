@@ -1,9 +1,13 @@
 /**
  * `/amendments` and its cards — design §8.3, §8.5, §10.1, §10.5, §10.7, §10.10, R7.5,
- * R8.4, R10.7.
+ * R8.4, R10.7, R10.8.
  *
  * Namespaced `amendments-page__*`, `amendment-card__*` and `accept-control__*`: every
- * Ledger stylesheet is global, so the prefix is the only scope there is.
+ * Ledger stylesheet is global, so the prefix is the only scope there is — and Next
+ * imports a stylesheet per route, so the vocabulary shared with `/reviews` (the
+ * definition-list grammar, the empty state, the identifier scroll box) is restated
+ * under this prefix rather than imported. A class defined only in `reviews.css` does
+ * not exist on this page.
  *
  * The card sits at `.surface-raised-2`, which §10.5 reserves *by name* for the promise
  * panel and the amendment cards, and the diff inside it at `.surface-well` — the bytes
@@ -11,59 +15,78 @@
  * file writes no `box-shadow`, because `surfaces.css` is the only place depth exists and
  * the forbidden-palette scan holds that line.
  *
+ * ## The interlock is 64 characters and belongs on one line
+ *
+ * `expectedSha256` used to wrap with `overflow-wrap: anywhere`, which breaks a hash
+ * across a line boundary into two runs that are not the hash. A reader checking it
+ * against their own `sha256sum` output is comparing character by character, and two
+ * fragments make that impossible in exactly the place the product is asking to be
+ * checked. So every value in the provenance grid sits in a horizontally scrollable box
+ * with a slim scrollbar: whole, on one line, and selectable end to end. Truncating it
+ * would be worse still — a displayed truncation invites a reproduced one, and a
+ * shortened interlock is a weaker interlock.
+ *
+ * The box is on the value's own child element, never on the `dd`, so a value that is a
+ * link stays a link a pointer and a caret can both reach.
+ *
+ * ## The provenance block is a definition list, so it is set as one
+ *
+ * A two-column grid of `minmax(11rem, max-content) minmax(0, 1fr)`: the term column is
+ * as wide as the longest term and no wider, and the value column has a zero minimum so
+ * no identifier can widen the card. Each `dt` is filled `--ink-050` with a 2px ink rule
+ * down its right edge. Below 56rem the grid folds to one column and that rule turns
+ * into a bottom one, because in one column the term sits above its value.
+ *
  * Typography follows §10.7 exactly. Mono is texture: the amendment id, the `path:line`
  * citation, the ISO instant, the sha256 interlock, the promise ids and the artefact
- * paths. Prose is `--font-ui`: the lede, the rationale, every empty-state sentence and
- * the accept control's status line. The interlock is 64 characters of hex, so it wraps
- * with `overflow-wrap: anywhere` rather than widening the card — truncating it in CSS
- * would display a shortened interlock, and a shortened interlock is a weaker one.
+ * paths. Prose is `--font-ui`: the standfirst, the rationale, every empty-state sentence
+ * and the accept control's status line.
  *
  * ## The accept control looks like a control because it is one
  *
  * It is a native `<button>` with a real focus ring, and the command sits beside it in
  * selectable mono. Both halves matter (§8.5): the button is the affordance, and the
  * visible command is what a judge reads before running it and what makes the clipboard
- * being unavailable a non-event rather than a dead end. The only transitions are
- * `background-color` and `border-color` on hover and focus — both on the closed
- * allowlist of §10.6 — and there is no hover scale, no shadow bloom and no
- * `@keyframes` anywhere in this file.
+ * being unavailable a non-event rather than a dead end. The button is an ink-edged slab
+ * that presses on `:active` by translating — not by growing a shadow, because a shadow
+ * cannot be authored outside `surfaces.css`. The only transitions are
+ * `background-color`, `border-color` and `transform`, all three on the closed allowlist
+ * of §10.6, and there is no hover scale and no `@keyframes` anywhere in this file.
  */
 
 /* ── the page ──────────────────────────────────────────────────────────────── */
 
+/* No padding of its own: `.page-main` in `shell.css` owns the page gutter, and a
+   second one here doubled it. The measure is capped in `rem` so it scales with the
+   reader's own type size rather than pinning to a pixel count. */
 .amendments-page {
   display: grid;
   gap: var(--s-6);
   min-width: 0;
-  padding: var(--s-8) var(--s-6);
-  max-width: 1100px;
+  max-width: 72rem;
 }
 
+/* Placement only: the plane and the offset shadow come from `.surface-slab-ink`, the box
+   from `.page-title__slab`, and the size, case and tracking from `shell.css`'s `h1`
+   clamp. The standfirst under it is the shared `.page-standfirst`, so the title-and-
+   sentence pair is one treatment across all five routes rather than five copies of four
+   declarations. */
 .amendments-page__title {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
-  color: var(--text-000);
+  margin: 0 0 var(--s-4);
 }
 
-.amendments-page__lede {
+/* The measured line, ruled off above so it reads as the sentence that accounts for the
+   list rather than as a caption hanging under the standfirst. Body tone, not label tone:
+   it carries the two counts a reader checks the page against. */
+.amendments-page__measured {
+  max-width: 72ch;
   margin: 0;
+  padding-top: var(--s-3);
+  border-top: var(--line) solid var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
-}
-
-.amendments-page__measured {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
-  color: var(--text-200);
-  max-width: 72ch;
 }
 
 /* The instant is an identifier, so it is mono and its digits align (§10.7). */
@@ -72,19 +95,38 @@
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-100);
+  color: var(--text-000);
+  white-space: nowrap;
 }
 
-/* The empty state is a specified state, not a blank (§10.10). */
+/* ── the empty state: the one dashed border in the system (§10.10) ──────────── */
+
 .amendments-page__empty {
+  display: grid;
+  gap: var(--s-2);
   margin: 0;
-  padding: var(--s-4);
+  padding: var(--s-6);
+  border: var(--line-heavy) dashed var(--text-000);
   border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.amendments-page__empty-lead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+.amendments-page__empty-detail {
+  max-width: 62ch;
+  margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
-  color: var(--text-100);
-  max-width: 72ch;
+  color: var(--text-200);
 }
 
 .amendments-page__list {
@@ -106,98 +148,249 @@
   border-radius: var(--r-panel);
 }
 
+/**
+ * The card's head, and the named complaint it answers.
+ *
+ * `am_57fdcb99`, `pending` and `2026-08-21T04:55:58.756Z` used to be three unlabelled
+ * runs on one baseline, two of them mono, at 13px, 11px and 11px. Nothing said which of
+ * the three was the card's *name*, nothing said what the instant was the instant *of*,
+ * and the reader had to work out the hierarchy from the order — which is the definition
+ * of a jumble.
+ *
+ * It is now a two-column grid with three ranks, and every rank is labelled:
+ *
+ *   1. **the identity**, top left: a small-caps eyebrow naming what this is, and the id
+ *      under it at `--fs-md` — the largest type on the card, because it is the handle
+ *      every other surface refers to this amendment by;
+ *   2. **the status**, top right, in the badge grammar it already had. It keeps its own
+ *      corner rather than trailing the id, so `pending` is answerable at a glance from
+ *      across a list of cards;
+ *   3. **the stamp**, on its own row underneath, where the instant is preceded by the
+ *      word `proposed`. An ISO timestamp with no verb in front of it is a number, and a
+ *      reader guessing whether it means proposed, accepted or last-checked is a reader
+ *      the card has failed.
+ *
+ * `align-items: start` rather than `baseline`, because the left column is now two stacked
+ * lines and a baseline shared with a badge would drag the badge down to the id's.
+ */
 .amendment-card__head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
-  align-items: baseline;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: var(--s-2) var(--s-3);
+  align-items: start;
+  min-width: 0;
+  padding-bottom: var(--s-3);
+  border-bottom: var(--line) solid var(--text-000);
 }
 
-.amendment-card__id {
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+.amendment-card__identity {
+  display: grid;
+  gap: var(--s-1);
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+/* The eyebrow: what the id under it is the id of. Small caps at the bottom of the ramp,
+   so it names the run below without competing with it (§10.7). */
+.amendment-card__eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
-  letter-spacing: var(--tr-mono);
+  letter-spacing: var(--tr-caps-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* The id, at `--fs-md`: the largest type on the card and the top of its hierarchy. One
+   line, in its own scroll box, because it is a single value and a value broken across a
+   line boundary is two fragments that are not the value. */
+.amendment-card__id {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: var(--s-6);
+  letter-spacing: var(--tr-tight);
   color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* The stamp row: the verb, then the instant. Spans both columns, so a 24-character ISO
+   value never has to share a line with the badge. */
+.amendment-card__stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  align-items: baseline;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0;
+  min-width: 0;
+}
+
+.amendment-card__stamp-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
 }
 
 /* The status is a state word, not a verdict, so it takes no verdict hue: colour is
-   reserved for verdict communication (§10.4.3, R10.2). */
+   reserved for verdict communication (§10.4.3, R10.2). It takes the badge grammar
+   instead — a `--line` ink edge on paper for a record, a `--line-heavy` edge for a
+   decision still waiting on a human. The word is never abbreviated. */
 .amendment-card__status {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
   padding: var(--s-1) var(--s-2);
-  border: 1px solid var(--hairline-strong);
+  border: var(--line) solid var(--text-000);
   border-radius: var(--r-chip);
-  font-family: var(--font-ui);
-  font-size: var(--fs-micro);
-  line-height: var(--s-3);
-  color: var(--text-100);
-}
-
-.amendment-card__instant {
+  background-color: var(--ink-100);
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* Pending is the one status with something to do about it. */
+.amendment-card[data-status='pending'] .amendment-card__status {
+  border-width: var(--line-heavy);
+}
+
+/* The instant itself: an identifier, so mono and tabular, and one step up from the label
+   beside it so the value reads louder than the word that names it. It scrolls rather than
+   wrapping for the same reason the id does. */
+.amendment-card__instant {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
   line-height: var(--s-4);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-200);
+  color: var(--text-000);
+  white-space: nowrap;
 }
 
 .amendment-card__section {
   display: grid;
-  gap: var(--s-2);
+  gap: var(--s-3);
   min-width: 0;
 }
 
+/* Section headings inside a card are small caps at the bottom of the ramp, so they
+   name a block without competing with the card's own head — and each sits on a 1px
+   hairline, which is the in-card weight of the same device `.section-head` uses at 3px on
+   the page. An 11px small-caps line with nothing under it reads as a caption for whatever
+   is above it rather than a heading for what is below. */
 .amendment-card__heading {
   margin: 0;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .amendment-card__prose {
+  max-width: 68ch;
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
 }
 
+/* One identifier, one line, one scroll box. */
 .amendment-card__ident {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  white-space: nowrap;
 }
+
+/* ── the provenance grid: a definition list set as a table of facts ──────────── */
 
 .amendment-card__facts {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--s-1) var(--s-3);
+  grid-template-columns: minmax(11rem, max-content) minmax(0, 1fr);
+  gap: 0;
   margin: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .amendment-card__term {
+  padding: var(--s-2) var(--s-3);
+  border-right: var(--line) solid var(--text-000);
+  border-bottom: 1px solid var(--hairline);
+  background-color: var(--ink-050);
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-mono);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .amendment-card__value {
   margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.amendment-card__term:last-of-type,
+.amendment-card__value:last-of-type {
+  border-bottom-width: 0;
+}
+
+/* The 64-character interlock, the promise ids and the evidence reference: one line
+   each, scrolled rather than wrapped, on the child so a linked value stays reachable. */
+.amendment-card__value-inner {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  white-space: nowrap;
 }
 
 .amendment-card__link {
@@ -209,13 +402,27 @@
 
 .amendment-card__artifacts {
   display: grid;
-  gap: var(--s-1);
+  gap: var(--s-2);
   margin: 0;
   padding: 0;
   list-style: none;
+  min-width: 0;
+}
+
+.amendment-card__artifact-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  align-items: baseline;
+  min-width: 0;
 }
 
 .amendment-card__artifact {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
@@ -223,7 +430,7 @@
   color: var(--text-100);
   text-decoration: underline;
   text-underline-offset: 2px;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   transition: color var(--dur-fast) var(--ease-out);
 }
 
@@ -232,64 +439,119 @@
 }
 
 .amendment-card__artifact-kind {
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
-  line-height: var(--s-3);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-200);
+  white-space: nowrap;
 }
 
 /* ── the accept control (§8.5, §10.8) ──────────────────────────────────────── */
 
 .accept-control {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--s-2) var(--s-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
   align-items: center;
   min-width: 0;
 }
 
+/* An ink-edged slab. It presses by translating rather than by changing depth, because
+   depth lives in `surfaces.css` and nothing else may author it (§10.5). */
 .accept-control__button {
+  flex: 0 0 auto;
   padding: var(--s-2) var(--s-4);
-  border: 1px solid var(--hairline-strong);
+  border: var(--line) solid var(--text-000);
   border-radius: var(--r-chip);
   background-color: var(--ink-100);
   color: var(--text-000);
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
+  font-weight: 700;
   line-height: var(--s-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .accept-control__button:hover {
   background-color: var(--ink-150);
 }
 
+.accept-control__button:active {
+  transform: translate(1px, 1px);
+}
+
 .accept-control__button:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: var(--line-heavy) solid var(--focus);
   outline-offset: 2px;
 }
 
-/* The command, revealed inline — the half of §8.5 that makes the clipboard optional. */
+/* The command, revealed inline — the half of §8.5 that makes the clipboard optional.
+   It is a command someone is going to select and run, so it keeps its spacing byte
+   for byte and scrolls rather than wrapping: a command broken across two lines is a
+   command someone pastes half of. */
 .accept-control__command {
+  flex: 1 1 16rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
-  overflow-wrap: anywhere;
+  white-space: pre;
   user-select: all;
 }
 
 /* A live region, so what the copy did is announced rather than only coloured. */
 .accept-control__status {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
+  max-width: 68ch;
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--text-200);
-  max-width: 72ch;
+}
+
+/* ── narrow viewports: the facts grid folds to one column ────────────────────── */
+
+@media (max-width: 56rem) {
+  .amendment-card__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The right divider becomes a bottom one: in one column the term sits *above* its
+     value, so the rule that separates them has to turn with them. */
+  .amendment-card__term {
+    border-right-width: 0;
+    border-bottom: var(--line) solid var(--text-000);
+  }
+
+  .amendment-card__term:last-of-type {
+    border-bottom-width: var(--line);
+  }
+
+  .amendments-page__empty {
+    padding: var(--s-4);
+  }
 }

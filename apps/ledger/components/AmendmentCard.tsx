@@ -55,6 +55,10 @@ import '../styles/amendments.css';
 
 /** Every heading and sentence the card says. Tests assert the words, not the shape. */
 export const AMENDMENT_WORDS = {
+  /** What the id under it is the id of. Without this the card opens on a bare hash. */
+  eyebrow: 'amendment',
+  /** The verb in front of the instant. An ISO stamp with no verb is a number. */
+  proposedAt: 'proposed',
   citation: 'cited in',
   diff: 'proposed replacement',
   rationale: 'why',
@@ -101,7 +105,18 @@ function Fact({
     <>
       <dt className="amendment-card__term">{term}</dt>
       <dd className="amendment-card__value">
-        {href === undefined ? value : <a className="amendment-card__link" href={href}>{value}</a>}
+        {/* The scroll box is on the `dd`'s child, never on the `dd` itself. A 64-character
+            interlock and a promise id each belong on one line, and a scroller wrapped
+            around the cell would swallow the link inside it — a pointer would scroll the
+            box instead of following the href. On the child, the link is still a link and
+            the value is still whole and selectable end to end. */}
+        {href === undefined ? (
+          <span className="amendment-card__value-inner">{value}</span>
+        ) : (
+          <a className="amendment-card__link amendment-card__value-inner" href={href}>
+            {value}
+          </a>
+        )}
       </dd>
     </>
   );
@@ -127,12 +142,23 @@ export function AmendmentCard({ amendment, className }: AmendmentCardProps) {
       data-status={amendment.status}
       id={amendment.id}
     >
+      {/* Three ranks rather than three runs on one baseline: the identity with an eyebrow
+          naming it, the status in its own corner, and the instant preceded by the verb it
+          is the instant of. See the note over `.amendment-card__head` in
+          `amendments.css` for what this replaced and why. The `id` attribute stays on the
+          id run itself, because that is what `aria-labelledby` names the card by. */}
       <div className="amendment-card__head">
-        <span className="amendment-card__id" id={headingId}>
-          {amendment.id}
+        <span className="amendment-card__identity">
+          <span className="amendment-card__eyebrow">{AMENDMENT_WORDS.eyebrow}</span>
+          <span className="amendment-card__id" id={headingId}>
+            {amendment.id}
+          </span>
         </span>
         <span className="amendment-card__status">{amendment.status}</span>
-        <span className="amendment-card__instant">{amendment.createdAt}</span>
+        <span className="amendment-card__stamp">
+          <span className="amendment-card__stamp-label">{AMENDMENT_WORDS.proposedAt}</span>
+          <span className="amendment-card__instant">{amendment.createdAt}</span>
+        </span>
       </div>
 
       <section className="amendment-card__section">
@@ -189,8 +215,8 @@ export function AmendmentCard({ amendment, className }: AmendmentCardProps) {
         ) : (
           <ul className="amendment-card__artifacts">
             {artifacts.map(([label, publicPath]) => (
-              <li key={label}>
-                <span className="amendment-card__artifact-kind">{label}</span>{' '}
+              <li className="amendment-card__artifact-item" key={label}>
+                <span className="amendment-card__artifact-kind">{label}</span>
                 <a className="amendment-card__artifact" href={publicPath}>
                   {publicPath}
                 </a>

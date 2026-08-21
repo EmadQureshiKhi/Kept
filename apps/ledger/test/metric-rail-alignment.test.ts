@@ -214,6 +214,63 @@ describe('metric rail alignment — the assertions have something to read', () =
   });
 });
 
+/* ─────────── claim 0: the rail reflows on its own width (R10.8) ─────────────── */
+
+describe('metric rail alignment — the rail is fluid, and lifts without a shadow', () => {
+  it('lays the tiles out with auto-fit tracks rather than a fixed count', () => {
+    const rail = declarationsFor(CONTRACT.rail);
+    expect(rail.get('display')).toBe('grid');
+    expect(
+      rail.get('grid-template-columns'),
+      `R10.8: the rail must yield at every width from 320px up. auto-fit tracks let the ` +
+        `container decide how many tiles fit, so there is no width the rail is wrong at ` +
+        `and no breakpoint to be wrong at it.`,
+    ).toBe('repeat(auto-fit, minmax(10rem, 1fr))');
+    expect(rail.get('gap')).toBe('var(--s-4)');
+  });
+
+  it('sets no min-width anywhere in the rail, so nothing can force overflow', () => {
+    const offences: string[] = [];
+    for (const rule of RULES) {
+      for (const declared of rule.declarations) {
+        if (declared.property.toLowerCase() !== 'min-width') continue;
+        if (normaliseCssValue(declared.value) !== '0') {
+          offences.push(`${rule.prelude} { min-width: ${declared.value} }`);
+        }
+      }
+    }
+    expect(offences, offences.join('\n')).toEqual([]);
+  });
+
+  it('lifts a tile with a transform and a fill, never with a shadow of its own', () => {
+    const lift = RULES.filter((rule) => selectorsOf(rule).includes(`.${CONTRACT.tile}:hover`));
+    expect(lift.length, 'the tile does not lift on hover').toBe(1);
+    const declared = new Map(
+      (lift[0] as CssRule).declarations.map((entry) => [
+        entry.property.toLowerCase(),
+        normaliseCssValue(entry.value),
+      ]),
+    );
+    expect(declared.get('transform')).toBe('translateY(-2px)');
+    expect(
+      declared.get('background-color'),
+      'the hover fill is the paper surface the palette already names for it',
+    ).toBe('var(--ink-150)');
+    expect(
+      [...declared.keys()],
+      `§10.5: depth is authored in surfaces.css alone, so a slab cannot raise its own ` +
+        `elevation ramp — it translates and changes fill instead`,
+    ).not.toContain('box-shadow');
+  });
+
+  it('transitions only the two properties the lift moves', () => {
+    const box = declarationsFor(CONTRACT.tile);
+    expect(box.get('transition')).toBe(
+      'transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out)',
+    );
+  });
+});
+
 /* ──────────────────── claim 1: the digits align, not the run ────────────────── */
 
 describe('metric rail alignment — the unit is optical, the digits are the column', () => {
@@ -375,7 +432,10 @@ describe('metric rail alignment — one 4px grid, one named exception', () => {
   it('puts the label line box on the grid too', () => {
     const label = declarationsFor(CONTRACT.label);
     expect(label.get('line-height')).toBe('var(--s-4)');
-    expect(label.get('font-size')).toBe('var(--fs-sm)');
+    /* `--fs-micro`, not `--fs-sm`: the label is a small-caps name for the figure
+       beside it, so it sits at the bottom of the ramp and lets the figure carry the
+       tile. Its line box is still `--s-4`, which is what keeps it on the grid. */
+    expect(label.get('font-size')).toBe('var(--fs-micro)');
     const margin = expandTokens(label.get('margin') ?? '')
       .split(' ')
       .map((part) => resolveLength(part))
@@ -425,10 +485,29 @@ describe('metric rail alignment — tabular numerals and the mono/ui split', () 
     expect(declaration(CONTRACT.label, 'font-family')).toBe('var(--font-ui)');
   });
 
-  it('tracks only the display run, and unsets tracking where it inherits', () => {
-    expect(declaration(CONTRACT.figure, 'letter-spacing')).toBe('var(--tr-tight)');
+  /**
+   * The tracking inversion of §10.7, read across the whole tile: negative as the
+   * size grows, positive as it shrinks into small caps, and `normal` for the one run
+   * that is neither — prose at `--fs-lg`.
+   *
+   * The figure's `-0.04em` is a literal rather than `--tr-tight`. `--tr-tight` is the
+   * ramp's general display tracking and is authored for `--fs-xl`; at `--fs-metric`
+   * the counters are open enough to take more, and the four figures read as one
+   * column of numerals rather than four separate words at the tighter setting. The
+   * value is not on the 4px module and does not need to be — letter-spacing places
+   * nothing, so it is outside the grid rule below by construction.
+   */
+  it('inverts tracking across the ramp: tight display, open small caps, normal prose', () => {
+    expect(declaration(CONTRACT.figure, 'letter-spacing')).toBe('-0.04em');
     expect(declaration(CONTRACT.word, 'letter-spacing')).toBe('normal');
-    expect(declaration(CONTRACT.label, 'letter-spacing')).toBe('normal');
+    expect(declaration(CONTRACT.label, 'letter-spacing')).toBe('0.1em');
+  });
+
+  /** The display run is the heaviest thing on the tile, and the label the lightest. */
+  it('weights the figure above the label, so the number carries the tile', () => {
+    expect(declaration(CONTRACT.figure, 'font-weight')).toBe('800');
+    expect(declaration(CONTRACT.label, 'font-weight')).toBe('700');
+    expect(declaration(CONTRACT.label, 'text-transform')).toBe('uppercase');
   });
 });
 

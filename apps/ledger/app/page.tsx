@@ -28,14 +28,36 @@ import { snapshot } from '../lib/snapshot.js';
 
 import '../styles/hero.css';
 
+/**
+ * **No `metadata` export here, and that is the decision rather than an omission.**
+ *
+ * The root layout sets `title.default` to `KEPT` and `title.template` to `KEPT · %s`.
+ * A `title` on this page would be composed by that template, so the site's front door
+ * would read `KEPT · Promises` — a section name for something that is not a section.
+ * Falling through to `default` is what makes the home tab read plain `KEPT`, and the
+ * layout's `description` already covers this page, being a description of the product
+ * and this page being the product's front page.
+ */
+
 export default function LedgerPage() {
   const freshness = renderFreshness(snapshot.freshness, snapshot.generatedAt);
 
   return (
     <>
       <header className="hero-header">
-        <h1 className="hero-title">The promises this codebase makes</h1>
-        <p className="hero-lede">
+        {/* The title is set in a solid ink slab: `.surface-slab-ink` fills the plane with
+            `--text-000` and inverts its type to `--ink-000` (surfaces.css, because that is
+            the one file permitted to declare the offset shadow), and
+            `.page-title__slab` sizes the box around the words (shell.css). The `h1`
+            itself keeps the type ramp, so the heading is still one clamp from a phone to
+            a wide monitor — and `.hero-title`'s own `textContent` is unchanged, which is
+            what `promise-graph.test.tsx` asserts. */}
+        <h1 className="hero-title">
+          <span className="page-title__slab surface-slab-ink">
+            The promises this codebase makes
+          </span>
+        </h1>
+        <p className="page-standfirst">
           Every claim the repository states in prose, the citation it is written at, the
           designed test that would prove it, and the verdict of the last verification run.
         </p>

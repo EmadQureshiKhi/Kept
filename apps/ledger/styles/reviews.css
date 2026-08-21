@@ -1,9 +1,13 @@
 /**
  * `/reviews` and its cards — design §8.1, §8.2, §10.1, §10.5, §10.7, §10.10, R5.7,
- * R7.2, R7.7.
+ * R7.2, R7.7, R10.8.
  *
  * Namespaced `reviews-page__*` and `review-card__*`, for the same reason every other
  * Ledger stylesheet is namespaced: they are all global, so the prefix is the scope.
+ * That also means the vocabulary shared with `/amendments` — the definition-list
+ * grammar, the empty state, the identifier scroll box — is *restated* under this
+ * prefix rather than imported. It has to be: Next imports a stylesheet per route, so
+ * a class defined only in `amendments.css` does not exist on this page.
  *
  * The card is `.surface-raised-2` and the diffs inside it are `.surface-well`, matching
  * `/amendments` exactly — the two repair surfaces are the same *kind* of artefact seen
@@ -17,12 +21,27 @@
  * A reviewer's decision on a review card is *what the repair should be*, which is a
  * conversation and not a click.
  *
+ * ## The provenance block is a definition list, so it is set as one
+ *
+ * R7.7 names three fields a card must carry, and a card carries five. Set as a
+ * `dt`/`dd` stack they read as ten paragraphs; set as a two-column grid they read as
+ * five facts. So the grid is `minmax(11rem, max-content) minmax(0, 1fr)`: the term
+ * column is as wide as the longest term and no wider, the value column takes what is
+ * left and — crucially — has a zero minimum, so a 64-character reference cannot widen
+ * the card. Each `dt` is filled in `--ink-050` with a 2px ink rule down its right
+ * edge, which is the divider doing the work a border on every row would do worse.
+ *
+ * Below 56rem the grid collapses to one column and each `dt` swaps its right rule for
+ * a bottom one, because a 176px term column inside a card on a 320px screen leaves
+ * nothing for the value.
+ *
  * Typography per §10.7: the card id, the ISO instant, the promise id, the branch, the
  * evidence reference and each changed file's path are identifiers and take
  * `--font-mono`; the title, the detail, each change's summary and every empty-state
  * sentence are prose and take `--font-ui`. The title is prose deliberately — it is a
  * sentence about a claim, and setting it in mono would flatten the one typographic
- * contrast the page has.
+ * contrast the page has. The terms are set in small caps at `--fs-micro`, tracked open
+ * to `0.08em`, which is the bottom of the tracking inversion the ramp lives on.
  *
  * No `box-shadow`, no `@keyframes`, and the only transition is `color` on a link hover —
  * on the closed allowlist of §10.6.
@@ -30,39 +49,36 @@
 
 /* ── the page ──────────────────────────────────────────────────────────────── */
 
+/* No padding of its own: `.page-main` in `shell.css` owns the page gutter, and a
+   second one here doubled it — 40px each side on a 320px phone, a quarter of the
+   viewport spent twice. The measure is capped in `rem` so it scales with the reader's
+   own type size rather than pinning to a pixel count. */
 .reviews-page {
   display: grid;
   gap: var(--s-6);
   min-width: 0;
-  padding: var(--s-8) var(--s-6);
-  max-width: 1100px;
+  max-width: 72rem;
 }
 
+/* Placement only: the plane and the offset shadow come from `.surface-slab-ink`, the box
+   from `.page-title__slab`, and the size, case and tracking from `shell.css`'s `h1`
+   clamp. The standfirst under it is the shared `.page-standfirst` — one treatment for the
+   title-and-sentence pair across all five routes, rather than five copies of it. */
 .reviews-page__title {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
-  color: var(--text-000);
+  margin: 0 0 var(--s-4);
 }
 
-.reviews-page__lede {
+/* The measured line, ruled off above it so it reads as the sentence that accounts for the
+   list rather than as a caption under the standfirst. */
+.reviews-page__measured {
+  max-width: 72ch;
   margin: 0;
+  padding-top: var(--s-3);
+  border-top: var(--line) solid var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
-}
-
-.reviews-page__measured {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
-  color: var(--text-200);
-  max-width: 72ch;
 }
 
 .reviews-page__instant {
@@ -70,18 +86,42 @@
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-100);
+  color: var(--text-000);
+  white-space: nowrap;
 }
 
+/* ── the empty state: the one dashed border in the system (§10.10) ──────────── */
+
+/* This is the live path today — the committed snapshot holds no card — so it is the
+   first thing a judge sees on this route and it has to read as deliberate. A dashed
+   3px ink edge on the recessed paper surface says "specified, and holding nothing";
+   a blank would say "this page does not work". */
 .reviews-page__empty {
+  display: grid;
+  gap: var(--s-2);
   margin: 0;
-  padding: var(--s-4);
+  padding: var(--s-6);
+  border: var(--line-heavy) dashed var(--text-000);
   border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.reviews-page__empty-lead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+.reviews-page__empty-detail {
+  max-width: 62ch;
+  margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
-  color: var(--text-100);
-  max-width: 72ch;
+  color: var(--text-200);
 }
 
 .reviews-page__list {
@@ -97,37 +137,61 @@
 
 .review-card {
   display: grid;
-  gap: var(--s-3);
+  gap: var(--s-4);
   min-width: 0;
   padding: var(--s-4);
   border-radius: var(--r-panel);
 }
 
+/* The head is the card's own masthead: id on the left, status and instant pushed to
+   the right, and a rule under all three so the body below reads as a separate block. */
 .review-card__head {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2);
+  gap: var(--s-2) var(--s-3);
   align-items: baseline;
-  justify-content: space-between;
+  padding-bottom: var(--s-3);
+  border-bottom: var(--line) solid var(--text-000);
 }
 
 .review-card__id {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
+  font-weight: 700;
   line-height: var(--s-4);
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
+  white-space: nowrap;
 }
 
-/* `open` or `dismissed`, and never a verdict — so it carries no verdict hue. */
+/* `open` or `dismissed`, and never a verdict — so it carries no verdict hue. It takes
+   the badge grammar instead: a `--line` ink edge on paper for a decision already
+   taken, a `--line-heavy` edge for one still outstanding. The word is always the
+   whole word (§8.2 declares exactly two, and neither is abbreviated). */
 .review-card__status {
+  margin-left: auto;
   padding: var(--s-1) var(--s-2);
-  border: 1px solid var(--hairline-strong);
+  border: var(--line) solid var(--text-000);
   border-radius: var(--r-chip);
-  font-family: var(--font-ui);
+  background-color: var(--ink-100);
+  font-family: var(--font-mono);
   font-size: var(--fs-micro);
-  line-height: var(--s-3);
-  color: var(--text-100);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* Outstanding: heavier edge, unfilled. Nothing here has gone wrong — a human has not
+   decided yet — so it is weight rather than fill that marks it. */
+.review-card[data-status='open'] .review-card__status {
+  border-width: var(--line-heavy);
 }
 
 .review-card__instant {
@@ -137,73 +201,127 @@
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--text-200);
+  white-space: nowrap;
 }
 
 /* Prose, at the largest size on the card: it is the subject (§10.7). */
 .review-card__title {
+  max-width: 62ch;
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--fs-md);
-  line-height: var(--lh-body);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
   color: var(--text-000);
-  max-width: 72ch;
 }
 
 .review-card__section {
   display: grid;
-  gap: var(--s-2);
+  gap: var(--s-3);
   min-width: 0;
 }
 
+/* Section headings inside a card are small caps at the bottom of the ramp, so they
+   name a block without competing with the card's own title — and each sits on a 1px
+   hairline, the in-card weight of the device `.section-head` uses at 3px on the page. */
 .review-card__heading {
   margin: 0;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .review-card__prose {
+  max-width: 68ch;
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
 }
 
+/* One identifier, one line, one scroll box: the whole value stays selectable rather
+   than being wrapped into fragments or hidden behind a tooltip. */
 .review-card__ident {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  white-space: nowrap;
 }
+
+/* ── the provenance grid: a definition list set as a table of facts ──────────── */
 
 .review-card__facts {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--s-1) var(--s-3);
+  grid-template-columns: minmax(11rem, max-content) minmax(0, 1fr);
+  gap: 0;
   margin: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  min-width: 0;
 }
 
+/* The term cell: filled, small caps, and separated from its value by a 2px ink rule
+   rather than by whitespace. Two columns of type with no divider read as one ragged
+   column; the divider is what makes the pair legible as a pair. */
 .review-card__term {
+  padding: var(--s-2) var(--s-3);
+  border-right: var(--line) solid var(--text-000);
+  border-bottom: 1px solid var(--hairline);
+  background-color: var(--ink-050);
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-mono);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .review-card__value {
   margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.review-card__term:last-of-type,
+.review-card__value:last-of-type {
+  border-bottom-width: 0;
+}
+
+/* The value inside a `dd`, boxed so a long reference scrolls instead of widening the
+   card. On the child rather than on the `dd`, so a linked value stays a link a
+   pointer and a caret can both reach. */
+.review-card__value-inner {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  white-space: nowrap;
 }
 
 .review-card__link {
@@ -215,7 +333,7 @@
 
 .review-card__changes {
   display: grid;
-  gap: var(--s-3);
+  gap: var(--s-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -226,4 +344,27 @@
   display: grid;
   gap: var(--s-2);
   min-width: 0;
+}
+
+/* ── narrow viewports: the facts grid folds to one column ────────────────────── */
+
+@media (max-width: 56rem) {
+  .review-card__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The right divider becomes a bottom one: in one column the term sits *above* its
+     value, so the rule that separates them has to turn with them. */
+  .review-card__term {
+    border-right-width: 0;
+    border-bottom: var(--line) solid var(--text-000);
+  }
+
+  .review-card__term:last-of-type {
+    border-bottom-width: var(--line);
+  }
+
+  .reviews-page__empty {
+    padding: var(--s-4);
+  }
 }
