@@ -1,0 +1,12 @@
+
+> kept@0.0.0 loop
+> node bin/kept verify --all --member-debug
+
+kept verify --all
+  repository   /Users/nokitha/Desktop/KEPT
+  radius       1c4fff07-a0da-495b-8471-26d45b4a1441, 4be09740-bce4-483f-ad83-9e6cc24bd421, 58f4980c-0110-4f7e-b84a-ed89a963a9c6, 6badb68a-68e8-42cd-b3eb-8ca64143a599, 70e7202d-3dfd-4056-9d11-15705096ad5c, 9337ea4e-6534-424b-9aba-80b3ff5018d0, e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb, e342c321-5b49-4525-a14e-c227ff5b52ed, ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c
+  command      testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue
+  outcome      failure, testrun_done seen
+  verdicts     8 written
+  next action  docs-lie
+  handoff      /Users/nokitha/Desktop/KEPT/.kept/handoff.json

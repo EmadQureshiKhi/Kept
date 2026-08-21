@@ -6,19 +6,155 @@
   ],
   "diagnostics": [
     {
-      "at": "2026-08-20T16:17:09.800Z",
+      "at": "2026-08-21T03:58:20.194Z",
       "code": "enrichment-assurance-status",
       "file": null,
       "line": null,
-      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: no context store here (run `kane-cli context ingest <files>` first)",
+      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: 108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time",
       "severity": "warn"
     },
     {
-      "at": "2026-08-20T16:17:09.802Z",
+      "at": "2026-08-21T03:58:20.196Z",
       "code": "merge-degraded",
       "file": null,
       "line": null,
       "message": "The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 19,
+      "message": "Promise 'p_177308118beb' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 18,
+      "message": "Promise 'p_365815f2bcca' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 20,
+      "message": "Promise 'p_45ccecba7aa5' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-repair-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 20,
+      "message": "Promise 'p_45ccecba7aa5' has a repair annotation referencing '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to no evidence pack in this snapshot, so the reference was cleared.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 14,
+      "message": "Promise 'p_6ca9700b8471' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 16,
+      "message": "Promise 'p_8d965c2fae07' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 15,
+      "message": "Promise 'p_a972e6fcb195' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 13,
+      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-evidence-unresolved",
+      "file": "apps/fixture/README.md",
+      "line": 17,
+      "message": "Promise 'p_eb071a709ed0' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_45ccecba7aa5 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.993Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.994Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_8d965c2fae07 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.994Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.994Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "severity": "warn"
+    },
+    {
+      "at": "2026-08-21T03:58:40.994Z",
+      "code": "snapshot-edge-unresolved",
+      "file": null,
+      "line": null,
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
       "severity": "warn"
     }
   ],
@@ -113,11 +249,11 @@
   ],
   "evidence": [],
   "freshness": {
-    "commandFamily": null,
-    "terminalEventAt": null,
-    "terminalEventType": null
+    "commandFamily": "ExecutionTestrun",
+    "terminalEventAt": "2026-08-21T03:52:23.744Z",
+    "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-20T16:17:09.885Z",
+  "generatedAt": "2026-08-21T03:58:40.990Z",
   "generator": {
     "kaneCli": null,
     "kept": "0.0.0"
@@ -125,10 +261,10 @@
   "metrics": {
     "designedCount": 8,
     "designedCoverage": 1,
-    "provenCount": 0,
+    "provenCount": 7,
     "provenCoverage": null,
-    "redCount": 0,
-    "staleCount": 8,
+    "redCount": 1,
+    "staleCount": 0,
     "totalPromises": 8,
     "undesignedCount": 0
   },
@@ -151,8 +287,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -172,8 +315,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -192,9 +342,24 @@
       "providers": [
         "baseline"
       ],
-      "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "repair": {
+        "branch": "docs-lie",
+        "category": null,
+        "confidence": null,
+        "evidenceRef": null,
+        "rationale": "No readable failure.yaml in the resolved evidence pack — absent, unreadable or unparseable — so no positive evidence of a product fault or a test-mechanics fault exists and the claim itself is what is left in doubt.",
+        "severity": null,
+        "strategy": "failureYamlTriage"
+      },
+      "verdict": "red",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "failed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -214,8 +379,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -235,8 +407,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -256,8 +435,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -277,8 +463,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     },
     {
       "citation": {
@@ -298,8 +491,15 @@
         "baseline"
       ],
       "repair": null,
-      "verdict": "stale",
-      "verdictSource": null
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-21T03:52:23.744Z",
+        "memberStatus": "passed",
+        "reasonCode": null,
+        "resultCode": null,
+        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "terminalEventType": "testrun_done"
+      }
     }
   ],
   "reviewCards": [],

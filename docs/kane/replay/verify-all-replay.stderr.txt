@@ -1,0 +1,800 @@
+
+Update available: 0.8.4 → 0.8.5 — run `npm install -g @testmuai/kane-cli@latest` to update
+
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Pin the presentation currency to USD","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/settings. Wait until the currency options are visible and the\nloading message is gone. Choose USD, then confirm the status line reads \"Showing prices in USD.\"","timestamp":1787283845,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.3,"summary":"navigate: Navigate to http://localhost:3100/settings","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"f07779f9-38ad-4028-8157-7f12dbd7cba9"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the first sentence of the status line beneath the display currency options","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the first sentence of the status line beneath the display currency options","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.2,"summary":"analyze: Reading the first sentence of the status line beneath the display currency optio","ordinal":2,"id":"0-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"118887c2-8d17-4c20-b2c9-fd4c8f09ee38"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the status line reads \"Showing prices in USD.\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the status line reads \"Showing prices in USD.\"","ordinal":3,"id":"0-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"f307b5e2-4bf4-441a-9250-d2a324ea66ee"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.57,"final_url":"http://localhost:3100/settings","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/0/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"pointer":""},"variables_out":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.57,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Empty the cart","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. If any\ncoffees are listed, use each line's Remove button until the page says \"Your cart is empty.\"","timestamp":1787283846,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":4,"id":"1-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"0d24d29c-6a76-4afd-97f1-e2098be061b7"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Checking whether any coffees are listed in the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Checking whether any coffees are listed in the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Checking whether any coffees are listed in the cart","ordinal":5,"id":"1-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"b185f857-1c6e-4366-90e6-4638c827172f"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.42,"final_url":"http://localhost:3100/cart","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/1/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{"coffees_listed_condition":{"syntax":"{{coffees_listed_condition}}","value":"false","secret":false}},"pointer":""},"variables_out":{"coffees_listed_condition":{"syntax":"{{coffees_listed_condition}}","value":"false","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.42,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Add one bag of Orion House Blend","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/product/orion-house-blend and wait until the price reads\n\"$18.00\". Leave Quantity at 1 and press \"Add to cart\".","timestamp":1787283846,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 2 actions","recording_length":2}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"navigate: Navigate to http://localhost:3100/product/orion-house-blend","ordinal":6,"id":"2-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"1b4f7770-e104-40c8-b559-773242f708bf"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Clicking Add to cart button","action_type":"click","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Clicking Add to cart button","action_type":"click"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.7,"summary":"click: Clicking Add to cart button","ordinal":7,"id":"2-2","kind":"click","screenshot":"screenshot.jpg","action_id":"8c62cc4a-7b1b-4866-beff-507bc5051ac0"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.83,"final_url":"http://localhost:3100/product/orion-house-blend","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/2/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.83,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Assert the cart shows one bag at eighteen dollars","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. Assert that\nthe quantity for Orion House Blend reads 1 and that the Subtotal reads \"$18.00\".","timestamp":1787283847,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":8,"id":"3-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"975bb752-d514-4328-a625-a3fec3e61f09"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the quantity of Orion House Blend from the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the quantity of Orion House Blend from the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the quantity of Orion House Blend from the cart","ordinal":9,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"c97bfd0e-f85c-4e38-ae15-4e6fc4388b12"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the subtotal from the cart summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the subtotal from the cart summary","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the subtotal from the cart summary","ordinal":10,"id":"3-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"529e8532-9f96-46db-bcbe-5018cfa01488"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the quantity for Orion House Blend reads 1 and the Subtotal reads \"$18.00\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: the quantity for Orion House Blend reads 1 and the Subtotal reads \"$18.00\"","ordinal":11,"id":"3-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"635f4ae5-a800-4bf4-a49e-490aa75dfe3c"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.42,"final_url":"http://localhost:3100/cart","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/3/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"1","secret":false},"subtotal_18_00_check":{"syntax":"{{subtotal_18_00_check}}","value":"$18.00","secret":false}},"pointer":""},"variables_out":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"1","secret":false},"subtotal_18_00_check":{"syntax":"{{subtotal_18_00_check}}","value":"$18.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.42,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":5,"heading":"Increase the quantity to two without reloading","ref":null}
+[member] {"type":"run_start","objective":"Press the \"Increase quantity of Orion House Blend\" button once. Do not reload the page. Assert\nthe quantity now reads 2.","timestamp":1787283847,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking the increase quantity button for Orion House Blend in the cart","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking the increase quantity button for Orion House Blend in the cart","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking the increase quantity button for Orion House Blend in the cart","ordinal":12,"id":"4-1","kind":"click","screenshot":"screenshot.jpg","action_id":"db2f68fd-75f7-4113-b9cc-745003c0b9a0"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the cart quantity value for Orion House Blend","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the cart quantity value for Orion House Blend","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the cart quantity value for Orion House Blend","ordinal":13,"id":"4-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"13fe0c09-47d2-48e6-8473-d58a5b6feda5"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the quantity now reads 2","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the quantity now reads 2","ordinal":14,"id":"4-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"edf50066-a1c1-446b-ac6a-f83d1d916148"}
+[member] {"type":"run_end","run_id":"run-4","status":"passed","summary":"","reason":"replay completed","duration":0.69,"final_url":"http://localhost:3100/cart","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/4/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/4/replay-test","total_runs":1,"context":{"memory":{},"variables":{"quantity_now_reads_2_check":{"syntax":"{{quantity_now_reads_2_check}}","value":"2","secret":false}},"pointer":""},"variables_out":{"quantity_now_reads_2_check":{"syntax":"{{quantity_now_reads_2_check}}","value":"2","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":5,"status":"passed","duration_s":0.69,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":6,"heading":"Assert the subtotal doubled","ref":null}
+[member] {"type":"run_start","objective":"Assert that the Subtotal reads \"$36.00\" and that the Total reads \"$36.00\".","timestamp":1787283848,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the subtotal from the cart summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the subtotal from the cart summary","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the subtotal from the cart summary","ordinal":15,"id":"5-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"8f29428e-7afb-459d-94ad-038249b08095"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the total from the cart summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the total from the cart summary","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the total from the cart summary","ordinal":16,"id":"5-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"c19651b2-7e86-4fe3-9df7-c70a2f373ca3"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the Subtotal reads \"$36.00\" and the Total reads \"$36.00\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the Subtotal reads \"$36.00\" and the Total reads \"$36.00\"","ordinal":17,"id":"5-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"9553c0a2-0e7f-4869-9508-b3873a93cd3f"}
+[member] {"type":"run_end","run_id":"run-5","status":"passed","summary":"","reason":"replay completed","duration":0.2,"final_url":"http://localhost:3100/cart","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/5/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/95b1a44a-d1d4-4398-aab0-0e73bf48cb5b/scratch/5/replay-test","total_runs":1,"context":{"memory":{},"variables":{"subtotal_reads_check":{"syntax":"{{subtotal_reads_check}}","value":"$36.00","secret":false},"total_reads_check":{"syntax":"{{total_reads_check}}","value":"$36.00","secret":false}},"pointer":""},"variables_out":{"subtotal_reads_check":{"syntax":"{{subtotal_reads_check}}","value":"$36.00","secret":false},"total_reads_check":{"syntax":"{{total_reads_check}}","value":"$36.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":6,"status":"passed","duration_s":0.2,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":10,"steps":{"total":6,"passed":6,"failed":0,"skipped":0,"replay_decisions":6,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":10,"session_id":"95b1a44a-d1d4-4398-aab0-0e73bf48cb5b"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — pin the presentation currency to USD","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/settings. Wait until the currency options appear and the\nloading message is gone. Choose USD, then confirm the status line reads\n\"Showing prices in USD.\"","timestamp":1787283854,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.3,"summary":"navigate: Navigate to http://localhost:3100/settings","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"cee7ed39-4062-49fc-b7df-f39c2fe948e4"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the status line text","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the status line text","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":5.7,"summary":"analyze: Reading the status line text","ordinal":2,"id":"0-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"1bdd9338-f012-4c7d-a562-7114e2069785"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the status line reads \"Showing prices in USD.\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the status line reads \"Showing prices in USD.\"","ordinal":3,"id":"0-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"2fcb2e0c-5d7e-4b0e-8c2f-52afca00cbdc"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":6.08,"final_url":"http://localhost:3100/settings","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/0/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"pointer":""},"variables_out":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":6.08,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — empty the cart","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. If any\ncoffees are listed, use each line's Remove button until the page says \"Your cart is empty.\"","timestamp":1787283860,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":4,"id":"1-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"7a82a8e1-82a5-43d5-a89d-826604b048a4"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Checking whether any coffees are listed in the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Checking whether any coffees are listed in the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Checking whether any coffees are listed in the cart","ordinal":5,"id":"1-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"c40c9d44-cda1-41b0-a993-3abe0790c0f6"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.44,"final_url":"http://localhost:3100/cart","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/1/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{"any_coffees_listed":{"syntax":"{{any_coffees_listed}}","value":"false","secret":false}},"pointer":""},"variables_out":{"any_coffees_listed":{"syntax":"{{any_coffees_listed}}","value":"false","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.44,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — add three bags of Kepler Reserve","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/product/kepler-reserve and wait until the price reads\n\"$24.00\". Set Quantity to 3 and press \"Add to cart\".","timestamp":1787283860,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/product/kepler-reserve","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/product/kepler-reserve","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/product/kepler-reserve","ordinal":6,"id":"2-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"67a8127b-6d56-479e-96b1-21b6a5ec688f"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Waiting for the plan steps to complete","action_type":"wait","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting for the plan steps to complete","action_type":"wait"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":1.1,"summary":"wait: Waiting for the plan steps to complete","ordinal":7,"id":"2-2","kind":"wait","screenshot":"screenshot.jpg","action_id":"aaaa1745-2118-4bdc-a938-ea6c430045be"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Select \"3\" in \"Quantity\"","action_type":"select","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Select \"3\" in \"Quantity\"","action_type":"select"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"select: Select \"3\" in \"Quantity\"","ordinal":8,"id":"2-3","kind":"select","screenshot":"screenshot.jpg","action_id":"a1f9f170-7b6f-4168-939a-82e0c42a8b5f"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":4,"event":"action","detail":"Click \"Add to cart\"","action_type":"click","success":true}
+[member] {"type":"step_event","index":4,"event":"reasoning","detail":"Click \"Add to cart\"","action_type":"click"}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.6,"summary":"click: Click \"Add to cart\"","ordinal":9,"id":"2-4","kind":"click","screenshot":"screenshot.jpg","action_id":"79cbc0a4-63b2-4dfe-9639-c36ecd92d6dc"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":2.04,"final_url":"http://localhost:3100/product/kepler-reserve","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/2/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":2.04,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — assert the subtotal is over fifty dollars","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. Assert that\nthe quantity for Kepler Reserve reads 3 and that the Subtotal reads \"$72.00\", which is over\nfifty dollars.","timestamp":1787283862,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":10,"id":"3-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"62f9204b-8ae2-4441-94f7-27e0776275f3"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the quantity of Kepler Reserve from the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the quantity of Kepler Reserve from the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.2,"summary":"analyze: Reading the quantity of Kepler Reserve from the cart","ordinal":11,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"f93591b3-c38f-4f9b-9d53-b98afea9ba3d"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the Subtotal from the order summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the Subtotal from the order summary","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the Subtotal from the order summary","ordinal":12,"id":"3-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"c377faa7-c4a9-4e39-8f02-3cf5a885bbfc"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":4,"event":"action","detail":"Reading the Subtotal from the order summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":4,"event":"reasoning","detail":"Reading the Subtotal from the order summary","action_type":"analyze"}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"analyze: Reading the Subtotal from the order summary","ordinal":13,"id":"3-4","kind":"analyze","screenshot":"screenshot.jpg","action_id":"2d13d7f7-fddb-487b-bba4-2dcf9410454b"}
+[member] {"type":"step_start","index":5,"objective":"Step 5"}
+[member] {"type":"step_event","index":5,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":5,"event":"assertion","detail":"the quantity for Kepler Reserve reads 3 and the Subtotal reads \"$72.00\", which is over fifty dollars","passed":true}
+[member] {"type":"step_end","index":5,"status":"passed","duration":0.1,"summary":"assert: the quantity for Kepler Reserve reads 3 and the Subtotal reads \"$72.00\", which i","ordinal":14,"id":"3-5","kind":"assert","screenshot":"screenshot.jpg","action_id":"dcd84d94-79f4-405c-aa9b-860d2682e626"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.53,"final_url":"http://localhost:3100/cart","actions_executed":5,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/3/replay-test/screenshots/step_005.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"kepler_reserve_quantity_check":{"syntax":"{{kepler_reserve_quantity_check}}","value":"3","secret":false},"subtotal_72_00_check":{"syntax":"{{subtotal_72_00_check}}","value":"$72.00","secret":false},"subtotal_over_fifty_dollars_check":{"syntax":"{{subtotal_over_fifty_dollars_check}}","value":"$72.00","secret":false}},"pointer":""},"variables_out":{"kepler_reserve_quantity_check":{"syntax":"{{kepler_reserve_quantity_check}}","value":"3","secret":false},"subtotal_72_00_check":{"syntax":"{{subtotal_72_00_check}}","value":"$72.00","secret":false},"subtotal_over_fifty_dollars_check":{"syntax":"{{subtotal_over_fifty_dollars_check}}","value":"$72.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.53,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":5,"heading":"Step 5 — assert the total is ten percent below the subtotal","ref":null}
+[member] {"type":"bifurcation","flows":["Assert that the Total reads \"$64.80\", ten percent below the Subtotal, because the Cart screen\napplies the discount automatically once the subtotal exceeds 50 dollars."],"count":1,"is_single_flow":true,"names":["Cart Discount Assertion"]}
+[member] {"type":"run_start","objective":"Assert that the Total reads \"$64.80\", ten percent below the Subtotal, because the Cart screen\napplies the discount automatically once the subtotal exceeds 50 dollars.","timestamp":1787283866,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"cm_init","detail":"extracted 1 checkpoints","checkpoint_count":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"describe_trigger","index":1,"screenshot_path":"/var/folders/75/2hmtwkxd25989nx883t1r5hw0000gn/T/v16-run-4-6tqub8sj/run-test/screenshots/step_001.png","objective":"Assert that the Total reads \"$64.80\", ten percent below the Subtotal, because the Cart screen\napplies the discount automatically once the subtotal exceeds 50 dollars.","recent_actions":[]}
+[member] {"type":"step_event","index":1,"event":"evaluation","detail":"checkpoints: 0 passed, 0 failed, 1 pending","all_passed":false}
+[member] {"type":"step_event","index":1,"event":"page_manager","detail":"blocked: none","page_ready":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Waiting for the cart totals section to reflect the conditional discount state","action_type":"wait"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Waiting for the cart totals to update the conditional discount state","action_type":"wait","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Waiting for the cart totals to update the conditional discount state","action_type":"wait"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":54.6,"summary":"wait: PRIMARY: wait for the cart totals section to reflect the conditional discount st","ordinal":15,"id":"4-1","kind":"wait","screenshot":"screenshot.jpg","action_id":"79038ca6-9ff2-41bd-906c-a1a2e1c03688"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"describe_trigger","index":2,"screenshot_path":"/var/folders/75/2hmtwkxd25989nx883t1r5hw0000gn/T/v16-run-4-6tqub8sj/run-test/screenshots/step_002.png","objective":"Assert that the Total reads \"$64.80\", ten percent below the Subtotal, because the Cart screen\napplies the discount automatically once the subtotal exceeds 50 dollars.","recent_actions":[{"step":1,"action_type":"wait","instruction":"PRIMARY: wait for the cart totals section to reflect the conditional discount state","success":true}]}
+[member] {"type":"step_event","index":2,"event":"evaluation","detail":"checkpoints: 0 passed, 0 failed, 1 pending","all_passed":false}
+[member] {"type":"step_event","index":2,"event":"page_manager","detail":"blocked: none","page_ready":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting because the cart totals do not match the required checkpoint state and branch actions are not permitted here","action_type":"wait"}
+[member] {"type":"run_end","status":"failed","summary":"The cart is not applying the automatic over-$50 discount rule, so customers see and would be charged the full amount instead of the reduced total.\nCheck the cart pricing logic that should reduce totals by 10% once the subtotal exceeds $50, and add a regression test that verifies a $72.00 subtotal becomes a $64.80 total automatically.\nevidence: objective_contradiction: Subtotal\nevidence: objective_contradiction: Total\nevidence: objective_contradiction: $72.00","one_liner":"The cart shows a $72.00 total for a $72.00 subtotal instead of applying the expected 10% discount to reach $64.80.","final_state":{},"reason":"AP determined agent is stuck — no viable actions remain","duration":101.8,"bifurcated":false,"total_runs":1,"context":{"memory":{},"variables":{},"pointer":"(failed) The cart shows a $72.00 total for a $72.00 subtotal instead of applying the expected 10% discount to reach $64.80."},"credits_consumed":10.840679999999999,"session_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/5227f75a-3491-4af4-a2ad-07c658d28437/runs/4","result_code":740,"reason_code":"assertion_error.confirmed_product_bug","per_flow_metadata":[{"result_code":"740","reason_code":"assertion_error.confirmed_product_bug","error_message":"AP determined agent is stuck — no viable actions remain","summary":"The cart is not applying the automatic over-$50 discount rule, so customers see and would be charged the full amount instead of the reduced total.\nCheck the cart pricing logic that should reduce totals by 10% once the subtotal exceeds $50, and add a regression test that verifies a $72.00 subtotal becomes a $64.80 total automatically.\nevidence: objective_contradiction: Subtotal\nevidence: objective_contradiction: Total\nevidence: objective_contradiction: $72.00","one_liner":"The cart shows a $72.00 total for a $72.00 subtotal instead of applying the expected 10% discount to reach $64.80.","credits_consumed":10.840679999999999}],"run_id":"run-4","verdict":{"confirmed":true,"status":"failed","family":"application_issue","category":"functional_defect","category_proposal":"","severity":"major","root_cause":"The cart is not applying the automatic over-$50 discount rule, so customers see and would be charged the full amount instead of the reduced total.","agent_fault_assessment":"The agent did not cause this outcome. It reached the correct Cart page, observed a subtotal above the $50 threshold, and then waited for the automatic discount to appear. Because this discount is supposed to apply on its own, there was no missing click or typing step the agent could take to make the total change. The run ended as stuck only because the page never reached the expected discounted state.","bug_title":"Cart total omits automatic 10% discount above $50","signals":[{"excerpt":"Subtotal","kind":"objective_contradiction","step":"4-1"},{"excerpt":"Total","kind":"objective_contradiction","step":"4-1"},{"excerpt":"$72.00","kind":"objective_contradiction","step":"4-1"}],"confidence":0.92,"suggestion":"Check the cart pricing logic that should reduce totals by 10% once the subtotal exceeds $50, and add a regression test that verifies a $72.00 subtotal becomes a $64.80 total automatically.","one_liner":"The cart shows a $72.00 total for a $72.00 subtotal instead of applying the expected 10% discount to reach $64.80.","relevant_steps":[],"culprit_step":"4-1","credits_consumed":5.0165999999999995,"mode":"terminal"}}
+[member] {"type":"test_md_bug_verdict","step_index":5,"confirmed":true,"bug_title":"Cart total omits automatic 10% discount above $50","family":"application_issue","category":"functional_defect","category_proposal":null,"severity":"major","confidence":0.92,"one_liner":"The cart shows a $72.00 total for a $72.00 subtotal instead of applying the expected 10% discount to reach $64.80."}
+[member] {"type":"test_md_step_end","step_index":5,"status":"failed","duration_s":101.8,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[lock] run not committed (failed); discarding playground lock
+[member] {"type":"test_md_bundle_sync","status":"ok","commit_id":"a3d5a121-adcf-4be6-bbbf-3b031f0d8031","path":"/Users/nokitha/Desktop/KEPT/tests/cart_discount_test.md","bytes":25127}
+[member] {"type":"test_md_summary","overall_status":"failed","duration_s":113,"steps":{"total":5,"passed":4,"failed":1,"skipped":0,"replay_decisions":4,"author_decisions":1},"retries":{"triggered":false},"commit":{"committed":false,"reason":"run_failed"},"artifacts":{"replaced":true},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"failed","duration_s":113,"session_id":"5227f75a-3491-4af4-a2ad-07c658d28437"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — pin the presentation currency to USD","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/settings. Wait until the currency options appear and the\nloading message is gone. Choose USD, then confirm the status line reads\n\"Showing prices in USD.\"","timestamp":1787283972,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.3,"summary":"navigate: Navigate to http://localhost:3100/settings","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"3a70901d-0184-4b54-a379-bb722bcf9318"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Waiting briefly for the next step","action_type":"wait","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting briefly for the next step","action_type":"wait"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.7,"summary":"wait: Waiting briefly for the next step","ordinal":2,"id":"0-2","kind":"wait","screenshot":"screenshot.jpg","action_id":"477f513f-4cb6-47f4-9a3e-d6f729149ec8"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the selected currency status line","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the selected currency status line","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the selected currency status line","ordinal":3,"id":"0-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"a9109ced-22d2-4a19-b92e-9921bb720915"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the status line reads \"Showing prices in USD.\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: the status line reads \"Showing prices in USD.\"","ordinal":4,"id":"0-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"9146d419-d3b1-4c19-9bf5-19fa1a73f91c"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":1.09,"final_url":"http://localhost:3100/settings","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/0/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"pointer":""},"variables_out":{"status_line_usd_check":{"syntax":"{{status_line_usd_check}}","value":"Showing prices in USD.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":1.09,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — empty the cart","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. If any\ncoffees are listed, use each line's Remove button until the page says \"Your cart is empty.\"","timestamp":1787283974,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":5,"id":"1-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"4f0a75cf-29f1-42eb-99b2-de2f06cf8c14"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Checking whether any coffees are listed in the cart contents area","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Checking whether any coffees are listed in the cart contents area","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Checking whether any coffees are listed in the cart contents area","ordinal":6,"id":"1-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"ef1ef632-8c2e-46b8-8e2f-f4f462ad2d55"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.38,"final_url":"http://localhost:3100/cart","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/1/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{"any_coffees_listed":{"syntax":"{{any_coffees_listed}}","value":"false","secret":false}},"pointer":""},"variables_out":{"any_coffees_listed":{"syntax":"{{any_coffees_listed}}","value":"false","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.38,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — add one bag of Orion House Blend","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/product/orion-house-blend and wait until the price reads\n\"$18.00\". Leave Quantity at 1 and press \"Add to cart\".","timestamp":1787283974,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 2 actions","recording_length":2}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"navigate: Navigate to http://localhost:3100/product/orion-house-blend","ordinal":7,"id":"2-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"3926192f-e58d-42ae-b3c6-9da8664852fa"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Clicking Add to cart for Orion House Blend","action_type":"click","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Clicking Add to cart for Orion House Blend","action_type":"click"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.7,"summary":"click: Clicking Add to cart for Orion House Blend","ordinal":8,"id":"2-2","kind":"click","screenshot":"screenshot.jpg","action_id":"0e59a77b-1547-464d-9ab0-6d69ee793f96"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.8,"final_url":"http://localhost:3100/product/orion-house-blend","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/2/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.8,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — assert the cart shows one bag at eighteen dollars","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/cart and wait until \"Loading your cart\" is gone. Assert that\nthe quantity for Orion House Blend reads 1 and that the Subtotal reads \"$18.00\".","timestamp":1787283975,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/cart","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"navigate: Navigate to http://localhost:3100/cart","ordinal":9,"id":"3-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"f182ea90-028b-45a1-9a22-4dc5fe69d405"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the quantity for Orion House Blend in the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the quantity for Orion House Blend in the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the quantity for Orion House Blend in the cart","ordinal":10,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"8b50a09f-d65b-4b17-ac8e-32e176e42dc2"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the subtotal from the order summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the subtotal from the order summary","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the subtotal from the order summary","ordinal":11,"id":"3-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"a8f8e4ed-45d6-45bc-8daa-34149e3cbcfa"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the quantity for Orion House Blend reads 1 and the Subtotal reads \"$18.00\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0,"summary":"assert: the quantity for Orion House Blend reads 1 and the Subtotal reads \"$18.00\"","ordinal":12,"id":"3-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"dd78028e-924c-4ad3-bc9b-dff658714f92"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.43,"final_url":"http://localhost:3100/cart","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/3/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"1","secret":false},"subtotal_reads_18_00_check":{"syntax":"{{subtotal_reads_18_00_check}}","value":"$18.00","secret":false}},"pointer":""},"variables_out":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"1","secret":false},"subtotal_reads_18_00_check":{"syntax":"{{subtotal_reads_18_00_check}}","value":"$18.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.43,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":5,"heading":"Step 5 — increase the quantity to two without reloading","ref":null}
+[member] {"type":"run_start","objective":"Press the \"Increase quantity of Orion House Blend\" button once. Do not reload the page. Assert\nthe quantity now reads 2.","timestamp":1787283975,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking Increase quantity button for Orion House Blend in your cart","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking Increase quantity button for Orion House Blend in your cart","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking Increase quantity button for Orion House Blend in your cart","ordinal":13,"id":"4-1","kind":"click","screenshot":"screenshot.jpg","action_id":"afab23ec-f3a6-481f-9849-64eb4cea0ee1"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the quantity for Orion House Blend in the cart","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the quantity for Orion House Blend in the cart","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the quantity for Orion House Blend in the cart","ordinal":14,"id":"4-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"f8a51934-013b-4403-aaca-bbabfd7a0d54"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the quantity now reads 2","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0,"summary":"assert: the quantity now reads 2","ordinal":15,"id":"4-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"943a5777-88f6-4a03-a935-3724236a7f63"}
+[member] {"type":"run_end","run_id":"run-4","status":"passed","summary":"","reason":"replay completed","duration":0.69,"final_url":"http://localhost:3100/cart","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/4/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/4/replay-test","total_runs":1,"context":{"memory":{},"variables":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"2","secret":false}},"pointer":""},"variables_out":{"orion_house_blend_quantity_check":{"syntax":"{{orion_house_blend_quantity_check}}","value":"2","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":5,"status":"passed","duration_s":0.69,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":6,"heading":"Step 6 — assert the subtotal doubled","ref":null}
+[member] {"type":"run_start","objective":"Assert that the Subtotal now reads \"$36.00\" and that the Total reads \"$36.00\".","timestamp":1787283976,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the subtotal amount from the cart totals section","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the subtotal amount from the cart totals section","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the subtotal amount from the cart totals section","ordinal":16,"id":"5-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"f2e6ff33-1a1e-4f90-8669-08fc7d7c122d"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the total amount from the cart totals section","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the total amount from the cart totals section","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the total amount from the cart totals section","ordinal":17,"id":"5-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"9548ea40-46db-4575-821d-9ff8aa986783"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/cart"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the Subtotal now reads \"$36.00\" and the Total reads \"$36.00\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the Subtotal now reads \"$36.00\" and the Total reads \"$36.00\"","ordinal":18,"id":"5-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"5b70f58b-18d0-4fdb-8669-30ae867c757a"}
+[member] {"type":"run_end","run_id":"run-5","status":"passed","summary":"","reason":"replay completed","duration":0.2,"final_url":"http://localhost:3100/cart","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/5/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/a0da27ae-a392-437e-befa-bba0dfd0939a/scratch/5/replay-test","total_runs":1,"context":{"memory":{},"variables":{"subtotal_now_reads_check":{"syntax":"{{subtotal_now_reads_check}}","value":"$36.00","secret":false},"total_reads_check":{"syntax":"{{total_reads_check}}","value":"$36.00","secret":false}},"pointer":""},"variables_out":{"subtotal_now_reads_check":{"syntax":"{{subtotal_now_reads_check}}","value":"$36.00","secret":false},"total_reads_check":{"syntax":"{{total_reads_check}}","value":"$36.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":6,"status":"passed","duration_s":0.2,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":6,"steps":{"total":6,"passed":6,"failed":0,"skipped":0,"replay_decisions":6,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":6,"session_id":"a0da27ae-a392-437e-befa-bba0dfd0939a"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — reach a hydrated Checkout screen","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/checkout and wait until the Order summary panel stops showing\n\"Loading your cart\".","timestamp":1787283979,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/checkout","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/checkout","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/checkout","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"80a50b96-ca97-4b63-b4cc-826387d0710b"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.25,"final_url":"http://localhost:3100/checkout","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/0/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.25,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — fill everything except the email","ref":null}
+[member] {"type":"run_start","objective":"Fill \"Full name\" with \"Ada Lovelace\" and \"Delivery address\" with \"12 Orbit Way, Bristol\". Leave\n\"Email\" empty.","timestamp":1787283980,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Waiting for the plan to start typing Full name and Delivery address","action_type":"wait","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Waiting for the plan to start typing Full name and Delivery address","action_type":"wait"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":1.1,"summary":"wait: Waiting for the plan to start typing Full name and Delivery address","ordinal":2,"id":"1-1","kind":"wait","screenshot":"screenshot.jpg","action_id":"2f5e72a0-2668-4c95-a5e5-becff4d503fb"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Type \"Ada Lovelace\" into \"Full name\"","action_type":"fill","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Type \"Ada Lovelace\" into \"Full name\"","action_type":"fill"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.2,"summary":"fill: Type \"Ada Lovelace\" into \"Full name\"","ordinal":3,"id":"1-2","kind":"fill","screenshot":"screenshot.jpg","action_id":"e8e51305-ae20-40b9-95ff-04d464d91e4b"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","action_type":"fill","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","action_type":"fill"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"fill: Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","ordinal":4,"id":"1-3","kind":"fill","screenshot":"screenshot.jpg","action_id":"40267600-ac69-4b92-9979-5925d2600ab6"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":1.53,"final_url":"http://localhost:3100/checkout","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/1/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":1.53,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — submit the order","ref":null}
+[member] {"type":"run_start","objective":"Press \"Place order\".","timestamp":1787283981,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking Place order button in checkout page","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking Place order button in checkout page","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking Place order button in checkout page","ordinal":5,"id":"2-1","kind":"click","screenshot":"screenshot.jpg","action_id":"ad6e7373-dd1c-45a8-a0b5-57c21ba037bc"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.63,"final_url":"http://localhost:3100/checkout","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/2/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.63,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — assert the refusal names the email field","ref":null}
+[member] {"type":"run_start","objective":"Assert that the alert summarising the refusal appears and contains \"Email: Email is required.\",\nthat the message \"Email is required.\" appears under the Email field, that the Email field is\nmarked invalid and has keyboard focus, and that the browser is still on\nhttp://localhost:3100/checkout with no query string.","timestamp":1787283982,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the alert summary text for the Email field","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the alert summary text for the Email field","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the alert summary text for the Email field","ordinal":6,"id":"3-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"44aec64e-db07-45e9-a8b9-beee058a8a07"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the validation message under the Email field","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the validation message under the Email field","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the validation message under the Email field","ordinal":7,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"079624c9-227f-4e7f-80e9-2e9fddd42b65"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the current checkout page URL","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the current checkout page URL","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the current checkout page URL","ordinal":8,"id":"3-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"e868128e-2dfc-4567-aefe-ad108664d537"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":4,"event":"action","detail":"Checking whether the Email field is marked invalid and focused","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":4,"event":"reasoning","detail":"Checking whether the Email field is marked invalid and focused","action_type":"analyze"}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"analyze: Checking whether the Email field is marked invalid and focused","ordinal":9,"id":"3-4","kind":"analyze","screenshot":"screenshot.jpg","action_id":"dc86a0a9-f686-4db6-b3c5-50c3d9772a3a"}
+[member] {"type":"step_start","index":5,"objective":"Step 5"}
+[member] {"type":"step_event","index":5,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":5,"event":"assertion","detail":"the alert summarising the refusal appears and contains \"Email: Email is required.\", the message \"Email is required.\" appears under the Email field, the Email field is marked invalid and has keyboard focus, and the browser is still on http://localhost:3100/checkout with no query string","passed":true}
+[member] {"type":"step_end","index":5,"status":"passed","duration":0.1,"summary":"assert: the alert summarising the refusal appears and contains \"Email: Email is required","ordinal":10,"id":"3-5","kind":"assert","screenshot":"screenshot.jpg","action_id":"0eebcdf6-944e-4e6d-9b4e-9d4bfa93feeb"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.35,"final_url":"http://localhost:3100/checkout","actions_executed":5,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/3/replay-test/screenshots/step_005.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/29827f07-4ed4-4099-b95e-f39ea0ccd568/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"alert_refusal_summary_check":{"syntax":"{{alert_refusal_summary_check}}","value":"Email: Email is required.","secret":false},"email_required_message_under_field_check":{"syntax":"{{email_required_message_under_field_check}}","value":"Email is required.","secret":false},"checkout_url_no_query_string_check":{"syntax":"{{checkout_url_no_query_string_check}}","value":"http://localhost:3100/checkout","secret":false},"email_field_invalid_and_focused_check":{"syntax":"{{email_field_invalid_and_focused_check}}","value":"true","secret":false}},"pointer":""},"variables_out":{"alert_refusal_summary_check":{"syntax":"{{alert_refusal_summary_check}}","value":"Email: Email is required.","secret":false},"email_required_message_under_field_check":{"syntax":"{{email_required_message_under_field_check}}","value":"Email is required.","secret":false},"checkout_url_no_query_string_check":{"syntax":"{{checkout_url_no_query_string_check}}","value":"http://localhost:3100/checkout","secret":false},"email_field_invalid_and_focused_check":{"syntax":"{{email_field_invalid_and_focused_check}}","value":"true","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.35,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":5,"steps":{"total":4,"passed":4,"failed":0,"skipped":0,"replay_decisions":4,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":5,"session_id":"29827f07-4ed4-4099-b95e-f39ea0ccd568"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — assert the hero call to action","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/ and assert that the hero shows a link whose name is\n\"Shop all six coffees\".","timestamp":1787283987,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"0874ffb6-2235-43a7-80e6-8ac951104168"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the hero link name","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the hero link name","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.2,"summary":"analyze: Reading the hero link name","ordinal":2,"id":"0-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"639650d8-61f5-446e-985d-e5c418f1725d"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the hero shows a link whose name is \"Shop all six coffees\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the hero shows a link whose name is \"Shop all six coffees\"","ordinal":3,"id":"0-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"1731392e-3306-43f4-899c-400c3eb4ce23"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.52,"final_url":"http://localhost:3100/","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/0/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"hero_link_name_check":{"syntax":"{{hero_link_name_check}}","value":"Shop all six coffees","secret":false}},"pointer":""},"variables_out":{"hero_link_name_check":{"syntax":"{{hero_link_name_check}}","value":"Shop all six coffees","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.52,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — activate the link","ref":null}
+[member] {"type":"run_start","objective":"Activate that link.","timestamp":1787283987,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking Shop all six coffees in the hero section","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking Shop all six coffees in the hero section","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.7,"summary":"click: Clicking Shop all six coffees in the hero section","ordinal":4,"id":"1-1","kind":"click","screenshot":"screenshot.jpg","action_id":"cc13b40c-6bc1-40ec-b8d8-f126f0875275"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.7,"final_url":"http://localhost:3100/shop","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/1/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.7,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — assert the Shop screen was reached","ref":null}
+[member] {"type":"run_start","objective":"Assert that the browser is now on http://localhost:3100/shop and that the Shop screen reads\n\"Showing 6 of 6 coffees\".","timestamp":1787283988,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the current page URL","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the current page URL","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the current page URL","ordinal":5,"id":"2-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"c02ab833-d44b-48e9-b84a-5173a2f89375"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the results summary on the Shop screen","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the results summary on the Shop screen","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the results summary on the Shop screen","ordinal":6,"id":"2-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"a75912d8-5ba7-4381-a1e6-40de9206ec46"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the browser is now on http://localhost:3100/shop and the Shop screen reads \"Showing 6 of 6 coffees\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0,"summary":"assert: the browser is now on http://localhost:3100/shop and the Shop screen reads \"Show","ordinal":7,"id":"2-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"5b8877df-2763-4a0b-a7bf-8d6f3898390f"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.19,"final_url":"http://localhost:3100/shop","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/2/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/0a92db47-5f02-4bb9-aa97-cc420d9d5833/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{"browser_on_shop_url_check":{"syntax":"{{browser_on_shop_url_check}}","value":"http://localhost:3100/shop","secret":false},"shop_screen_showing_6_of_6_coffees_check":{"syntax":"{{shop_screen_showing_6_of_6_coffees_check}}","value":"Showing 6 of 6 coffees","secret":false}},"pointer":""},"variables_out":{"browser_on_shop_url_check":{"syntax":"{{browser_on_shop_url_check}}","value":"http://localhost:3100/shop","secret":false},"shop_screen_showing_6_of_6_coffees_check":{"syntax":"{{shop_screen_showing_6_of_6_coffees_check}}","value":"Showing 6 of 6 coffees","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.19,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":4,"steps":{"total":3,"passed":3,"failed":0,"skipped":0,"replay_decisions":3,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":4,"session_id":"0a92db47-5f02-4bb9-aa97-cc420d9d5833"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — add one bag of Orion House Blend","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/product/orion-house-blend, wait until the price reads \"$18.00\",\nthen press \"Add to cart\".","timestamp":1787283992,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 2 actions","recording_length":2}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/product/orion-house-blend","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.3,"summary":"navigate: Navigate to http://localhost:3100/product/orion-house-blend","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"7cd1118a-7c4e-4193-a510-363f7804e82c"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Clicking Add to cart button","action_type":"click","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Clicking Add to cart button","action_type":"click"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.7,"summary":"click: Clicking Add to cart button","ordinal":2,"id":"0-2","kind":"click","screenshot":"screenshot.jpg","action_id":"6aa4e4fd-a31d-47d7-a94f-46a9ad70d071"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.99,"final_url":"http://localhost:3100/product/orion-house-blend","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/0/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.99,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — fill in the checkout details","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/checkout, wait until the Order summary panel stops showing\n\"Loading your cart\", then fill \"Full name\" with \"Ada Lovelace\", \"Email\" with \"ada@example.com\" and\n\"Delivery address\" with \"12 Orbit Way, Bristol\".","timestamp":1787283993,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 5 actions","recording_length":5}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/product/orion-house-blend"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/checkout","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/checkout","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.4,"summary":"navigate: Navigate to http://localhost:3100/checkout","ordinal":3,"id":"1-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"1e3bac6a-3227-4e31-b8b5-94281962a83f"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Waiting for the form fields to finish loading","action_type":"wait","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting for the form fields to finish loading","action_type":"wait"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":1.1,"summary":"wait: Waiting for the form fields to finish loading","ordinal":4,"id":"1-2","kind":"wait","screenshot":"screenshot.jpg","action_id":"74070757-2491-4dd5-9336-17c8fe7c5acf"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Type \"Ada Lovelace\" into \"Full name\"","action_type":"fill","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Type \"Ada Lovelace\" into \"Full name\"","action_type":"fill"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"fill: Type \"Ada Lovelace\" into \"Full name\"","ordinal":5,"id":"1-3","kind":"fill","screenshot":"screenshot.jpg","action_id":"e27f3c49-7c3c-4510-9035-dce7e92193e9"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":4,"event":"action","detail":"Type \"ada@example.com\" into \"Email\"","action_type":"fill","success":true}
+[member] {"type":"step_event","index":4,"event":"reasoning","detail":"Type \"ada@example.com\" into \"Email\"","action_type":"fill"}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"fill: Type \"ada@example.com\" into \"Email\"","ordinal":6,"id":"1-4","kind":"fill","screenshot":"screenshot.jpg","action_id":"7afe9f3f-8562-4280-ad3c-0b17e541f7c4"}
+[member] {"type":"step_start","index":5,"objective":"Step 5"}
+[member] {"type":"step_event","index":5,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":5,"event":"action","detail":"Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","action_type":"fill","success":true}
+[member] {"type":"step_event","index":5,"event":"reasoning","detail":"Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","action_type":"fill"}
+[member] {"type":"step_end","index":5,"status":"passed","duration":0.1,"summary":"fill: Type \"12 Orbit Way, Bristol\" into \"Delivery address\"","ordinal":7,"id":"1-5","kind":"fill","screenshot":"screenshot.jpg","action_id":"c3b0fac6-909d-48d0-b260-22d4ac405aa5"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":2.08,"final_url":"http://localhost:3100/checkout","actions_executed":5,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/1/replay-test/screenshots/step_005.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":2.08,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — place the order","ref":null}
+[member] {"type":"run_start","objective":"Press \"Place order\" and assert that the browser lands on http://localhost:3100/orders.","timestamp":1787283995,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/checkout"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking Place order button","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking Place order button","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking Place order button","ordinal":8,"id":"2-1","kind":"click","screenshot":"screenshot.jpg","action_id":"ecdd97dd-60b0-4368-897e-69dec789c028"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the current page URL","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the current page URL","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0,"summary":"analyze: Reading the current page URL","ordinal":9,"id":"2-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"71f3e76f-2814-4da6-b205-1141b6dd624e"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the browser lands on http://localhost:3100/orders","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the browser lands on http://localhost:3100/orders","ordinal":10,"id":"2-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"f7b62ea6-444b-437e-a47d-98267aacab95"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.79,"final_url":"http://localhost:3100/orders","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/2/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{"browser_lands_on_orders_url_check":{"syntax":"{{browser_lands_on_orders_url_check}}","value":"http://localhost:3100/orders","secret":false}},"pointer":""},"variables_out":{"browser_lands_on_orders_url_check":{"syntax":"{{browser_lands_on_orders_url_check}}","value":"http://localhost:3100/orders","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.79,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — store what Orders lists","ref":null}
+[member] {"type":"run_start","objective":"Wait until \"Loading your orders\" is gone. Store the number of orders listed as\nbaseline_order_count, store the order number shown on the newest order as baseline_order_number,\nand store the total shown on that same order as baseline_order_total.","timestamp":1787283996,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the number of orders listed","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the number of orders listed","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the number of orders listed","ordinal":11,"id":"3-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"133c2ab7-33bf-458a-9692-dd9492c45fbc"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the newest order number","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the newest order number","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the newest order number","ordinal":12,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"898f4097-3665-4000-866b-02839f7aa8dd"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the newest order total","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the newest order total","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the newest order total","ordinal":13,"id":"3-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"e6b4c034-0032-417f-9b63-08f3fe2fec53"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.22,"final_url":"http://localhost:3100/orders","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/3/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"baseline_order_count":{"syntax":"{{baseline_order_count}}","value":"1 order","secret":false},"baseline_order_number":{"syntax":"{{baseline_order_number}}","value":"KC-1001","secret":false},"baseline_order_total":{"syntax":"{{baseline_order_total}}","value":"$18.00","secret":false}},"pointer":""},"variables_out":{"baseline_order_count":{"syntax":"{{baseline_order_count}}","value":"1 order","secret":false},"baseline_order_number":{"syntax":"{{baseline_order_number}}","value":"KC-1001","secret":false},"baseline_order_total":{"syntax":"{{baseline_order_total}}","value":"$18.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.22,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":5,"heading":"Step 5 — assert the order survives a full reload","ref":null}
+[member] {"type":"run_start","objective":"Reload the page fully and wait until \"Loading your orders\" is gone again. Assert the number of\norders listed equals baseline_order_count, and assert the newest order still shows the order\nnumber baseline_order_number and the total baseline_order_total.","timestamp":1787283996,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 7 actions","recording_length":7}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate refresh","action_type":"refresh","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate refresh","action_type":"refresh"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"refresh: Navigate refresh","ordinal":14,"id":"4-1","kind":"refresh","screenshot":"screenshot.jpg","action_id":"b7143b98-a95f-4ae1-9df7-a47a337c24a5"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Waiting for orders page to finish reloading and loading text to disappear","action_type":"wait","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting for orders page to finish reloading and loading text to disappear","action_type":"wait"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":42.4,"summary":"wait: Waiting for orders page to finish reloading and loading text to disappear","ordinal":15,"id":"4-2","kind":"wait","screenshot":"screenshot.jpg","action_id":"4a794ce6-6308-4a94-8f89-84c4699ce7a0"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the number of orders from the orders summary","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the number of orders from the orders summary","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the number of orders from the orders summary","ordinal":16,"id":"4-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"3b1672cb-0568-4d84-a5db-1b867962eb8f"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":4,"event":"action","detail":"Reading the order number from the newest order","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":4,"event":"reasoning","detail":"Reading the order number from the newest order","action_type":"analyze"}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"analyze: Reading the order number from the newest order","ordinal":17,"id":"4-4","kind":"analyze","screenshot":"screenshot.jpg","action_id":"1df0cded-ce52-4d8f-a210-c80b032e5dcf"}
+[member] {"type":"step_start","index":5,"objective":"Step 5"}
+[member] {"type":"step_event","index":5,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":5,"event":"action","detail":"Reading the total from the newest order","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":5,"event":"reasoning","detail":"Reading the total from the newest order","action_type":"analyze"}
+[member] {"type":"step_end","index":5,"status":"passed","duration":0.1,"summary":"analyze: Reading the total from the newest order","ordinal":18,"id":"4-5","kind":"analyze","screenshot":"screenshot.jpg","action_id":"879b3a59-54e0-497f-97a8-de7a3e6b626f"}
+[member] {"type":"step_start","index":6,"objective":"Step 6"}
+[member] {"type":"step_event","index":6,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":6,"event":"assertion","detail":"the number of orders listed equals {{baseline_order_count}}","passed":true}
+[member] {"type":"step_end","index":6,"status":"passed","duration":0.1,"summary":"assert: the number of orders listed equals {{baseline_order_count}}","ordinal":19,"id":"4-6","kind":"assert","screenshot":"screenshot.jpg","action_id":"dd3525b1-366c-47f9-af21-2300d6d731cd"}
+[member] {"type":"step_start","index":7,"objective":"Step 7"}
+[member] {"type":"step_event","index":7,"event":"screenshot","detail":"http://localhost:3100/orders"}
+[member] {"type":"step_event","index":7,"event":"assertion","detail":"the newest order still shows the order number {{baseline_order_number}} and the total {{baseline_order_total}}","passed":true}
+[member] {"type":"step_end","index":7,"status":"passed","duration":0.1,"summary":"assert: the newest order still shows the order number {{baseline_order_number}} and the ","ordinal":20,"id":"4-7","kind":"assert","screenshot":"screenshot.jpg","action_id":"2838c50d-8d65-43d3-ad24-3b63322e6bdf"}
+[member] {"type":"run_end","run_id":"run-4","status":"passed","summary":"","reason":"replay completed","duration":42.92,"final_url":"http://localhost:3100/orders","actions_executed":7,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/4/replay-test/screenshots/step_007.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/fb53bd20-f03f-4a7c-bb95-1e162a4c9d41/scratch/4/replay-test","total_runs":1,"context":{"memory":{},"variables":{"order_count_check":{"syntax":"{{order_count_check}}","value":"1 order","secret":false},"newest_order_number_check":{"syntax":"{{newest_order_number_check}}","value":"KC-1001","secret":false},"newest_order_total_check":{"syntax":"{{newest_order_total_check}}","value":"$18.00","secret":false}},"pointer":""},"variables_out":{"order_count_check":{"syntax":"{{order_count_check}}","value":"1 order","secret":false},"newest_order_number_check":{"syntax":"{{newest_order_number_check}}","value":"KC-1001","secret":false},"newest_order_total_check":{"syntax":"{{newest_order_total_check}}","value":"$18.00","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":5,"status":"passed","duration_s":42.92,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":49,"steps":{"total":5,"passed":5,"failed":0,"skipped":0,"replay_decisions":5,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":49,"session_id":"fb53bd20-f03f-4a7c-bb95-1e162a4c9d41"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — choose EUR in Settings","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/settings, wait until the currency options appear and the loading\nmessage is gone, then choose EUR and confirm the status line reads \"Showing prices in EUR.\"","timestamp":1787284045,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.4,"summary":"navigate: Navigate to http://localhost:3100/settings","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"810752e1-3d5c-4c13-ad10-e53659a5e4f5"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Clicking EUR currency option","action_type":"click","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Clicking EUR currency option","action_type":"click"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.7,"summary":"click: Clicking EUR currency option","ordinal":2,"id":"0-2","kind":"click","screenshot":"screenshot.jpg","action_id":"dd7e3d1e-3dae-4618-8e54-d6dfd8ea66e6"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the display currency status line","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the display currency status line","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the display currency status line","ordinal":3,"id":"0-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"ce920d2b-6ec2-46bd-9bf6-b7ca15a7d54a"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the status line reads \"Showing prices in EUR.\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: the status line reads \"Showing prices in EUR.\"","ordinal":4,"id":"0-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"475a99fa-39c2-42fe-a611-fa3bb27b1870"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":1.33,"final_url":"http://localhost:3100/settings","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/0/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"status_line_eur_check":{"syntax":"{{status_line_eur_check}}","value":"Showing prices in EUR.","secret":false}},"pointer":""},"variables_out":{"status_line_eur_check":{"syntax":"{{status_line_eur_check}}","value":"Showing prices in EUR.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":1.33,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — open the Kepler Reserve product screen","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/product/kepler-reserve and wait until the price stops showing an\nem dash and reports itself ready.","timestamp":1787284046,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/product/kepler-reserve","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/product/kepler-reserve","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"navigate: Navigate to http://localhost:3100/product/kepler-reserve","ordinal":5,"id":"1-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"07edcb3b-1cf7-45e5-aa31-45b4fead8f9d"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.16,"final_url":"http://localhost:3100/product/kepler-reserve","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/1/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.16,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — assert the price is in euros","ref":null}
+[member] {"type":"run_start","objective":"Assert that the price reads \"€22.08\" — Kepler Reserve's $24.00 expressed in the currency Settings\nholds — and not \"$24.00\".","timestamp":1787284046,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the product price from the buy panel","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the product price from the buy panel","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the product price from the buy panel","ordinal":6,"id":"2-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"d08b77c3-b920-41a7-a961-a05cd2493347"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the product price from the buy panel","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the product price from the buy panel","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the product price from the buy panel","ordinal":7,"id":"2-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"5e4d9aae-822b-4211-9c80-db0b8096f90a"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/product/kepler-reserve"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the price reads \"€22.08\" — Kepler Reserve's $24.00 expressed in the currency Settings holds — and not \"$24.00\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the price reads \"€22.08\" — Kepler Reserve's $24.00 expressed in the currency Set","ordinal":8,"id":"2-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"4958eaf0-1ef6-4451-b95b-19935faddc58"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.28,"final_url":"http://localhost:3100/product/kepler-reserve","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/2/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/75460e44-bd0a-4e72-a1a8-1774a8fd3531/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{"price_not_usd_24_00_check":{"syntax":"{{price_not_usd_24_00_check}}","value":"€22.08Priced per 340 g bag, in the currency you chose in Settings.Quantity12345Add to cart","secret":false},"price_reads_eur_22_08_check":{"syntax":"{{price_reads_eur_22_08_check}}","value":"€22.08","secret":false}},"pointer":""},"variables_out":{"price_not_usd_24_00_check":{"syntax":"{{price_not_usd_24_00_check}}","value":"€22.08Priced per 340 g bag, in the currency you chose in Settings.Quantity12345Add to cart","secret":false},"price_reads_eur_22_08_check":{"syntax":"{{price_reads_eur_22_08_check}}","value":"€22.08","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.28,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":5,"steps":{"total":3,"passed":3,"failed":0,"skipped":0,"replay_decisions":3,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":5,"session_id":"75460e44-bd0a-4e72-a1a8-1774a8fd3531"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — reach a hydrated Settings screen","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/settings and wait until the currency options appear and\n\"Loading your preferences\" is gone.","timestamp":1787284051,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/settings","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.4,"summary":"navigate: Navigate to http://localhost:3100/settings","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"cf525029-7c4a-4c18-9d13-8cf12fa35f1b"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.39,"final_url":"http://localhost:3100/settings","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/0/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.39,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — choose EUR","ref":null}
+[member] {"type":"run_start","objective":"Choose EUR and assert that the EUR option is now selected and that the status line reads\n\"Showing prices in EUR. A $18.00 bag reads as €16.56.\"","timestamp":1787284051,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking EUR option","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking EUR option","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking EUR option","ordinal":2,"id":"1-1","kind":"click","screenshot":"screenshot.jpg","action_id":"ae5670a8-c7da-45ac-9a57-c24befa94e02"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Checking whether the EUR display currency option is selected","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Checking whether the EUR display currency option is selected","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Checking whether the EUR display currency option is selected","ordinal":3,"id":"1-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"7b034b7a-1da0-4400-a57d-238d55dd507e"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the status line below the display currency options","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the status line below the display currency options","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the status line below the display currency options","ordinal":4,"id":"1-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"2a6780a1-0888-4dc8-b7c5-4a71ff070c0a"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the EUR option is now selected and the status line reads \"Showing prices in EUR. A $18.00 bag reads as €16.56.\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: the EUR option is now selected and the status line reads \"Showing prices in EUR.","ordinal":5,"id":"1-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"c04601d7-9896-4d9f-9b00-e70e82aa2f72"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.89,"final_url":"http://localhost:3100/settings","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/1/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{"eur_option_selected_check":{"syntax":"{{eur_option_selected_check}}","value":"true","secret":false},"status_line_eur_message_check":{"syntax":"{{status_line_eur_message_check}}","value":"Showing prices in EUR. A $18.00 bag reads as €16.56.","secret":false}},"pointer":""},"variables_out":{"eur_option_selected_check":{"syntax":"{{eur_option_selected_check}}","value":"true","secret":false},"status_line_eur_message_check":{"syntax":"{{status_line_eur_message_check}}","value":"Showing prices in EUR. A $18.00 bag reads as €16.56.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.89,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — reload the page","ref":null}
+[member] {"type":"run_start","objective":"Reload the page fully.","timestamp":1787284052,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 2 actions","recording_length":2}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate refresh","action_type":"refresh","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate refresh","action_type":"refresh"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"refresh: Navigate refresh","ordinal":6,"id":"2-1","kind":"refresh","screenshot":"screenshot.jpg","action_id":"0bf82d8d-eacf-4652-bc2e-917de3f9f198"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Waiting for the reloaded Settings page to become visible","action_type":"wait","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Waiting for the reloaded Settings page to become visible","action_type":"wait"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":4.6,"summary":"wait: Waiting for the reloaded Settings page to become visible","ordinal":7,"id":"2-2","kind":"wait","screenshot":"screenshot.jpg","action_id":"53e32849-07cd-41a7-bd1b-d75679a7613a"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":4.79,"final_url":"http://localhost:3100/settings","actions_executed":2,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/2/replay-test/screenshots/step_002.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":4.79,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — assert EUR survived the reload","ref":null}
+[member] {"type":"run_start","objective":"Wait until the currency options appear and \"Loading your preferences\" is gone, then assert that\nEUR is still the selected option and that the status line still reads\n\"Showing prices in EUR. A $18.00 bag reads as €16.56.\"","timestamp":1787284057,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Checking whether the EUR currency option is selected","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Checking whether the EUR currency option is selected","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Checking whether the EUR currency option is selected","ordinal":8,"id":"3-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"90905395-449f-4121-8c14-291c86a69c21"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the currency status line","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the currency status line","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the currency status line","ordinal":9,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"04f8fb39-547c-4956-8ec2-fd5270c64f69"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/settings"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"EUR is still the selected option and the status line still reads \"Showing prices in EUR. A $18.00 bag reads as €16.56.\"","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: EUR is still the selected option and the status line still reads \"Showing prices","ordinal":10,"id":"3-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"99da8e5f-85d4-4749-aacf-f2af2e5e05bd"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.24,"final_url":"http://localhost:3100/settings","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/3/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/91384400-be9d-4143-8c94-c099edee31ef/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"eur_selected_option_check":{"syntax":"{{eur_selected_option_check}}","value":"true","secret":false},"status_line_eur_text_check":{"syntax":"{{status_line_eur_text_check}}","value":"Showing prices in EUR. A $18.00 bag reads as €16.56.","secret":false}},"pointer":""},"variables_out":{"eur_selected_option_check":{"syntax":"{{eur_selected_option_check}}","value":"true","secret":false},"status_line_eur_text_check":{"syntax":"{{status_line_eur_text_check}}","value":"Showing prices in EUR. A $18.00 bag reads as €16.56.","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.24,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":9,"steps":{"total":4,"passed":4,"failed":0,"skipped":0,"replay_decisions":4,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":9,"session_id":"91384400-be9d-4143-8c94-c099edee31ef"}
+[member] {"type":"test_md_step_start","step_index":1,"heading":"Step 1 — assert the unfiltered listing","ref":null}
+[member] {"type":"run_start","objective":"Navigate to http://localhost:3100/shop and assert that exactly six coffees are listed and that\nthe count line reads \"Showing 6 of 6 coffees\".","timestamp":1787284062,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"chrome://new-tab-page/"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Navigate to http://localhost:3100/shop","action_type":"navigate","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Navigate to http://localhost:3100/shop","action_type":"navigate"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.2,"summary":"navigate: Navigate to http://localhost:3100/shop","ordinal":1,"id":"0-1","kind":"navigate","screenshot":"screenshot.jpg","action_id":"0ad1ed4b-535c-4d4f-bead-de5fc06ea45b"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the number of coffee items in the coffee list","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the number of coffee items in the coffee list","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.2,"summary":"analyze: Reading the number of coffee items in the coffee list","ordinal":2,"id":"0-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"460727cd-368c-44b6-b7ff-a804f5df7b4d"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Reading the coffee count line above the coffee list","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Reading the coffee count line above the coffee list","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"analyze: Reading the coffee count line above the coffee list","ordinal":3,"id":"0-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"65f5418f-642f-4ca6-b8e9-b21a899cfb06"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"exactly six coffees are listed and the count line reads \"Showing 6 of 6 coffees\"","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: exactly six coffees are listed and the count line reads \"Showing 6 of 6 coffees\"","ordinal":4,"id":"0-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"f1405cc3-06b3-4f6b-9ec1-92de6955c275"}
+[member] {"type":"run_end","run_id":"run-0","status":"passed","summary":"","reason":"replay completed","duration":0.6,"final_url":"http://localhost:3100/shop","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/0/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/0/replay-test","total_runs":1,"context":{"memory":{},"variables":{"six_coffees_listed_check":{"syntax":"{{six_coffees_listed_check}}","value":"6","secret":false},"count_line_showing_6_of_6_coffees_check":{"syntax":"{{count_line_showing_6_of_6_coffees_check}}","value":"Showing 6 of 6 coffees","secret":false}},"pointer":""},"variables_out":{"six_coffees_listed_check":{"syntax":"{{six_coffees_listed_check}}","value":"6","secret":false},"count_line_showing_6_of_6_coffees_check":{"syntax":"{{count_line_showing_6_of_6_coffees_check}}","value":"Showing 6 of 6 coffees","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":1,"status":"passed","duration_s":0.6,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":2,"heading":"Step 2 — apply the light roast filter","ref":null}
+[member] {"type":"run_start","objective":"Press the \"Light roast\" filter button and wait until it reports itself as pressed.","timestamp":1787284063,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 1 actions","recording_length":1}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Clicking the Light roast filter button","action_type":"click","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Clicking the Light roast filter button","action_type":"click"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.6,"summary":"click: Clicking the Light roast filter button","ordinal":5,"id":"1-1","kind":"click","screenshot":"screenshot.jpg","action_id":"0d97d944-86cc-4b05-bbf9-285561b05a08"}
+[member] {"type":"run_end","run_id":"run-1","status":"passed","summary":"","reason":"replay completed","duration":0.6,"final_url":"http://localhost:3100/shop","actions_executed":1,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/1/replay-test/screenshots/step_001.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/1/replay-test","total_runs":1,"context":{"memory":{},"variables":{},"pointer":""},"variables_out":{},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":2,"status":"passed","duration_s":0.6,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":3,"heading":"Step 3 — assert the filtered listing","ref":null}
+[member] {"type":"run_start","objective":"Assert that the count line now reads \"Showing 2 of 6 coffees · Light roast\", that exactly two\ncoffees are listed, and that both of them are light roasts.","timestamp":1787284063,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 4 actions","recording_length":4}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the count line from the coffee shelf status","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the count line from the coffee shelf status","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the count line from the coffee shelf status","ordinal":6,"id":"2-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"36718ef6-0498-4c11-bdaf-def136f51446"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Reading the number of coffees in the results list","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Reading the number of coffees in the results list","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Reading the number of coffees in the results list","ordinal":7,"id":"2-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"ce98dd58-6645-44d2-a025-6010e51520c9"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":3,"event":"action","detail":"Checking whether both listed coffees are light roasts","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":3,"event":"reasoning","detail":"Checking whether both listed coffees are light roasts","action_type":"analyze"}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0,"summary":"analyze: Checking whether both listed coffees are light roasts","ordinal":8,"id":"2-3","kind":"analyze","screenshot":"screenshot.jpg","action_id":"347b1a3a-8f13-4102-b2ec-1d96b8f9f48c"}
+[member] {"type":"step_start","index":4,"objective":"Step 4"}
+[member] {"type":"step_event","index":4,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":4,"event":"assertion","detail":"the count line now reads \"Showing 2 of 6 coffees · Light roast\", exactly two coffees are listed, and both of them are light roasts","passed":true}
+[member] {"type":"step_end","index":4,"status":"passed","duration":0.1,"summary":"assert: the count line now reads \"Showing 2 of 6 coffees · Light roast\", exactly two cof","ordinal":9,"id":"2-4","kind":"assert","screenshot":"screenshot.jpg","action_id":"c74031ec-5c25-46b7-a159-6a5b3db9fffe"}
+[member] {"type":"run_end","run_id":"run-2","status":"passed","summary":"","reason":"replay completed","duration":0.25,"final_url":"http://localhost:3100/shop","actions_executed":4,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/2/replay-test/screenshots/step_004.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/2/replay-test","total_runs":1,"context":{"memory":{},"variables":{"count_line_check":{"syntax":"{{count_line_check}}","value":"Showing 2 of 6 coffees · Light roast","secret":false},"two_coffees_listed_check":{"syntax":"{{two_coffees_listed_check}}","value":"2","secret":false},"both_listed_coffees_light_roast_check":{"syntax":"{{both_listed_coffees_light_roast_check}}","value":"true","secret":false}},"pointer":""},"variables_out":{"count_line_check":{"syntax":"{{count_line_check}}","value":"Showing 2 of 6 coffees · Light roast","secret":false},"two_coffees_listed_check":{"syntax":"{{two_coffees_listed_check}}","value":"2","secret":false},"both_listed_coffees_light_roast_check":{"syntax":"{{both_listed_coffees_light_roast_check}}","value":"true","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":3,"status":"passed","duration_s":0.25,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_step_start","step_index":4,"heading":"Step 4 — assert the page was not reloaded","ref":null}
+[member] {"type":"run_start","objective":"Assert that the browser is still on http://localhost:3100/shop and that the page was not\nreloaded — the six coffee cards were replaced in place.","timestamp":1787284063,"environment":{"resolution":"1440x788"}}
+[member] {"type":"step_event","index":0,"event":"replay_started","detail":"replaying 3 actions","recording_length":3}
+[member] {"type":"step_start","index":1,"objective":"Step 1"}
+[member] {"type":"step_event","index":1,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":1,"event":"action","detail":"Reading the current page URL","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":1,"event":"reasoning","detail":"Reading the current page URL","action_type":"analyze"}
+[member] {"type":"step_end","index":1,"status":"passed","duration":0.1,"summary":"analyze: Reading the current page URL","ordinal":10,"id":"3-1","kind":"analyze","screenshot":"screenshot.jpg","action_id":"462d2bd5-4027-4504-833f-a5d6c255bb1e"}
+[member] {"type":"step_start","index":2,"objective":"Step 2"}
+[member] {"type":"step_event","index":2,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":2,"event":"action","detail":"Checking whether the shelf section indicates the coffee cards are replaced in place","action_type":"analyze","success":true}
+[member] {"type":"step_event","index":2,"event":"reasoning","detail":"Checking whether the shelf section indicates the coffee cards are replaced in place","action_type":"analyze"}
+[member] {"type":"step_end","index":2,"status":"passed","duration":0.1,"summary":"analyze: Checking whether the shelf section indicates the coffee cards are replaced in pl","ordinal":11,"id":"3-2","kind":"analyze","screenshot":"screenshot.jpg","action_id":"33a89c49-9873-4178-98fa-2368c2211a24"}
+[member] {"type":"step_start","index":3,"objective":"Step 3"}
+[member] {"type":"step_event","index":3,"event":"screenshot","detail":"http://localhost:3100/shop"}
+[member] {"type":"step_event","index":3,"event":"assertion","detail":"the browser is still on http://localhost:3100/shop and the page was not reloaded — the six coffee cards were replaced in place","passed":true}
+[member] {"type":"step_end","index":3,"status":"passed","duration":0.1,"summary":"assert: the browser is still on http://localhost:3100/shop and the page was not reloaded","ordinal":12,"id":"3-3","kind":"assert","screenshot":"screenshot.jpg","action_id":"61d1ea21-a2c6-4237-96ab-7ef2b6265121"}
+[member] {"type":"run_end","run_id":"run-3","status":"passed","summary":"","reason":"replay completed","duration":0.21,"final_url":"http://localhost:3100/shop","actions_executed":3,"screenshot_path":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/3/replay-test/screenshots/step_003.png","run_dir":"/Users/nokitha/.testmuai/kaneai/sessions/042999a8-b93d-4833-a22a-d9ebd0048f31/scratch/3/replay-test","total_runs":1,"context":{"memory":{},"variables":{"browser_still_on_shop_page_check":{"syntax":"{{browser_still_on_shop_page_check}}","value":"http://localhost:3100/shop","secret":false},"page_not_reloaded_six_coffee_cards_replaced_in_place_check":{"syntax":"{{page_not_reloaded_six_coffee_cards_replaced_in_place_check}}","value":"true","secret":false}},"pointer":""},"variables_out":{"browser_still_on_shop_page_check":{"syntax":"{{browser_still_on_shop_page_check}}","value":"http://localhost:3100/shop","secret":false},"page_not_reloaded_six_coffee_cards_replaced_in_place_check":{"syntax":"{{page_not_reloaded_six_coffee_cards_replaced_in_place_check}}","value":"true","secret":false}},"store_out":{},"result_code":100,"reason_code":"success.complete"}
+[member] {"type":"test_md_step_end","step_index":4,"status":"passed","duration_s":0.21,"ref_kind":null,"unit_kind":null,"inlined_count":null,"failed_sub_step_index":null}
+[member] {"type":"test_md_summary","overall_status":"passed","duration_s":5,"steps":{"total":4,"passed":4,"failed":0,"skipped":0,"replay_decisions":4,"author_decisions":0},"retries":{"triggered":false},"commit":{"committed":false,"reason":"readonly_fallback"},"artifacts":{"replaced":false},"upload":{"performed":true,"succeeded":true},"cancelled":false}
+[member] {"type":"test_md_done","overall_status":"passed","duration_s":5,"session_id":"042999a8-b93d-4833-a22a-d9ebd0048f31"}
+
+Evidence — view locally:
+  kane-cli evidence serve /Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8.evidence   # execution

@@ -563,9 +563,13 @@ describe('/ — the hero page composes the rail, the graph and the list', () => 
     }
   });
 
-  it('shows the honest degraded, never-verified state the snapshot is actually in', () => {
+  it('shows the honest degraded state the snapshot is actually in', () => {
+    // Verified and degraded at once, which is the state worth rendering correctly:
+    // the replay of 15.3 wrote verdicts, and the assurance axis is still discarded,
+    // so the proven *tile* stays absent even though seven promises are proven.
     expect(snapshot.degraded).toBe(true);
-    expect(snapshot.freshness.terminalEventAt).toBeNull();
+    expect(snapshot.freshness.terminalEventAt).not.toBeNull();
+    expect(snapshot.metrics.provenCoverage).toBeNull();
     const { container, unmount } = render(<LedgerPage />);
     try {
       expect(container.querySelector('[data-degraded="true"]')).not.toBeNull();

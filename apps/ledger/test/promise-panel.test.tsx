@@ -334,8 +334,12 @@ describe('PromisePanel — the way out (§10.8)', () => {
   });
 });
 
-describe('PromisePanel — against the committed snapshot, which is the empty case', () => {
-  it('renders every promise the repository states, and says why nothing is sealed', () => {
+describe('PromisePanel — against the committed snapshot, verdicts and all', () => {
+  it('renders every promise with the run that verified it, and says why nothing is sealed', () => {
+    // The snapshot has verdicts now — the whole-suite replay of 15.3 wrote eight —
+    // but no curated evidence pack, which lands in 15.7. So each panel shows the
+    // verdict source and *still* explains the empty artefact list rather than
+    // rendering a dead link.
     expect(snapshot.evidence, 'the committed snapshot has grown evidence packs').toEqual([]);
     for (const promise of snapshot.promises) {
       const pack =
@@ -349,7 +353,15 @@ describe('PromisePanel — against the committed snapshot, which is the empty ca
         expect(text).toContain(promise.citation.text);
         expect(text).toContain(promise.verdict);
         expect(text).toContain(PANEL_WORDS.noEvidence);
-        expect(text).toContain(PANEL_WORDS.noVerdictSource);
+
+        const source = promise.verdictSource;
+        expect(source, `${promise.id} carries a verdict with no source`).not.toBeNull();
+        if (source === null) continue;
+        expect(text).not.toContain(PANEL_WORDS.noVerdictSource);
+        expect(text).toContain(source.runId);
+        expect(text).toContain(source.terminalEventType);
+        expect(text).toContain(source.at);
+        if (source.memberStatus !== null) expect(text).toContain(source.memberStatus);
       } finally {
         unmount();
       }

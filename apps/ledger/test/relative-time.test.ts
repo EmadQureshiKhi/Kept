@@ -43,10 +43,28 @@ describe('the null state', () => {
     expect(rendering.at).toBeNull();
   });
 
-  it('is what the committed snapshot renders, because nothing has run yet', () => {
-    const rendering = renderFreshness(snapshot.freshness, NOW);
+  it('is what an empty triple renders, whatever else the snapshot holds', () => {
+    const rendering = renderFreshness(
+      { terminalEventAt: null, terminalEventType: null, commandFamily: null },
+      NOW,
+    );
     expect(rendering.text).toBe(NEVER_VERIFIED);
     expect(rendering.tone).toBe('unverified');
+  });
+});
+
+describe('the committed snapshot has been verified, and renders an age', () => {
+  it('reads as an age off its own terminal event, not as never verified', () => {
+    // The whole-suite replay of 15.3 moved the triple, so the copy the Ledger shows
+    // is an age. One hour after that instant is a stable clock to read it against.
+    const at = snapshot.freshness.terminalEventAt;
+    expect(at, 'the committed snapshot carries a terminal event').not.toBeNull();
+    const anHourLater = new Date(Date.parse(at ?? '') + 3_600_000).toISOString();
+    const rendering = renderFreshness(snapshot.freshness, anHourLater);
+    expect(rendering.text).not.toBe(NEVER_VERIFIED);
+    expect(rendering.text).toBe('1 hour ago');
+    expect(rendering.tone).toBe('current');
+    expect(rendering.at).toBe(at);
   });
 });
 

@@ -1,0 +1,119 @@
+{
+  "valid": true,
+  "capturedAt": "2026-08-21T03:52:23.747Z",
+  "members": [
+    {
+      "path": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "testId": null,
+      "tags": [],
+      "failure": null
+    },
+    {
+      "path": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "testId": null,
+      "tags": [],
+      "failure": null
+    },
+    {
+      "path": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "testId": null,
+      "tags": [],
+      "failure": null
+    },
+    {
+      "path": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "testId": null,
+      "tags": [],
+      "failure": null
+    },
+    {
+      "path": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "testId": "58f4980c-0110-4f7e-b84a-ed89a963a9c6",
+      "tags": [
+        "cart",
+        "subtotal",
+        "breakable",
+        "verdict-spike"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/cart_discount_test.md",
+      "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "tags": [
+        "cart",
+        "discount",
+        "docs-lie"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/cart_subtotal_test.md",
+      "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "tags": [
+        "cart",
+        "subtotal",
+        "breakable"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/checkout_validation_test.md",
+      "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+      "tags": [
+        "checkout",
+        "validation"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/home_cta_test.md",
+      "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "tags": [
+        "home",
+        "navigation"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/orders_persist_test.md",
+      "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+      "tags": [
+        "orders",
+        "persistence",
+        "checkout"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/product_currency_test.md",
+      "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+      "tags": [
+        "product",
+        "currency",
+        "settings"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/settings_currency_test.md",
+      "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+      "tags": [
+        "settings",
+        "currency",
+        "persistence"
+      ],
+      "failure": null
+    },
+    {
+      "path": "tests/shop_filter_test.md",
+      "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+      "tags": [
+        "shop",
+        "filter",
+        "catalog"
+      ],
+      "failure": null
+    }
+  ]
+}

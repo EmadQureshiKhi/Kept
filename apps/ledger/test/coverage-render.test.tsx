@@ -75,9 +75,13 @@ describe('/coverage — the four things R9.8 asks for are on the page', () => {
     const { container, unmount } = render(<CoveragePage />);
     const chip = container.querySelector('[data-freshness]');
     expect(chip, 'no freshness chip').not.toBeNull();
-    expect(snapshot.freshness.terminalEventAt).toBeNull();
-    expect(chip?.getAttribute('data-freshness')).toBe('unverified');
-    expect(chip?.textContent).toContain(NEVER_VERIFIED);
+    // The committed snapshot has consumed one: the whole-suite replay of 15.3. So
+    // the chip carries an age rather than the never-verified copy, and it must not
+    // fall back to that copy while a real instant is present.
+    expect(snapshot.freshness.terminalEventAt).not.toBeNull();
+    expect(chip?.getAttribute('data-freshness')).not.toBe('unverified');
+    expect(chip?.textContent).not.toContain(NEVER_VERIFIED);
+    expect(['current', 'stale']).toContain(chip?.getAttribute('data-freshness'));
     unmount();
   });
 

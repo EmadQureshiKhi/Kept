@@ -155,14 +155,22 @@ describe('ordering', () => {
   });
 
   it('lifts a red promise above a stale one regardless of id', () => {
-    const first = snapshot.promises[0];
-    const last = snapshot.promises[snapshot.promises.length - 1];
+    // Level the field first. The committed snapshot has been verified — seven
+    // `proven` and one `red` — so reddening one more promise would leave two reds
+    // and the assertion would be about which red sorts first, not about rank
+    // beating id. Every promise starts `stale` here, and exactly one is reddened.
+    const levelled = snapshot.promises.map((promise) => ({
+      ...promise,
+      verdict: 'stale' as const,
+    }));
+    const first = levelled[0];
+    const last = levelled[levelled.length - 1];
     expect(first).toBeDefined();
     expect(last).toBeDefined();
     if (first === undefined || last === undefined) return;
     // Redden whichever id sorts *last*, so only the rank can put it on top.
     const reddened = first.id > last.id ? first : last;
-    const promises = snapshot.promises.map((promise) =>
+    const promises = levelled.map((promise) =>
       promise.id === reddened.id ? { ...promise, verdict: 'red' as const } : promise,
     );
     const relaid = promiseNodes(layoutSnapshot({ ...snapshot, promises }));

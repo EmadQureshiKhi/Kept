@@ -34,13 +34,23 @@ import { SNAPSHOT_FILE_RELATIVE_PATH } from '../src/snapshot.js';
  *    overwrites the text from disk precisely so this can be asserted rather than
  *    hoped for. The claims block is eight lines, one claim per line, so the cited
  *    line numbers must be eight distinct consecutive lines.
- * 3. **The degradation is the honest one.** At this stage there is no `.context/`
- *    store, so `cover --json` refuses, the enrichment axis is discarded, and the
- *    file must say so: `degraded: true`, a reason of `assurance-status:refused`,
- *    and `provenCoverage` **withheld as null** rather than reported as zero
- *    (R2.11). A snapshot claiming 0% proven would be a claim about the fixture; a
- *    snapshot claiming `null` is a claim about KEPT's knowledge, and only the
- *    second one is true.
+ * 3. **The degradation is the honest one.** `cover --json` still refuses — now
+ *    because the newest sealed pack is a replay pack that carries no
+ *    `coverage/usecases.yaml` — so the enrichment axis is discarded and the file
+ *    must say so: `degraded: true`, a reason of `assurance-status:refused`, and
+ *    `provenCoverage` **withheld as null** (R2.11). That withholding is the point,
+ *    and it is now sharper than it was: the file records seven `proven` verdicts
+ *    and one `red`, earned by a real `testrun_done`, and *still* publishes no
+ *    coverage percentage, because the percentage belongs to the assurance axis and
+ *    that axis was discarded. A verdict is what KEPT observed; coverage is what
+ *    Kane's graph says the observation covers, and the two are not the same claim.
+ *
+ * 4. **Every verdict is traceable to the run that earned it.** The eight verdicts
+ *    came from the whole-suite replay of 15.3: one `runId` across all of them, one
+ *    `terminalEventAt` in the freshness triple, and `memberStatus` recorded per
+ *    promise so `failed` stays distinguishable from `broken` (R4.9). T-7 is `red`
+ *    on the never-true discount claim and routes to `docs-lie`; that failure is the
+ *    designed deliverable of the corpus, not a defect in this file.
  *
  * ## What is deliberately not asserted
  *
@@ -77,6 +87,18 @@ const EXPECTED_DESIGNED_TESTS: Readonly<Record<string, string>> = Object.freeze(
 
 /** The refusal this stage expects, verbatim from the enrichment vocabulary (§5.3). */
 const EXPECTED_DEGRADED_REASON = 'assurance-status:refused';
+
+/**
+ * Seven of the eight promises passed their replay. The eighth is T-7, the
+ * never-true discount claim of `apps/fixture/README.md:20`, which is **designed to
+ * fail** on a correct application: the fixture has no discount logic and will never
+ * get any, so the failure is the deliverable and the `red` verdict is the honest
+ * one. Nothing here may be relaxed to make the count eight.
+ */
+const PROVEN_COUNT = 7;
+
+/** The README line T-7 asserts, and the only claim in the file that is a lie. */
+const DISCOUNT_CLAIM_LINE = 20;
 
 const readRepoFile = (file: string): string =>
   readFileSync(resolve(REPO_ROOT, file), { encoding: 'utf8' });
@@ -179,37 +201,65 @@ describe('the committed snapshot — the honest degraded state', () => {
     ).toBe(true);
   });
 
-  it('withholds the proven figure rather than reporting zero', () => {
+  it('withholds the coverage percentage even though seven promises are proven', () => {
     expect(SNAPSHOT.metrics.designedCount).toBe(CLAIM_LINES.length);
     expect(SNAPSHOT.metrics.designedCoverage).toBe(1);
     expect(SNAPSHOT.metrics.undesignedCount).toBe(0);
-    expect(SNAPSHOT.metrics.provenCount).toBe(0);
+    expect(SNAPSHOT.metrics.provenCount).toBe(PROVEN_COUNT);
     expect(
       SNAPSHOT.metrics.provenCoverage,
-      'provenCoverage must be null while degraded: a zero would claim the fixture was ' +
-        'measured and found unproven, when in fact it was never measured (R2.11).',
+      'provenCoverage must be null while degraded, and a proven verdict does not change ' +
+        'that: the percentage is the assurance axis, and the assurance axis was discarded. ' +
+        'Publishing a figure derived from the verdicts alone would state as coverage ' +
+        'something Kane never confirmed (R2.11).',
     ).toBeNull();
   });
 
-  it('claims no verdict, no evidence and no run it has not earned', () => {
-    expect(SNAPSHOT.metrics.staleCount).toBe(CLAIM_LINES.length);
-    expect(SNAPSHOT.metrics.redCount).toBe(0);
+  it('attributes every verdict it does claim to one real terminal event', () => {
+    expect(SNAPSHOT.metrics.staleCount).toBe(0);
+    expect(SNAPSHOT.metrics.redCount).toBe(CLAIM_LINES.length - PROVEN_COUNT);
+
+    // One replay wrote all eight, so one run id and one instant cover the file.
+    const runIds = new Set<string>();
     for (const promise of SNAPSHOT.promises) {
-      expect(promise.verdict).toBe('stale');
-      expect(promise.verdictSource).toBeNull();
-      expect(promise.repair).toBeNull();
-      expect(promise.evidencePackId).toBeNull();
-      expect(promise.credits).toBeNull();
+      const source = promise.verdictSource;
+      expect(
+        source,
+        `Promise ${promise.id} carries verdict '${promise.verdict}' with no source, so the ` +
+          `Ledger could show a verdict no run is accountable for.`,
+      ).not.toBeNull();
+      if (source === null) continue;
+      runIds.add(source.runId);
+      expect(source.terminalEventType).toBe('testrun_done');
+      expect(source.at).toBe(SNAPSHOT.freshness.terminalEventAt);
+      // R4.9: the wire status survives, so `failed` never reads as `broken`.
+      expect(source.memberStatus).toBe(promise.verdict === 'proven' ? 'passed' : 'failed');
       expect(promise.providers).toEqual(['baseline']);
+      // Curated packs land in stage 15.7; until then a reference would be a dead
+      // link, and the snapshot clears it rather than publishing one.
+      expect(promise.evidencePackId).toBeNull();
     }
-    expect(SNAPSHOT.freshness).toEqual({
-      commandFamily: null,
-      terminalEventAt: null,
-      terminalEventType: null,
-    });
+    expect(runIds.size, 'One whole-suite replay wrote these verdicts.').toBe(1);
+
+    // The one red promise is the designed docs-lie, and it is the only one routed.
+    const red = SNAPSHOT.promises.filter((promise) => promise.verdict === 'red');
+    expect(red).toHaveLength(1);
+    expect(red[0]?.citation.line).toBe(DISCOUNT_CLAIM_LINE);
+    expect(red[0]?.repair?.branch).toBe('docs-lie');
+    for (const promise of SNAPSHOT.promises) {
+      if (promise.verdict === 'proven') expect(promise.repair).toBeNull();
+    }
+
+    expect(SNAPSHOT.freshness.terminalEventType).toBe('testrun_done');
+    expect(SNAPSHOT.freshness.commandFamily).toBe('ExecutionTestrun');
+    expect(Number.isFinite(Date.parse(SNAPSHOT.freshness.terminalEventAt ?? ''))).toBe(true);
+  });
+
+  it('still claims no evidence, no run entry and no amendment it has not earned', () => {
     expect(SNAPSHOT.evidence).toEqual([]);
     expect(SNAPSHOT.runs).toEqual([]);
     expect(SNAPSHOT.reviewCards).toEqual([]);
     expect(SNAPSHOT.amendments).toEqual([]);
+    for (const promise of SNAPSHOT.promises) expect(promise.credits).toBeNull();
   });
 });

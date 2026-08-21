@@ -61,10 +61,13 @@ describe('the committed snapshot', () => {
     expect(snapshot.metrics.designedCoverage).toBe(1);
   });
 
-  it('has never consumed a terminal event, and does not pretend otherwise', () => {
-    expect(snapshot.freshness.terminalEventAt).toBeNull();
-    expect(snapshot.freshness.terminalEventType).toBeNull();
-    expect(snapshot.freshness.commandFamily).toBeNull();
+  it('carries the freshness triple of the replay that verified it', () => {
+    // The whole-suite replay of 15.3 consumed a real `testrun_done`, so all three
+    // parts of the triple are present or none are — a half-filled triple is what
+    // §9.1's cross-field rule rejects.
+    expect(snapshot.freshness.terminalEventType).toBe('testrun_done');
+    expect(snapshot.freshness.commandFamily).toBe('ExecutionTestrun');
+    expect(Number.isFinite(Date.parse(snapshot.freshness.terminalEventAt ?? ''))).toBe(true);
   });
 
   it('is idempotent under a second load', () => {
