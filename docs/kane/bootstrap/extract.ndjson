@@ -1,0 +1,21 @@
+{"type":"run_start","v":1,"verb":"extract","mode":"agent","trace":"/Users/nokitha/.testmuai/kaneai/assurance/ctx-c97b50991cf0/logs/extract-as-20260821T0004-2336n8y2.log","session":"as-20260821T0004-2336n8y2"}
+{"type":"corpus","v":1,"verb":"extract","sources":[{"source_id":"readme","cid":"sha256:883da226b4bb43118667ad07ab3726394fcb899d595015c57e2931f08f8e8232"}],"skipped":[]}
+{"type":"source_start","v":1,"verb":"extract","source_id":"readme","cid":"sha256:883da226b4bb43118667ad07ab3726394fcb899d595015c57e2931f08f8e8232","index":1,"total":1,"resumed":false}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"thinking_done","label":"thought for 3.2s"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"→ trace provenance…"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"→ search graph…"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"→ list sources…"}
+{"type":"usage","v":1,"verb":"extract","credits":3.48,"total_credits":3.48}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"decision","label":"checking provenance"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"✓ trace provenance"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"decision","label":"checking a possible duplicate"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"✓ search graph"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"decision","label":"corpus roster"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"✓ list sources"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"thinking_done","label":"thought for 32.6s"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"→ propose use-cases…"}
+{"type":"usage","v":1,"verb":"extract","credits":9.19,"total_credits":12.67}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"decision","label":"putting the result together"}
+{"type":"agent_activity","v":1,"verb":"extract","kind":"tool","label":"✓ propose use-cases"}
+{"type":"commit","v":1,"verb":"extract","source_id":"readme","proposal_id":"20260821T000402-readme","trusted":0,"derived":5,"archived":0,"superseded":0,"assumed":0,"evidence_matched":0,"minted":[{"cid":"sha256:cbc4d45ac2e90345fd619f3d6a7a8fd3049b1029b6dbbabbf0b24f2a417609d8","logical_id":"uc-1"},{"cid":"sha256:686473872779e7764fa9fce32783b7c69bbf574156e3a3a2d5490c237899e89b","logical_id":"uc-2"},{"cid":"sha256:8360558b78a266b6a815f1d450fb444d535429f4499f2b0cbf8af5fab10bc8bc","logical_id":"uc-3"},{"cid":"sha256:815da31e6d212f4a7554644807fd25d51596fd5462cd9b44ca49cce59a8b33ef","logical_id":"uc-4"},{"cid":"sha256:85640476e9f0cc72d83b008a61251389a34f5ca4e70a0733fe6e009f22578980","logical_id":"uc-5"}]}
+{"type":"done","v":1,"verb":"extract","status":"complete","exit_code":0}

@@ -1,0 +1,6 @@
+{"id":"readme","cid":"sha256:883da226b4bb43118667ad07ab3726394fcb899d595015c57e2931f08f8e8232","label":"source","title":"readme","trust":"-","fresh":"fresh"}
+{"id":"uc-4","cid":"sha256:815da31e6d212f4a7554644807fd25d51596fd5462cd9b44ca49cce59a8b33ef","label":"usecase","title":"Browse the coffee catalog","trust":"derived","fresh":"fresh"}
+{"id":"uc-1","cid":"sha256:cbc4d45ac2e90345fd619f3d6a7a8fd3049b1029b6dbbabbf0b24f2a417609d8","label":"usecase","title":"Complete checkout with required contact details","trust":"derived","fresh":"fresh"}
+{"id":"uc-2","cid":"sha256:686473872779e7764fa9fce32783b7c69bbf574156e3a3a2d5490c237899e89b","label":"usecase","title":"Manage cart pricing and discounts","trust":"derived","fresh":"fresh"}
+{"id":"uc-5","cid":"sha256:85640476e9f0cc72d83b008a61251389a34f5ca4e70a0733fe6e009f22578980","label":"usecase","title":"Review completed orders","trust":"derived","fresh":"fresh"}
+{"id":"uc-3","cid":"sha256:8360558b78a266b6a815f1d450fb444d535429f4499f2b0cbf8af5fab10bc8bc","label":"usecase","title":"Shop in a selected currency","trust":"derived","fresh":"fresh"}

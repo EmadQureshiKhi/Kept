@@ -1,0 +1,2 @@
+{"type":"error","v":1,"verb":"design","code":"UC_UNREVIEWED","message":"design: uc-2 is unreviewed — approve it first, or pass --allow-unreviewed","next":["kane-cli context review --approve uc-2"]}
+{"type":"done","v":1,"verb":"design","status":"refused","exit_code":2,"next":["kane-cli context review --approve uc-2","kane-cli design tests --use-case uc-2 --mode agent --allow-unreviewed"]}

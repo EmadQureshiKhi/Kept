@@ -1,0 +1,2 @@
+{"type":"error","v":1,"verb":"cover","message":"error: ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time"}
+{"type":"done","v":1,"verb":"cover","status":"refused","exit_code":2}

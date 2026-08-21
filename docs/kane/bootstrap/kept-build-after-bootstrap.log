@@ -1,0 +1,9 @@
+kept build
+  repository   /Users/nokitha/Desktop/KEPT
+  state        /Users/nokitha/Desktop/KEPT/.kept/state.json
+  promises     8
+  edges        16
+  degraded     true (assurance-status:refused)
+  freshness    never verified
+  warn enrichment-assurance-status: `cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time
+  warn merge-degraded: The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).
