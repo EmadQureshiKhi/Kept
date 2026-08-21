@@ -189,9 +189,39 @@ describe('a figure counts only when it carries a number', () => {
     return playMetricCountUp(chipFigure, { to: 42, format: percentDigits });
   });
 
-  it('the committed snapshot is the degraded path, so this is what a judge sees', () => {
-    expect(snapshot.degraded).toBe(true);
-    expect(snapshot.metrics.provenCoverage).toBeNull();
+  it('counts exactly the tiles of the committed rail that carry a figure', async () => {
+    /* The real snapshot, whatever state it is in. Today it is `degraded: true` with
+       `provenCoverage: null`, so the chip stands where a figure would and two tiles count —
+       but the assertion is written against the rail as rendered rather than against that
+       state, because which figures the snapshot carries is the snapshot's business and this
+       flourish's rule is the same either way: a tile counts if and only if it shows a
+       positive number. */
+    const { container } = render(
+      <MetricRail
+        degraded={snapshot.degraded}
+        freshness={FRESHNESS}
+        metrics={snapshot.metrics}
+      />,
+    );
+
+    let expected = 0;
+    for (const tile of container.querySelectorAll<HTMLElement>('[data-metric]')) {
+      const figure = tile.querySelector<HTMLElement>('[role="img"]');
+      if (figure === null) continue;
+      if (countUpDigitRun(figure) === null) continue;
+      /* the accessible name is the final value from first paint, so it is safe to read while
+         a count is already in flight */
+      const value = Number((figure.getAttribute('aria-label') ?? '').replace('%', ''));
+      if (Number.isInteger(value) && value > 0) expected += 1;
+    }
+
+    expect(
+      pendingMotion(),
+      'the rail counted a different number of figures than it renders. A tile counts when ' +
+        'it shows a positive number, and never when the degraded chip replaced it (R2.11) ' +
+        'or the ratio was withheld (R9.3).',
+    ).toBe(expected);
+    await quiet();
   });
 });
 
