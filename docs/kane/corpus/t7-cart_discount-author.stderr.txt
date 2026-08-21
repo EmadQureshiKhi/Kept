@@ -1,0 +1,6 @@
+
+Update available: 0.8.4 → 0.8.5 — run `npm install -g @testmuai/kane-cli@latest` to update
+
+evidence: 1 status_disagrees advisory(ies) — expected under --bug-detection continue
+[lock] run not committed (failed); discarding playground lock
+evidence: view locally with `kane-cli evidence serve /Users/nokitha/.testmuai/kaneai/sessions/994d16b7-6a50-4caa-bc09-491ba6663ffc/evidence/20091f19-2681-44ca-bc81-81c9e0a4587d.evidence`

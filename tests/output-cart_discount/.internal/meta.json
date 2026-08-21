@@ -1,0 +1,18 @@
+{
+  "commit_id": "a3d5a121-adcf-4be6-bbbf-3b031f0d8031",
+  "test_id": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+  "testcase_id": "01M0H3EN8HWBHEMG2NRQK3VD95",
+  "project_id": "01M0E80FB9PQ3DCXR1FT5Q0V1M",
+  "folder_id": "01M0E80FYRHKR7HS51MZ582PY7",
+  "org_id": "3281604",
+  "session_name": "cart_discount",
+  "executions": [
+    {
+      "execution_id": "20091f19-2681-44ca-bc81-81c9e0a4587d",
+      "run_kind": "author",
+      "status": "failed",
+      "valid": true,
+      "at": "2026-08-21T02:53:29.445Z"
+    }
+  ]
+}
