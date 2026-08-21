@@ -15,10 +15,10 @@ could leak and nothing to authenticate against.
 | Framework | Next.js 16.3 |
 | Project root | the **monorepo root**, not `apps/ledger` — see below |
 | Install | `npm ci` |
-| Build | `next build apps/ledger` |
+| Build | `tsc -b packages/kept-core && next build apps/ledger` |
 | Output | `apps/ledger/.next` |
 | Environment variables | **none** |
-| Routes | 7, all statically prerendered |
+| Routes | 9, all statically prerendered |
 
 Every one of those settings is committed in `vercel.json` at the repository root, so the
 dashboard is not the source of truth for any of them.
@@ -52,6 +52,45 @@ arrangement.
 needs. That is the trade for not having a manifest per app, and it costs install seconds
 rather than correctness.
 
+## Why the build command starts with `tsc -b packages/kept-core`
+
+**Because `@kept/core` is a workspace package that ships compiled output, and the compiled
+output is not in the repository.**
+
+The Ledger imports `@kept/core` in three places — `lib/snapshot.ts` for `parseSnapshot`,
+`lib/runVocabulary.ts` for the exit meanings and the verdict contract, and
+`components/AmendmentCard.tsx` for `amendedPromiseId`. `packages/kept-core/package.json`
+resolves that specifier through `main` and `exports`, and both point at `./dist/index.js`.
+`.gitignore` line 5 excludes `dist/`, so a fresh clone has none: `git ls-files
+packages/kept-core/dist` returns nothing.
+
+`npm ci` does create the symlink — `node_modules/@kept/core` → `packages/kept-core` — which
+is why the failure is confusing. The package is *found*. Its entry point is what is
+missing. Turbopack reports that as three `Module not found: Can't resolve '@kept/core'`
+errors and the build exits 1.
+
+Locally the specifier resolves only because `npm run check` runs `tsc -b` before anything
+else, so `dist/` is sitting there from the last check. The build host has no such
+history. **This was reproduced rather than reasoned about**: deleting
+`packages/kept-core/dist` and running `next build apps/ledger` produces the same three
+errors against the same three files as the failed deploy, and building the one package
+clears all three.
+
+Two details in the spelling are deliberate:
+
+- **`packages/kept-core`, not a bare `tsc -b`.** A bare solution build also type-checks
+  every package test suite and the Ledger's `lib/` and `test/` trees against the root
+  `tsconfig.json`. That is exactly the second, weaker copy of the type check that
+  `apps/ledger/next.config.mjs` explains removing — `@types` drift under a lockfile
+  install can fail it for a reason no local command reproduces. The Ledger needs one
+  package built; the build command builds one package.
+- **It emits, so it cannot be `--noEmit`.** `dist/index.js` and `dist/index.d.ts` are the
+  artefact, not a side effect. `typescript` is a root `devDependency` and Vercel installs
+  dev dependencies by default, so `tsc` is on `PATH` for the same reason `next` is.
+
+The pinning test accepts this: it asserts the build command *ends by naming the app
+directory*, not that it is the only thing in the command.
+
 ## Why there are no environment variables
 
 Not "none needed yet" — none possible. The build reads
@@ -68,21 +107,43 @@ the file contains no `KANE`, `API_KEY`, `TOKEN` or `SECRET` string at all.
 
 ## Measured locally, before any deploy
 
-The build command from `vercel.json`, run at the repository root on the committed tree:
+The build command from `vercel.json`, run at the repository root on the committed tree —
+**with `packages/kept-core/dist` deleted first**, so the starting state is the one a fresh
+clone has rather than the one a local `npm run check` leaves behind:
 
 ```console
-$ node node_modules/next/dist/bin/next build apps/ledger
+$ rm -rf packages/kept-core/dist
+$ tsc -b packages/kept-core && node node_modules/next/dist/bin/next build apps/ledger
 ▲ Next.js 16.3.1 (Turbopack)
-✓ Compiled successfully in 4.9s
-  Finished TypeScript in 3.7s
-✓ Generating static pages using 7 workers (8/8) in 272ms
+✓ Running next.config.mjs took 8ms
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.8s
+  Skipping validation of types
+✓ Generating static pages using 7 workers (10/10) in 239ms
+Turbopack build encountered 4 warnings:
 ```
 
-Exit 0. Seven routes, every one marked `○ (Static)` and prerendered.
-`apps/ledger/.next/routes-manifest.json` — the artefact Vercel looks for in the output
-directory — is present. Nothing outside `apps/ledger/.next` was written: neither
-`apps/ledger/tsconfig.json` nor the root `package.json` changed, both checksummed either
-side of the run.
+Exit 0. Nine routes, every one marked `○ (Static)` and prerendered — `/`, `/_not-found`,
+`/amendments`, `/apple-icon.png`, `/badge.svg`, `/coverage`, `/icon.png`, `/reviews`,
+`/runs`. `apps/ledger/.next/routes-manifest.json` — the artefact Vercel looks for in the
+output directory — is present.
+
+`Skipping validation of types` is `next.config.mjs` doing what its comment says; the type
+check ran locally under `npm run check`.
+
+**The four warnings are expected and not a failure.** They are output-tracing notices
+against `packages/kept-core/dist/kane/evidence.js`, which calls `resolve()` and `join()` on
+paths the tracer cannot statically scope, so the tracer widens what it includes in the
+server bundle. That module is on the import graph because `lib/snapshot.ts` pulls the
+snapshot model through the `@kept/core` barrel, and it is never *called* on any route: the
+Ledger reads evidence through the committed `publicPath` values, which is the whole point
+of R13.4. The cost is a larger traced bundle, not a behaviour change. Removing them means
+splitting the barrel so the browser half never reaches the filesystem half, which is a
+change to design §2.1's single-entry-point rule and wants its own decision.
+
+Deleting `dist/` and re-running is also the check that the first line of the build command
+is load-bearing: without it, the same command fails with three
+`Module not found: Can't resolve '@kept/core'` errors.
 
 **What this does not prove.** The install, the framework detection and the output pickup
 are the host's, and the only way to measure those is to deploy. The root-directory
@@ -114,14 +175,14 @@ starts asserting Requirement 13.9 against the URL instead — inside the first 2
 HTTPS, and not localhost. A single `it.todo` names the edit and prints in every run's
 summary until it is made, so it cannot be forgotten in a document.
 
-### If the build fails on `next: command not found`
+### If the build fails on `next: command not found` or `tsc: command not found`
 
 Vercel puts `node_modules/.bin` on `PATH` for the build command, so it should not. If it
 does, use the spelling that depends on no `PATH` at all — the same one `scripts/demo.mjs`
-uses, and the one measured above:
+uses for `next`, and the one measured above:
 
 ```
-node node_modules/next/dist/bin/next build apps/ledger
+node node_modules/typescript/bin/tsc -b packages/kept-core && node node_modules/next/dist/bin/next build apps/ledger
 ```
 
 Change it in `vercel.json` rather than in the dashboard, so the next reader sees it.
@@ -154,6 +215,6 @@ Four things, in the order they can go wrong.
    list. Anything there did not come from this repository.
 
 Also worth a look: every route in the build output should be marked static. The local build
-prerenders all seven — `/`, `/_not-found`, `/amendments`, `/badge.svg`, `/coverage`,
-`/reviews`, `/runs`. A route that turns dynamic is a route that grew a server, which is the
-read-only guarantee of Requirement 8.4 slipping.
+prerenders all nine — `/`, `/_not-found`, `/amendments`, `/apple-icon.png`, `/badge.svg`,
+`/coverage`, `/icon.png`, `/reviews`, `/runs`. A route that turns dynamic is a route that
+grew a server, which is the read-only guarantee of Requirement 8.4 slipping.
