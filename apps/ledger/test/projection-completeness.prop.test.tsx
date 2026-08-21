@@ -8,8 +8,9 @@
  * is a different kind of claim, so each is proven differently and honestly:
  *
  *   1. **Completeness (R8.1, R8.2).** For *any* schema-valid snapshot the graph paints
- *      exactly one node per promise, and that node carries the promise's claim text and
- *      its citation as `path:line`. Not "at least one" and not "a node for every
+ *      exactly one node per promise, that node carries the promise's claim text and
+ *      its citation as `path:line`, and it is numbered with its own position in the lane's
+ *      urgency order. Not "at least one" and not "a node for every
  *      promise it happens to know about": a duplicated node is a graph that double-counts
  *      its own subject, and a missing one is a promise the repository states and the
  *      ledger hides.
@@ -198,7 +199,14 @@ describe('Property 23 — completeness: exactly one node per promise (R8.1, R8.2
           );
 
           /* and in the one order lib/layout.ts sorted, red first */
-          expect(painted).toEqual([...orderOf(snapshot)]);
+          const order = orderOf(snapshot);
+          expect(painted).toEqual([...order]);
+
+          /* the urgency numeral is that order, stated on the node. A sort a reader has to
+             infer from four hues is a sort a reader does not have, so the position is
+             painted — and it must agree with the position, on every snapshot, or the node
+             is telling a reader something the lane does not do. */
+          const position = new Map(order.map((id, index) => [id, index + 1]));
 
           for (const promise of snapshot.promises) {
             const node = container.querySelector(`[data-promise-node="${promise.id}"]`);
@@ -212,6 +220,11 @@ describe('Property 23 — completeness: exactly one node per promise (R8.1, R8.2
             );
             /* R10.5 read through the graph: the verdict is a word on the node */
             expect(node?.textContent).toContain(promise.verdict);
+            expect(
+              node?.querySelector('.promise-node__rank')?.textContent,
+              `${promise.id} is painted at lane position ${position.get(promise.id)} but ` +
+                `numbered otherwise`,
+            ).toBe(String(position.get(promise.id)));
           }
           return true;
         } finally {

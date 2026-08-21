@@ -38,7 +38,7 @@ import {
 } from '../components/PromiseGraph.js';
 import { PROMISE_LIST_LABEL } from '../components/PromiseList.js';
 import { SELECTION_PARAM, navOrder } from '../lib/graphNav.js';
-import { layoutSnapshot } from '../lib/layout.js';
+import { LANES, LANE_HEADINGS, layoutSnapshot } from '../lib/layout.js';
 import { snapshot } from '../lib/snapshot.js';
 
 import { installBrowserShims } from './_dom.js';
@@ -172,6 +172,159 @@ describe('PromiseGraph — the graph a judge sees first', () => {
         container.querySelector('[role="list"]'),
         'the parallel list is always in the DOM, empty included (§10.8)',
       ).not.toBeNull();
+    } finally {
+      unmount();
+    }
+  });
+});
+
+/* ───────────── the canvas furniture: frame, ground, controls, minimap ──────────── */
+
+describe('PromiseGraph — the canvas is framed, grounded and steerable', () => {
+  it('frames the canvas with a surface class rather than an authored shadow (§10.5)', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      const frame = container.querySelector('.promise-graph__canvas');
+      expect(frame).not.toBeNull();
+      expect(
+        frame?.classList.contains('surface-raised-2'),
+        'the frame is composed from surfaces.css, because §10.4.4 permits a shadow to be ' +
+          'declared there and nowhere else',
+      ).toBe(true);
+    } finally {
+      unmount();
+    }
+  });
+
+  it('lays a dotted ground at the page ruling behind the lanes', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      const ground = container.querySelector('[data-testid="rf__background"]');
+      expect(ground, 'no background layer is drawn, so the canvas is a void').not.toBeNull();
+      const dot = container.querySelector('.react-flow__background-pattern.dots');
+      expect(dot, 'the background is drawn but not as dots').not.toBeNull();
+      /* 28px is `--grid-cell`, the page's own ruling, so the graph sits on the page's grid */
+      expect(container.querySelector('pattern')?.getAttribute('width')).toBe('28');
+    } finally {
+      unmount();
+    }
+  });
+
+  it('offers zoom and fit-view as native buttons with accessible names', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      const controls = container.querySelector('.graph-controls');
+      expect(controls, 'no controls are drawn').not.toBeNull();
+      const buttons = [...container.querySelectorAll<HTMLButtonElement>('.react-flow__controls-button')];
+      expect(buttons.length, 'zoom in, zoom out and fit view').toBe(3);
+      for (const button of buttons) {
+        expect(button.tagName).toBe('BUTTON');
+        expect(
+          button.getAttribute('aria-label'),
+          'a control with no name is a control a screen reader cannot offer',
+        ).toBeTruthy();
+      }
+      for (const required of [
+        'react-flow__controls-zoomin',
+        'react-flow__controls-zoomout',
+        'react-flow__controls-fitview',
+      ]) {
+        expect(container.querySelector(`.${required}`), `${required} is absent`).not.toBeNull();
+      }
+      /* the interactivity lock is off: the graph is read-only, so there is nothing to unlock */
+      expect(container.querySelector('.react-flow__controls-interactive')).toBeNull();
+    } finally {
+      unmount();
+    }
+  });
+
+  it('draws a minimap, and neither it nor the controls add a tab stop of their own', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      expect(container.querySelector('.graph-minimap'), 'no minimap on a 1520px graph').not.toBeNull();
+      /* §10.8: one Tab enters the graph. Native buttons are reachable without a tabindex,
+         and nothing here takes focus away from the canvas or holds it. */
+      expect(container.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
+      for (const trap of container.querySelectorAll('.graph-minimap [tabindex], .graph-controls [tabindex]')) {
+        expect(trap.getAttribute('tabindex'), 'a positive tabindex jumps the tab order').not.toMatch(
+          /^[1-9]/,
+        );
+      }
+    } finally {
+      unmount();
+    }
+  });
+
+  it('labels the four columns so the left-to-right story needs no click', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      const headings = [...container.querySelectorAll('[data-lane-header]')];
+      expect(headings.map((heading) => heading.getAttribute('data-lane-header'))).toEqual([
+        ...LANES,
+      ]);
+      expect(headings.map((heading) => heading.textContent)).toEqual(
+        LANES.map((kind) => LANE_HEADINGS[kind]),
+      );
+      /* labels, not controls: no role and no focus stop (§10.8) */
+      for (const heading of headings) {
+        expect(heading.getAttribute('role')).toBeNull();
+        expect(heading.getAttribute('tabindex')).toBeNull();
+      }
+      /* and they are not mistaken for the lanes they name */
+      expect(container.querySelectorAll('[data-lane]')).toHaveLength(
+        layoutSnapshot(snapshot).nodes.filter((node) => node.kind !== 'promise').length,
+      );
+    } finally {
+      unmount();
+    }
+  });
+
+  it('numbers the promise lane so "most urgent first" is visible, not inferred', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      const ranks = ORDER.map((id) =>
+        container
+          .querySelector(`[data-promise-node="${id}"] .promise-node__rank`)
+          ?.textContent ?? null,
+      );
+      expect(ranks).toEqual(ORDER.map((_, index) => String(index + 1)));
+      const first = container.querySelector(
+        `[data-promise-node="${ORDER[0]}"] .promise-node__rank`,
+      );
+      expect(first?.getAttribute('title')).toBe(
+        `urgency 1 of ${snapshot.promises.length}, most urgent first`,
+      );
+    } finally {
+      unmount();
+    }
+  });
+
+  it('keeps the graph read-only: nothing drags, nothing connects, nothing is deletable', () => {
+    const { container, unmount } = render(
+      <PromiseGraph initialSelectedId={null} snapshot={snapshot} />,
+    );
+    try {
+      for (const node of container.querySelectorAll('.react-flow__node')) {
+        expect(
+          node.classList.contains('draggable'),
+          'a draggable node lets a reader move a coordinate lib/layout.ts computed',
+        ).toBe(false);
+      }
+      for (const handle of container.querySelectorAll('.react-flow__handle')) {
+        expect(handle.classList.contains('connectionindicator')).toBe(false);
+      }
     } finally {
       unmount();
     }

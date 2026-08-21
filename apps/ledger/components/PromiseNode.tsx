@@ -1,10 +1,16 @@
 /**
- * `PromiseNode` — design §10.2, §10.3 (320×76), §10.4.3, §10.7, §10.8, R8.1, R10.2,
+ * `PromiseNode` — design §10.2, §10.3 (320×88), §10.4.3, §10.7, §10.8, R8.1, R10.2,
  * R10.5, R10.7.
  *
- * One promise, as the graph draws it: the id a reader can deep-link, the claim in two
- * lines of prose, the `path:line` that makes it checkable, and the verdict as a word
- * beside its hue.
+ * One promise, as the graph draws it: its position in the urgency order, the id a reader
+ * can deep-link, the claim in two lines of prose, the `path:line` that makes it checkable,
+ * and the verdict as a word beside its hue.
+ *
+ * **The urgency numeral is the sort, made visible.** `lib/layout.ts` puts red at the top
+ * and proven at the bottom, and until the numeral landed the only way to know that was to
+ * already know it. It is a numeral, so it is mono (§10.7); it carries the full "n of m,
+ * most urgent first" in `title`; and it is optional, because a node rendered outside a lane
+ * has no position to state.
  *
  * **It is a plain presentational component, not a React Flow node type.** React Flow
  * is used for panning, zooming, edges and the viewport only (§10.3), so it is handed
@@ -55,6 +61,17 @@ import '../styles/promise-node.css';
 
 export interface PromiseNodeProps {
   readonly promise: SnapshotPromise;
+  /**
+   * 1-based position in the lane's urgency order, when the caller knows it.
+   *
+   * The lane is already sorted `(verdict rank, id)` with red first (§10.3) — the numeral
+   * says so out loud, because an order a reader has to infer from four hues is an order a
+   * reader does not have. Omitted when the node is rendered outside a lane, where a
+   * position would be a claim about a sequence that does not exist.
+   */
+  readonly rank?: number;
+  /** How many promises the lane holds, so the numeral can say "of what". */
+  readonly rankOf?: number;
   /** True when this promise is the panel's subject (`?p=<id>` or a selection). */
   readonly selected?: boolean;
   /** Called on click and on `Enter`/`Space`; the graph owns what selection means. */
@@ -70,6 +87,8 @@ export interface PromiseNodeProps {
 
 export function PromiseNode({
   promise,
+  rank,
+  rankOf,
   selected = false,
   onSelect,
   registerElement,
@@ -97,6 +116,18 @@ export function PromiseNode({
       tabIndex={-1}
     >
       <span className="promise-node__head">
+        {rank === undefined ? null : (
+          <span
+            className="promise-node__rank"
+            title={
+              rankOf === undefined
+                ? `urgency ${rank}`
+                : `urgency ${rank} of ${rankOf}, most urgent first`
+            }
+          >
+            {rank}
+          </span>
+        )}
         <span className="promise-node__id">{promise.id}</span>
         <VerdictTag className="promise-node__verdict" verdict={promise.verdict} />
       </span>

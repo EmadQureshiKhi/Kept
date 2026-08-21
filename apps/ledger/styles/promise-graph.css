@@ -9,49 +9,130 @@
  * needing a shadow of its own, and there is exactly one place shadows are authored
  * (§10.5).
  *
- * **No horizontal overflow between 1280 and 1920 (R10.8), by construction rather
- * than by media query.** The canvas column is `minmax(0, 1fr)`, so it is the column
- * that yields; the two fixed columns and the two gaps total 712px, which leaves
- * 520px of canvas inside a 1280px viewport once the shell's padding is taken. No
- * rule in this file sets a non-zero `min-width`, and the canvas clips its own
- * viewport, so nothing inside the graph can push the page wider than the window —
- * asserted in `test/promise-graph-density.test.ts` rather than eyeballed at two
- * widths.
+ * **No horizontal overflow at any width from 320px up (R10.8), by construction.** The
+ * canvas column is `minmax(0, 1fr)`, so it is the column that yields; the two fixed
+ * columns and the two gaps total 760px, which leaves 472px of canvas inside a 1280px
+ * viewport once the shell's padding is taken. Below 1100px the fixed columns stop being
+ * columns and fold underneath, and below 720px so does the panel — so the arithmetic
+ * that holds between 1280 and 1920 never has to hold at 320, because at 320 there is
+ * only one column. No rule in this file sets a non-zero `min-width`, and the canvas
+ * clips its own viewport, so nothing inside the graph can push the page wider than the
+ * window — asserted in `test/promise-graph-density.test.ts` rather than eyeballed at
+ * two widths.
  *
- * **React Flow is styled down to its geometry.** Its `base.css` is the functional
- * half only — the transform origins and the pane stacking that panning and zooming
- * need — so no third-party theme reaches the page and the overrides below are about
- * this palette rather than about undoing another one. Edges are one hairline stroke;
- * handles exist because an edge needs endpoints to attach to and are painted to
- * nothing, since a promise is not a thing a reader connects by hand.
+ * **The canvas height is fluid.** A pinned 620px is a bet on one screen: on a laptop it
+ * crowds the fold and on a phone it is most of the page. `clamp(360px, 62vh, 720px)`
+ * keeps four lanes legible from a phone to a wide monitor, and `fitView` with a low
+ * `minZoom` is what makes the *contents* fit whatever height it lands on.
+ *
+ * **React Flow is restyled, not themed.** Its `base.css` is the functional half only —
+ * the transform origins, the pane stacking, and the positioning its background, controls
+ * and minimap need — so the rules below dress that geometry in this palette rather than
+ * undoing another one. The reference is React Flow's own showcase: a framed canvas over a
+ * dotted ground, visible handles, smooth edges, controls and a minimap. Everything here
+ * translates that into paper and ink: no shadow is declared (depth is picked from
+ * `surfaces.css` in the markup), no colour is invented, and every fill is one of the four
+ * `--ink-*` surfaces.
  */
 
 /* ── the grid ───────────────────────────────────────────────────────────────── */
 
+/**
+ * Two rows, named, and that is the alignment fix.
+ *
+ * The named complaint was that `8 promises, most urgent first` sat too high — it was not
+ * in line with the canvas beside it, so the heading and its list read as a separate object
+ * floating above the graph rather than as the column next to it.
+ *
+ * The cause was structural rather than a margin. Each column used to be its own `<div>`
+ * holding a caption and then its content, so the two captions were laid out independently:
+ * `.promise-graph__caption` is a two-line sentence and `.graph-list__caption` is one line
+ * of small caps, so the canvas started roughly a line lower than the list did. No amount of
+ * padding on either one fixes that, because the offset is whatever the sentence above the
+ * canvas happens to wrap to at the current width.
+ *
+ * So the wrappers are gone and the grid gained a **row**: the two captions share row 1 and
+ * the canvas and the list share row 2. Row 1 is `auto`, so it is as tall as the taller
+ * caption, and both captions are `align-self: end` — they sit on the row's bottom edge, one
+ * gap above the two frames they belong to. The result is what the brief asked for: the
+ * heading/caption block and the graph frame read as one unit at the top, and because the
+ * list's `max-height` is the same clamp as the canvas's `height`, they end level too.
+ *
+ * The tracks are named rather than placed by index, and that is what makes the two folded
+ * layouts below readable: an explicit `grid-column: 2` would silently create a second
+ * column at a phone width, where the template has one.
+ */
+/**
+ * The list column is 288px, and it used to be 240px.
+ *
+ * 240 was the context chip's width, picked so the column and the lanes agreed on a number.
+ * That agreement bought nothing a reader can see and cost the thing the column exists for:
+ * a claim is a sentence, and at 240px minus the row's padding and its verdict edge there
+ * are about 220px of measure for it — so every row ellipsised into a fragment and the
+ * column read as eight truncated hashes. At 288 the claim gets two lines of roughly 45
+ * characters each, which is most claims whole and the rest recognisable.
+ *
+ * The arithmetic is safe by construction rather than by luck: the canvas track is
+ * `minmax(0, 1fr)`, so it is the column that yields, and the 48px comes out of it.
+ * 288 + 440 + two 16px gaps = 760px of fixed width, which leaves 472px of canvas inside
+ * 1280 once the shell's 48px of column padding is taken — still wider than one 320px
+ * promise node, which is the floor `promise-graph-density.test.ts` holds this to.
+ */
 .promise-graph {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(0, 1fr) 288px;
+  grid-template-areas:
+    'canvas-head list-head'
+    'canvas      list';
   gap: var(--s-4);
   align-items: start;
 }
 
-/* The panel takes a column of its own rather than covering the graph. 240 + 440 +
-   two 16px gaps = 712px of fixed width, which fits inside 1280 with room to spare
-   and simply widens the canvas at 1920. */
+/* The panel takes a column of its own rather than covering the graph. 288 + 440 +
+   two 16px gaps = 760px of fixed width, which fits inside 1280 with room to spare
+   and simply widens the canvas at 1920. It spans both rows: a panel that started at row 2
+   would hang its own heading off the bottom of the captions' row. */
 .promise-graph[data-panel='open'] {
-  grid-template-columns: minmax(0, 1fr) 240px 440px;
+  grid-template-columns: minmax(0, 1fr) 288px 440px;
+  grid-template-areas:
+    'canvas-head list-head panel'
+    'canvas      list      panel';
+}
+
+/* The five children, placed by name. Nothing else in this file positions anything. */
+.promise-graph > .promise-graph__caption {
+  grid-area: canvas-head;
+  align-self: end;
+}
+
+.promise-graph > .graph-list__caption {
+  grid-area: list-head;
+  align-self: end;
+}
+
+.promise-graph > .promise-graph__canvas {
+  grid-area: canvas;
+}
+
+.promise-graph > .graph-list {
+  grid-area: list;
+}
+
+.promise-graph > .promise-panel {
+  grid-area: panel;
 }
 
 /* ── the canvas: role="application", and the only pannable thing on the page ─── */
 
+/* Geometry only. The frame — the 2px ink border, the radius and the 6px offset slab —
+   arrives from `.surface-raised-2`, composed in `PromiseGraph.tsx`, because §10.4.4
+   permits a shadow to be declared in `surfaces.css` and nowhere else. Nothing here
+   re-declares a border or a fill, so the two classes cannot fight over the cascade. */
 .promise-graph__canvas {
   position: relative;
   min-width: 0;
-  height: 620px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-card);
+  height: clamp(360px, 62vh, 720px);
   overflow: hidden;
-  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 /* `Tab` enters the graph at React Flow's own wrapper, which is the one element in
@@ -67,40 +148,203 @@
   outline-offset: -2px;
 }
 
-/* Reading order, in words, above the lanes. The graph's structure is legible
-   without it; this is what makes it legible in the first three seconds. */
+/**
+ * Reading order, in words, above the lanes. The graph's structure is legible without it;
+ * this is what makes it legible in the first three seconds.
+ *
+ * Named in the brief as copy that was "just there", and it was: 13px in the label tone
+ * with nothing but a margin, sitting on a ruled page directly above a framed canvas — so
+ * the one sentence that explains the hero read as a stray line between two objects. It is
+ * now set as a caption *belonging to* the canvas under it: body size, body tone, and a
+ * 2px ink rule down its left edge. The rule is the same device the standfirst uses one
+ * step up the page, at one step less weight, which is how the hierarchy says "this
+ * explains the thing below" rather than "this is another standfirst".
+ *
+ * The measure is 78ch rather than the standfirst's 62ch: it is a single line of
+ * enumeration on a wide canvas, and breaking four clauses across three short lines is
+ * harder to read than across two long ones. Its `textContent` is untouched — that is
+ * `GRAPH_CAPTION`, asserted verbatim in `promise-graph.test.tsx`.
+ */
+/* No bottom margin: the grid's row gap is the space between a caption and the frame it
+   belongs to, stated once in one place for both columns. A margin here would add to it and
+   the two columns would separate by different amounts. */
 .promise-graph__caption {
-  margin: 0 0 var(--s-2);
+  max-width: 78ch;
+  margin: 0;
+  padding-left: var(--s-3);
+  border-left: var(--line) solid var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  line-height: var(--s-4);
-  color: var(--text-200);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
 }
 
-/* ── React Flow, reduced to geometry ────────────────────────────────────────── */
+/* ── the dotted ground: paper texture, at the page's own ruling ─────────────── */
+
+/* The dot pitch is `--grid-cell`, passed as a number from the component because a
+   React prop cannot read a custom property. The fill is a rule token — ink at 18%
+   over the page, already flattened in `tokens.css` — so the ground reads as the
+   tooth of the sheet rather than as a decoration, and it is the only thing behind
+   the lanes. */
+.promise-graph__canvas .react-flow__background-pattern.dots {
+  fill: var(--hairline);
+}
+
+/* ── edges: smooth bezier, ink at moderate alpha ────────────────────────────── */
 
 .promise-graph__canvas .react-flow__edge-path {
   stroke: var(--hairline-strong);
-  stroke-width: 1;
+  stroke-width: 1.5;
   fill: none;
 }
 
-/* An edge attaches to a handle, so the handles exist; a promise is not connected by
-   hand, so they are 1px and painted to nothing and take no pointer. */
+/* The `designed` edge is the one a verdict travels along — it is the path M1 draws
+   when a verdict moves (§10.6.3) — so it is drawn heavier. Weight rather than hue:
+   the verdict hues are spent on the verdict itself. */
+.promise-graph__canvas .graph-edge--designed .react-flow__edge-path {
+  stroke: var(--text-200);
+  stroke-width: 2.5;
+}
+
+/* ── handles: visible endpoints, and nothing a reader wires up ──────────────── */
+
+/* Drawn, the way the reference draws them, so it is clear where a line leaves a node
+   and where it arrives. Still `pointer-events: none` and still `isConnectable={false}`
+   in the markup: a promise is not connected by hand. `min-width` is pinned to zero
+   because `base.css` sets 5px and R10.8's arithmetic holds only while nothing in the
+   hero carries a minimum. */
 .promise-graph__canvas .react-flow__handle {
-  width: 1px;
-  height: 1px;
+  width: 8px;
+  height: 8px;
   min-width: 0;
   min-height: 0;
-  border: 0;
+  border: var(--line) solid var(--text-000);
+  border-radius: 50%;
   background-color: var(--ink-100);
-  opacity: 0;
   pointer-events: none;
 }
 
 .promise-graph__canvas .react-flow__attribution {
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
+}
+
+/* ── the four column headings ───────────────────────────────────────────────── */
+
+/* Labels, not controls: no role, no tab stop, nothing to activate. They pan and zoom
+   with the lanes they name, which is why they are nodes rather than an overlay. */
+.lane-header {
+  display: flex;
+  box-sizing: border-box;
+  height: 32px;
+  align-items: flex-end;
+  padding: 0 0 var(--s-1) var(--s-1);
+  border-bottom: var(--line) solid var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: var(--s-4);
+  color: var(--text-000);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* ── the controls: neubrutalist, keyboard reachable, no focus trap ──────────── */
+
+/* `.surface-raised` on the container supplies the border and the offset slab
+   (composed in the markup, §10.5). This adds the vocabulary: hard corners inside a
+   card radius, a 2px ink rule between buttons, and an uppercase micro-label beside
+   each icon so the control says what it does rather than only showing a glyph. */
+.promise-graph__canvas .graph-controls {
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* A stated `width` rather than a `min-width`: R10.8's arithmetic holds only while
+   nothing in the hero carries a minimum, and the density scan enforces that over this
+   whole file rather than over the grid children alone. */
+.promise-graph__canvas .react-flow__controls-button {
+  box-sizing: border-box;
+  width: 64px;
+  height: 26px;
+  gap: var(--s-1);
+  justify-content: flex-start;
+  padding: 0 var(--s-2);
+  border: 0;
+  border-top: var(--line) solid var(--text-000);
+  border-radius: 0;
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+/* The first button closes against the container's own border rather than doubling it. */
+.promise-graph__canvas .react-flow__controls-button:first-of-type {
+  border-top: 0;
+}
+
+.promise-graph__canvas .react-flow__controls-button:hover {
+  background-color: var(--ink-150);
+}
+
+.promise-graph__canvas .react-flow__controls-button:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: -3px;
+}
+
+.promise-graph__canvas .react-flow__controls-button svg {
+  flex: 0 0 auto;
+  width: 10px;
+  max-width: 10px;
+  max-height: 10px;
+}
+
+/* The micro-labels. Three short words, so `content` is where they belong: they name
+   the button they are drawn inside and would be duplicate text in the markup, which
+   already carries the same words as each button's accessible name. */
+.promise-graph__canvas .react-flow__controls-zoomin::after {
+  content: 'in';
+}
+
+.promise-graph__canvas .react-flow__controls-zoomout::after {
+  content: 'out';
+}
+
+.promise-graph__canvas .react-flow__controls-fitview::after {
+  content: 'fit';
+}
+
+/* ── the minimap: node colour by verdict, ink border ───────────────────────── */
+
+/* Worth having on a graph this wide: at a phone width `fitView` zooms far enough out
+   that the minimap is how a reader knows which part of the lanes they are looking at.
+   `.surface-raised` in the markup carries the border and the slab; the fill is stated
+   here at higher specificity than `base.css`'s own `background` shorthand so the
+   surface class cannot lose the cascade. */
+.promise-graph__canvas .graph-minimap.react-flow__minimap {
+  background-color: var(--ink-100);
+  overflow: hidden;
+}
+
+.promise-graph__canvas .react-flow__minimap-mask {
+  fill: var(--ink-050);
+  stroke: var(--text-200);
+  stroke-width: 2;
+}
+
+.promise-graph__canvas .react-flow__minimap-node {
+  stroke-width: 3;
+}
+
+.promise-graph__canvas .graph-minimap:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: -3px;
 }
 
 /* ── the parallel list: always present, never a fallback (§10.8) ────────────── */
@@ -110,28 +354,146 @@
    global. Two components under one class name is two components restyling each other
    after a client-side navigation. */
 
+/**
+ * The list is a **ruled sheet**, and that is the fix for "it is just there".
+ *
+ * It used to be eight bare rows sitting directly on the page, separated by 4px of gap. The
+ * page is ruled at `--grid-cell` by `shell.css`, so the ruling ran through every gap and
+ * the eight rows read as one block of debris rather than as eight records — the same
+ * complaint `/runs` had about its diagnostics, and the same answer: one opaque sheet with a
+ * 2px ink edge, with the rows as cells cut into it.
+ *
+ * The sheet is `.surface-raised`, composed in `PromiseList.tsx`, because §10.4.4 permits a
+ * shadow to be declared in `surfaces.css` and nowhere else. It sits one elevation below the
+ * canvas beside it, which is the right order: the graph is the object and the list is the
+ * index to it. Nothing here re-declares a border, a fill or a radius, so the two classes
+ * cannot fight over the cascade — and the padding stays zero so the rules between rows run
+ * the full width of the sheet, the way a rule in a table does.
+ *
+ * `max-height` is the canvas's own clamp, asserted equal to it in the density test, so the
+ * two columns end level. `align-content: start` keeps eight short rows eight short rows
+ * rather than letting them stretch to fill a tall column.
+ *
+ * ── the scroll affordance, which is the half of the brief the box has to say for itself ──
+ *
+ * `max-height` and `overflow-y: auto` were already here and already worked; what they did
+ * not do was *look* like they worked. A scroller a reader cannot see is a scroller a reader
+ * does not use, so this takes the four-part treatment `.runs-table-frame` uses in
+ * `runs.css`, minus the horizontal axis it does not have:
+ *
+ *   1. `scrollbar-gutter: stable` reserves the track always, so the channel is visible at
+ *      rest — that is what tells a reader the column moves before they try to move it — and
+ *      the rows do not reflow the moment the eighth one arrives;
+ *   2. the track is the recessed paper surface and the thumb is a paper slab with the same
+ *      2px ink edge every other control in the system has. Paper rather than ink
+ *      deliberately: an ink fill is an inversion, and §10.4.3 requires an inverting rule to
+ *      set the text colour it inverts to in the same rule, which a thumb carrying no text
+ *      cannot honestly do;
+ *   3. `scrollbar-color` names the same pair for the engines that take only the standard
+ *      property, so a Firefox reader gets an ink thumb rather than the user-agent default;
+ *   4. `overscroll-behavior: contain` stops a flick at the bottom of the list carrying on
+ *      into the page, which is the one thing that makes a nested scroller feel broken.
+ */
 .graph-list {
   display: grid;
-  gap: var(--s-1);
+  align-content: start;
   min-width: 0;
-  max-height: 620px;
+  max-height: clamp(360px, 62vh, 720px);
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-000) var(--ink-050);
   list-style: none;
 }
 
-.graph-list__caption {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  line-height: var(--s-4);
-  color: var(--text-200);
+.graph-list::-webkit-scrollbar {
+  width: var(--s-3);
 }
 
-/* A native button, so it is operable with no pointer, no canvas and no JavaScript
-   of ours in the way. `background-color` is unset rather than transparent-with-a-
-   token: the row's fill is the ink ramp, and only when it is hovered or selected. */
+.graph-list::-webkit-scrollbar-track {
+  background-color: var(--ink-050);
+}
+
+.graph-list::-webkit-scrollbar-thumb {
+  border-radius: var(--r-chip);
+  border: var(--line) solid var(--text-000);
+  background-color: var(--ink-150);
+}
+
+/**
+ * The list's heading — `8 promises, most urgent first`, the other line the brief named.
+ *
+ * It is a *heading* rather than a caption: it names the column beneath it and states the
+ * sort that column is in, which is the one thing a reader has to know before the list
+ * means anything. So it takes the section-head treatment the rest of the product uses —
+ * small caps, tracked open, over a 3px ink rule the full width of the column — at
+ * `--fs-xs` rather than the shared `.section-head`'s `--fs-sm`, because this column is
+ * 288px wide and the shared size sets these four words on more lines than they need.
+ *
+ * Full ink rather than the label tone: it is the heading of a block, and the rule under it
+ * is drawn in the same ink, so a lighter grey word over a black rule reads as a caption
+ * that lost an argument with its own divider.
+ */
+.graph-list__caption {
+  margin: 0;
+  padding-bottom: var(--s-2);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+/**
+ * Where one row ends and the next begins — the second named complaint.
+ *
+ * Eight rows with nothing between them are one block, so the boundary is **drawn** and the
+ * banding is the second channel underneath it. That is the pairing `runs.css` settled on for
+ * its run groups, for the same reason: the rule says where the boundary is and the fill says
+ * which side of it a row is on, so a reader gets the answer from either one.
+ *
+ * A 1px `--hairline` — ink at 18% over the page — because these are cells in one sheet
+ * rather than sections of a page; `--line-heavy` is the weight this system reserves for "a
+ * new thing starts here", and eight of them in a 288px column would be a fence. The first
+ * row draws none: the sheet's own 2px ink edge is already there, and a doubled edge reads as
+ * a mistake.
+ *
+ * The band goes on the `<li>` rather than on the button, and that is what keeps the hover and
+ * the selected fill able to win without an `!important`: the button paints nothing at rest,
+ * so the band shows through, and the moment the button paints anything it covers the band
+ * exactly — it is the full width of its item and the item has no padding of its own.
+ */
+.graph-list__item {
+  min-width: 0;
+}
+
+.graph-list__item + .graph-list__item {
+  border-top: 1px solid var(--hairline);
+}
+
+.graph-list__item:nth-of-type(even) {
+  background-color: var(--ink-050);
+}
+
+/**
+ * A native button, so it is operable with no pointer, no canvas and no JavaScript of ours in
+ * the way. `background-color` is unset rather than transparent-with-a-token: the row's fill
+ * is the ink ramp, and only when it is hovered or selected.
+ *
+ * No radius, and that is a change. A row is a cell in a ruled sheet now, and a cell has
+ * corners — a 2px radius left a sliver of band showing at each end of every hover.
+ *
+ * The transparent outline is the same device `.promise-node` uses: it gives the selected
+ * ring something to transition from, and `outline-color` is on the motion allowlist where a
+ * `border-width` would not be. The offset is negative so both rings are drawn *inside* the
+ * row, where the list's own `overflow` cannot clip them.
+ */
 .graph-list__button {
   display: grid;
   box-sizing: border-box;
@@ -140,27 +502,91 @@
   padding: var(--s-2);
   border: 0;
   border-left: 3px solid transparent;
-  border-radius: var(--r-chip);
+  outline: var(--line) solid transparent;
+  outline-offset: -2px;
   color: var(--text-100);
   font-family: var(--font-ui);
   font-size: var(--fs-xs);
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-out);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    outline-color var(--dur-fast) var(--ease-out);
 }
 
 .graph-list__button:hover {
-  background-color: var(--ink-100);
-}
-
-.graph-list__button[aria-current='true'] {
   background-color: var(--ink-150);
 }
 
-.graph-list__id {
+/* The selected row is the panel's subject, and it is marked the way the selected node is:
+   the brightest paper in the ramp, plus a ring in `--hairline-strong` rather than in
+   `--focus`, because the focus ring belongs to focus alone (§10.4.3) and a row can be
+   selected without being focused — a `?p=` deep link opens exactly that state. The rank
+   chip inverts underneath, which is the channel that survives a banded row: on paper,
+   `--ink-150` over `--ink-100` is a difference a reader has to look for. */
+.graph-list__button[aria-current='true'] {
+  background-color: var(--ink-150);
+  outline-color: var(--hairline-strong);
+}
+
+.graph-list__button[aria-current='true'] .graph-list__rank {
+  border-color: var(--text-000);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* Last of the three state rules, and deliberately: it matches the selected rule's
+   specificity, so source order is what keeps a selected row's focus ring visible instead of
+   losing it to the selection ring. Inset for the same reason the base outline is. */
+.graph-list__button:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* ── the row: rank and id over the claim, with the verdict word on the top line ── */
+
+/* The same three facts in the same arrangement `.promise-node__head` uses, so a reader
+   moving between the lane and the list is reading one object twice rather than two. */
+.graph-list__head {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+/**
+ * The urgency numeral — the third named complaint, and the one the column is *for*.
+ *
+ * The heading says "most urgent first" and until now nothing in the rows said which one was
+ * first: the sort was carried entirely by four verdict hues a reader had to already know the
+ * ranking of. `PromiseList` is handed the promises in lane order, so the index is the rank,
+ * and it is rendered as the same chip the node carries — mono and tabular (§10.7), so eight
+ * figures line up down the column instead of drifting, which is what makes the column read
+ * as a ranking. A chip rather than bare text so that "1" at the top is unmistakably a
+ * position and not a count.
+ */
+.graph-list__rank {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 22px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
-  line-height: var(--s-3);
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  text-align: center;
+}
+
+.graph-list__id {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-4);
   letter-spacing: var(--tr-mono);
   color: var(--text-200);
   white-space: nowrap;
@@ -168,16 +594,38 @@
   text-overflow: ellipsis;
 }
 
-/* One line of the claim, in prose, so the list reads as a list of promises rather
-   than a list of hashes. The full claim is one keystroke away in the panel. */
+/* The verdict word, beside its hue, on the row's top line — the fourth complaint. The 3px
+   wash on the left edge is a real channel but a quiet one on paper, and R10.5 forbids colour
+   from being the only one anywhere. So the tag is where a reader's eye already is rather than
+   alone on a third line, and it never shrinks: an abbreviated verdict is not a verdict. */
+.graph-list__verdict {
+  flex: 0 0 auto;
+}
+
+/**
+ * The claim, in prose, so the list reads as a list of promises rather than a list of hashes.
+ *
+ * **Two lines, clamped, rather than one line ellipsised** — the first complaint, in its
+ * concrete form. One line at this size held about 40 characters, so the ellipsis arrived
+ * mid-clause on every row and eight rows read as eight fragments. Two lines of a 288px column
+ * hold most claims whole, and the ones they do not are recognisable rather than merely
+ * truncated. The full text stays in `title` and verbatim in the panel, which is the same
+ * bargain the node makes (§10.7).
+ *
+ * `--text-000` rather than the label tone: this is the row's content, and everything around
+ * it — the numeral, the id, the verdict — is already one step lighter than it.
+ */
 .graph-list__claim {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  min-width: 0;
+  overflow: hidden;
   font-family: var(--font-ui);
   font-size: var(--fs-xs);
   line-height: var(--s-4);
-  color: var(--text-100);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--text-000);
 }
 
 /* ── the wash edge, again on a border and again in rules that carry no text ──── */
@@ -210,4 +658,56 @@
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-100);
+}
+
+/* ── narrow viewports: the fixed columns stop being columns ─────────────────── */
+
+/* Deliberately last in the file, and deliberately re-stating `grid-template-columns`
+   rather than overriding a shorthand: the density scan reads the *first* rule for each
+   prelude, which is the desktop grid its arithmetic is about, and these two are the
+   answer for widths that arithmetic was never asked about.
+   The panel goes first, at 1100px, because it is the widest fixed column and the one a
+   reader opened deliberately — it gets the full width underneath instead of 440px of a
+   440px screen. The list follows at 760px. */
+@media (max-width: 1100px) {
+  .promise-graph[data-panel='open'] {
+    grid-template-columns: minmax(0, 1fr) 288px;
+    grid-template-areas:
+      'canvas-head list-head'
+      'canvas      list'
+      'panel       panel';
+  }
+}
+
+@media (max-width: 760px) {
+  .promise-graph,
+  .promise-graph[data-panel='open'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'canvas-head'
+      'canvas'
+      'list-head'
+      'list'
+      'panel';
+  }
+
+  /* A canvas shorter than the fold on a phone, and a list that is a list rather than
+     a 720px scroll region inside a scrolling page. */
+  .promise-graph__canvas {
+    height: clamp(320px, 52vh, 480px);
+  }
+
+  .graph-list {
+    max-height: clamp(200px, 34vh, 320px);
+  }
+
+  /* The panel is authored at 440px in `promise-panel.css`, which is correct in a column of
+     its own and wider than a phone is. Below the fold-point it takes the column instead.
+     Stated here rather than there because this is the grid making a claim about the track
+     its own child sits in, and because a 440px box in a 272px column is the one way this
+     page could still overflow sideways at 320px. */
+  .promise-graph > .promise-panel {
+    width: auto;
+    max-width: 100%;
+  }
 }

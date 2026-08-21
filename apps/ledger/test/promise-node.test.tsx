@@ -17,9 +17,15 @@
  *      cannot disagree about where a claim is written;
  *   4. the verdict arrives as a word, from `VerdictTag`.
  *
- * The geometry — 320×76, the 3px wash edge, the two-line clamp — is asserted in
- * `promise-graph-density.test.ts` against the stylesheet, because jsdom does no
- * layout and any width it reported here would be a fiction.
+ * The geometry — 320×88, the 3px wash edge, the two-line clamp, and whether each box is
+ * taller than the rows stacked inside it — is asserted in `promise-graph-density.test.ts`
+ * against the stylesheet, because jsdom does no layout and any width it reported here would
+ * be a fiction.
+ *
+ * A fifth claim joined the four: the urgency numeral. The lane is sorted `(verdict rank,
+ * id)` with red first, and until the numeral landed the only way to know that was to already
+ * know it. It is optional, because a node rendered outside a lane has no position — so both
+ * halves are asserted, the numeral when a rank is given and its absence when none is.
  */
 
 import { cleanup, render } from '@testing-library/react';
@@ -27,10 +33,10 @@ import type { SnapshotPromise, Verdict } from '@kept/core';
 import { SnapshotPromiseSchema } from '@kept/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { LANE_WORDS, LaneNode } from '../components/LaneNode.js';
+import { LANE_WORDS, LaneHeader, LaneNode } from '../components/LaneNode.js';
 import { PromiseNode } from '../components/PromiseNode.js';
 import { citationLabel } from '../lib/citation.js';
-import { VERDICT_RANK } from '../lib/layout.js';
+import { LANES, LANE_HEADINGS, VERDICT_RANK } from '../lib/layout.js';
 import { snapshot } from '../lib/snapshot.js';
 
 afterEach(cleanup);
@@ -78,6 +84,33 @@ describe('PromiseNode — the four things §10.3 puts on a node', () => {
 
       /* R10.5: the verdict is a word, not only a hue */
       expect(node?.querySelector('.verdict-tag')?.textContent).toBe(promise.verdict);
+    } finally {
+      unmount();
+    }
+  });
+
+  it('states its position in the urgency order when the lane gives it one', () => {
+    const promise = makePromise();
+    const { container, unmount } = render(<PromiseNode promise={promise} rank={1} rankOf={8} />);
+    try {
+      const rank = container.querySelector('.promise-node__rank');
+      expect(rank?.textContent).toBe('1');
+      expect(
+        rank?.getAttribute('title'),
+        'the numeral alone does not say what it counts, so the full sentence is in title',
+      ).toBe('urgency 1 of 8, most urgent first');
+    } finally {
+      unmount();
+    }
+  });
+
+  it('states no position at all when it is rendered outside a lane', () => {
+    const { container, unmount } = render(<PromiseNode promise={makePromise()} />);
+    try {
+      expect(
+        container.querySelector('.promise-node__rank'),
+        'a rank on a node with no lane is a claim about a sequence that does not exist',
+      ).toBeNull();
     } finally {
       unmount();
     }
@@ -196,6 +229,37 @@ describe('LaneNode — the three lanes that are context rather than subjects', (
       const chip = container.querySelector('.lane-node');
       expect(chip?.getAttribute('tabindex')).toBeNull();
       expect(chip?.getAttribute('role')).toBeNull();
+    } finally {
+      unmount();
+    }
+  });
+});
+
+describe('LaneHeader — the four column names, above the four columns', () => {
+  it('names each column and marks which one it names', () => {
+    for (const kind of LANES) {
+      const { container, unmount } = render(
+        <LaneHeader heading={LANE_HEADINGS[kind]} kind={kind} />,
+      );
+      try {
+        const header = container.querySelector('.lane-header');
+        expect(header?.getAttribute('data-lane-header')).toBe(kind);
+        expect(header?.textContent).toBe(LANE_HEADINGS[kind]);
+      } finally {
+        unmount();
+      }
+    }
+  });
+
+  it('is a label rather than a control, so it takes no role and no focus (§10.8)', () => {
+    const { container, unmount } = render(<LaneHeader heading="Promises" kind="promise" />);
+    try {
+      const header = container.querySelector('.lane-header');
+      expect(header?.getAttribute('role')).toBeNull();
+      expect(
+        header?.getAttribute('tabindex'),
+        'four focus stops in front of the promise lane is four keystrokes and no information',
+      ).toBeNull();
     } finally {
       unmount();
     }

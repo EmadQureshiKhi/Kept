@@ -18,9 +18,10 @@
  * having two notions of "selected" is how they come to disagree.
  *
  * Only React Flow's `base.css` is imported: the functional half, the transforms and
- * pane stacking that panning needs. Its default theme is deliberately not loaded, so
- * the palette on this page is the one in `tokens.css` and no third-party colour reaches
- * it.
+ * pane stacking that panning needs, plus the geometry its background, controls and minimap
+ * need to be positioned at all. Its default theme is deliberately not loaded, so every
+ * colour on this page comes from `tokens.css` and the chrome is restyled in
+ * `promise-graph.css` rather than themed over.
  *
  * ## The keyboard model (§10.8)
  *
@@ -56,11 +57,47 @@
  * row of it is a native `<button>`. So the graph is a *second* way to reach a promise,
  * never the only one — no part of this page depends on a pointer or on a canvas.
  *
- * ## Density (R10.8)
+ * ## What is on the canvas
+ *
+ * The reference is React Flow's own showcase, read into this paper/ink system rather than
+ * copied out of its dark one: a framed canvas over a dotted ground, rounded slab nodes with
+ * visible handles, smooth bezier edges, zoom and fit-view controls, and a minimap.
+ *
+ *   - **`<Background variant={Dots} />`** at the page's own 28px ruling, filled with ink at
+ *     low alpha in `promise-graph.css`, so the canvas reads as paper rather than as a void.
+ *   - **The frame** is `.surface-raised-2` on the container — a 2px ink border and the 6px
+ *     offset slab — because §10.4.4 permits a shadow to be *declared* in `surfaces.css`
+ *     only, so depth here is picked rather than authored.
+ *   - **`<Controls />`** and **`<MiniMap />`**, both restyled to the same vocabulary and
+ *     both keyboard reachable: the control buttons are native `<button>`s and take the
+ *     shell's focus ring, and neither traps focus, because neither holds any.
+ *   - **Four column headings** as nodes, so they pan with the lanes they name.
+ *   - **The urgency numeral** on each promise node, and an initial viewport fitted to the
+ *     *top* rows rather than to the whole extent, so the `(verdict rank, id)` sort is
+ *     something a reader sees in the first second.
+ *
+ * Nothing here is interactive beyond panning, zooming and selecting: `nodesDraggable`,
+ * `nodesConnectable` and `elementsSelectable` are all off, and the handles take no pointer.
+ * The graph is a reading surface.
+ *
+ * ## Density and responsiveness (R10.8)
  *
  * One grid: `minmax(0, 1fr)` for the canvas, 240px for the list, 440px for the panel
  * when it is open. The canvas is the column that yields, so between 1280 and 1920 the
- * page has nothing to overflow — asserted in `test/promise-graph-density.test.ts`.
+ * page has nothing to overflow — asserted in `test/promise-graph-density.test.ts`. Below
+ * 1100px the fixed columns fold underneath in the same stylesheet, so the page has nothing
+ * to overflow at 320px either. The canvas height is a `clamp` on viewport height rather
+ * than a pinned 620px, and `fitView` runs with a `minZoom` low enough to get all four lanes
+ * into a phone-width viewport instead of clipping the outer two.
+ *
+ * ## Cost
+ *
+ * `@xyflow/react` is the heaviest thing on the page, so the parallel list, the caption and
+ * the panel are all plain markup in the same client component — client components are still
+ * server-rendered, so the `role="list"` is in the first HTML and the page is useful before
+ * the canvas hydrates. Deliberately *not* `next/dynamic`: `ssr: false` would take the graph
+ * out of that HTML, and it is the hero. The node and edge arrays are memoised on the layout,
+ * so panning and zooming re-derive neither.
  *
  * ## Motion (§10.6.1, §10.6.3, tasks 17.5 and 17.8)
  *
@@ -80,21 +117,34 @@
 'use client';
 
 import {
+  Background,
+  BackgroundVariant,
+  Controls,
   Handle,
+  MiniMap,
   Position,
   ReactFlow,
   type Edge,
+  type FitViewOptions,
+  type MiniMapNodeProps,
   type Node,
   type NodeProps,
   type NodeTypes,
 } from '@xyflow/react';
 import clsx from 'clsx';
-import type { LedgerSnapshot, SnapshotEvidence, SnapshotPromise } from '@kept/core';
+import type { LedgerSnapshot, SnapshotEvidence, SnapshotPromise, Verdict } from '@kept/core';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
+import { TOKENS } from '../lib/tokens.js';
 import {
-  NODE_H,
+  LANES,
+  LANE_HEADER_H,
+  LANE_HEADER_Y,
+  LANE_HEADINGS,
+  LANE_INDEX,
   NODE_W,
+  framingNodeIds,
+  laneX,
   layoutSnapshot,
   promiseNodes,
   type LaneKind,
@@ -113,7 +163,7 @@ import {
 
 import { useEdgeDraw } from './EdgeDraw.js';
 import { useGraphEntrance } from './GraphEntrance.js';
-import { LaneNode } from './LaneNode.js';
+import { LaneHeader, LaneNode } from './LaneNode.js';
 import { PromiseList } from './PromiseList.js';
 import { PromiseNode } from './PromiseNode.js';
 import { PromisePanel } from './PromisePanel.js';
@@ -121,9 +171,20 @@ import { PromisePanel } from './PromisePanel.js';
 import '@xyflow/react/dist/base.css';
 import '../styles/promise-graph.css';
 
-/** Footprint of the three context lanes, mirrored from `promise-node.css`. */
-const LANE_NODE_W = 240;
-const LANE_NODE_H = 44;
+/**
+ * The zoom range the canvas allows.
+ *
+ * `MIN_ZOOM` is low enough that `fitView` can get four 320px lanes across 1520px of graph
+ * into a 320px phone viewport rather than clipping the outer two; `MAX_ZOOM` is 1, because
+ * the nodes are already authored at their reading size and a zoomed-in node is a blurrier
+ * node, not a bigger one.
+ */
+const MIN_ZOOM = 0.18;
+const MAX_ZOOM = 1;
+
+/** Dot pitch of the paper ruling behind the lanes — `--grid-cell`, as a number. */
+const DOT_GAP = 28;
+const DOT_SIZE = 1.5;
 
 /** The reading order, in words, above the canvas. */
 export const GRAPH_CAPTION =
@@ -145,6 +206,8 @@ export const GRAPH_EMPTY =
  */
 type PromiseNodeData = {
   readonly promise: SnapshotPromise;
+  readonly rank: number;
+  readonly rankOf: number;
   readonly selected: boolean;
   readonly select: (id: string) => void;
   readonly register: (id: string, element: HTMLElement | null) => void;
@@ -155,13 +218,20 @@ type LaneNodeData = {
   readonly name: string;
 };
 
+type LaneHeaderData = {
+  readonly lane: LaneKind;
+  readonly heading: string;
+};
+
 type PromiseFlowNode = Node<PromiseNodeData, 'promise'>;
 type LaneFlowNode = Node<LaneNodeData, 'lane'>;
+type LaneHeaderFlowNode = Node<LaneHeaderData, 'laneHeader'>;
 
 /**
- * Handles exist because an edge needs two endpoints to attach to; they are painted to
- * nothing in `promise-graph.css` and take no pointer, because a promise is not
- * something a reader wires up by hand.
+ * Handles exist because an edge needs two endpoints to attach to. They are drawn — a small
+ * ink-ringed dot on each side, the way React Flow's own showcase draws them, so the reader
+ * can see where a line leaves a node and where it arrives — and they take no pointer,
+ * because a promise is not something a reader wires up by hand.
  */
 function PromiseFlowNodeView({ data }: NodeProps<PromiseFlowNode>) {
   return (
@@ -170,6 +240,8 @@ function PromiseFlowNodeView({ data }: NodeProps<PromiseFlowNode>) {
       <PromiseNode
         onSelect={data.select}
         promise={data.promise}
+        rank={data.rank}
+        rankOf={data.rankOf}
         registerElement={data.register}
         selected={data.selected}
       />
@@ -188,8 +260,81 @@ function LaneFlowNodeView({ data }: NodeProps<LaneFlowNode>) {
   );
 }
 
+/** A column heading. No handles: nothing connects to a label. */
+function LaneHeaderFlowNodeView({ data }: NodeProps<LaneHeaderFlowNode>) {
+  return <LaneHeader heading={data.heading} kind={data.lane} />;
+}
+
 /** Module scope, so React Flow is never handed a new map on a re-render. */
-const NODE_TYPES: NodeTypes = { promise: PromiseFlowNodeView, lane: LaneFlowNodeView };
+const NODE_TYPES: NodeTypes = {
+  promise: PromiseFlowNodeView,
+  lane: LaneFlowNodeView,
+  laneHeader: LaneHeaderFlowNodeView,
+};
+
+/**
+ * The four column headings, as nodes.
+ *
+ * Nodes rather than an overlay, so they pan and zoom with the lanes they name — a heading
+ * pinned to the viewport would drift off its column the moment a reader panned sideways,
+ * which is worse than no heading. Their ids are namespaced away from the snapshot's, and
+ * they carry `data-lane-header` rather than `data-lane`, so neither the projection property
+ * nor the keyboard model can mistake one for a subject.
+ */
+const HEADER_NODES: readonly Node[] = LANES.map((kind): Node => {
+  const data: LaneHeaderData = { lane: kind, heading: LANE_HEADINGS[kind] };
+  return {
+    id: `lane-header:${kind}`,
+    type: 'laneHeader',
+    position: { x: laneX(LANE_INDEX[kind]), y: LANE_HEADER_Y },
+    data,
+    width: NODE_W,
+    height: LANE_HEADER_H,
+    draggable: false,
+    selectable: false,
+    connectable: false,
+    focusable: false,
+  };
+});
+
+/**
+ * A minimap node's fill: the verdict, for a promise; the raised paper, for everything else.
+ *
+ * Read out of `lib/tokens.ts` rather than written as a literal, because an SVG `fill`
+ * attribute does not resolve a custom property and a hex typed twice is a hex that drifts.
+ * So the minimap is coloured by the same four values the stylesheet resolves (§10.4.1).
+ */
+const VERDICT_FILL: Readonly<Record<Verdict, string>> = {
+  red: TOKENS['--verdict-red'],
+  stale: TOKENS['--verdict-stale'],
+  undesigned: TOKENS['--verdict-undesigned'],
+  proven: TOKENS['--verdict-proven'],
+};
+
+function minimapNodeColor(node: Node): string {
+  if (node.type !== 'promise') return TOKENS['--ink-050'];
+  const { promise } = node.data as PromiseNodeData;
+  return VERDICT_FILL[promise.verdict];
+}
+
+function minimapNodeStroke(): string {
+  return TOKENS['--text-000'];
+}
+
+/** The minimap's own node shape, so a promise reads as a slab rather than a rounded blob. */
+function MinimapNode({ x, y, width, height, color, strokeColor, className }: MiniMapNodeProps) {
+  return (
+    <rect
+      className={className}
+      fill={color}
+      height={Math.max(height, 1)}
+      stroke={strokeColor}
+      width={Math.max(width, 1)}
+      x={x}
+      y={y}
+    />
+  );
+}
 
 /**
  * React Flow's own node and edge descriptions, blanked.
@@ -240,6 +385,7 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     [layout],
   );
   const order = useMemo(() => navOrder(layout), [layout]);
+  const promiseCount = promises.length;
 
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -338,58 +484,84 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     [close, selectedId],
   );
 
+  /**
+   * The painted nodes, headings included.
+   *
+   * Every coordinate and every footprint is read straight off `layout.nodes` — the vertical
+   * centring of a short chip inside its row band is arithmetic in `lib/layout.ts` now
+   * rather than an offset applied here, so there is exactly one place that knows where a
+   * node is. Memoised on the layout, so panning and zooming re-derive nothing.
+   */
   const nodes = useMemo<Node[]>(
-    () =>
-      layout.nodes.map((node): Node => {
+    () => [
+      ...HEADER_NODES,
+      ...layout.nodes.map((node): Node => {
+        const shape = {
+          position: { x: node.x, y: node.y },
+          width: node.width,
+          height: node.height,
+          draggable: false,
+          selectable: false,
+          connectable: false,
+        } as const;
+
         if (node.kind === 'promise') {
           const data: PromiseNodeData = {
             promise: node.promise,
+            rank: node.row + 1,
+            rankOf: promiseCount,
             selected: node.promise.id === selectedId,
             select,
             register,
           };
-          return {
-            id: node.id,
-            type: 'promise',
-            position: { x: node.x, y: node.y },
-            data,
-            width: NODE_W,
-            height: NODE_H,
-            draggable: false,
-            selectable: false,
-            connectable: false,
-          };
+          return { id: node.id, type: 'promise', data, ...shape };
         }
         const data: LaneNodeData = { lane: node.kind, name: laneName(node) };
-        return {
-          id: node.id,
-          type: 'lane',
-          /* Centred on the promise row it belongs to: the chip is shorter than a node,
-             and this is presentation over the layout rather than a change to it — the
-             coordinates `lib/layout.ts` computed are untouched. */
-          position: { x: node.x, y: node.y + (NODE_H - LANE_NODE_H) / 2 },
-          data,
-          width: LANE_NODE_W,
-          height: LANE_NODE_H,
-          draggable: false,
-          selectable: false,
-          connectable: false,
-        };
+        return { id: node.id, type: 'lane', data, ...shape };
       }),
-    [layout.nodes, register, select, selectedId],
+    ],
+    [layout.nodes, promiseCount, register, select, selectedId],
   );
 
+  /**
+   * The edges: smooth beziers in ink, with the promise-to-test edge drawn heavier.
+   *
+   * The weight is not decoration. `designed` is the one edge kind a verdict travels along —
+   * it is the path M1 draws when a verdict moves (§10.6.3) — so it is the line worth
+   * following, and `promise-graph.css` gives it the extra stroke through the class named
+   * here rather than through an inline style.
+   */
   const edges = useMemo<Edge[]>(
     () =>
       layout.edges.map((edge) => ({
         id: edge.id,
         source: edge.from,
         target: edge.to,
+        type: 'default',
+        className: `graph-edge graph-edge--${edge.kind}`,
         focusable: false,
         selectable: false,
         data: { kind: edge.kind },
       })),
     [layout.edges],
+  );
+
+  /**
+   * The opening shot: the top of the lanes, not the middle of the graph.
+   *
+   * `fitView` on its own centres the whole extent, which on an eight-row graph puts row
+   * four in the middle of the canvas and the most urgent promise off the top edge — the
+   * exact opposite of what the sort is for. Fitting to the first few rows of all four lanes
+   * frames the urgent end and still shows the left-to-right story.
+   */
+  const fitViewOptions = useMemo<FitViewOptions>(
+    () => ({
+      padding: 0.1,
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
+      nodes: framingNodeIds(layout).map((id) => ({ id })),
+    }),
+    [layout],
   );
 
   const selected = promises.find((promise) => promise.id === selectedId) ?? null;
@@ -404,46 +576,73 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
       data-panel={selected === null ? 'closed' : 'open'}
       onKeyDown={onSectionKeyDown}
     >
-      <div>
-        <p className="promise-graph__caption">{GRAPH_CAPTION}</p>
-        <div className="promise-graph__canvas" ref={canvas}>
-          {/* Gated on the *promise* lane rather than on the node count, and Property 23
-              found the difference: a schema-valid snapshot may carry an evidence pack
-              that no promise references, and the pack alone was enough to draw a canvas
-              holding one stray chip and no subject. This is a graph *of promises*, so
-              zero promises is the empty state (§10.10) whatever else happens to be in
-              the file — which is also what the sentence below already said. */}
-          {promises.length === 0 ? (
-            <p className="promise-graph__empty">{GRAPH_EMPTY}</p>
-          ) : (
-            <ReactFlow
-              aria-label={GRAPH_LABEL}
-              ariaLabelConfig={ARIA_LABELS}
-              colorMode="dark"
-              disableKeyboardA11y
-              edges={edges}
-              elementsSelectable={false}
-              fitView
-              fitViewOptions={{ padding: 0.12 }}
-              maxZoom={1.5}
-              minZoom={0.5}
-              nodeTypes={NODE_TYPES}
-              nodes={nodes}
-              nodesConnectable={false}
-              nodesDraggable={false}
-              nodesFocusable={false}
-              onKeyDown={onCanvasKeyDown}
-              tabIndex={0}
-              zoomOnDoubleClick={false}
+      {/* Five children, placed by name into a two-row grid rather than wrapped in a
+          column div each — see the note over `.promise-graph` in `promise-graph.css`. The
+          two captions share row 1 and are bottom-aligned in it, so the list's heading and
+          the canvas's caption sit on one line and each block starts at the same y as the
+          frame beside it. Wrapping each column in its own div is what put them at
+          different heights: the taller caption pushed its canvas down and the shorter one
+          left its list riding up above it. */}
+      <p className="promise-graph__caption">{GRAPH_CAPTION}</p>
+      <p className="graph-list__caption">{promises.length} promises, most urgent first</p>
+
+      {/* `.surface-raised-2` frames the canvas: the 2px ink border and the 6px offset
+          slab of §10.5, picked in the markup because a shadow may only be *declared* in
+          `surfaces.css` (§10.4.4 rule 5). `.promise-graph__canvas` contributes geometry
+          only — the fluid height and the clip. */}
+      <div className="promise-graph__canvas surface-raised-2" ref={canvas}>
+        {/* Gated on the *promise* lane rather than on the node count, and Property 23
+            found the difference: a schema-valid snapshot may carry an evidence pack
+            that no promise references, and the pack alone was enough to draw a canvas
+            holding one stray chip and no subject. This is a graph *of promises*, so
+            zero promises is the empty state (§10.10) whatever else happens to be in
+            the file — which is also what the sentence above already said. */}
+        {promises.length === 0 ? (
+          <p className="promise-graph__empty">{GRAPH_EMPTY}</p>
+        ) : (
+          <ReactFlow
+            aria-label={GRAPH_LABEL}
+            ariaLabelConfig={ARIA_LABELS}
+            colorMode="light"
+            disableKeyboardA11y
+            edges={edges}
+            elementsSelectable={false}
+            fitView
+            fitViewOptions={fitViewOptions}
+            maxZoom={MAX_ZOOM}
+            minZoom={MIN_ZOOM}
+            nodeTypes={NODE_TYPES}
+            nodes={nodes}
+            nodesConnectable={false}
+            nodesDraggable={false}
+            nodesFocusable={false}
+            onKeyDown={onCanvasKeyDown}
+            tabIndex={0}
+            zoomOnDoubleClick={false}
+          >
+            {/* Paper texture rather than a decoration: the dot pitch is the page's own
+                28px ruling, and the fill is ink at low alpha, authored in the stylesheet
+                so no colour literal enters this file. */}
+            <Background gap={DOT_GAP} size={DOT_SIZE} variant={BackgroundVariant.Dots} />
+            <Controls
+              className="graph-controls surface-raised"
+              position="bottom-left"
+              showInteractive={false}
             />
-          )}
-        </div>
+            <MiniMap
+              className="graph-minimap surface-raised"
+              nodeColor={minimapNodeColor}
+              nodeComponent={MinimapNode}
+              nodeStrokeColor={minimapNodeStroke}
+              pannable
+              position="bottom-right"
+              zoomable
+            />
+          </ReactFlow>
+        )}
       </div>
 
-      <div>
-        <p className="graph-list__caption">{promises.length} promises, most urgent first</p>
-        <PromiseList onSelect={select} promises={promises} selectedId={selectedId} />
-      </div>
+      <PromiseList onSelect={select} promises={promises} selectedId={selectedId} />
 
       {selected === null ? null : (
         <PromisePanel evidence={pack} onClose={close} promise={selected} />

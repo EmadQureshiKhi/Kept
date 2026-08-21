@@ -20,10 +20,23 @@
  *      is panned to rather than scrolled to.
  *
  * The footprints are checked against their single source too: `.promise-node` must be
- * exactly the 320×76 `lib/layout.ts` reserves per row, or the lanes and the painted
- * nodes disagree about where a row ends — and `ROW_H` must leave a real gutter between
- * two stacked nodes, which is the difference between a lane and a column of touching
- * boxes.
+ * exactly the 320×88 `lib/layout.ts` reserves per row and `.lane-node` the 240×56 it
+ * reserves for a context chip, or the lanes and the painted nodes disagree about where a
+ * row ends — and `ROW_H` must leave a real gutter between two stacked nodes, which is the
+ * difference between a lane and a column of touching boxes.
+ *
+ * **And each box is now checked against the rows it holds.** That is the assertion the old
+ * footprints would have failed: a context chip stacks a 12px kind label, a 4px gap and a
+ * 16px name line inside 16px of vertical padding, which is 48px of content, and the chip
+ * was 44px tall — so every document, designed-test and evidence name was cut in half on a
+ * page that otherwise looked finished. jsdom does no layout, so this is arithmetic over the
+ * `--s-*` steps the stylesheet actually uses rather than a measurement, which is the same
+ * reason the overflow claim below is arithmetic.
+ *
+ * The canvas height is a `clamp` on viewport height rather than a pinned 620px, so the
+ * assertions about it are about the shape of the clamp — a floor that can show a node and
+ * the row beneath it, a preferred value in `vh`, a ceiling above the floor — rather than
+ * about one number.
  *
  * No DOM is touched here, deliberately: this file is `.ts`, so the root
  * `tsconfig.json` type-checks it under `lib: ["ES2022"]` with no DOM at all. A density
@@ -32,7 +45,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { NODE_H, NODE_W, ROW_H } from '../lib/layout.js';
+import { LANE_HEADER_H, LANE_NODE_H, LANE_NODE_W, NODE_H, NODE_W, ROW_H } from '../lib/layout.js';
 import {
   STYLE_EXTENSIONS,
   normaliseCssValue,
@@ -49,6 +62,19 @@ const SHELL_CSS = 'apps/ledger/styles/shell.css';
 /** The window widths R10.8 names, and the whole range between them. */
 const NARROWEST = 1280;
 const WIDEST = 1920;
+
+/**
+ * The parallel list's column, stated once so the arithmetic below reads as arithmetic.
+ *
+ * It was 240px — the context chip's width — and is now 288px. The number moved because the
+ * column's content did: a row carries a rank chip, an id, a verdict word and two clamped
+ * lines of a claim, and 240px left the claim about 220px of measure, so every row ellipsised
+ * mid-clause. The guarantee this file exists for is untouched, because it never depended on
+ * the number: the canvas track is `minmax(0, 1fr)`, so the extra 48px comes out of the
+ * canvas, and the assertions below re-derive the canvas width from the stylesheet rather than
+ * from a remembered total.
+ */
+const LIST_COLUMN = 288;
 
 /** `--s-*` steps, resolved from `tokens.css` values (§10.4.1). */
 const SPACING: Readonly<Record<string, number>> = {
@@ -146,21 +172,118 @@ describe('the hero is one grid, and the canvas is the column that yields', () =>
   it('adds the panel as a third column rather than as an overlay', () => {
     const closed = tracks('.promise-graph');
     const open = tracks(".promise-graph[data-panel='open']");
-    expect(closed.fixed).toEqual([240]);
-    expect(open.fixed).toEqual([240, 440]);
+    expect(closed.fixed).toEqual([LIST_COLUMN]);
+    expect(open.fixed).toEqual([LIST_COLUMN, 440]);
     expect(open.fixed.length - closed.fixed.length, 'the panel is not a column').toBe(1);
   });
 
   it('sizes each fixed column to the component that lives in it', () => {
     /* 440px is the panel width design §10.2 states, declared once in its own file */
     expect(lengthPx(declaration(PANEL_RULES, '.promise-panel', 'width'))).toBe(440);
-    /* 240px is the lane chip, so the list column and the context lanes agree */
-    expect(lengthPx(declaration(NODE_RULES, '.lane-node', 'width'))).toBe(240);
+    /* 240px is the lane chip, which is one name on one line */
+    expect(lengthPx(declaration(NODE_RULES, '.lane-node', 'width'))).toBe(LANE_NODE_W);
+    expect(LANE_NODE_W).toBe(240);
+    /* The list column is deliberately *wider* than the lane chip, and it used to be equal
+       to it. Matching the chip bought a tidy number and cost the column its content: a row
+       carries two clamped lines of a claim rather than one name, and at 240px minus the
+       row's padding and its 3px verdict edge every claim ellipsised into a fragment. The
+       48px comes out of the canvas track, which is the column that yields. */
+    expect(tracks('.promise-graph').fixed[0]).toBe(LIST_COLUMN);
+    expect(
+      LIST_COLUMN,
+      'the list column is no wider than a lane chip, so a claim has no measure to be read in',
+    ).toBeGreaterThan(LANE_NODE_W);
   });
 
   it('clips its own viewport, so a wide graph is panned to and never scrolled to', () => {
     expect(declaration(GRAPH_RULES, '.promise-graph__canvas', 'overflow')).toBe('hidden');
-    expect(lengthPx(declaration(GRAPH_RULES, '.promise-graph__canvas', 'height'))).toBe(620);
+  });
+
+  it('folds the fixed columns underneath before the page can overflow a phone', () => {
+    /* R10.8's arithmetic below is about 1280 and up. Under it the columns stop being
+       columns, so the arithmetic is not asked to hold at a width it was never about — and
+       a 320px viewport has exactly one column to fit. */
+    const folded = GRAPH_RULES.filter((rule) =>
+      rule.ancestors.some((ancestor) => /^@media\s*\(\s*max-width/.test(ancestor)),
+    );
+    expect(
+      folded.length,
+      'no narrow-viewport rule exists, so the 712px of fixed columns are still 712px at 320px',
+    ).toBeGreaterThan(0);
+
+    const singleColumn = folded.filter((rule) =>
+      rule.declarations.some(
+        (entry) =>
+          entry.property.toLowerCase() === 'grid-template-columns' &&
+          normaliseCssValue(entry.value).replace(/\s+/g, '') === 'minmax(0,1fr)',
+      ),
+    );
+    expect(
+      singleColumn.length,
+      'the hero never folds all the way to one column, so something is 240px wide at 320px',
+    ).toBeGreaterThan(0);
+    expect(
+      singleColumn.some((rule) => rule.prelude.includes("[data-panel='open']")),
+      'the panel keeps its own column at a phone width, which is 440px of a 320px screen',
+    ).toBe(true);
+  });
+
+  it('stops the fixed-width panel overflowing the column it folds into', () => {
+    /* `.promise-panel` is 440px in its own file, which is right for a column of its own and
+       wider than a 320px screen. Once it folds underneath, the grid that owns it has to say
+       so — otherwise the one remaining way this page overflows sideways is a panel a reader
+       opened deliberately. */
+    const folded = GRAPH_RULES.filter(
+      (rule) =>
+        rule.ancestors.some((ancestor) => /^@media\s*\(\s*max-width/.test(ancestor)) &&
+        rule.prelude.includes('.promise-panel'),
+    );
+    expect(
+      folded.length,
+      `no narrow-viewport rule constrains the ${lengthPx(
+        declaration(PANEL_RULES, '.promise-panel', 'width'),
+      )}px panel, so it overflows every column narrower than itself`,
+    ).toBeGreaterThan(0);
+    const widths = folded.flatMap((rule) =>
+      rule.declarations
+        .filter((entry) => entry.property.toLowerCase() === 'width')
+        .map((entry) => normaliseCssValue(entry.value)),
+    );
+    expect(widths, 'the panel keeps a pinned width in the folded layout').toContain('auto');
+  });
+});
+
+/* ───────── the canvas height is fluid, so it fits a phone and a wide monitor ────── */
+
+describe('the canvas is sized in viewport height, not in one screenful of pixels', () => {
+  /** `clamp(min, preferred, max)` split into its three arguments. */
+  function clampArgs(value: string): string[] {
+    const match = /^clamp\(([\s\S]*)\)$/.exec(value);
+    expect(match, `${value} is not a clamp(), so the canvas height is pinned to one screen`).not.toBeNull();
+    return (match?.[1] ?? '').split(',').map((part) => part.trim());
+  }
+
+  it('clamps the canvas height between a phone floor and a monitor ceiling', () => {
+    const args = clampArgs(declaration(GRAPH_RULES, '.promise-graph__canvas', 'height'));
+    expect(args).toHaveLength(3);
+    const floor = lengthPx(args[0] ?? '');
+    const ceiling = lengthPx(args[2] ?? '');
+    expect(
+      args[1],
+      'the preferred height is not stated in viewport units, so it does not respond to one',
+    ).toMatch(/vh$/);
+    expect(floor).toBeGreaterThanOrEqual(320);
+    expect(ceiling).toBeGreaterThan(floor);
+    expect(
+      floor,
+      `a ${floor}px floor cannot show a ${NODE_H}px node and the row beneath it`,
+    ).toBeGreaterThanOrEqual(ROW_H + NODE_H);
+  });
+
+  it('holds the parallel list to the same height as the canvas beside it', () => {
+    expect(declaration(GRAPH_RULES, '.graph-list', 'max-height')).toBe(
+      declaration(GRAPH_RULES, '.promise-graph__canvas', 'height'),
+    );
   });
 });
 
@@ -208,8 +331,9 @@ describe('no horizontal overflow anywhere between 1280 and 1920', () => {
       `at ${NARROWEST}px with the panel open the canvas gets ${width}px, which is less ` +
         `than one ${NODE_W}px node — the hero would open on a graph a reader cannot read`,
     ).toBeGreaterThanOrEqual(NODE_W);
-    /* for the record: 1280 − 48 padding − (240 + 440) − 32 gaps = 520 */
-    expect(width).toBe(520);
+    /* for the record: 1280 − 48 padding − (288 + 440) − 32 gaps = 472 */
+    expect(width).toBe(NARROWEST - 48 - (LIST_COLUMN + 440) - 32);
+    expect(width).toBe(472);
   });
 
   it('spends the extra width on the canvas rather than on the fixed columns', () => {
@@ -247,23 +371,59 @@ describe('no horizontal overflow anywhere between 1280 and 1920', () => {
 /* ──────────────── the node footprint is the one lib/layout.ts reserves ─────────── */
 
 describe('the painted node is exactly the row the layout reserved for it (§10.3)', () => {
-  it('is 320×76, in border-box, so content cannot re-flow the lanes', () => {
+  it('is 320×88, in border-box, so content cannot re-flow the lanes', () => {
     expect(lengthPx(declaration(NODE_RULES, '.promise-node', 'width'))).toBe(NODE_W);
     expect(lengthPx(declaration(NODE_RULES, '.promise-node', 'height'))).toBe(NODE_H);
     expect(NODE_W).toBe(320);
-    expect(NODE_H).toBe(76);
+    expect(NODE_H).toBe(88);
     expect(
       declaration(NODE_RULES, '.promise-node', 'box-sizing'),
-      'a content-box node grows by its padding and stops being 76px tall',
+      `a content-box node grows by its padding and stops being ${NODE_H}px tall`,
     ).toBe('border-box');
   });
 
-  it('leaves a real gutter between two stacked rows', () => {
+  it('paints the context chip at the footprint the layout reserves for it', () => {
+    expect(lengthPx(declaration(NODE_RULES, '.lane-node', 'height'))).toBe(LANE_NODE_H);
+    expect(declaration(NODE_RULES, '.lane-node', 'box-sizing')).toBe('border-box');
+    expect(LANE_NODE_H).toBe(56);
+  });
+
+  it('gives every node a box taller than the rows the stylesheet puts inside it', () => {
+    /* The clipping bug, as arithmetic. Both boxes are `border-box` with `--s-2` of padding
+       top and bottom, so the content budget is the height minus 16 — and a budget smaller
+       than the line boxes stacked in it is text cut in half. The context chip failed this
+       at 44px: 12 + 4 + 16 = 32 of content, plus 16 of padding, is 48. */
+    const padding = 2 * lengthPx('var(--s-2)');
+    const promiseRows = 18 + 32 + 16; /* head incl. the rank chip's 1px rules, claim ×2, citation */
+    const chipRows = 12 + lengthPx('var(--s-1)') + 16; /* kind, gap, name */
     expect(
-      ROW_H - NODE_H,
-      `ROW_H ${ROW_H} and a ${NODE_H}px node leave ${ROW_H - NODE_H}px between rows; a ` +
-        `lane of touching boxes is a column, not a lane`,
-    ).toBeGreaterThanOrEqual(8);
+      NODE_H - padding,
+      `a promise node has ${NODE_H - padding}px for ${promiseRows}px of rows`,
+    ).toBeGreaterThanOrEqual(promiseRows);
+    expect(
+      LANE_NODE_H - padding,
+      `a context chip has ${LANE_NODE_H - padding}px for ${chipRows}px of rows; this is the ` +
+        `assertion 44px failed, and every document, test and evidence name was clipped`,
+    ).toBeGreaterThanOrEqual(chipRows);
+  });
+
+  it('leaves a real gutter between two stacked rows, in both footprints', () => {
+    for (const [name, height] of [
+      ['a promise node', NODE_H],
+      ['a context chip', LANE_NODE_H],
+    ] as const) {
+      expect(
+        ROW_H - height,
+        `ROW_H ${ROW_H} and ${name} of ${height}px leave ${ROW_H - height}px between rows; a ` +
+          `lane of touching boxes is a column, not a lane`,
+      ).toBeGreaterThanOrEqual(8);
+    }
+    expect(ROW_H, 'a row shorter than its node is a row that clips it').toBeGreaterThan(NODE_H);
+  });
+
+  it('draws the column headings at the height the layout reserves above row 0', () => {
+    expect(lengthPx(declaration(GRAPH_RULES, '.lane-header', 'height'))).toBe(LANE_HEADER_H);
+    expect(declaration(GRAPH_RULES, '.lane-header', 'box-sizing')).toBe('border-box');
   });
 
   it('clamps the claim to two lines and keeps the other three rows unclamped (§10.7)', () => {

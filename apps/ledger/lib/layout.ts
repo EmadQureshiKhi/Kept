@@ -12,6 +12,21 @@
  *
  * Lanes, left to right (§10.3): documents, promises, designed tests, evidence.
  *
+ * ## The geometry, and why it is stated as one pitch
+ *
+ * A 320px node on a 400px lane pitch and an 88px node on a 112px row pitch. So every
+ * adjacent pair of lanes gets the same 80px gutter and every pair of stacked rows the same
+ * 24px one, and both facts are consequences of two numbers rather than of four hand-picked
+ * offsets that have to be kept in step by hand.
+ *
+ * They were not, previously, and it showed: the lanes sat at `[0, 360, 760, 1080]`, which
+ * is a 40px gutter, then an 80px gutter, then **nothing at all** — a 320px node at x 760
+ * ends at exactly 1080, where lane 3 started, so the designed-test and evidence columns
+ * were one column and their text ran through each other. The context chips were 44px tall
+ * around 48px of content, so each of them clipped its own name as well. `layout.test.ts`
+ * now asserts the gutters are positive and equal and that no two painted boxes intersect,
+ * because "looks fine" is not a measurement and this is what "looks fine" was hiding.
+ *
  * Rows within a lane sort by `(verdict rank, id)` with red first, so the promises
  * that need attention are where the eye already is. Only promises carry a verdict,
  * so the other three lanes sort by id alone — the same comparator with a constant
@@ -41,15 +56,63 @@ import type {
   Verdict,
 } from '@kept/core';
 
-/** Lane x offsets, in order. Verbatim from design §10.3. */
-export const LANE_X = [0, 360, 760, 1080] as const;
-
-/** Vertical pitch between rows. Verbatim from design §10.3. */
-export const ROW_H = 92;
-
-/** Node footprint (§9.6), exported so the graph and the viewport agree on bounds. */
+/** Widest node in the graph — the promise node. Every lane pitch is measured from it. */
 export const NODE_W = 320;
-export const NODE_H = 76;
+
+/**
+ * Height of a promise node, and the height every row reserves.
+ *
+ * Raised from 76 because 76 was a guess that the content then outgrew: the node's three
+ * rows sum to 60px of line box inside 16px of vertical padding, and a box that leaves no
+ * slack clips the moment a line height or a padding step moves. 88 leaves 12px, and the
+ * box is `border-box` so the border cannot eat into it.
+ */
+export const NODE_H = 88;
+
+/** Footprint of the three context lanes' chips. Mirrored by `.lane-node`. */
+export const LANE_NODE_W = 240;
+
+/**
+ * Height of a context-lane chip.
+ *
+ * Raised from 44, which was the clipping bug: the chip carries a 12px kind label, a 4px
+ * gap and a 16px name line inside 16px of vertical padding — 48px of content in a 44px
+ * box, so every document, designed-test and evidence chip cut its own name in half. 56
+ * leaves 8px of slack. The chip is shorter than a promise node on purpose (it is context,
+ * not a subject), but "shorter" is not the same as "shorter than its contents".
+ */
+export const LANE_NODE_H = 56;
+
+/**
+ * Horizontal distance between one lane's left edge and the next.
+ *
+ * One pitch for all four lanes, so every gutter is the same gutter. The previous offsets
+ * — `[0, 360, 760, 1080]` — spent 40px between lanes 0 and 1, 80px between 1 and 2 and
+ * **zero** between 2 and 3: a 320px node at x 760 ends at 1080, which is exactly where
+ * lane 3 began, so the designed-test and evidence columns were the same column and their
+ * text overlapped. A single pitch makes that arithmetically impossible rather than
+ * carefully avoided.
+ */
+export const LANE_PITCH = 400;
+
+/** The gutter every adjacent pair of lanes gets: pitch minus the widest node. */
+export const LANE_GUTTER = LANE_PITCH - NODE_W;
+
+/**
+ * Lane x offsets, in order — `lane index × LANE_PITCH`.
+ *
+ * Written out rather than mapped so the tuple keeps its literal length, which `laneX`
+ * relies on to refuse a fifth lane. `layout.test.ts` asserts it equals the multiplication.
+ */
+export const LANE_X = [0, 400, 800, 1200] as const;
+
+/**
+ * Vertical pitch between rows.
+ *
+ * Strictly greater than `NODE_H`, and by a whole spacing step: a lane whose rows touch is
+ * a column of boxes rather than a lane, and 24px is the gutter that reads as one.
+ */
+export const ROW_H = 112;
 
 /** The four lanes, in x order. The index into `LANE_X` is the lane's identity. */
 export const LANES = ['document', 'promise', 'test', 'evidence'] as const;
@@ -62,6 +125,42 @@ export const LANE_INDEX: Readonly<Record<LaneKind, number>> = {
   promise: 1,
   test: 2,
   evidence: 3,
+};
+
+/**
+ * What each column is called, above the lanes.
+ *
+ * The reading order of §10.3 said in four words instead of only in the caption, so the
+ * left-to-right story is legible without clicking anything. Headings are labels rather
+ * than controls, so nothing here is a focus stop.
+ */
+export const LANE_HEADINGS: Readonly<Record<LaneKind, string>> = {
+  document: 'Documents',
+  promise: 'Promises',
+  test: 'Designed tests',
+  evidence: 'Evidence',
+};
+
+/** Height of a lane heading. */
+export const LANE_HEADER_H = 32;
+
+/**
+ * y of the lane headings — above row 0, by one node gutter.
+ *
+ * Negative, so row 0 stays at y 0 and every row's y remains `row × ROW_H` plus a constant
+ * that depends only on the node's own height. `LANE_HEADER_Y + LANE_HEADER_H` is `-24`,
+ * which is the proof that a heading cannot touch the row beneath it.
+ */
+export const LANE_HEADER_Y = -(LANE_HEADER_H + (ROW_H - NODE_H));
+
+/** The painted footprint of a node in each lane, in the one place both CSS and TS read. */
+export const NODE_SIZE: Readonly<
+  Record<LaneKind, { readonly width: number; readonly height: number }>
+> = {
+  document: { width: LANE_NODE_W, height: LANE_NODE_H },
+  promise: { width: NODE_W, height: NODE_H },
+  test: { width: LANE_NODE_W, height: LANE_NODE_H },
+  evidence: { width: LANE_NODE_W, height: LANE_NODE_H },
 };
 
 /**
@@ -90,6 +189,9 @@ interface LayoutNodeBase {
   readonly row: number;
   readonly x: number;
   readonly y: number;
+  /** The painted footprint, so a bounding box is readable without a stylesheet. */
+  readonly width: number;
+  readonly height: number;
   /** Present only on a promise; the other lanes have nothing to be a verdict of. */
   readonly verdict: Verdict | null;
 }
@@ -183,9 +285,17 @@ export function laneX(lane: number): number {
   return x;
 }
 
-/** y for a row. Pure multiplication, which is what makes two renders identical. */
-export function rowY(row: number): number {
-  return row * ROW_H;
+/**
+ * y for a row in a given lane. Multiplication and one constant, nothing else.
+ *
+ * The row's own height is `ROW_H` and the tallest thing in it is a promise node, so a
+ * shorter chip is centred in the band its row reserves — `(NODE_H − height) / 2`, a
+ * constant per lane. That is presentation expressed as arithmetic rather than as an offset
+ * applied later by a component: two renders of one snapshot still land on the same pixel,
+ * and the y a test reads is the y a reader sees.
+ */
+export function rowY(row: number, kind: LaneKind = 'promise'): number {
+  return row * ROW_H + (NODE_H - NODE_SIZE[kind].height) / 2;
 }
 
 /** The designed-test lane, derived from the snapshot's `designed` edges. */
@@ -236,7 +346,7 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
     const x = laneX(lane);
     const ordered = [...rows].sort(byRankThenId);
     ordered.forEach((entry, row) => {
-      nodes.push(entry.build(row, x, rowY(row)));
+      nodes.push(entry.build(row, x, rowY(row, kind)));
     });
     laneRows[lane] = ordered.length;
   };
@@ -253,6 +363,8 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
         row,
         x,
         y,
+        width: NODE_SIZE.document.width,
+        height: NODE_SIZE.document.height,
         verdict: null,
         document,
       }),
@@ -271,6 +383,8 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
         row,
         x,
         y,
+        width: NODE_SIZE.promise.width,
+        height: NODE_SIZE.promise.height,
         verdict: promise.verdict,
         promise,
       }),
@@ -289,6 +403,8 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
         row,
         x,
         y,
+        width: NODE_SIZE.test.width,
+        height: NODE_SIZE.test.height,
         verdict: null,
         path: entry.path,
         testId: entry.testId,
@@ -309,6 +425,8 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
         row,
         x,
         y,
+        width: NODE_SIZE.evidence.width,
+        height: NODE_SIZE.evidence.height,
         verdict: null,
         evidence,
       }),
@@ -343,4 +461,78 @@ export function layoutSnapshot(snapshot: LedgerSnapshot): GraphLayout {
 /** The promise nodes only, in the row order the keyboard model walks (§10.8). */
 export function promiseNodes(layout: GraphLayout): readonly PromiseLayoutNode[] {
   return layout.nodes.filter((node): node is PromiseLayoutNode => node.kind === 'promise');
+}
+
+/**
+ * How many rows the initial viewport frames.
+ *
+ * The rows are sorted `(verdict rank, id)` with red first, so framing the *top* of the
+ * graph rather than centring the whole of it is what makes "most urgent first" a thing a
+ * reader sees rather than a thing the sort knows. Four rows across four lanes is a legible
+ * opening shot at a phone width and still shows the lane structure on a wide monitor.
+ */
+export const VIEWPORT_ROWS = 4;
+
+/**
+ * The ids the initial viewport is fitted to: every node in the first {@link VIEWPORT_ROWS}
+ * rows of every lane.
+ *
+ * Falls back to the whole graph when it is shorter than that, so a two-promise snapshot is
+ * framed rather than magnified past `maxZoom` and clipped.
+ */
+export function framingNodeIds(layout: GraphLayout): readonly string[] {
+  const framed = layout.nodes.filter((node) => node.row < VIEWPORT_ROWS);
+  return (framed.length === 0 ? layout.nodes : framed).map((node) => node.id);
+}
+
+/** A node's painted bounding box, in layout coordinates. */
+export interface NodeBox {
+  readonly id: string;
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/**
+ * Every node's bounding box.
+ *
+ * Exported so the non-overlap guarantee is *measured* rather than eyeballed: two boxes that
+ * intersect are two nodes whose text is on top of each other, and that is arithmetic a test
+ * can settle. `layout.test.ts` checks every pair.
+ */
+export function nodeBoxes(layout: GraphLayout): readonly NodeBox[] {
+  return layout.nodes.map((node) => ({
+    id: node.id,
+    left: node.x,
+    top: node.y,
+    right: node.x + node.width,
+    bottom: node.y + node.height,
+  }));
+}
+
+/** `true` when two painted boxes share any area. Touching edges do not count. */
+export function boxesIntersect(left: NodeBox, right: NodeBox): boolean {
+  return (
+    left.left < right.right &&
+    right.left < left.right &&
+    left.top < right.bottom &&
+    right.top < left.bottom
+  );
+}
+
+/**
+ * The gutter between each adjacent pair of lanes, left to right.
+ *
+ * `LANE_X[n + 1] − (LANE_X[n] + NODE_W)`, so a zero or negative entry is two columns that
+ * touch or overlap — which is the bug this module was carrying. One pitch for all four
+ * lanes means every entry is {@link LANE_GUTTER}, and `layout.test.ts` asserts exactly
+ * that rather than trusting the constants to stay in step.
+ */
+export function laneGutters(): readonly number[] {
+  const gutters: number[] = [];
+  for (let lane = 0; lane + 1 < LANE_X.length; lane += 1) {
+    gutters.push(laneX(lane + 1) - (laneX(lane) + NODE_W));
+  }
+  return gutters;
 }

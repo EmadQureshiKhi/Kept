@@ -14,9 +14,28 @@
  * lane cannot disagree: red sorts to the top in both, because there is one sort.
  *
  * `aria-current` rather than `aria-pressed`: the row does not toggle, it names which
- * promise the panel is currently showing. One row of the claim in prose, ellipsised,
- * with the full text in `title` and in the panel — the same bargain the node makes
- * (§10.7).
+ * promise the panel is currently showing. Two lines of the claim in prose, clamped, with
+ * the full text in `title` and in the panel — the same bargain the node makes (§10.7).
+ *
+ * **The rank is the sort, made visible.** `1 of 8` down the left of the column is the same
+ * numeral `PromiseNode` carries and it comes from the same place: the promises arrive here in
+ * lane order, so the index *is* the rank and no second sort is possible. The column's heading
+ * says "most urgent first" — before the numeral landed, nothing in the rows said which one
+ * was first, and the order was carried entirely by four verdict hues a reader had to already
+ * know the ranking of.
+ *
+ * **The verdict is a word, on the row's top line, beside its hue.** `VerdictTag` was already
+ * here but sat alone on a third line under the claim, with the verdict's real signal — the
+ * 3px `--wash-*` left edge — doing the work at an alpha that is close to invisible on paper.
+ * Colour is never the only channel (R10.5), so the word sits where the eye already is.
+ *
+ * **The row is a cell in a ruled sheet, not a box on the page.** The `<ul>` composes
+ * `.surface-raised`, so the list is one opaque `--ink-100` plane with a 2px ink edge and the
+ * rows are ruled cells inside it. Before that the rows sat directly on the page and the
+ * page's own 28px ruling ran through the gap between every pair of them, which is why eight
+ * promises read as one block. The elevation is picked rather than authored: §10.4.4 permits a
+ * `box-shadow` in `styles/surfaces.css` and in no other file, so a component composes a
+ * surface class in its markup and never writes depth.
  *
  * **The class namespace is `graph-list`, not `promise-list`, and that is not a matter
  * of taste.** `styles/coverage.css` already owns `.promise-list`, `.promise-list__item`,
@@ -60,8 +79,8 @@ export function PromiseList({
   className,
 }: PromiseListProps) {
   return (
-    <ul aria-label={label} className={clsx('graph-list', className)} role="list">
-      {promises.map((promise) => (
+    <ul aria-label={label} className={clsx('graph-list', 'surface-raised', className)} role="list">
+      {promises.map((promise, index) => (
         <li className="graph-list__item" key={promise.id}>
           <button
             aria-current={promise.id === selectedId ? 'true' : undefined}
@@ -71,11 +90,19 @@ export function PromiseList({
             onClick={onSelect === undefined ? undefined : () => onSelect(promise.id)}
             type="button"
           >
-            <span className="graph-list__id">{promise.id}</span>
+            <span className="graph-list__head">
+              <span
+                className="graph-list__rank"
+                title={`urgency ${index + 1} of ${promises.length}, most urgent first`}
+              >
+                {index + 1}
+              </span>
+              <span className="graph-list__id">{promise.id}</span>
+              <VerdictTag className="graph-list__verdict" verdict={promise.verdict} />
+            </span>
             <span className="graph-list__claim" title={promise.claim}>
               {promise.claim}
             </span>
-            <VerdictTag className="graph-list__verdict" verdict={promise.verdict} />
           </button>
         </li>
       ))}
