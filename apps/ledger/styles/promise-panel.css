@@ -1,7 +1,7 @@
 /**
  * The promise panel — design §10.2, §10.5 (a well reads as cut into the card),
  * §10.6.3 (the panel's slide and fade is the one plain CSS transition here), §10.7,
- * §10.10 (empty states are specified states), R8.2, R8.3, R10.7.
+ * §10.10 (empty states are specified states), R8.2, R8.3, R10.7, R10.8.
  *
  * 440px at `.surface-raised-2`, which is the elevation §10.5 reserves for the panel
  * and the amendment cards. It authors no depth and no shadow of its own; it picks
@@ -20,19 +20,78 @@
  * reads as cut into the panel rather than stacked on it. That is the whole visual
  * argument for the verbatim quote being *source* and not commentary.
  *
+ * ## The facts block is a definition list, so it is set as one
+ *
+ * A verdict source is seven facts. Set as a `dt`/`dd` stack it reads as fourteen
+ * paragraphs; set as a two-column grid it reads as seven facts. So the grid is
+ * `minmax(8rem, max-content) minmax(0, 1fr)`, with each `dt` filled `--ink-050` and
+ * separated from its value by a 2px ink rule rather than by whitespace.
+ *
+ * The term column's minimum is 8rem here rather than the 11rem the page-level cards
+ * use, and that is the panel's own width forcing it: 440px of card minus padding
+ * leaves about 400px, and an 11rem term column would take nearly half of it for words
+ * as short as `run` and `at`. Below 56rem the grid folds to one column and each `dt`
+ * swaps its right rule for a bottom one, because in one column the term sits above
+ * its value.
+ *
+ * ## Every identifier keeps its own line
+ *
+ * A run id, a `path:line`, a reason code and an ISO instant are single values, and
+ * wrapping one is worse than scrolling it: `tr_20260820T184011Z` broken across a line
+ * boundary is two runs of characters that are not the id. So each sits in a
+ * horizontally scrollable box with a slim scrollbar — on the value's own element, never
+ * on the `dd`, so nothing interactive is trapped inside a scroller.
+ *
+ * ## The panel is as tall as the canvas beside it, and never taller
+ *
+ * The named complaint: the red promise carries a repair annotation *and* a pack of 37
+ * artefacts, so its content is several times a proven promise's, and the panel had a
+ * `width` and no bound on its height at all. It ran the whole page — past the top of
+ * the viewport, with its own bottom out of reach — while a proven promise opened a
+ * short card that sat neatly under the metric rail. Two promises, two completely
+ * different objects.
+ *
+ * The bound is `clamp(360px, 62vh, 720px)`, which is not a new number: it is the
+ * canvas's `height` and the parallel list's `max-height` in `promise-graph.css`, so all
+ * three columns of the hero end on the same line whatever the content of any of them.
+ * Content beyond it scrolls in `.promise-panel__body` rather than growing the card, and
+ * the header stays out of that scrollport — a reader who has scrolled to artefact 37
+ * can still see the id they are reading about and the control that closes it.
+ *
+ * `position: sticky` with a `top` that clears the sticky masthead keeps the card beside
+ * the graph it describes while the page moves under both. The `top` is a literal sum of
+ * `--s-*` steps rather than a measured masthead height, because a custom property may
+ * only be declared in `tokens.css` and this file does not own that.
+ *
+ * Under the 760px fold-point the bound is released and the panel simply flows: below
+ * that width the panel is the full column with the page scrolling anyway, and a 400px
+ * scroll region inside a scrolling page is worse than a long card.
+ *
  * Motion is one container transition on `opacity` and `transform` (§10.6.3), both on
  * the compositor. It stays a transition: M3, the staggered section reveal in
  * `components/PanelStagger.tsx`, layers over it and touches only the sections, so
  * dropping that flourish (§18.1) leaves the rule below sliding the panel as one unit.
+ * Neither the height nor the sticky offset is animated, and neither may be.
  */
 
+/* `width` is a preferred width with `max-width: 100%` under it, so the panel is 440px
+   where there is room for 440px and the viewport's width where there is not. Neither
+   is animated — the transition below moves `opacity` and `transform` only.
+
+   Two rows: the header at its own height, and the body taking whatever is left.
+   `minmax(0, 1fr)` on the second is what lets it be shorter than its content, which is
+   the difference between a body that scrolls and a card that grows. */
 .promise-panel {
+  position: sticky;
+  top: calc(var(--s-16) + var(--s-4));
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   box-sizing: border-box;
   width: 440px;
   max-width: 100%;
   min-width: 0;
-  gap: var(--s-3);
+  height: clamp(360px, 62vh, 720px);
+  gap: var(--s-4);
   padding: var(--s-4);
   border-radius: var(--r-panel);
   transition:
@@ -42,111 +101,242 @@
 
 /* ── the header: the id, the verdict, and the way out ───────────────────────── */
 
+/* Outside the scrollport on purpose. It is the row that says *which* promise this is and
+   carries the only control that closes the card, so it stays put while the evidence
+   moves under it. In the panel's two-row grid this is the `auto` track: it takes its own
+   height and yields none of it. */
 .promise-panel__head {
   display: flex;
-  gap: var(--s-2);
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
   align-items: center;
-  justify-content: space-between;
+  min-width: 0;
+  padding-bottom: var(--s-3);
+  border-bottom: var(--line) solid var(--text-000);
+}
+
+/* ── the body: everything a sceptic reads, inside the bound ─────────────────── */
+
+/**
+ * The scrollport, and the affordance that says so.
+ *
+ * The scrollbar treatment is the one `.runs-table-frame` in `runs.css` already uses,
+ * for the same reason: a scroller a reader cannot see is a scroller a reader does not
+ * use, and this one holds 37 artefacts behind a repair annotation.
+ * `scrollbar-gutter: stable` reserves the channel *always*, so the sections do not
+ * reflow the moment a scrollbar appears and the region reads as movable at rest; the
+ * track is the recessed paper surface and the thumb is a paper slab with the same 2px
+ * ink edge every other control in the system carries. Paper rather than ink for the
+ * thumb: an ink fill is an inversion, and §10.4.3 requires an inverting rule to state
+ * the text colour it inverts to, which a thumb carrying no text cannot honestly do.
+ *
+ * `overscroll-behavior: contain` stops a flick at the end of the artefact list carrying
+ * on into the page, which is the one thing that makes a nested scroller feel broken.
+ *
+ * `align-content: start` matters at the other end of the range: a proven promise's
+ * content is shorter than the bound, and without it the four sections would distribute
+ * themselves down 720px of card.
+ */
+.promise-panel__body {
+  display: grid;
+  align-content: start;
+  gap: var(--s-4);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-000) var(--ink-050);
+}
+
+.promise-panel__body::-webkit-scrollbar {
+  width: var(--s-3);
+  height: var(--s-3);
+}
+
+.promise-panel__body::-webkit-scrollbar-track {
+  background-color: var(--ink-050);
+}
+
+.promise-panel__body::-webkit-scrollbar-corner {
+  background-color: var(--ink-050);
+}
+
+.promise-panel__body::-webkit-scrollbar-thumb {
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
 }
 
 .promise-panel__id {
+  flex: 1 1 8rem;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  font-weight: 700;
   line-height: var(--s-4);
   letter-spacing: var(--tr-mono);
   color: var(--text-200);
+  white-space: nowrap;
 }
 
+/* An ink-edged slab, like every other control in the Ledger. It presses by
+   translating rather than by changing depth, because depth lives in `surfaces.css`. */
 .promise-panel__close {
+  flex: 0 0 auto;
   padding: var(--s-1) var(--s-2);
-  border: 1px solid var(--hairline-strong);
+  border: var(--line) solid var(--text-000);
   border-radius: var(--r-chip);
   background-color: var(--ink-100);
-  color: var(--text-100);
+  color: var(--text-000);
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-micro);
+  font-weight: 700;
   line-height: var(--s-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .promise-panel__close:hover {
   background-color: var(--ink-150);
 }
 
+.promise-panel__close:active {
+  transform: translate(1px, 1px);
+}
+
 /* ── the claim: the subject, so it is the largest prose on the panel ─────────── */
 
 .promise-panel__claim {
+  max-width: 62ch;
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-md);
+  font-weight: 600;
   line-height: var(--lh-body);
   color: var(--text-000);
-  max-width: 72ch;
 }
 
 /* ── sections ───────────────────────────────────────────────────────────────── */
 
 .promise-panel__section {
   display: grid;
-  gap: var(--s-1);
+  gap: var(--s-2);
   min-width: 0;
 }
 
+/* Small caps at the bottom of the ramp: a section heading names a block without
+   competing with the claim above it (§10.7's tracking inversion).
+ *
+ * Ruled off underneath, at 1px rather than the 3px a page-level `.section-head` takes.
+ * That is the whole hierarchy of headings in the product, stated in two weights: ink at
+ * 3px opens a block of the page, a hairline opens a block inside a card. Without a rule
+ * an 11px small-caps line in the label tone is indistinguishable from the caption of the
+ * thing above it, which is the complaint that produced this pass. */
 .promise-panel__heading {
   margin: 0;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 /* Prose: rationale, empty states, panel copy. Never mono (§10.7). */
 .promise-panel__prose {
+  max-width: 62ch;
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-100);
-  max-width: 72ch;
 }
 
 /* Identifiers: `path:line`, test ids, result and reason codes, ISO instants,
-   member statuses, credit figures. Mono, and tracked open at small sizes. */
+   member statuses, credit figures. Mono, tracked open at small sizes, and each on
+   one scrollable line rather than wrapped into fragments. */
 .promise-panel__ident {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  white-space: nowrap;
 }
+
+/* ── the facts grid: a definition list set as a table of facts ───────────────── */
 
 .promise-panel__facts {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--s-1) var(--s-3);
+  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+  gap: 0;
   margin: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .promise-panel__term {
+  padding: var(--s-2) var(--s-3);
+  border-right: var(--line) solid var(--text-000);
+  border-bottom: 1px solid var(--hairline);
+  background-color: var(--ink-050);
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-mono);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .promise-panel__value {
   margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--hairline);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text-100);
-  overflow-wrap: anywhere;
+  color: var(--text-000);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.promise-panel__term:last-of-type,
+.promise-panel__value:last-of-type {
+  border-bottom-width: 0;
+}
+
+/* On the child rather than on the `dd`, so a value that becomes a link stays one. */
+.promise-panel__value-inner {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
+  white-space: nowrap;
 }
 
 /* ── the citation well: the verbatim line, cut into the panel (§10.5) ────────── */
@@ -156,33 +346,87 @@
   gap: var(--s-2);
   padding: var(--s-3);
   border-radius: var(--r-card);
+  min-width: 0;
 }
 
 /* The cited line is prose from a document, so it stays `--font-ui` — mono is for the
    `path:line` above it, which is an identifier (§10.7). It is quoted with no
    normalisation of any kind: leading space, trailing space and inner runs are the
-   bytes on the line, which is the credibility of the whole product. */
+   bytes on the line, which is the credibility of the whole product. `pre-wrap` and
+   `break-word` together are the one place wrapping is right — this is a sentence, and
+   a sentence that scrolled sideways would be a sentence nobody reads. */
 .promise-panel__quote {
+  max-width: 62ch;
   margin: 0;
+  padding-left: var(--s-3);
+  border-left: var(--line-heavy) solid var(--text-000);
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--text-000);
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* ── evidence artefacts ─────────────────────────────────────────────────────── */
 
+/**
+ * One artefact is one row: the kind, then the link, side by side.
+ *
+ * The named complaint was that they were stacked — `failure-yaml` on one line and the
+ * link dropping onto the next. The cause was `flex-wrap: wrap` on the row: the link is
+ * `nowrap` inside a scroll box, so its own content could not break, and the only thing
+ * left to break was the row itself. A pack with 37 artefacts became 74 lines, none of
+ * them scannable.
+ *
+ * So the list is the grid and each row is a `subgrid` of it. That is what shares the
+ * label column: every kind chip is measured against every other one, so the links start
+ * on a single vertical line down the whole pack instead of each row finding its own.
+ * `grid-template-columns` is stated twice on purpose — the two-column value first, then
+ * `subgrid` — so an engine without subgrid keeps a two-column row and loses only the
+ * shared column, which is the fault the wrap produced degrading to a cosmetic one.
+ *
+ * `align-items: center` rather than `baseline`: the link is a scroll container, and a
+ * scroll container's baseline is its bottom margin edge rather than the baseline of the
+ * text inside it, so a baseline row would hang the chip a couple of pixels low.
+ */
 .promise-panel__artifacts {
   display: grid;
-  gap: var(--s-1);
+  grid-template-columns: minmax(max-content, auto) minmax(0, 1fr);
+  gap: var(--s-1) var(--s-2);
   margin: 0;
   padding: 0;
   list-style: none;
+  min-width: 0;
+}
+
+.promise-panel__artifact-item {
+  display: grid;
+  grid-template-columns: minmax(max-content, auto) minmax(0, 1fr);
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  column-gap: var(--s-2);
+  align-items: center;
+  min-width: 0;
+}
+
+/* The link cell: the link, and the mark that says it leaves the page. The link takes
+   whatever width is left and scrolls the rest, so the mark stays visible at the end of
+   the row rather than scrolling away inside it. */
+.promise-panel__artifact-link {
+  display: flex;
+  gap: var(--s-1);
+  align-items: center;
+  min-width: 0;
 }
 
 .promise-panel__artifact {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
@@ -190,8 +434,26 @@
   color: var(--text-100);
   text-decoration: underline;
   text-underline-offset: 2px;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   transition: color var(--dur-fast) var(--ease-out);
+}
+
+/* The mark that the link leaves the Ledger, drawn rather than typed: two edges of a
+   small square, turned 45°, so it reads as a head pointing up and out of the row. It is
+   geometry for the same reason nothing here is an icon font or a pictograph — the
+   forbidden-palette scan refuses both, and a border pair costs no request and no
+   codepoint. `aria-hidden` in the markup, because the words are the link's job: the
+   sentence above the list says once that these open in a new tab, rather than 37 rows
+   each repeating it. */
+.promise-panel__artifact-away {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--text-200);
+  border-bottom-width: 0;
+  border-left-width: 0;
+  transform: rotate(45deg);
 }
 
 .promise-panel__artifact:hover {
@@ -199,8 +461,63 @@
 }
 
 .promise-panel__artifact-kind {
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
-  line-height: var(--s-3);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-200);
+  white-space: nowrap;
+}
+
+/* ── narrow viewports: the facts grid folds to one column ────────────────────── */
+
+@media (max-width: 56rem) {
+  .promise-panel__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .promise-panel__term {
+    border-right-width: 0;
+    border-bottom: var(--line) solid var(--text-000);
+  }
+
+  .promise-panel__term:last-of-type {
+    border-bottom-width: var(--line);
+  }
+}
+
+/* ── under the fold-point: the bound is released and the panel flows ─────────── */
+
+/**
+ * At 760px `promise-graph.css` folds the panel out of its column and gives it the full
+ * width underneath. From there the page scrolls, so a bounded card would put a 400px
+ * scrollport inside a scrolling page — two nested scrollers, and a reader who flicks at
+ * the artefact list expecting the page to move. So the height comes off, the sticky
+ * offset comes off, and the panel is as long as its content.
+ *
+ * The prelude is `aside.promise-panel` rather than `.promise-panel`, and that is
+ * deliberate rather than decorative: §18.1's guard reads this file for *the* rule whose
+ * prelude is exactly `.promise-panel` and requires there to be one, so that the
+ * container's slide and fade cannot be moved out of CSS. A second rule under that
+ * prelude — even one setting no motion at all — would make the guard ambiguous. The
+ * element selector adds the same specificity the class already has, matches the one tag
+ * `PromisePanel` renders, and keeps the guard reading a single rule.
+ */
+@media (max-width: 760px) {
+  aside.promise-panel {
+    position: static;
+    height: auto;
+  }
+
+  .promise-panel__body {
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+  }
 }
