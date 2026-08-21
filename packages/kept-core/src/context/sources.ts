@@ -24,6 +24,32 @@
  * | 2 | `abs-path` | absolute-path equality after resolving both sides against `repoRoot` |
  * | 3 | `digest` | sha256 of the file's current bytes equals the recorded digest |
  * | 4 | `unique-basename` | basename equality **and exactly one live candidate** |
+ * | 5 | `basename-slug` | the file's slugified basename equals the slugified id, **and exactly one live candidate** |
+ *
+ * ## Why there is a fifth rung, and why it is last
+ *
+ * Observed, not assumed. The live store's projection carries `id, cid, label,
+ * title, trust, fresh` — **no path key at all**, and `cid` is not one of
+ * `digest | sha256 | hash | content_hash`, so rungs 1, 2 and 4 have nothing to
+ * read and rung 3 has nothing to compare against. Nor is the path recoverable:
+ * `context explain readme` replays only `minted` and `head_move`, and no file
+ * under `.context/` contains the string `README`. The three hashes in play are all
+ * different — `cid sha256:883da226…`, the ingest line's `blob sha256:2d6ab576…`,
+ * and the file's own `shasum -a 256` `b2118de7…` — so Kane does not key a source
+ * by the digest KEPT computes.
+ *
+ * **Kane keys a source by content and by slug, not by repository path.** The one
+ * thread that survives is the slug: `apps/fixture/README.md` was ingested and the
+ * source it minted is `id: readme`. Matching on that is the difference between a
+ * docs branch that works and one that silently does nothing, and it is recorded at
+ * `docs/kane/reconcile/` rather than inferred.
+ *
+ * It is **last** so it can never shadow a stronger match: a store that does
+ * publish a path is still matched on the path, and the slug is consulted only when
+ * every rung above it found nothing. And it is subject to the same uniqueness rule
+ * as rung 4 — two live entries whose ids slugify to one value are `ambiguous`, not
+ * a coin flip — because a slug is a *lossier* key than a basename and the answer to
+ * a lossy tie is a human, not a guess.
  *
  * First hit wins, and a hit is only a hit when it is unambiguous. Two or more live
  * candidates tying at one rung is {@link SourceResolution} `ambiguous` — never a
@@ -98,7 +124,8 @@ export type SourceResolutionVia =
   | 'exact-path'
   | 'abs-path'
   | 'digest'
-  | 'unique-basename';
+  | 'unique-basename'
+  | 'basename-slug';
 
 /** Every `via` value, in ladder order with `cache` in front of it. */
 export const SOURCE_RESOLUTION_VIA: readonly SourceResolutionVia[] = Object.freeze([
@@ -107,6 +134,7 @@ export const SOURCE_RESOLUTION_VIA: readonly SourceResolutionVia[] = Object.free
   'abs-path',
   'digest',
   'unique-basename',
+  'basename-slug',
 ]);
 
 /**
@@ -331,7 +359,50 @@ function basenameOf(path: string): string {
   return posix.basename(toPosix(path));
 }
 
-/** The four rungs, in ladder order. `cache` is not a rung — it precedes the ladder. */
+/**
+ * The slug of a name: lowercased, every run of characters that is not a letter or
+ * a digit collapsed to one `-`, and the result trimmed of `-` (rung 5).
+ *
+ * This is the normalisation Kane's own ids carry — `README.md` was ingested and
+ * became `readme` — and it is applied to **both** sides so the comparison is
+ * equality over one form rather than a similarity test. Two values that slugify
+ * differently do not match; nothing here decides that two different values are
+ * close enough, which is what would make it fuzzy.
+ *
+ * Answers the empty string when nothing survives, and an empty slug never
+ * matches: a file called `---.md` names no source, and letting empty equal empty
+ * would match it against every id that also slugifies to nothing.
+ */
+export function slugOfName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+/**
+ * The slug of a file's basename, with its extension dropped first (rung 5).
+ *
+ * The extension goes because Kane's id for `README.md` is `readme` rather than
+ * `readme-md`. A leading-dot name keeps its whole basename — `.eslintrc` has no
+ * extension to drop, it has a name that starts with a dot.
+ *
+ * That guard is deliberate all the way down, so `.md` slugifies to `md` rather
+ * than to nothing. `md` is an ordinary slug that matches whatever id also
+ * slugifies to `md` and nothing else; it is not a wildcard, so there is no rule
+ * here for it to break. The rule this rung does need is that an *empty* slug
+ * never matches, and that is enforced by {@link matchStoreSources} refusing to
+ * compare when either side normalises away — `---.md` names no source.
+ */
+export function basenameSlug(path: string): string {
+  const base = basenameOf(path);
+  if (base.length === 0) return '';
+  const cut = base.lastIndexOf('.');
+  return slugOfName(cut <= 0 ? base : base.slice(0, cut));
+}
+
+/** The five rungs, in ladder order. `cache` is not a rung — it precedes the ladder. */
 export type LadderRung = Exclude<SourceResolutionVia, 'cache'>;
 
 /** The rungs, in the order {@link resolveFromSources} walks them. */
@@ -340,6 +411,7 @@ export const LADDER_RUNGS: readonly LadderRung[] = Object.freeze([
   'abs-path',
   'digest',
   'unique-basename',
+  'basename-slug',
 ]);
 
 /** What {@link matchStoreSources} was asked to match against. */
@@ -376,7 +448,9 @@ export interface SourceMatchSet {
   readonly absPath: string;
   /** The digest that was compared, or null when rung 3 was skipped. */
   readonly fileDigest: string | null;
-  /** One entry per rung, in ladder order. Always four entries. */
+  /** The slug rung 5 compared, or the empty string when the file has none. */
+  readonly fileSlug: string;
+  /** One entry per rung, in ladder order. Always {@link LADDER_RUNGS}.length entries. */
   readonly rungs: readonly RungMatches[];
 }
 
@@ -423,14 +497,24 @@ export function matchStoreSources(request: SourceMatchRequest): SourceMatchSet {
           return candidate !== null && basenameOf(candidate) === wantedBasename;
         });
 
+  // Rung 5 keys on the *id*, because the live store publishes no path at all: the
+  // only thing an entry and a file share is the slug Kane derived at ingest. Both
+  // sides go through the same normalisation, and an empty slug matches nothing.
+  const fileSlug = basenameSlug(relPath ?? absPath);
+  const slug =
+    fileSlug.length === 0
+      ? []
+      : sources.filter((s) => slugOfName(s.sourceId) === fileSlug);
+
   const rungs: RungMatches[] = [
     { rung: 'exact-path', ...partition(exact) },
     { rung: 'abs-path', ...partition(absolute) },
     { rung: 'digest', ...partition(digest) },
     { rung: 'unique-basename', ...partition(basename) },
+    { rung: 'basename-slug', ...partition(slug) },
   ];
 
-  return { relPath, absPath, fileDigest, rungs };
+  return { relPath, absPath, fileDigest, fileSlug, rungs };
 }
 
 /** {@link resolveFromSources}'s input: a match request plus where diagnostics go. */
@@ -480,7 +564,15 @@ export function resolveFromSources(request: ResolveFromSourcesRequest): SourceRe
         message:
           `${named} resolves to source ${source.sourceId} via ${rung.rung}` +
           `${rung.retired.length === 0 ? '' : `, ignoring ${rung.retired.length} retired entr${rung.retired.length === 1 ? 'y' : 'ies'} that matched the same rung`}` +
-          `.`,
+          `.` +
+          // The slug rung is named in its own words, so a reviewer reading `/runs`
+          // is never left thinking a path matched when none was published.
+          `${
+            rung.rung === 'basename-slug'
+              ? ` The match is on the slug '${matches.fileSlug}' Kane derived at ingest, not on a` +
+                ` path: this listing publishes none.`
+              : ''
+          }`,
         file: matches.relPath,
       });
       return { ok: true, source, via: rung.rung };

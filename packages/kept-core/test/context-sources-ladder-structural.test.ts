@@ -121,15 +121,17 @@ function fixtureLines(name: string): readonly string[] {
     .filter((line) => line.length > 0);
 }
 
-const LISTING_LINES = fixtureLines('context-list-sources.ndjson');
-const REFUSED_LINES = fixtureLines('assurance-cover-refused.ndjson');
-/** The listing fixture truncated before its `done` event. */
-const CRASHED_LINES = [LISTING_LINES[0] as string, LISTING_LINES[1] as string];
-/** An empty store: it said something, so the honest answer is the ingest remedy. */
-const EMPTY_STORE_LINES = [
-  '{"type":"sources","v":1,"verb":"context list","total":0,"sources":[]}',
-  '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-];
+const LISTING_LINES = fixtureLines('context-list-sources.jsonl');
+/** The verbatim stdout of a `context list` in a directory with no `.context/`. */
+const NO_STORE_LINES = fixtureLines('context-list-no-store.txt');
+/**
+ * A listing cut off mid-flight. `context list` has no terminal event to be missing
+ * — it is a JSON-lines listing — so a truncated one is a *signalled* death, which
+ * the stub spells as a `null` exit code.
+ */
+const CRASHED_LINES = LISTING_LINES.slice(0, 3);
+/** An empty store: no lines at all, exit 0. The honest answer is the ingest remedy. */
+const EMPTY_STORE_LINES: readonly string[] = [];
 
 const BYTES = {
   readme: '# Fixture storefront\n',
@@ -210,7 +212,9 @@ function stub(
       const child = new FakeChild();
       queueMicrotask(() => {
         for (const line of options.lines ?? LISTING_LINES) child.stdout.emit(`${line}\n`);
-        child.emitClose(options.exitCode ?? 0);
+        // `null` is a signalled death and is a different fact from exit 0, so an
+        // explicit null must survive rather than collapse into success.
+        child.emitClose(options.exitCode === undefined ? 0 : options.exitCode);
       });
       return child.asChild();
     },
@@ -429,12 +433,13 @@ describe('every rung reports itself, cache included (§13.2.2)', () => {
     expect(attempted.spawns).toEqual([]);
   });
 
-  it('answers each of the four ladder rungs over the committed listing', async () => {
+  it('answers each of the five ladder rungs over the committed listing', async () => {
     const cases: readonly {
       readonly via: string;
       readonly file: string;
       readonly sourceId: string;
       readonly fileDigest?: string;
+      readonly lines?: readonly string[];
     }[] = [
       { via: 'exact-path', file: 'apps/fixture/README.md', sourceId: 'src_7f31c0a4' },
       { via: 'abs-path', file: 'apps/fixture/app/settings/page.tsx', sourceId: 'src_2f6c1d90' },
@@ -445,6 +450,15 @@ describe('every rung reports itself, cache included (§13.2.2)', () => {
         fileDigest: sourceDigest(BYTES.checkout),
       },
       { via: 'unique-basename', file: 'apps/fixture/docs/currency.md', sourceId: 'src_5e8b03df' },
+      {
+        // The live store's own shape: an id, a `cid` that is not a digest, and no
+        // path at all. Every rung above this one has nothing to read, so the slug
+        // Kane derived at ingest is the only thread left.
+        via: 'basename-slug',
+        file: 'apps/fixture/README.md',
+        sourceId: 'readme',
+        lines: fixtureLines('context-list-live.jsonl'),
+      },
     ];
     expect(cases.map((testCase) => testCase.via)).toEqual([...LADDER_RUNGS]);
 
@@ -452,6 +466,7 @@ describe('every rung reports itself, cache included (§13.2.2)', () => {
       const attempted = await attempt({
         file: testCase.file,
         ...(testCase.fileDigest === undefined ? {} : { fileDigest: testCase.fileDigest }),
+        ...(testCase.lines === undefined ? {} : { lines: testCase.lines }),
       });
       expect(resolvedVia(attempted), testCase.via).toEqual({
         sourceId: testCase.sourceId,
@@ -459,15 +474,9 @@ describe('every rung reports itself, cache included (§13.2.2)', () => {
       });
       // Exactly one process: the listing. Never a second one, never a reconcile.
       expect(attempted.spawns).toHaveLength(1);
-      expect(attempted.spawns[0]).toEqual([
-        'context',
-        'list',
-        '--type',
-        'source',
-        '--json',
-        '--mode',
-        'agent',
-      ]);
+      // No enabler is appended: `context list` belongs to no family and has no
+      // `--mode` flag, so the declared argv is the effective one.
+      expect(attempted.spawns[0]).toEqual(['context', 'list', '--type', 'source', '--json']);
       // And this is the arm — the only arm — an argv can be built from.
       const argv = reconcileArgv(attempted.resolution, testCase.file);
       expect(argv).not.toBeNull();
@@ -512,9 +521,9 @@ const FAILURE_RUNGS: readonly FailureRung[] = [
   {
     reason: 'no-store',
     file: 'apps/fixture/README.md',
-    // The live path in this repository today: no `.context/` store exists yet, and
-    // a refusal is a *complete* stream carrying its own remedy (§5.3.1).
-    arrange: { file: 'apps/fixture/README.md', lines: REFUSED_LINES, exitCode: 2 },
+    // Observed: a `context list` in a directory with no `.context/` prints
+    // `error: no context store here (…)` on stdout and exits 2.
+    arrange: { file: 'apps/fixture/README.md', lines: NO_STORE_LINES, exitCode: 2 },
     listingSpawns: 1,
   },
   {
@@ -526,7 +535,7 @@ const FAILURE_RUNGS: readonly FailureRung[] = [
   {
     reason: 'crashed-stream',
     file: 'apps/fixture/README.md',
-    arrange: { file: 'apps/fixture/README.md', lines: CRASHED_LINES },
+    arrange: { file: 'apps/fixture/README.md', lines: CRASHED_LINES, exitCode: null },
     listingSpawns: 1,
   },
   {
@@ -700,9 +709,11 @@ describe('a crashed refresh honours the previous entry, so the branch still runs
     const attempted = await attempt({
       file: 'apps/fixture/README.md',
       cache: cacheWith([readme], 'apps/fixture/README.md', 'src_7f31c0a4'),
-      // The document was just saved, so the refresh had to happen — and it crashed.
+      // The document was just saved, so the refresh had to happen — and it was
+      // signalled part-way through, leaving a listing missing entries.
       mtimeMs: NOW_MS - 1_000,
       lines: CRASHED_LINES,
+      exitCode: null,
     });
 
     expect(resolvedVia(attempted)).toEqual({ sourceId: 'src_7f31c0a4', via: 'cache' });
@@ -726,6 +737,7 @@ describe('a crashed refresh honours the previous entry, so the branch still runs
       cache: cacheWith([shop], 'apps/fixture/app/shop/page.tsx', 'src_44e1ba07'),
       mtimeMs: NOW_MS - 1_000,
       lines: CRASHED_LINES,
+      exitCode: null,
     });
     expect(attempted.resolution.ok).toBe(false);
     if (attempted.resolution.ok) return;

@@ -9,8 +9,10 @@ import {
   SOURCE_RESOLUTION_REASONS,
   SOURCE_RESOLUTION_VIA,
   absoluteSourcePath,
+  basenameSlug,
   createDiagnosticSink,
   matchStoreSources,
+  slugOfName,
   normaliseDigest,
   normaliseSourcePath,
   repoRelativeSourcePath,
@@ -22,13 +24,13 @@ import {
 } from '@kept/core';
 
 /**
- * Task 12.1 — the four-rung match ladder (design §13.2.2, R5.1, R5.2).
+ * Task 12.1 — the match ladder (design §13.2.2, R5.1, R5.2), five rungs since 15.4.
  *
  * Nothing here starts a process, reads a file or touches a clock. The ladder
  * takes an already-projected listing and an already-computed digest, which is
  * exactly what lets every rung be exercised over literal values: the listing is
  * built by hand from the shapes the committed
- * `test/fixtures/context-list-sources.ndjson` carries, and the digests are
+ * `test/fixtures/context-list-sources.jsonl` carries, and the digests are
  * `node:crypto` hashes of the byte strings that fixture's provenance register
  * documents. The listing invocation and its tolerant projection are task 12.2's
  * and are tested separately, so a failure here is a failure of the *decision*
@@ -339,6 +341,100 @@ describe('rung 4, unique-basename', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Rung 5 — the one the live store actually needs
+// ---------------------------------------------------------------------------
+
+/**
+ * The live listing publishes `id, cid, label, title, trust, fresh`: no path key at
+ * all, and `cid` is not one of the digest spellings, so the four rungs above have
+ * nothing to read. The one thing an entry and a file share is the slug Kane derived
+ * at ingest — `apps/fixture/README.md` minted `id: readme` — and the verbatim line
+ * is committed as `test/fixtures/context-list-live.jsonl`.
+ */
+const LIVE: readonly StoreSource[] = [
+  source({
+    sourceId: 'readme',
+    path: null,
+    digest: null,
+    raw: { id: 'readme', cid: 'sha256:883da226', label: 'source', title: 'readme' },
+  }),
+];
+
+describe('rung 5, basename-slug', () => {
+  it('matches the live entry, which publishes neither a path nor a digest', () => {
+    expect(resolved(walk('apps/fixture/README.md', { sources: LIVE }))).toEqual({
+      sourceId: 'readme',
+      via: 'basename-slug',
+    });
+  });
+
+  it('says in the diagnostic that a slug matched, not a path', () => {
+    const attempt = walk('apps/fixture/README.md', { sources: LIVE });
+    const recorded = attempt.sink.withCode(SOURCE_DIAGNOSTIC_CODES.resolved);
+    expect(recorded).toHaveLength(1);
+    // A reviewer reading `/runs` must not be told a path matched when the listing
+    // published none.
+    expect(recorded[0]?.message).toContain('basename-slug');
+    expect(recorded[0]?.message).toContain("slug 'readme'");
+    expect(recorded[0]?.message).toContain('publishes none');
+  });
+
+  it('slugifies both sides, and drops the extension from the file', () => {
+    expect(basenameSlug('apps/fixture/README.md')).toBe('readme');
+    expect(basenameSlug('docs/Getting Started.mdx')).toBe('getting-started');
+    expect(slugOfName('Getting_Started')).toBe('getting-started');
+    // Kane's id for `README.md` is `readme`, never `readme-md`.
+    expect(basenameSlug('README.md')).not.toBe('readme-md');
+    // A leading-dot name has no extension to drop; it has a name starting with a dot.
+    expect(basenameSlug('.eslintrc')).toBe('eslintrc');
+  });
+
+  it('never matches on an empty slug, so a file called ---.md names no source', () => {
+    // The load-bearing rule: empty must not equal empty. Both sides normalise away
+    // here, and matching would hand `---.md` to every id that also survives as ''.
+    const listing = [source({ sourceId: '---', path: null })];
+    expect(basenameSlug('---.md')).toBe('');
+    expect(slugOfName('---')).toBe('');
+    expect(walk('apps/fixture/---.md', { sources: listing }).resolution.ok).toBe(false);
+
+    // `.md` is a leading-dot name rather than a bare extension, so it keeps its
+    // whole basename and slugifies to `md`. That is an ordinary slug, not a
+    // wildcard: it matches no id in this listing and so still names no source.
+    expect(basenameSlug('.md')).toBe('md');
+    expect(walk('apps/fixture/.md', { sources: listing }).resolution.ok).toBe(false);
+  });
+
+  it('refuses to choose when two live ids slugify to one value', () => {
+    // A slug is a lossier key than a basename, so the answer to a lossy tie is a
+    // human. `readme` and `README` are one slug and two sources.
+    const listing = [
+      source({ sourceId: 'readme', path: null }),
+      source({ sourceId: 'README', path: null }),
+    ];
+    const attempt = walk('apps/fixture/README.md', { sources: listing });
+    expect(attempt.resolution.ok).toBe(false);
+    if (!attempt.resolution.ok) expect(attempt.resolution.reason).toBe('ambiguous');
+  });
+
+  it('is not softened by a retired entry slugifying alongside one live match', () => {
+    const listing = [
+      source({ sourceId: 'readme', path: null }),
+      source({ sourceId: 'read-me', path: null, retired: true }),
+    ];
+    expect(resolved(walk('apps/fixture/README.md', { sources: listing })).via).toBe(
+      'basename-slug',
+    );
+  });
+
+  it('answers retired when the only slug match is retired', () => {
+    const listing = [source({ sourceId: 'readme', path: null, retired: true })];
+    const attempt = walk('apps/fixture/README.md', { sources: listing });
+    expect(attempt.resolution.ok).toBe(false);
+    if (!attempt.resolution.ok) expect(attempt.resolution.reason).toBe('retired');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // First hit wins, and the rungs are walked in the documented order
 // ---------------------------------------------------------------------------
 
@@ -362,7 +458,18 @@ describe('the ladder is first-hit-wins in a fixed order', () => {
     );
   });
 
-  it('exposes all four rungs, in ladder order, for the fork guard to reuse', () => {
+  it('prefers a unique basename over a slug that names another entry', () => {
+    // Rung 5 is last so it can never shadow a stronger match. `currency.md` is a
+    // unique basename on entry 7 of the fixture; a slug-shaped id is added that
+    // would also answer, and it must lose.
+    const listing = [...LISTING, source({ sourceId: 'currency', path: null })];
+    expect(resolved(walk('apps/fixture/docs/currency.md', { sources: listing }))).toEqual({
+      sourceId: 'src_5e8b03df',
+      via: 'unique-basename',
+    });
+  });
+
+  it('exposes all five rungs, in ladder order, for the fork guard to reuse', () => {
     const matches = matchStoreSources({
       repoRoot: REPO,
       file: 'apps/fixture/app/shop/page.tsx',

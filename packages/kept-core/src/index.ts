@@ -1384,3 +1384,13 @@ export {
   SOURCE_LISTING_NO_STORE_MARKERS,
   readSourceListingLines,
 } from './context/listing.js';
+
+// The fifth match rung (15.4) — design §13.2.2. The live store's projection carries
+// `id, cid, label, title, trust, fresh`: no path key, and `cid` is not one of the
+// digest spellings, so rungs 1 to 4 have nothing to read. Kane keys a source by
+// content and by **slug** — `apps/fixture/README.md` minted `id: readme` — so
+// `basename-slug` is the lowest-priority rung, below `unique-basename` so it can
+// never shadow a stronger match, subject to the same one-live-candidate rule, and
+// carrying its own `via` string so a reviewer is never told a path matched when the
+// listing published none.
+export { basenameSlug, slugOfName } from './context/sources.js';

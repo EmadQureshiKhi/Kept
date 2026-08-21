@@ -15,7 +15,9 @@ import {
   SOURCE_REASON_DIAGNOSTIC_CODE,
   applyNdjsonEnabler,
   createDiagnosticSink,
+  familyForArgv,
   listStoreSources,
+  plainArgv,
   projectSourceListing,
   resolveSourceId,
   sourceDigest,
@@ -56,17 +58,31 @@ function fixtureLines(name: string): readonly string[] {
     .filter((line) => line.length > 0);
 }
 
-/** The committed listing, and the committed refusal a storeless repository gives. */
-const LISTING_LINES = fixtureLines('context-list-sources.ndjson');
-const REFUSED_LINES = fixtureLines('assurance-cover-refused.ndjson');
+/**
+ * The committed listing, in the shape `context list --json` actually emits: one
+ * plain JSON object per line, with the observed `Update available` advisory ahead
+ * of them so the prefix-skip rule (R3.23) is exercised rather than assumed.
+ */
+const LISTING_LINES = fixtureLines('context-list-sources.jsonl');
 
-/** The refusal's own message, decoded without the parser's help. */
-const REFUSAL_MESSAGE = (JSON.parse(REFUSED_LINES[0] as string) as Record<string, unknown>)[
-  'message'
-] as string;
+/** The verbatim stdout of a `context list` in a directory with no `.context/`. */
+const NO_STORE_LINES = fixtureLines('context-list-no-store.txt');
 
-/** The listing's payload event, decoded independently of the stream reader. */
-const LISTING_PAYLOAD = JSON.parse(LISTING_LINES[1] as string) as Record<string, unknown>;
+/** The one line the live store actually prints — id, cid, label, title, trust, fresh. */
+const LIVE_LINES = fixtureLines('context-list-live.jsonl');
+
+/** Kane's own sentence, which carries the remedy and is quoted rather than paraphrased. */
+const NO_STORE_MESSAGE = NO_STORE_LINES[0] as string;
+
+/**
+ * The listing as the projection sees it: the parsed lines *are* the array. Decoded
+ * here independently of the reader, so the projection tests do not depend on it.
+ */
+const LISTING_PAYLOAD: Record<string, unknown> = {
+  lines: LISTING_LINES.filter((line) => line.startsWith('{')).map(
+    (line) => JSON.parse(line) as Record<string, unknown>,
+  ),
+};
 
 /** The byte strings the fixtures register pins for the four hashed entries. */
 const BYTES = {
@@ -134,6 +150,7 @@ interface Stub {
  */
 function stub(options: {
   readonly lines?: readonly string[];
+  /** `null` is a signalled death, which is a different fact from exit 0. */
   readonly exitCode?: number | null;
   readonly binary?: string | null;
   readonly hang?: boolean;
@@ -149,7 +166,7 @@ function stub(options: {
       if (options.hang !== true) {
         queueMicrotask(() => {
           for (const line of options.lines ?? []) child.stdout.emit(`${line}\n`);
-          child.emitClose(options.exitCode ?? 0);
+          child.emitClose(options.exitCode === undefined ? 0 : options.exitCode);
         });
       }
       return child.asChild();
@@ -201,6 +218,8 @@ describe('the source listing projects tolerantly (§13.2.2)', () => {
     // The array was found by shape, and its location is reported so a diagnostic
     // can name one entry rather than "somewhere in the payload".
     expect(projection.arrays).toBe(1);
+    // The advisory line ahead of the JSON is not an entry and was never examined.
+    expect(projection.examined).toBe(7);
   });
 
   it('reads an id, a path, a digest and a lifecycle marker under every spelling', () => {
@@ -364,27 +383,31 @@ describe('the projection is structural, not positional', () => {
 // ---------------------------------------------------------------------------
 
 describe('the listing invocation (§13.2.2)', () => {
-  it('issues context list --type source --json and lets the invoker append the enabler', async () => {
+  it('issues context list --type source --json and appends no enabler at all', async () => {
     const kane = stub({ lines: LISTING_LINES });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
 
     expect([...SOURCE_LISTING_ARGV]).toEqual(['context', 'list', '--type', 'source', '--json']);
-    // `--mode agent` comes from the Assurance contract, appended once, at the
-    // invoker seam — never written at this call site, and never `--agent`.
-    expect([...listing.effectiveArgv]).toEqual([
-      'context',
-      'list',
-      '--type',
-      'source',
-      '--json',
-      '--mode',
-      'agent',
-    ]);
-    expect(kane.spawns).toEqual([[...listing.effectiveArgv]]);
-    expect([...applyNdjsonEnabler(SOURCE_LISTING_FAMILY, SOURCE_LISTING_ARGV)]).toEqual([
-      ...listing.effectiveArgv,
-    ]);
+    // Nothing is appended. `context list` has no `--mode` flag — its own `--help`
+    // lists `--type`, `--inferred`, `--stale`, `--all`, `--json` — so the declared
+    // argv *is* the effective argv, and `plainArgv` is what says so.
+    expect([...listing.effectiveArgv]).toEqual([...SOURCE_LISTING_ARGV]);
+    expect(kane.spawns).toEqual([[...SOURCE_LISTING_ARGV]]);
+    expect([...plainArgv(SOURCE_LISTING_ARGV)]).toEqual([...SOURCE_LISTING_ARGV]);
     expect(SOURCE_LISTING_TIMEOUT_MS).toBe(60_000);
+  });
+
+  it('belongs to no family, so no enabler can be appended to it', () => {
+    // The bug this pins: the listing was declared `Assurance`, so the invoker
+    // appended that family's enabler and Kane answered
+    // `error: unknown option '--mode'` at exit 1 with an empty stdout — every save
+    // resolved to `listing-unreadable` and no source could ever match.
+    expect(SOURCE_LISTING_FAMILY).toBeNull();
+    expect(familyForArgv(SOURCE_LISTING_ARGV)).toBeNull();
+    // And the invariant holds in both directions: a family command cannot be
+    // invoked plainly, so nothing can lose an enabler it does need.
+    expect(() => plainArgv(['cover', '--json'])).toThrow(TypeError);
+    expect(() => applyNdjsonEnabler('Assurance', SOURCE_LISTING_ARGV)).toThrow(TypeError);
   });
 
   it('reads the committed listing and reports what it found', async () => {
@@ -397,47 +420,61 @@ describe('the listing invocation (§13.2.2)', () => {
     });
 
     expect(read(listing)).toHaveLength(7);
-    expect(listing.status).toBe('complete');
+    expect(listing.exitCode).toBe(0);
+    // The advisory line was skipped, not read as a source and not read as a failure.
+    expect(listing.lines?.skipped).toHaveLength(1);
+    expect(listing.lines?.unparsable).toEqual([]);
     const recorded = sink.withCode(SOURCE_LISTING_DIAGNOSTIC_CODES.listed);
     expect(recorded).toHaveLength(1);
     expect(recorded[0]?.message).toContain('1 retired');
     expect(recorded[0]?.message).toContain('6 live');
   });
 
-  it('reads a refusal as no-store, quoting Kane’s own remedy', async () => {
-    // The committed refusal envelope: a **complete** stream with
-    // `status: 'refused'` and its own exit code. A `context list` against a
-    // repository with no `.context/` store looks exactly like this — which is the
-    // live path here today — and misreading it as a crash would throw the remedy
-    // away and describe a working Kane as a broken one (§5.3.1).
-    const kane = stub({ lines: REFUSED_LINES, exitCode: 2 });
+  it('reads the storeless answer as no-store, quoting Kane’s own remedy', async () => {
+    // Observed against 0.8.4 in a directory with no `.context/`: one plain-text
+    // line on **stdout** and exit 2. It is the same sentence design §5.3.1 records
+    // for `cover`, arriving without an envelope, and it carries the remedy — so it
+    // is quoted verbatim rather than summarised.
+    const kane = stub({ lines: NO_STORE_LINES, exitCode: 2 });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
 
     expect(listing.ok).toBe(false);
     if (listing.ok) return;
     expect(listing.reason).toBe('no-store');
-    expect(listing.stream?.kind).toBe('complete');
-    expect(listing.status).toBe('refused');
+    expect(listing.exitCode).toBe(2);
     expect(listing.diagnostic.code).toBe(SOURCE_REASON_DIAGNOSTIC_CODE['no-store']);
-    expect(listing.diagnostic.message).toContain(REFUSAL_MESSAGE);
+    expect(listing.diagnostic.message).toContain(NO_STORE_MESSAGE);
     expect(listing.diagnostic.message).toContain('context ingest');
   });
 
-  it('reads a stream with no done event as crashed-stream', async () => {
-    const kane = stub({ lines: [LISTING_LINES[0] as string, LISTING_LINES[1] as string] });
+  it('reads a signalled listing as crashed-stream, however much it had printed', async () => {
+    const kane = stub({ lines: LISTING_LINES.slice(0, 3), exitCode: null });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
 
     expect(listing.ok).toBe(false);
     if (listing.ok) return;
     expect(listing.reason).toBe('crashed-stream');
     expect(listing.diagnostic.code).toBe(SOURCE_REASON_DIAGNOSTIC_CODE['crashed-stream']);
-    // The payload was there in full, and it is still not trusted: a listing
-    // missing entries Kane had not enumerated turns a real match into a missing
-    // one.
+    // Two entries had arrived and they are still not trusted: a listing missing
+    // entries Kane had not printed yet turns a real match into a missing one.
     expect(listing.projection).toBeNull();
   });
 
-  it('reads a missing invoker, an absent binary and a pause as listing-unreadable', async () => {
+  it('reads the rejected-flag shape as listing-unreadable, not as an empty store', async () => {
+    // The regression for the enabler bug, in the exact shape Kane produced:
+    // `--mode agent` appended, exit 1, stdout empty, the reason on stderr. Reading
+    // that as an empty store would answer every save with the ingest remedy for a
+    // store that is in fact fully populated.
+    const kane = stub({ lines: [], exitCode: 1 });
+    const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
+
+    expect(listing.ok).toBe(false);
+    if (listing.ok) return;
+    expect(listing.reason).toBe('listing-unreadable');
+    expect(listing.diagnostic.message).toContain('exited 1');
+  });
+
+  it('reads a missing invoker and an absent binary as listing-unreadable', async () => {
     const noInvoker = await listStoreSources({ repoRoot: REPO });
     expect(noInvoker.ok).toBe(false);
     if (!noInvoker.ok) expect(noInvoker.reason).toBe('listing-unreadable');
@@ -449,16 +486,14 @@ describe('the listing invocation (§13.2.2)', () => {
     // No binary means no process: the stub was never asked to spawn anything.
     expect(absent.spawns).toEqual([]);
 
-    const paused = stub({
-      lines: ['{"type":"done","v":1,"verb":"context list","status":"paused","exit_code":3}'],
-      exitCode: 3,
-    });
-    const pausedListing = await listStoreSources({ repoRoot: REPO, invoker: paused.invoker });
-    expect(pausedListing.ok).toBe(false);
-    if (pausedListing.ok) return;
-    expect(pausedListing.reason).toBe('listing-unreadable');
-    // Exit 3 is a pause, resumable, and never a failure — the message says so.
-    expect(pausedListing.diagnostic.message).toContain('resumable');
+    // Exit 3 has no special meaning for a command that belongs to no family: there
+    // is no pause to resume and nothing pretends otherwise.
+    const three = stub({ lines: [], exitCode: 3 });
+    const threeListing = await listStoreSources({ repoRoot: REPO, invoker: three.invoker });
+    expect(threeListing.ok).toBe(false);
+    if (threeListing.ok) return;
+    expect(threeListing.reason).toBe('listing-unreadable');
+    expect(threeListing.exitMeaning).toBe('failure');
   });
 
   it('reads our own timeout kill as listing-unreadable rather than a crash', async () => {
@@ -477,12 +512,7 @@ describe('the listing invocation (§13.2.2)', () => {
   });
 
   it('reads a payload with nothing recognisable in it as listing-unreadable', async () => {
-    const kane = stub({
-      lines: [
-        '{"type":"sources","v":1,"verb":"context list","total":3,"note":"a shape we do not know"}',
-        '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-      ],
-    });
+    const kane = stub({ lines: ['{"total":3,"note":"a shape we do not know"}'] });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
 
     expect(listing.ok).toBe(false);
@@ -491,30 +521,44 @@ describe('the listing invocation (§13.2.2)', () => {
     expect(listing.diagnostic.message).toContain('not an empty store');
   });
 
-  it('reads an empty store as a listing with no sources, not as a failure', async () => {
-    const kane = stub({
-      lines: [
-        '{"type":"sources","v":1,"verb":"context list","total":0,"sources":[]}',
-        '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
-      ],
-    });
+  it('reads a line that will not parse as listing-unreadable, even at exit 0', async () => {
+    const kane = stub({ lines: [LISTING_LINES[1] as string, '{"id":"src_half"'] });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
 
-    // An empty store said something; the honest answer to it is the ingest
-    // remedy, which is what the ladder's `no-match` carries.
+    expect(listing.ok).toBe(false);
+    if (listing.ok) return;
+    expect(listing.reason).toBe('listing-unreadable');
+    // One entry read cleanly and it is still discarded: a listing we could not read
+    // in full is not a listing that was shorter than we thought.
+    expect(listing.lines?.unparsable).toHaveLength(1);
+  });
+
+  it('reads an empty store as a listing with no sources, not as a failure', async () => {
+    const kane = stub({ lines: [], exitCode: 0 });
+    const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
+
+    // An empty store prints no lines and exits 0. The honest answer to it is the
+    // ingest remedy, which is what the ladder's `no-match` carries — and it is a
+    // different fact from a listing we failed to read.
     expect(read(listing)).toEqual([]);
     expect(listing.projection?.emptyArrays).toBe(1);
   });
 
-  it('never examines the stream’s own events as candidate entries', async () => {
-    const kane = stub({ lines: LISTING_LINES });
+  it('reads the live store’s one line, which carries no path and no digest', async () => {
+    const kane = stub({ lines: LIVE_LINES });
     const listing = await listStoreSources({ repoRoot: REPO, invoker: kane.invoker });
-    // Only the seven members of the `sources` array were examined; the progress
-    // line, the payload event and `done` are not sources and are not refused
-    // entries either.
-    expect(listing.projection?.examined).toBe(7);
-    expect(listing.projection?.refused).toEqual([]);
-    expect(listing.projection?.sources[0]?.sourceId).toBe('src_7f31c0a4');
+    const sources = read(listing);
+
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toMatchObject({
+      sourceId: 'readme',
+      path: null,
+      absPath: null,
+      // `cid` is not one of `digest | sha256 | hash | content_hash`, and reading it
+      // as one would compare a node id against a file hash.
+      digest: null,
+      retired: false,
+    });
   });
 });
 
@@ -585,13 +629,31 @@ describe('resolveSourceId composes the listing with the ladder (§13.2.2)', () =
     expect(resolution.diagnostic.code).toBe(SOURCE_DIAGNOSTIC_CODES.retired);
   });
 
-  it('answers no-match over an empty store and names the ingest remedy', async () => {
+  it('resolves the live store’s slug-keyed source through the fifth rung', async () => {
+    // The live listing publishes `id, cid, label, title, trust, fresh` and no path
+    // at all, so rungs 1, 2 and 4 have nothing to read and `cid` is not a digest.
+    // The slug is the only thread that survives: `README.md` → `readme`.
+    const { resolution } = await walk('apps/fixture/README.md', { lines: LIVE_LINES });
+    expect(resolved(resolution)).toEqual({ sourceId: 'readme', via: 'basename-slug' });
+  });
+
+  it('will not slug-match two live entries that normalise to one id', async () => {
     const { resolution } = await walk('apps/fixture/README.md', {
       lines: [
-        '{"type":"sources","v":1,"verb":"context list","total":0,"sources":[]}',
-        '{"type":"done","v":1,"verb":"context list","status":"complete","exit_code":0}',
+        '{"id":"readme","label":"source","trust":"-"}',
+        '{"id":"README","label":"source","trust":"-"}',
       ],
     });
+    expect(resolution.ok).toBe(false);
+    if (resolution.ok) return;
+    // A slug is a lossier key than a basename, so the answer to a lossy tie is a
+    // human rather than the first entry.
+    expect(resolution.reason).toBe('ambiguous');
+    expect(resolution.diagnostic.message).toContain('basename-slug');
+  });
+
+  it('answers no-match over an empty store and names the ingest remedy', async () => {
+    const { resolution } = await walk('apps/fixture/README.md', { lines: [] });
     expect(resolution.ok).toBe(false);
     if (resolution.ok) return;
     expect(resolution.reason).toBe('no-match');
@@ -604,13 +666,13 @@ describe('resolveSourceId composes the listing with the ladder (§13.2.2)', () =
     const cases: readonly {
       readonly reason: string;
       readonly lines: readonly string[];
-      readonly exitCode?: number;
+      readonly exitCode: number | null;
     }[] = [
-      { reason: 'no-store', lines: REFUSED_LINES, exitCode: 2 },
-      { reason: 'crashed-stream', lines: [LISTING_LINES[1] as string] },
+      { reason: 'no-store', lines: NO_STORE_LINES, exitCode: 2 },
+      { reason: 'crashed-stream', lines: [LISTING_LINES[1] as string], exitCode: null },
     ];
     for (const testCase of cases) {
-      const kane = stub({ lines: testCase.lines, exitCode: testCase.exitCode ?? 0 });
+      const kane = stub({ lines: testCase.lines, exitCode: testCase.exitCode });
       const resolution = await resolveSourceId({
         repoRoot: REPO,
         file: 'apps/fixture/README.md',
