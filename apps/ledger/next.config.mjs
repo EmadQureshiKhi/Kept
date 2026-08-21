@@ -44,9 +44,13 @@
  * the machine that has the whole toolchain pinned. It is not a thing the deploy does
  * twice.
  *
- * `eslint.ignoreDuringBuilds` is the same argument with less to it — there is no
- * ESLint configuration in this repository at all, so the only outcome available to a
- * build-time lint step is a warning about its own absence.
+ * **There is deliberately no `eslint` block.** An earlier version of this file carried
+ * `eslint.ignoreDuringBuilds`, and Next 16 rejects the key outright — the first deploy
+ * reported `Unrecognized key(s) in object: 'eslint'` and pointed at the note that
+ * build-time linting was removed from the config surface. It was a warning rather than
+ * a failure, and the build completed, but a config key the framework has dropped is
+ * dead weight that reads as configuration. There is no ESLint configuration in this
+ * repository for it to have suppressed in any case.
  *
  * @type {import('next').NextConfig}
  */
@@ -58,11 +62,6 @@ const nextConfig = {
        libs, before anything is committed. See the note above for why the build host is
        not asked to repeat it. */
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    /* No ESLint configuration exists in this repository, so a build-time lint step has
-       nothing to read and one thing to complain about. */
-    ignoreDuringBuilds: true,
   },
 };
 
