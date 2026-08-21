@@ -39,15 +39,22 @@ npm run demo          # Ledger on :3000, fixture on :3100
 
 ## The idea
 
-A product's promises live in its README, its landing page, and its changelog. Its behaviour
-lives in code. The two drift apart silently, and nothing in a normal test suite notices,
-because a test asserts what someone decided to assert — not what the product went and told
-the world about itself.
+A product makes claims about itself in a dozen places: a landing page, a pricing table, a
+changelog entry, an onboarding tooltip, an API description, a README. Its behaviour lives in
+code. The two drift apart silently, and nothing in a normal test suite notices, because a test
+asserts what someone decided to assert — not what the product went and told the world about
+itself.
 
-KEPT builds a single graph of every promise, cites each one back to the exact source line
-that claims it, binds each to a Kane CLI test, and then keeps that graph honest from two
-directions: when code changes it re-verifies the promises in the blast radius, and when
-documentation changes it reconciles what the suite now owes.
+KEPT builds a single graph of every promise, cites each one back to the exact source line that
+claims it, binds each to a Kane CLI test, and then keeps that graph honest from two directions:
+when code changes it re-verifies the promises in the blast radius, and when documentation
+changes it reconciles what the suite now owes.
+
+Nothing in the citation grammar is markdown-specific. A `@verifies` tag takes any repository
+path and any line, so a promise can be cited to a JSX string in a hero component, a row of a
+pricing constant, a line of an OpenAPI description, or a sentence in a changelog. The fixture
+in this repository keeps its eight claims in a README because that is the cheapest thing to
+demonstrate on camera, not because the graph knows what a README is.
 
 > **The headline capability is the third repair branch.**
 > When a promise goes red there are exactly three possible causes, and Kane's own failure
@@ -94,11 +101,11 @@ documentation changes it reconciles what the suite now owes.
 
 ## Why this exists
 
-Every product ships two artefacts and only tests one of them. The code has a suite; the
-README has nobody. So the README accumulates claims — a landing page rewritten for a launch,
-a changelog entry that overstated what landed, a feature description nobody revisited after
-the feature changed — and each one is a promise the product is making to a reader with no
-mechanism behind it at all.
+Every product ships two artefacts and only tests one of them. The code has a suite. Everything
+the product *says about itself* has nobody — so it accumulates claims. A landing page rewritten
+for a launch. A changelog entry that overstated what shipped. A pricing table nobody revisited
+after the plans changed. A tooltip describing a flow that moved two releases ago. Each one is a
+promise the product is making to a reader, with no mechanism behind it at all.
 
 That gap is not merely untested. It is *unowned*, and it fails in a direction ordinary tooling
 cannot see. A test suite going green tells you the assertions someone wrote still hold. It
