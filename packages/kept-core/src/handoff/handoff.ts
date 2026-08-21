@@ -106,6 +106,13 @@ export const HANDOFF_DIAGNOSTIC_CODES = Object.freeze({
   exitUnproven: 'handoff-exit-unproven',
   /** The run proved an outcome and there is nothing to repair. */
   noRepairNeeded: 'handoff-no-repair-branch',
+  /**
+   * A `code-break` names a promise KEPT has never proven, so automatic repair was
+   * withheld for it (§8.1.1). Reported per promise, and reported whether or not the
+   * grant happened overall — a radius holding one regression beside one never-proven
+   * promise still keeps the record of which was which.
+   */
+  codeBreakUnproven: 'handoff-code-break-unproven',
   /** The immutable per-run copy already existed and was left exactly as it was. */
   archiveExists: 'handoff-archive-exists',
 } as const);
@@ -245,6 +252,129 @@ export const BRANCH_FENCES: {
 /** The fence for a branch, with `null` answering the `none` row. Total. */
 export function fenceFor(branch: RepairBranch | null): HandoffFence {
   return BRANCH_FENCES[branch ?? 'none'];
+}
+
+/**
+ * The fence a `code-break` gets when **KEPT has never proven the promise it would
+ * repair** — design §8.1.1, the one condition on automatic repair.
+ *
+ * ## Why this row exists
+ *
+ * `code-break` means *the product regressed*, and its fence is the only one that
+ * hands an agent a write path. Deciding it requires positive evidence of a product
+ * fault, and the only such evidence that survives to KEPT is the category in Kane's
+ * sealed triage note (`kane/packTriage.ts`). That category cannot carry the
+ * distinction the branch needs, and this is measured rather than feared:
+ *
+ * **Kane treats the test document as the specification.** So for the fixture's
+ * deliberately never-true discount claim it reports
+ * `application_issue/ui_data_defect` at confidence 0.89, with
+ * `suggested_fix: Check the cart's discount calculation … verify the total updates
+ * to 10% below the subtotal` — a correct description, on Kane's own terms, of a
+ * discount the cart never applies, written with no way to know the sentence was
+ * invented to be false. The genuinely broken `subtotal` earns the *same* category
+ * at 0.96. One token, two opposite meanings, and no third token that means "the
+ * claim itself is wrong" — because from where Kane stands the claim is the spec.
+ *
+ * Read off three committed packs, for one unchanged T-7 failure: `57591bff` says
+ * `application_issue/ui_data_defect`, `108dbb62` says
+ * `automation_bug/state_transition_bug`, and the `[member]` streams have said
+ * `confirmed: true`, nothing at all, and `confirmed: false` across four more runs.
+ * Kane's vocabulary is not a discriminator here, and no amount of widening
+ * `CODE_BREAK_SIGNALS` makes it one.
+ *
+ * ## The discriminator KEPT has and Kane does not
+ *
+ * The promise's **own prior verdict**. `proven` means KEPT itself witnessed the
+ * behaviour, with a terminal event and a sealed pack behind it; that promise going
+ * red is a regression, and restoring it is exactly what `code-break` authorises.
+ * A promise that has never been `proven` has no such witness — nothing established
+ * that it ever worked, so nothing can have broken.
+ *
+ * **You cannot break what was never proven to work.** Automatic repair is therefore
+ * granted only to restore behaviour KEPT has observed, which is a property this
+ * repository can enforce rather than a claim about another tool's word choice. It is
+ * also the difference between an agent *restoring* a `subtotal` and an agent
+ * *implementing* a discount nobody designed — the second being a strictly worse
+ * failure than the routing bug this gate exists beside.
+ *
+ * ## Why it is a fence and not a branch
+ *
+ * The branch stays `code-break`. R6.3, R6.4 and R6.5 say what the router must return
+ * for a coerced `740`, for a verdict object and for `confirmed: false`, and the
+ * router keeps returning it — the Ledger, the snapshot and `/runs` all go on
+ * reporting Kane's actual conclusion, which is the honest thing to publish. What the
+ * gate withholds is *autonomy*, which is §8.1's column and this module's business.
+ * So this row **narrows**: `allowedPaths` empties, nothing is added anywhere, and
+ * Property 26's containment holds more strictly than before.
+ *
+ * `hold` with no artefact, because the honest action is neither a patch (unproven),
+ * nor a review card (the test mechanics are not implicated), nor an amendment (the
+ * documentation may well be right and the product may well be at fault — a human
+ * has to look). The instruction says which promise and why.
+ */
+export const UNPROVEN_CODE_BREAK_FENCE: HandoffFence = Object.freeze({
+  autonomy: 'hold',
+  artefact: null,
+  instruction:
+    'Kane reports a product fault, but KEPT has never proven this promise: no run has ' +
+    'ever observed the cited behaviour working, so there is no earlier state to restore ' +
+    'and an automatic patch would be implementing the claim rather than repairing a ' +
+    'regression. Report the diagnostics and change nothing. Automatic repair resumes for ' +
+    'this promise once a verification has proven it once.',
+  allowedPaths: Object.freeze([]),
+  forbiddenPaths: EVERYTHING_FENCED,
+});
+
+/**
+ * The prior verdict that earns a promise automatic repair. One value, named once,
+ * because "previously proven" is the whole rule.
+ */
+export const AUTOMATIC_REPAIR_REQUIRES_VERDICT: Verdict = 'proven';
+
+/**
+ * Whether this run's `code-break` may be applied automatically (§8.1.1).
+ *
+ * True only when at least one result carrying the `code-break` branch was
+ * {@link AUTOMATIC_REPAIR_REQUIRES_VERDICT} before this run. "At least one" rather
+ * than "all", deliberately: a radius can hold one regressed promise beside one that
+ * was never proven, and restoring the regression is legitimate work that the second
+ * promise's history has no standing to forbid. The fence is glob-scoped to fixture
+ * source either way, so the grant widens nothing beyond the one branch that already
+ * had it.
+ *
+ * Total, and `false` for every branch that is not `code-break` — those never had
+ * automatic autonomy to grant.
+ */
+export function grantsAutomaticRepair(
+  branch: RepairBranch | null,
+  results: readonly HandoffResult[],
+): boolean {
+  if (branch !== 'code-break') return false;
+  return results.some(
+    (result) =>
+      result.repair?.branch === 'code-break' &&
+      result.previousVerdict === AUTOMATIC_REPAIR_REQUIRES_VERDICT,
+  );
+}
+
+/**
+ * The fence this run actually hands back: {@link fenceFor} for every branch, except
+ * a `code-break` whose promises KEPT has never proven, which gets
+ * {@link UNPROVEN_CODE_BREAK_FENCE}.
+ *
+ * This is the single site the handoff reads, so the condition cannot be forgotten by
+ * a second caller — and `fenceFor` stays exactly what §8.1's table says, so a test
+ * can still assert the table without knowing about the gate.
+ */
+export function fenceForResults(
+  branch: RepairBranch | null,
+  results: readonly HandoffResult[],
+): HandoffFence {
+  if (branch === 'code-break' && !grantsAutomaticRepair(branch, results)) {
+    return UNPROVEN_CODE_BREAK_FENCE;
+  }
+  return fenceFor(branch);
 }
 
 /**
@@ -402,6 +532,17 @@ export interface HandoffResult {
   readonly designedTest: string | null;
   readonly memberStatus: MemberEndStatus | null;
   readonly verdict: Verdict;
+  /**
+   * The verdict this promise carried **before** this run — the graph record's own,
+   * which is what makes `code-break` autonomy decidable (§8.1.1,
+   * {@link grantsAutomaticRepair}).
+   *
+   * Recorded on every result, not only failing ones, because it is also the only
+   * thing in the file that says whether `verdict` is a *transition*. A judge reading
+   * `/runs` can see `proven → red` and `stale → red` as the different events they
+   * are, and the second one is the one no agent may patch.
+   */
+  readonly previousVerdict: Verdict;
   readonly citation: Citation;
   /** The router's answer, stored unchanged — `RoutedRepair` is `RepairAnnotation`. */
   readonly repair: RoutedRepair | null;
@@ -471,6 +612,14 @@ export interface HandoffResultInput {
   readonly memberStatus?: MemberEndStatus | null;
   /** The verdict this run produced. Defaults to the record's current verdict. */
   readonly verdict?: Verdict;
+  /**
+   * The verdict the promise held before this run. Defaults to the supplied record's
+   * own, which is the right answer for every caller that loads state before it
+   * writes — `runVerify` routes off `prior.graph.promises`, so the record it passes
+   * *is* the pre-run one. Stating it explicitly is for tests and for any future
+   * caller that has already mutated its copy.
+   */
+  readonly previousVerdict?: Verdict;
   /** The router's answer. Defaults to the record's existing annotation. */
   readonly repair?: RoutedRepair | null;
   /** The raw wire `verdict` object; normalised here. Absent is fine. */
@@ -584,6 +733,8 @@ function resultOf(input: HandoffResultInput): HandoffResult {
     designedTest: designed?.path ?? null,
     memberStatus: input.memberStatus ?? promise.verdictSource?.memberStatus ?? null,
     verdict: input.verdict ?? promise.verdict,
+    // The record is the pre-run one, so its own verdict is the previous verdict.
+    previousVerdict: input.previousVerdict ?? promise.verdict,
     citation: promise.citation,
     repair: input.repair ?? promise.repair ?? null,
     verdictObject: verdictObjectOf(input.verdictObject),
@@ -706,7 +857,10 @@ export function buildHandoff<F extends CommandFamily = CommandFamily>(
 
   const results = Object.freeze((request.results ?? []).map(resultOf));
   const branch = branchOf(run, results);
-  const fence = fenceFor(branch);
+  // §8.1.1: `code-break` keeps its branch and loses its write path when KEPT has
+  // never proven the promise it would repair. `fenceForResults` is the only site
+  // that decides it, so a second caller cannot forget the condition.
+  const fence = fenceForResults(branch, results);
 
   const nextAction: HandoffNextAction = {
     branch,
@@ -773,6 +927,34 @@ export function buildHandoff<F extends CommandFamily = CommandFamily>(
         );
       }
     }
+  }
+
+  // ── §8.1.1: every code-break on a never-proven promise, named. ──────────────
+  //
+  // Reported per promise and independently of whether the grant happened overall,
+  // because a radius can hold one regression beside one never-proven promise and
+  // the useful record is which was which. Reported *after* the null-branch block so
+  // an unauthorised run still leads with the reason it was unauthorised.
+  for (const result of results) {
+    if (result.repair?.branch !== 'code-break') continue;
+    if (result.previousVerdict === AUTOMATIC_REPAIR_REQUIRES_VERDICT) continue;
+    diagnostics.push(
+      sink.report({
+        code: HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven,
+        severity: 'warn',
+        message:
+          `promise ${result.promiseId} routed 'code-break' and KEPT has never proven it — its ` +
+          `verdict before this run was '${result.previousVerdict}', not ` +
+          `'${AUTOMATIC_REPAIR_REQUIRES_VERDICT}'. There is no observed earlier state to ` +
+          `restore, so an automatic patch would implement the claim rather than repair a ` +
+          `regression, and no path is authorised for it` +
+          `${branch === 'code-break' && nextAction.allowedPaths.length > 0
+            ? ' — though another promise in this radius was proven, so the run does carry a write fence'
+            : ''}.`,
+        file: result.citation.file,
+        line: result.citation.line,
+      }),
+    );
   }
 
   return Object.freeze({
@@ -1058,6 +1240,13 @@ function isResultBlock(value: unknown): boolean {
   if (!isNullableString(block['designedTest'])) return false;
   if (!isNullableString(block['memberStatus'])) return false;
   if (!isVerdict(block['verdict'])) return false;
+  // Optional in the validator and required in the type, deliberately: handoffs
+  // written before §8.1.1 existed carry no key, and refusing to read those would
+  // make an old run entry unparseable rather than merely older. A present value
+  // must still be a real verdict.
+  if (block['previousVerdict'] !== undefined && !isVerdict(block['previousVerdict'])) {
+    return false;
+  }
   const citation = block['citation'];
   if (typeof citation !== 'object' || citation === null) return false;
   const cited = citation as Record<string, unknown>;

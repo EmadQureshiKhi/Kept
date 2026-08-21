@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AUTOMATIC_REPAIR_REQUIRES_VERDICT,
   BRANCH_FENCES,
   FIXTURE_DOC_GLOBS,
   FIXTURE_SOURCE_GLOBS,
@@ -13,11 +14,14 @@ import {
   NEXT_ACTION_BRANCH_PRECEDENCE,
   REPAIR_BRANCHES,
   TEST_CORPUS_GLOBS,
+  UNPROVEN_CODE_BREAK_FENCE,
   buildHandoff,
   contractFor,
   createPromiseRecord,
   exitMeaning,
   fenceFor,
+  fenceForResults,
+  grantsAutomaticRepair,
   handoffArchiveFileName,
   handoffPaths,
   inMemoryStateFileSystem,
@@ -35,6 +39,7 @@ import {
   type RepairBranch,
   type RoutedRepair,
   type RunOutcome,
+  type Verdict,
 } from '@kept/core';
 
 /**
@@ -158,11 +163,26 @@ const LISTING: EvidenceListing = {
   packIds: ['ev_20260820T184011Z'],
 };
 
-function resultInput(branch: RepairBranch): HandoffResultInput {
+/**
+ * One result, on a promise KEPT had **proven** before this run unless told
+ * otherwise.
+ *
+ * `proven` is the honest default because that is what design §11.2's example
+ * actually is: a save on `apps/fixture/lib/cart.ts` reddening T-3, the subtotal
+ * promise the committed snapshot has already proven. It also matters — §8.1.1 grants
+ * automatic repair only to restore behaviour KEPT has observed, so a helper that
+ * quietly defaulted to `stale` would have every `code-break` assertion in this file
+ * measuring the withheld fence instead of the granted one.
+ */
+function resultInput(
+  branch: RepairBranch,
+  previousVerdict: Verdict = 'proven',
+): HandoffResultInput {
   return {
     promise: promiseOf(),
     memberStatus: 'failed',
     verdict: 'red',
+    previousVerdict,
     repair: repairOf(branch),
     verdictObject: {
       confirmed: true,
@@ -253,6 +273,160 @@ describe('the handoff fence is by branch (design §8.1, §11.2, R7.1)', () => {
     // `code-break` first: it is the branch whose save re-fires the hook, and it is
     // also the narrowest fence, so preferring it grants nothing extra.
     expect(NEXT_ACTION_BRANCH_PRECEDENCE[0]).toBe('code-break');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §8.1.1 — you cannot break what was never proven to work
+// ---------------------------------------------------------------------------
+
+/**
+ * The one condition on automatic repair, and the measurement it answers.
+ *
+ * Kane's triage category is the only product-fault evidence that reaches KEPT, and
+ * it cannot separate a regression from a claim that was never true: Kane reads the
+ * test document as the specification, so the fixture's deliberately never-true
+ * discount claim earns `application_issue/ui_data_defect` — the *same* category the
+ * genuinely broken `subtotal` earns. Both facts are read off committed packs; three
+ * packs and six live runs have produced four different answers for one unchanged
+ * failure.
+ *
+ * So autonomy is gated on the thing KEPT knows and Kane cannot: whether KEPT itself
+ * ever proved the promise. The branch is untouched — the router keeps reporting what
+ * R6.3, R6.4 and R6.5 require, and the Ledger keeps publishing it — and only the
+ * write path is withheld.
+ */
+describe('automatic repair is granted only to restore a proven promise (§8.1.1)', () => {
+  const proven = () =>
+    buildHandoff({
+      runId: 'tr_regression',
+      at: AT,
+      run: testrunOutcome(),
+      results: [resultInput('code-break', 'proven')],
+    });
+
+  it('grants the fixture-source fence when the promise was proven and is now red', () => {
+    const handoff = proven();
+    expect(handoff.nextAction.branch).toBe('code-break');
+    expect(handoff.nextAction.autonomy).toBe('apply');
+    expect(handoff.nextAction.artefact).toBe('patch');
+    expect(handoff.nextAction.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(
+      handoff.diagnostics.map((entry) => entry.code),
+    ).not.toContain(HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven);
+  });
+
+  it('withholds it on every prior verdict that is not proven, branch intact', () => {
+    for (const previous of ['stale', 'red', 'undesigned'] as const) {
+      const handoff = buildHandoff({
+        runId: `tr_unproven_${previous}`,
+        at: AT,
+        run: testrunOutcome(),
+        results: [resultInput('code-break', previous)],
+      });
+
+      // The branch is what Kane concluded, and it is still published as such.
+      expect(handoff.nextAction.branch).toBe('code-break');
+      expect(handoff.results[0]?.repair?.branch).toBe('code-break');
+
+      // What is withheld is the write path, and nothing else.
+      expect(handoff.nextAction.autonomy).toBe('hold');
+      expect(handoff.nextAction.artefact).toBeNull();
+      expect(handoff.nextAction.allowedPaths).toEqual([]);
+      expect(handoff.nextAction.command).toBeNull();
+      expect(handoff.nextAction.instruction).toContain('never proven this promise');
+
+      // And it is never silent: the promise, its prior verdict and the reason.
+      const named = handoff.diagnostics.filter(
+        (entry) => entry.code === HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven,
+      );
+      expect(named).toHaveLength(1);
+      expect(named[0]?.message).toContain(previous);
+      expect(named[0]?.file).toBe('apps/fixture/README.md');
+    }
+  });
+
+  it('withholds nothing from the two branches that never had a write path', () => {
+    // The gate is scoped to `code-break` by construction, so a never-proven
+    // promise on either held branch is byte-identical to a proven one.
+    for (const branch of ['test-drift', 'docs-lie'] as const) {
+      const held = buildHandoff({
+        runId: `tr_held_${branch}`,
+        at: AT,
+        run: testrunOutcome(),
+        results: [resultInput(branch, 'stale')],
+      });
+      expect(held.nextAction.branch).toBe(branch);
+      expect(held.nextAction.autonomy).toBe(fenceFor(branch).autonomy);
+      expect(held.nextAction.artefact).toBe(fenceFor(branch).artefact);
+      expect(held.nextAction.allowedPaths).toEqual([]);
+      expect(grantsAutomaticRepair(branch, held.results)).toBe(false);
+    }
+  });
+
+  it('grants the fence when one promise in the radius was proven and another was not', () => {
+    // A radius can hold a regression beside a promise nobody ever proved.
+    // Restoring the regression is legitimate work that the second promise's
+    // history has no standing to forbid — and the second promise is still named.
+    const mixed = buildHandoff({
+      runId: 'tr_mixed',
+      at: AT,
+      run: testrunOutcome(),
+      results: [
+        resultInput('code-break', 'stale'),
+        {
+          ...resultInput('code-break', 'proven'),
+          promise: promiseOf({ citation: { file: 'apps/fixture/README.md', line: 20, text: CLAIM } }),
+        },
+      ],
+    });
+    expect(mixed.nextAction.autonomy).toBe('apply');
+    expect(mixed.nextAction.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(
+      mixed.diagnostics.filter(
+        (entry) => entry.code === HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('only ever narrows: the withheld row allows nothing the granted row forbade', () => {
+    // The whole safety argument depends on this direction. `fenceFor` still says
+    // exactly what §8.1's table says, so the table is assertable without the gate.
+    expect(UNPROVEN_CODE_BREAK_FENCE.allowedPaths).toEqual([]);
+    expect(fenceFor('code-break').allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    for (const glob of fenceFor('code-break').forbiddenPaths) {
+      expect(UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths).toContain(glob);
+    }
+    // Every source glob the granted row allowed is forbidden by the withheld one.
+    for (const glob of FIXTURE_SOURCE_GLOBS) {
+      expect(UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths).toContain(glob);
+    }
+    expect(UNPROVEN_CODE_BREAK_FENCE.allowedPaths).not.toContain(
+      UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths[0],
+    );
+  });
+
+  it('names the prior verdict that earns the grant, once', () => {
+    expect(AUTOMATIC_REPAIR_REQUIRES_VERDICT).toBe('proven');
+    // `fenceForResults` is the only site that decides it, and it agrees with the
+    // predicate for every branch and both histories.
+    for (const branch of [...REPAIR_BRANCHES, null]) {
+      for (const previous of ['proven', 'stale'] as const) {
+        const results = branch === null ? [] : [resultInput(branch, previous)];
+        const built = buildHandoff({
+          runId: 'tr_agreement',
+          at: AT,
+          run: testrunOutcome(),
+          results,
+        });
+        const expected = grantsAutomaticRepair(branch, built.results)
+          ? fenceFor(branch)
+          : branch === 'code-break'
+            ? UNPROVEN_CODE_BREAK_FENCE
+            : fenceFor(branch);
+        expect(fenceForResults(branch, built.results)).toEqual(expected);
+      }
+    }
   });
 });
 
@@ -544,6 +718,14 @@ describe('a proven failing run produces the instruction of design §11.2', () =>
     expect(handoff.nextAction.command).toBeNull();
     expect(handoff.diagnostics).toEqual([]);
     expect(handoff.blastRadius.testIds).toEqual(['T-3']);
+  });
+
+  it('records the transition, not just the verdict it landed on', () => {
+    // §8.1.1 needs the previous verdict, and `/runs` wants it for the same reason:
+    // `proven → red` and `stale → red` are different events, and only the first one
+    // is a regression an agent may patch.
+    expect(handoff.results[0]?.previousVerdict).toBe('proven');
+    expect(handoff.results[0]?.verdict).toBe('red');
   });
 
   it('hands back the evolve command on test-drift and the amend command on docs-lie', () => {

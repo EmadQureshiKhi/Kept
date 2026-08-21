@@ -1487,3 +1487,39 @@ export {
   sealedNoteFor,
   testIdFromResultManifest,
 } from './kane/packTriage.js';
+
+// The one condition on automatic repair — design §8.1.1, and the answer to the
+// question §6.3's signal table cannot answer.
+//
+// `code-break` is the only branch that hands an agent a write path, and the only
+// evidence of a product fault that survives to KEPT is the category in Kane's sealed
+// triage note. That category cannot carry the distinction the branch needs, because
+// **Kane treats the test document as the specification**: for the fixture's
+// deliberately never-true discount claim it reports `application_issue/ui_data_defect`
+// with a suggested fix that reads "check the cart's discount calculation" — correct on
+// its own terms about a discount the cart never applies, and identical to the category
+// it gives the genuinely broken `subtotal`. One token, two opposite meanings, and no
+// third token meaning "the claim is false", because from where Kane stands the claim
+// is the spec. Measured across three committed packs and six live runs, one unchanged
+// failure has drawn four different answers.
+//
+// The discriminator KEPT has and Kane cannot is the promise's own **prior verdict**.
+// `proven` means KEPT itself witnessed the behaviour, with a terminal event and a
+// sealed pack behind it, so red is a regression and restoring it is exactly what
+// `code-break` authorises. A promise never `proven` has no such witness: nothing
+// established it worked, so nothing broke. **You cannot break what was never proven to
+// work** — which is also the difference between an agent restoring a `subtotal` and an
+// agent implementing a discount nobody designed.
+//
+// It is a *fence*, not a branch. The router keeps returning what R6.3, R6.4 and R6.5
+// require, and the Ledger keeps publishing Kane's actual conclusion; what is withheld
+// is autonomy, which is §8.1's own column. `fenceForResults` is the single site that
+// decides it, so the condition cannot be forgotten by a second caller, and the row it
+// returns only ever **narrows** — `allowedPaths` empties and nothing is added, so
+// Property 26's containment holds more strictly than before.
+export {
+  AUTOMATIC_REPAIR_REQUIRES_VERDICT,
+  UNPROVEN_CODE_BREAK_FENCE,
+  fenceForResults,
+  grantsAutomaticRepair,
+} from './handoff/handoff.js';

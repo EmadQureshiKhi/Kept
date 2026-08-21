@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AUTOMATIC_REPAIR_REQUIRES_VERDICT,
   BRANCH_FENCES,
   FIXTURE_DOC_GLOBS,
   FIXTURE_SOURCE_GLOBS,
@@ -11,11 +12,14 @@ import {
   REPAIR_BRANCHES,
   REPAIR_STRATEGIES,
   TEST_CORPUS_GLOBS,
+  UNPROVEN_CODE_BREAK_FENCE,
   WRITE_PERMITTING_EXIT_MEANINGS,
   buildHandoff,
   contractFor,
   exitMeaning,
   fenceFor,
+  fenceForResults,
+  grantsAutomaticRepair,
   handoffPaths,
   inMemoryStateFileSystem,
   isHandoffFile,
@@ -193,6 +197,11 @@ const arbResultInput: fc.Arbitrary<HandoffResultInput> = fc.record({
   promise: arbPromise,
   memberStatus: arbNarrowMemberStatus,
   verdict: arbVerdict,
+  // Drawn independently of `verdict`, and named rather than left to default off the
+  // promise record, because §8.1.1 turns on it: a generator that only ever produced
+  // one history would leave the withheld `code-break` fence — or the granted one —
+  // unreached, and the fence clause below would be quantifying over nothing.
+  previousVerdict: arbVerdict,
   repair: fc.option(arbRepair, { nil: null }),
   verdictObject: fc.option(arbVerdictObject, { nil: null }),
   evidence: fc.option(arbEvidenceListing, { nil: null }),
@@ -361,7 +370,10 @@ describe('Feature: kept, Property 26: The handoff file is complete for every run
 
           // It states a next action, always — and a null branch always carries a
           // reason, so the agent never has to infer silence.
-          const fence = fenceFor(handoff.nextAction.branch);
+          // `fenceForResults`, not `fenceFor`: §8.1.1 withholds `code-break`'s write
+          // path when KEPT never proved the promise, and the file is built from the
+          // conditional row. `fenceFor` remains §8.1's table, unconditionally.
+          const fence = fenceForResults(handoff.nextAction.branch, handoff.results);
           expect(handoff.nextAction.allowedPaths).toEqual(fence.allowedPaths);
           expect(handoff.nextAction.forbiddenPaths).toEqual(fence.forbiddenPaths);
           expect(handoff.nextAction.autonomy).toBe(fence.autonomy);
@@ -547,6 +559,35 @@ describe('Feature: kept, Property 26 (fencing clause): a code-break repair reach
     );
   });
 
+  it('reaches both sides of the §8.1.1 grant, so the fence clause quantifies over both', () => {
+    // A property that only ever drew one history would assert the conditional row
+    // against itself and pass while testing half the rule. This walks the generator
+    // and requires each side to be reached, the same way the other generator
+    // meta-tests in this plan do.
+    const outcomes: { granted: number; withheld: number } = { granted: 0, withheld: 0 };
+    fc.assert(
+      fc.property(fc.constantFrom(...REPAIR_BRANCHES), arbResultInput, (branch, input) => {
+        const lines = [JSON.stringify({ type: 'testrun_done', status: 'failed' })];
+        const handoff = buildHandoff({
+          runId: 'run_reach',
+          at: '2026-08-20T18:40:11.000Z',
+          run: {
+            runId: 'run_reach',
+            exitMeaning: exitMeaning('ExecutionTestrun', 1, false),
+            stream: parseStream(contractFor('ExecutionTestrun'), lines),
+          },
+          results: [{ ...input, repair: { ...arbRepairSeed(branch) } }],
+        });
+        if (branch !== 'code-break') return;
+        if (handoff.nextAction.allowedPaths.length > 0) outcomes.granted += 1;
+        else outcomes.withheld += 1;
+      }),
+      { numRuns: NUM_RUNS },
+    );
+    expect(outcomes.granted).toBeGreaterThan(0);
+    expect(outcomes.withheld).toBeGreaterThan(0);
+  });
+
   it('names the required globs on code-break, and never a path in both sets', () => {
     const fence = fenceFor('code-break');
     expect(fence.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
@@ -584,10 +625,35 @@ describe('Feature: kept, Property 26 (fencing clause): a code-break repair reach
           });
 
           expect(handoff.nextAction.branch).toBe(branch);
-          expect(handoff.nextAction.allowedPaths).toEqual(BRANCH_FENCES[branch].allowedPaths);
-          expect(handoff.nextAction.forbiddenPaths).toEqual(BRANCH_FENCES[branch].forbiddenPaths);
-          expect(handoff.nextAction.autonomy).toBe(BRANCH_FENCES[branch].autonomy);
-          expect(handoff.nextAction.artefact).toBe(BRANCH_FENCES[branch].artefact);
+
+          // §8.1.1: the table is what a *granted* branch gets, and `code-break` is
+          // granted only when KEPT had proven the promise it would repair. The
+          // generated input carries whichever history it drew, so the expected row
+          // is read off the same predicate the builder uses rather than assumed —
+          // which is what makes this clause a statement about the rule instead of
+          // about the generator.
+          const expected = grantsAutomaticRepair(branch, handoff.results)
+            ? BRANCH_FENCES[branch]
+            : branch === 'code-break'
+              ? UNPROVEN_CODE_BREAK_FENCE
+              : BRANCH_FENCES[branch];
+          expect(handoff.nextAction.allowedPaths).toEqual(expected.allowedPaths);
+          expect(handoff.nextAction.forbiddenPaths).toEqual(expected.forbiddenPaths);
+          expect(handoff.nextAction.autonomy).toBe(expected.autonomy);
+          expect(handoff.nextAction.artefact).toBe(expected.artefact);
+
+          // And the direction the safety argument depends on: a write path exists
+          // only for a `code-break` restoring something KEPT observed working.
+          if (handoff.nextAction.allowedPaths.length > 0) {
+            expect(branch).toBe('code-break');
+            expect(
+              handoff.results.some(
+                (result) =>
+                  result.repair?.branch === 'code-break' &&
+                  result.previousVerdict === AUTOMATIC_REPAIR_REQUIRES_VERDICT,
+              ),
+            ).toBe(true);
+          }
 
           // `code-break` is an edit, so there is no command. The other two are a
           // command the agent runs and then stops — the exact invocation §11.1's
