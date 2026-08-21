@@ -64,6 +64,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 
 import LedgerPage from '../app/page.js';
 import { playGraphEntrance } from '../components/GraphEntrance.js';
+import { countUpDigitRun, playMetricCountUp } from '../components/MetricCountUp.js';
+import { countDigits } from '../components/MetricFigure.js';
 import { playPanelStagger } from '../components/PanelStagger.js';
 import { PromisePanel } from '../components/PromisePanel.js';
 import { playVerdictFlip } from '../components/VerdictFlip.js';
@@ -80,7 +82,7 @@ import {
   stopObservingMotionPreference,
   type MotionSpec,
 } from '../lib/motion.js';
-import { formatMetricFigure } from '../lib/metricRail.js';
+import { METRIC_RAIL_CLASSES, formatMetricFigure, percentDigits } from '../lib/metricRail.js';
 import { snapshot } from '../lib/snapshot.js';
 
 import { installBrowserShims } from './_dom.js';
@@ -277,6 +279,42 @@ const ORCHESTRATIONS: readonly Orchestration[] = [
       expect(nodes.length, 'no promise node to enter, so M4 was not driven at all')
         .toBeGreaterThan(0);
       await playGraphEntrance(container);
+    },
+  },
+  {
+    /**
+     * M2 — the metric count-up (§10.6.2). Driven over the rail of the real page, one
+     * figure at a time, because that is the orchestration's unit: a tile has a figure or
+     * it does not. Two of the four members have one today — the degraded chip replaces
+     * proven coverage and carries a word instead of digits, and a withheld ratio carries
+     * `n/a` — so the count is asserted rather than assumed, and the tiles that decline are
+     * the point of the assertion as much as the ones that count.
+     */
+    site: 'apps/ledger/components/MetricCountUp.tsx',
+    drive: async (container) => {
+      const figures = [...container.querySelectorAll<HTMLElement>('[data-metric] [role="img"]')];
+      expect(figures.length, 'no metric figure to count, so M2 was not driven at all')
+        .toBeGreaterThan(0);
+      let counted = 0;
+      for (const figure of figures) {
+        const digits = countUpDigitRun(figure);
+        if (digits === null) continue;
+        /* The figure to count to is read from the accessible name, not from the digit run.
+           The name is the *final* value from first paint and never moves (§10.6.2); the
+           digit run may be mid-count, because the mount effect has already started one. A
+           driver that read the digits would count to whatever frame it happened to catch. */
+        const label = figure.getAttribute('aria-label') ?? '';
+        const unit = figure.querySelector(`.${METRIC_RAIL_CLASSES.unit}`);
+        const format = unit === null ? countDigits : percentDigits;
+        const to = Number(label.replace('%', ''));
+        if (!Number.isInteger(to) || to <= 0) continue;
+        await playMetricCountUp(figure, { to, format });
+        expect(figure.getAttribute('aria-label'), 'the count-up rewrote the name').toBe(label);
+        expect(digits.textContent, 'the count-up did not land on its end state').toBe(format(to));
+        counted += 1;
+      }
+      expect(counted, 'every tile declined to count, so M2 was not driven at all')
+        .toBeGreaterThan(0);
     },
   },
   {

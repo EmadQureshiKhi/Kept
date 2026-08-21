@@ -28,16 +28,29 @@
  *    counted twice upstream, and rendering `100%` for it would hide exactly the
  *    kind of dishonest number the product exists to refuse (R9.3).
  *
- * Server component: no hooks, no handlers, no client boundary.
+ * **Motion (§10.6.2, task 17.7).** M2 counts the digit run up from 0 through
+ * `useMetricCountUp`, which is why this is a client component: the count-up needs the
+ * rendered element, and the element is this one. Everything above still holds while it
+ * runs — the `%`, the alignment and the accessible name are untouched, and the digits
+ * are formatted every frame by {@link countUpFor}'s formatter, which is the formatter
+ * the markup below renders from. Deleting `MetricCountUp.tsx` (§18.1 drops M2 second)
+ * leaves this component rendering exactly what it renders today.
  */
 
+'use client';
+
 import clsx from 'clsx';
+import { useRef } from 'react';
 
 import {
   METRIC_RAIL_CLASSES,
   formatMetricFigure,
   metricFigureParts,
+  percentDigits,
+  wholePercent,
 } from '../lib/metricRail.js';
+
+import { useMetricCountUp, type CountUpFigure } from './MetricCountUp.js';
 
 import '../styles/metric-rail.css';
 
@@ -76,6 +89,28 @@ export function metricFigureLabel(value: MetricValue): string {
   return value.kind === 'coverage' ? formatMetricFigure(value.ratio) : countDigits(value.value);
 }
 
+/**
+ * What M2 counts to for this value, and the formatter it counts through — or `null` when
+ * there is nothing to count (§10.6.2, task 17.7).
+ *
+ * `null` for a withheld ratio, because `n/a` is not a number (R9.3), and `null` for zero,
+ * because counting `0 → 0` is a figure pretending to move. The formatters are the two the
+ * markup below renders from: `percentDigits` for a percentage, `countDigits` for a count.
+ * That shared choice is what makes the count-up's final frame character-identical to the
+ * static render rather than merely equal-looking.
+ */
+export function countUpFor(value: MetricValue): CountUpFigure | null {
+  if (value.kind === 'count') {
+    /* no range check here: the markup below renders through `countDigits`, which refuses a
+       fraction or a negative, so a bad count is a throw at render rather than a count-up
+       over a nonsense range */
+    return value.value === 0 ? null : { to: value.value, format: countDigits };
+  }
+  if (value.ratio === null) return null;
+  const whole = wholePercent(value.ratio);
+  return whole === 0 ? null : { to: whole, format: percentDigits };
+}
+
 export interface MetricFigureProps {
   readonly value: MetricValue;
   readonly className?: string;
@@ -93,10 +128,16 @@ export interface MetricFigureProps {
 export function MetricFigure({ value, className }: MetricFigureProps) {
   const label = metricFigureLabel(value);
 
+  /* M2 (§10.6.2): the digit run counts up from 0; the name above it is already final. The
+     ref exists for that and for nothing else. */
+  const figure = useRef<HTMLParagraphElement | null>(null);
+  useMetricCountUp(figure, countUpFor(value));
+
   return (
     <p
       aria-label={label}
       className={clsx(METRIC_RAIL_CLASSES.figure, className)}
+      ref={figure}
       role="img"
     >
       {value.kind === 'count' ? (
