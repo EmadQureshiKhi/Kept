@@ -17,6 +17,7 @@
     "loop": "node bin/kept verify --all --member-debug",
     "build:snapshot": "node bin/kept build && node bin/kept snapshot",
     "test": "vitest --run",
+    "diagrams": "bash tools/build-diagrams.sh",
     "typecheck:fixture": "tsc -p apps/fixture",
     "typecheck:ledger": "tsc -p apps/ledger",
     "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && npm run typecheck:ledger && vitest --run"

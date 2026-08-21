@@ -84,3 +84,11 @@ build/
 # these files with zero Kane invocations, so they are committed (R13.4, R13.5).
 !apps/ledger/public/evidence/
 !apps/ledger/data/ledger.snapshot.json
+
+# Diagram rasters: regenerable with tools/build-diagrams.sh, and the SVGs are the
+# tracked deliverable the README renders. Kept out of git as diagram rasters.
+Assets/kept-architecture.png
+Assets/kept-three-contracts.png
+Assets/kept-verify-path.png
+Assets/kept-repair-branches.png
+Assets/kept-promise-lifecycle.png
