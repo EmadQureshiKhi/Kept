@@ -1,6 +1,5 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { deflateRawSync } from 'node:zlib';
 
 import type { PromiseRecord } from '@kept/core';
 import {
@@ -13,6 +12,8 @@ import {
 } from '@kept/core';
 import { describe, expect, it } from 'vitest';
 
+import { PACK_SLUG, bytesOf, realisticPack, zipOf } from '../../kept-core/test/pack-archive.js';
+
 import { deriveEdges } from '../src/graph.js';
 import { SNAPSHOT_DIAGNOSTIC_CODES } from '../src/snapshot.js';
 import type { CurationFileSystem } from '../src/commands/snapshot.js';
@@ -24,7 +25,6 @@ import {
   SNAPSHOT_COMMAND_DIAGNOSTIC_CODES,
   archiveNamesFor,
   curateEvidencePacks,
-  readPackEntries,
   referencedPackIds,
   runSnapshot,
 } from '../src/commands/snapshot.js';
@@ -57,136 +57,7 @@ const REPO = '/repo';
 const DOC = 'apps/fixture/README.md';
 const AT = '2026-08-20T12:00:00.000Z';
 const PACK = 'ev_20260821T0736Z';
-const SLUG = 'tests/cart-discount-27eaa1da';
-
-/* ───────────────────────── a zip archive, byte by byte ───────────────────────── */
-
-interface PlannedEntry {
-  readonly name: string;
-  readonly bytes: Uint8Array;
-  /** 0 = stored, 8 = deflate. Kane's packs use both. */
-  readonly method: 0 | 8;
-}
-
-function bytesOf(text: string): Uint8Array {
-  return new Uint8Array(Buffer.from(text, 'utf8'));
-}
-
-function u16(value: number): Uint8Array {
-  return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
-}
-
-function u32(value: number): Uint8Array {
-  return new Uint8Array([
-    value & 0xff,
-    (value >>> 8) & 0xff,
-    (value >>> 16) & 0xff,
-    (value >>> 24) & 0xff,
-  ]);
-}
-
-function concat(parts: readonly Uint8Array[]): Uint8Array {
-  const total = parts.reduce((sum, part) => sum + part.length, 0);
-  const out = new Uint8Array(total);
-  let at = 0;
-  for (const part of parts) {
-    out.set(part, at);
-    at += part.length;
-  }
-  return out;
-}
-
-/**
- * A single-disk zip archive holding exactly the planned entries.
- *
- * Deliberately hand-rolled: the point of the reader under test is that it needs
- * no unzip dependency, and a test that reached for one to build its input would
- * be asserting the dependency's agreement with itself.
- */
-function zipOf(planned: readonly PlannedEntry[]): Uint8Array {
-  const locals: Uint8Array[] = [];
-  const centrals: Uint8Array[] = [];
-  let offset = 0;
-
-  for (const entry of planned) {
-    const name = bytesOf(entry.name);
-    const payload =
-      entry.method === 8 ? new Uint8Array(deflateRawSync(entry.bytes)) : entry.bytes;
-    const local = concat([
-      u32(0x04034b50),
-      u16(20),
-      u16(0),
-      u16(entry.method),
-      u16(0),
-      u16(0),
-      u32(0),
-      u32(payload.length),
-      u32(entry.bytes.length),
-      u16(name.length),
-      u16(0),
-      name,
-      payload,
-    ]);
-    locals.push(local);
-    centrals.push(
-      concat([
-        u32(0x02014b50),
-        u16(20),
-        u16(20),
-        u16(0),
-        u16(entry.method),
-        u16(0),
-        u16(0),
-        u32(0),
-        u32(payload.length),
-        u32(entry.bytes.length),
-        u16(name.length),
-        u16(0),
-        u16(0),
-        u16(0),
-        u16(0),
-        u32(0),
-        u32(offset),
-        name,
-      ]),
-    );
-    offset += local.length;
-  }
-
-  const directory = concat(centrals);
-  return concat([
-    concat(locals),
-    directory,
-    u32(0x06054b50),
-    u16(0),
-    u16(0),
-    u16(planned.length),
-    u16(planned.length),
-    u32(directory.length),
-    u32(offset),
-    u16(0),
-  ]);
-}
-
-/** A pack in the real shape: two curated kinds, and bulk that must not be copied. */
-function realisticPack(): Uint8Array {
-  return zipOf([
-    { name: `${SLUG}/steps/`, bytes: new Uint8Array(0), method: 0 },
-    { name: `${SLUG}/steps/8-2-3/annotated.png`, bytes: bytesOf('annotated-capture'), method: 8 },
-    { name: `${SLUG}/steps/8-2-3/screenshot.jpg`, bytes: bytesOf('step-8-shot'), method: 8 },
-    { name: `${SLUG}/steps/9-2-4/screenshot.jpg`, bytes: bytesOf('step-9-shot'), method: 0 },
-    {
-      name: `${SLUG}/steps/15-4-3/failure.yaml`,
-      bytes: bytesOf('triage:\n  rca:\n    category: application_issue/ui_data_defect\n'),
-      method: 8,
-    },
-    { name: `${SLUG}/logs/0-network.har`, bytes: bytesOf('x'.repeat(4096)), method: 8 },
-    { name: `${SLUG}/logs/0-run.log`, bytes: bytesOf('runner noise'), method: 8 },
-    { name: `${SLUG}/auteur/execution.json`, bytes: bytesOf('{"big":true}'), method: 8 },
-    { name: `${SLUG}/v16-trajectory/0-run_summary.json`, bytes: bytesOf('{}'), method: 8 },
-    { name: 'run.yaml', bytes: bytesOf('broken: 1\nfailed: 0\n'), method: 8 },
-  ]);
-}
+const SLUG = PACK_SLUG;
 
 /** A curation filesystem over a map, so nothing in this suite touches disk. */
 function curationFs(
@@ -235,68 +106,6 @@ function stateOf(promises: readonly PromiseRecord[]) {
     }),
   });
 }
-
-/* ──────────────────────────────── the zip reader ─────────────────────────────── */
-
-describe('reading a sealed pack, which is a zip file and not a directory', () => {
-  it('reads stored and deflated entries alike, and skips directory entries', () => {
-    const entries = readPackEntries(realisticPack());
-    expect(entries.map((entry) => entry.name)).not.toContain(`${SLUG}/steps/`);
-    const shot = entries.find((entry) => entry.name.endsWith('9-2-4/screenshot.jpg'));
-    const annotated = entries.find((entry) => entry.name.endsWith('annotated.png'));
-    expect(Buffer.from(shot?.bytes ?? new Uint8Array()).toString('utf8')).toBe('step-9-shot');
-    expect(Buffer.from(annotated?.bytes ?? new Uint8Array()).toString('utf8')).toBe(
-      'annotated-capture',
-    );
-  });
-
-  it('refuses anything that is not an archive, by name rather than half-read', () => {
-    expect(() => readPackEntries(bytesOf('this is a png, not a zip'))).toThrow(
-      /not a zip archive/,
-    );
-  });
-
-  it('refuses a truncated archive rather than publishing a corrupt artefact', () => {
-    const whole = realisticPack();
-    // Keep the end record so the directory is found, then cut the data out from
-    // under it: the failure must be diagnosed, not decoded into garbage.
-    const cut = concat([whole.subarray(0, 8), whole.subarray(64)]);
-    expect(() => readPackEntries(cut)).toThrow();
-  });
-});
-
-describe('the reader against real Kane bytes, when this machine has any', () => {
-  /**
-   * The one assertion that cannot be committed as a fixture.
-   *
-   * `.testmuai/evidence/` is gitignored — the packs are one to three megabytes
-   * each — so on a clone there is nothing here to read and this test says so
-   * rather than passing quietly on a synthetic input it has already covered
-   * above. On the machine that authored the corpus it reads a genuine sealed pack
-   * and proves the reader against Kane's own bytes, which is the only place the
-   * archive's real compression, entry order and nesting are exercised.
-   */
-  const sealedDir = fileURLToPath(new URL('../../../.testmuai/evidence/', import.meta.url));
-  let archives: string[] = [];
-  try {
-    archives = readdirSync(sealedDir)
-      .filter((name) => name.endsWith('.evidence'))
-      .map((name) => `${sealedDir}${name}`)
-      .filter((path) => statSync(path).isFile())
-      .sort();
-  } catch {
-    archives = [];
-  }
-
-  it.skipIf(archives.length === 0)('reads a sealed pack and finds curatable artefacts', () => {
-    const path = archives[0] ?? '';
-    const entries = readPackEntries(readFileSync(path));
-    expect(entries.length).toBeGreaterThan(0);
-    // Every real pack carries a root `run.yaml` and per-step screenshots.
-    expect(entries.some((entry) => entry.name === 'run.yaml')).toBe(true);
-    expect(entries.some((entry) => /\/steps\/[^/]+\/screenshot\.jpg$/.test(entry.name))).toBe(true);
-  });
-});
 
 /* ─────────────────────────────── the curated copy ───────────────────────────── */
 

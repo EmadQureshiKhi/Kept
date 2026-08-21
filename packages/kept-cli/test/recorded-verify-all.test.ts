@@ -5,6 +5,7 @@ import type {
   KeptState,
   PlanFileSystem,
   PromiseRecord,
+  SealedPackFileSystem,
   StateFileSystem,
 } from '@kept/core';
 import {
@@ -347,6 +348,33 @@ function stateFileSystem(): StateFileSystem {
   });
 }
 
+/**
+ * The sealed-pack read, injected empty — because **the recording is the committed
+ * bytes, and a sealed pack is not among them.**
+ *
+ * `runVerify` now opens this run's own `.evidence` archive to read the triage note
+ * that decides a repair branch, and it locates that archive in the evidence
+ * directory the command family derives. This suite's repository root is read off
+ * the recording, so on the one machine that produced these bytes that directory is
+ * a real one holding a real archive for this very execution — several megabytes of
+ * it, gitignored, present nowhere else. Left to `node:fs`, the branch asserted
+ * below would be decided by an untracked local file, and would answer differently
+ * on a clean checkout than on the machine that made the recording. That is not a
+ * test of a recording.
+ *
+ * So the read is stubbed to find nothing, which is exactly the state of the world
+ * for anyone replaying `docs/kane/replay/`: the stream, the stderr, the plan cache
+ * and the run entry are committed; the pack is not. The live loop is where a real
+ * pack meets a real run, and `docs/kane/loop/` is where that evidence lives.
+ */
+function noSealedPacks(): SealedPackFileSystem {
+  return {
+    readDirectory: () => [],
+    stat: () => null,
+    readBinary: () => null,
+  };
+}
+
 describe('the recorded whole-suite replay — what it does to eight stale verdicts', () => {
   it('proves seven promises, reddens the designed failure, and moves the triple', async () => {
     const kane = recordedInvoker();
@@ -361,6 +389,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
       at: AT,
       now: () => Date.parse(AT),
       invoker: kane.invoker,
+      sealedPackFileSystem: noSealedPacks(),
     });
 
     expect(result.terminalSeen).toBe(true);
@@ -405,6 +434,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
       at: AT,
       now: () => Date.parse(AT),
       invoker: kane.invoker,
+      sealedPackFileSystem: noSealedPacks(),
     });
 
     for (const member of result.members) {
@@ -421,6 +451,30 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
     ).toHaveLength(1);
   });
 
+  /**
+   * T-7 is the deliberately never-true discount claim, and `docs-lie` is the
+   * branch design §6.3 wants for it: the application behaves exactly as written,
+   * and the sentence in `apps/fixture/README.md` is the thing that was never true.
+   *
+   * Nothing on the wire says so. `testrun_member_end` carries path, test id and
+   * status and no classification at all, and the recording ships no sealed pack
+   * (see {@link noSealedPacks}), so no triage note is attributable to this member
+   * and the conservative residue is what routes it. The residue and the correct
+   * answer coincide here, which is worth stating rather than relying on: they
+   * coincide *because* T-7 is a documentation fault, and the residue is the
+   * documentation.
+   *
+   * They do not always coincide, and the archive this recording's own machine
+   * still holds is the proof. Its note for T-7 reads
+   * `application_issue/functional_defect` at high confidence — Kane, correctly on
+   * its own terms, describing a discount the cart never applies, having no way to
+   * know the claim was invented for the fixture. Fed through the signal lists that
+   * would route `code-break`, whose fence authorises patching application source:
+   * KEPT would set an agent to *implementing* a discount nobody designed. That is
+   * a real question about the vocabulary of §6.3 and it is not settled by pinning
+   * it in a recording assertion, so it is not pinned here — it is stated, and the
+   * assertion below is what the committed bytes actually yield.
+   */
   it('routes the failing member to docs-lie and leaves the others unrouted', async () => {
     const kane = recordedInvoker();
     const result = await runVerify({
@@ -433,6 +487,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
       at: AT,
       now: () => Date.parse(AT),
       invoker: kane.invoker,
+      sealedPackFileSystem: noSealedPacks(),
     });
 
     const failing = result.members.filter((member) => member.status === 'failed');
@@ -456,6 +511,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
       at: AT,
       now: () => Date.parse(AT),
       invoker: kane.invoker,
+      sealedPackFileSystem: noSealedPacks(),
     });
 
     // One spawn: the plan came from the committed cache, so no refresh was needed.

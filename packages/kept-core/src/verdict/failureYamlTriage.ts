@@ -62,8 +62,35 @@ export const FAILURE_YAML_TRIAGE_NAME = 'failureYamlTriage' as const;
  * branch whose repair is applied automatically, so the list is deliberately a
  * closed set of product-fault vocabulary rather than anything that merely sounds
  * severe.
+ *
+ * **`application_issue` was added deliberately, and it is not a small change.**
+ * It is Kane's own top-level fault *family*, the one it writes into a sealed
+ * triage note as `application_issue/ui_data_defect`; the six tokens beside it were
+ * authored from the documented vocabulary before any pack had been opened. Nothing
+ * else in that note says "product fault" in a word this list already knew, so
+ * without the family the deliberately broken `subtotal` routed `docs-lie` at
+ * confidence 0.96 that the product was at fault — which is the gap
+ * `docs/kane/loop/README.md` measured. Admitting it means **Kane's judgement can
+ * now authorise an automatic source repair**, so it is said out loud here rather
+ * than slipped in: design §6.3's table lists the six tokens below it and not this
+ * one, and reconciling the table with the measurement is a documentation change
+ * with a decision in it, not a typo to fix in passing. Two things keep the
+ * admission honest in the meantime: the family is only ever read off a note the
+ * pack attributed to *this* member by identifier (`kane/packTriage.ts`), and the
+ * fence for `code-break` still forbids touching the test or the prose.
+ *
+ * It is also not free of judgement calls, and one is already visible. Kane's note
+ * for the fixture's never-true discount claim reads
+ * `application_issue/functional_defect` — a correct description on Kane's own
+ * terms of a discount the cart never applies, written without any way to know the
+ * sentence was invented for the fixture. That routes `code-break` off this list,
+ * where the honest answer is that the documentation lied. Nothing here can tell
+ * the two apart, which is a question about §6.3's vocabulary rather than about
+ * this function; `packages/kept-cli/test/recorded-verify-all.test.ts` records the
+ * case in full beside the recording it was measured on.
  */
 export const CODE_BREAK_SIGNALS: readonly string[] = Object.freeze([
+  'application_issue',
   'product_bug',
   'app_error',
   'server_error',

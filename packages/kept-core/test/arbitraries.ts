@@ -1930,13 +1930,14 @@ const TRIAGE_TOKENS: readonly string[] = [
 ];
 
 /**
- * A `failure.yaml`, covering **all four** accepted category aliases.
+ * A `failure.yaml`, covering **every** accepted category alias.
  *
  * The committed fixtures use three of them — nested `triage.category`, top-level
- * `category`, and `classification` — and the fourth, `reason`, has no fixture at
- * all, which is exactly why it has to be generated: it is the alias most likely to
- * hold a prose sentence rather than a classification token, and it is last in
- * precedence for that reason.
+ * `category`, and `classification` — while `reason` has no fixture at all, which is
+ * exactly why it has to be generated: it is the alias most likely to hold a prose
+ * sentence rather than a classification token, and it is last in precedence for
+ * that reason. `triage.rca.category` is the deepest and highest, and it is the
+ * spelling every real sealed pack uses.
  *
  * Precedence is exercised rather than assumed: when a lower-precedence alias is
  * also written, the winner is still the higher one, and `alias` names it.
@@ -2008,8 +2009,10 @@ export const arbFailureYaml: fc.Arbitrary<FailureYamlCase> = fc
     top.push('one_liner: "the subtotal does not update"');
     nested.push('confidence: 0.9');
 
+    const rca: string[] = [];
     const write = (field: TriageSignalField, value: string): void => {
-      if (field === 'triage.category') nested.push(`category: ${value}`);
+      if (field === 'triage.rca.category') rca.push(`category: ${value}`);
+      else if (field === 'triage.category') nested.push(`category: ${value}`);
       else if (field === 'reason') top.push(`reason: "${value}"`);
       else top.push(`${field}: ${value}`);
     };
@@ -2024,8 +2027,12 @@ export const arbFailureYaml: fc.Arbitrary<FailureYamlCase> = fc
     }
 
     const lines = [...top];
-    if (nested.length > 0) {
+    if (nested.length > 0 || rca.length > 0) {
       lines.push('triage:');
+      if (rca.length > 0) {
+        lines.push('  rca:');
+        for (const entry of rca) lines.push(`    ${entry}`);
+      }
       for (const entry of nested) lines.push(`  ${entry}`);
     }
 

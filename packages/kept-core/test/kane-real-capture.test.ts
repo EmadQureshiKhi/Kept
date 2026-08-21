@@ -20,11 +20,19 @@
  *    both configurations answer identically.
  * 4. The sealed pack's categorised note spells its category
  *    `triage.rca.category`, one level below the `triage.category` alias the
- *    loader accepts, and the note at the pack root is an index with no category
- *    at all. Both therefore read as no signal.
+ *    loader originally accepted, so a real note read as no signal at all and
+ *    every failure routed to the residue. The alias list now reads that
+ *    spelling, and the case below asserts the fixed behaviour: the real note
+ *    yields its real signal, and that signal is what makes `code-break` fire.
+ *    The note at the pack root is a different file — an index with no category —
+ *    and it still, correctly, reads as no signal.
  *
- * None of the four is asserted as *desired* behaviour. Each is asserted as
- * observed, with the follow-up named in `docs/kane/verdict-spike.md`. The
+ * Corrections 1 through 3 are asserted as *observed*, not as desired, with the
+ * follow-up named in `docs/kane/verdict-spike.md`. Correction 4 was the one with
+ * a fix in it, and `docs/kane/loop/README.md` finding four is the measurement
+ * that motivated it: without it the deliberately broken `subtotal` answered
+ * `docs-lie` while the sealed note said the product was at fault at high
+ * confidence, on the first attempt, every time. The
  * hand-authored `testrun-*.ndjson` and `run-failed-740.ndjson` fixtures stay
  * exactly as they were, because replacing them would have required editing the
  * suites that pin them — and a fixture swap is not the place to smuggle in a
@@ -41,6 +49,7 @@ import {
   parseStream,
   resultCode,
   selectRouter,
+  type SealedTriageNote,
 } from '@kept/core';
 import { describe, expect, it } from 'vitest';
 
@@ -199,25 +208,65 @@ describe('the real testmd captures, read as ExecutionRun', () => {
 });
 
 describe('the real sealed triage notes', () => {
-  it('spells the category one level below the alias the loader accepts', () => {
+  it('spells its category at triage.rca.category, and the loader reads it there', () => {
     const note = loadFailureYaml({ content: fixtureText('failure-real-triaged.yaml') });
     expect(note).not.toBeNull();
     if (note === null) return;
-    // Correction 4. The category is really at triage.rca.category, so the four
-    // accepted aliases find nothing and the router defaults.
-    expect(note.signal).toBeNull();
-    expect(note.signalField).toBeNull();
+    // Correction 4, fixed. Kane writes the categorised judgement one level below
+    // `triage`, and the alias list now reads that spelling, so a real sealed note
+    // yields a real signal instead of nothing.
+    expect(note.signal).toBe('application_issue/ui_data_defect');
+    expect(note.signalField).toBe('triage.rca.category');
     const rca = (note.fields['triage'] as Record<string, unknown>)['rca'] as Record<
       string,
       unknown
     >;
     expect(rca['category']).toBe('application_issue/ui_data_defect');
     expect(rca['confidence']).toBe(0.97);
-    // What the loader *does* reach: severity sits directly under triage, so it
-    // is read; confidence sits under triage.rca, so it is not.
+    // Severity sits directly under `triage` and confidence under `triage.rca`, so
+    // reading only the shallower placement published a category with no
+    // confidence beside it. Both are reached now.
     expect(note.severity).toBe('major');
-    expect(note.confidence).toBeNull();
+    expect(note.confidence).toBe(0.97);
     expect(note.resultCode).toBeNull();
+  });
+
+  it('routes code-break off that note, delivered the way the pack delivers it', () => {
+    // The whole ladder, over real bytes. `testrun_member_end` carries no verdict
+    // object and no readable code (correction 3), so rule one cannot fire and
+    // rule three has nothing to read; the note is what decides, and it arrives as
+    // *text* read out of the sealed `.evidence` archive and tied to this member by
+    // the test id the pack's own `result.yaml` declares — never by matching the
+    // pack's slug to a document title (§7.1, §4.6).
+    const sealed: SealedTriageNote = {
+      archivePath: '/tmp/0944d075-8dab-4683-a59f-96e51308697c.evidence',
+      entryName: 'tests/cart-subtotal-d5ba3490/steps/17-5-3/failure.yaml',
+      content: fixtureText('failure-real-triaged.yaml'),
+      testId: '1c4fff07-a0da-495b-8471-26d45b4a1441',
+    };
+    const ctx = createFailureContext({
+      family: 'ExecutionTestrun',
+      terminal: {
+        type: 'testrun_member_end',
+        path: 'tests/cart_subtotal_test.md',
+        status: 'failed',
+        test_id: sealed.testId,
+      },
+      memberStatus: 'failed',
+      promiseId: 'p_8d965c2fae07',
+      sealedTriage: sealed,
+    });
+    expect(ctx.verdictObject).toBeNull();
+
+    const routed = selectRouter({ verdictRouter: 'resultCode740' }).route(ctx);
+    expect(routed.strategy).toBe('failureYamlTriage');
+    expect(routed.branch).toBe('code-break');
+    expect(routed.category).toBe('application_issue/ui_data_defect');
+    expect(routed.confidence).toBe(0.97);
+    expect(routed.severity).toBe('major');
+    // The artefact named is the archive Kane sealed, which is a real file, not a
+    // pack directory someone extracted beside it.
+    expect(routed.evidenceRef).toContain('.evidence');
   });
 
   it('reads the pack-root note as an index with no signal at all', () => {

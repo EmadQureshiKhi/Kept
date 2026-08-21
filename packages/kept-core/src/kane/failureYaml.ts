@@ -16,7 +16,10 @@
  *    already owns that derivation. {@link loadFailureYamlFromEvidence} composes
  *    with `listArtifacts` and picks the artefact `classifyArtifact` already
  *    classified as `failure-yaml`; nothing here re-spells `evidence/` or
- *    `.testmuai/`.
+ *    `.testmuai/`. The other door is `content`: Kane seals its packs as single
+ *    `.evidence` zips, so `kane/packTriage.ts` hands the note's **text** in
+ *    already attributed to a member, and this parser stays the one place a note
+ *    is turned into a signal whichever way it arrived.
  * 2. **It never routes.** Choosing a `RepairBranch` from the signal, and the
  *    ordering that lets a selector signal outrank the assertion band, is task
  *    11.4's job. This module reports the signal and which field it came from,
@@ -52,24 +55,50 @@ export const FAILURE_YAML_FILENAMES: readonly string[] = ['failure.yaml', 'failu
 /**
  * The category-ish fields of design §6.3, in precedence order.
  *
- * The order is the design's own and is not an implementation detail: the nested
- * `triage.category` is Kane's structured placement and wins, the two top-level
- * spellings follow, and `reason` is last because it is the most likely to hold
- * a prose sentence rather than a classification token. First field that yields a
- * non-empty string wins; the rest are not consulted.
+ * The order is the design's own and is not an implementation detail: the deeper
+ * the spelling, the more structured Kane's placement, so the nested forms win and
+ * `reason` is last because it is the most likely to hold a prose sentence rather
+ * than a classification token. First field that yields a non-empty string wins;
+ * the rest are not consulted.
  *
- * Each of the three parseable committed fixtures uses a *different* one of these
- * (`test/fixtures/README.md`), so the alias handling is exercised by real files
- * rather than only by generated ones. `reason` has no fixture and is covered by
- * a generated case in task 11.4.
+ * `triage.rca.category` is the **real** spelling, and it was measured rather than
+ * assumed. Every sealed pack this project has produced puts the categorised
+ * judgement one level below `triage`:
+ *
+ * ```yaml
+ * triage:
+ *   rca:
+ *     category: application_issue/ui_data_defect
+ *     confidence: 0.96
+ *   severity: major
+ * ```
+ *
+ * With only the four shallower aliases, that file read as *no signal at all* and
+ * every failure routed to the residue — see `docs/kane/loop/README.md`, finding
+ * four. The shallower spellings are kept because three committed fixtures use
+ * three different ones (`test/fixtures/README.md`), so the alias handling stays
+ * exercised by real files rather than only by generated ones; `reason` has no
+ * fixture and is covered by a generated case.
  */
-export const TRIAGE_SIGNAL_FIELDS = ['triage.category', 'category', 'classification', 'reason'] as const;
+export const TRIAGE_SIGNAL_FIELDS = [
+  'triage.rca.category',
+  'triage.category',
+  'category',
+  'classification',
+  'reason',
+] as const;
 
 /** Which field a signal was read from. */
 export type TriageSignalField = (typeof TRIAGE_SIGNAL_FIELDS)[number];
 
-/** The nested mapping the first alias reads through. */
+/** The nested mapping the nested aliases read through. */
 const TRIAGE_MAPPING_FIELD = 'triage';
+
+/**
+ * The root-cause mapping inside `triage`, which is where Kane actually writes its
+ * category and its confidence. `severity` stays one level up, in the same file.
+ */
+const TRIAGE_RCA_FIELD = 'rca';
 
 /**
  * A loaded `failure.yaml`.
@@ -200,31 +229,47 @@ function isMappingValue(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Read one alias, given the root mapping and the nested `triage` mapping. */
+/** Read one alias, given the root mapping and the two nested mappings. */
 function readSignalField(
   field: TriageSignalField,
   fields: Record<string, unknown>,
   triage: unknown,
+  rca: unknown,
 ): string | null {
-  return field === 'triage.category'
-    ? text(readField(triage, 'category'))
-    : text(readField(fields, field));
+  if (field === 'triage.rca.category') return text(readField(rca, 'category'));
+  if (field === 'triage.category') return text(readField(triage, 'category'));
+  return text(readField(fields, field));
 }
 
 /** First alias that yields a non-empty string, lower-cased. */
 function resolveSignal(
   fields: Record<string, unknown>,
   triage: unknown,
+  rca: unknown,
 ): { readonly signal: string | null; readonly signalField: TriageSignalField | null } {
   for (const field of TRIAGE_SIGNAL_FIELDS) {
-    const value = readSignalField(field, fields, triage);
+    const value = readSignalField(field, fields, triage, rca);
     if (value !== null) return { signal: value.toLowerCase(), signalField: field };
   }
   return { signal: null, signalField: null };
 }
 
-/** `triage.<field>` preferred, top-level accepted — the shape both fixtures use. */
-function nestedFirst(fields: Record<string, unknown>, triage: unknown, field: string): unknown {
+/**
+ * `triage.rca.<field>` preferred, then `triage.<field>`, then top-level.
+ *
+ * Deepest-first for the same reason the signal aliases are: a real sealed note
+ * writes `confidence` under `triage.rca` and `severity` under `triage`, so a
+ * reader that only knew the shallower two published a category with no confidence
+ * beside it.
+ */
+function nestedFirst(
+  fields: Record<string, unknown>,
+  triage: unknown,
+  rca: unknown,
+  field: string,
+): unknown {
+  const deep = readField(rca, field);
+  if (deep !== undefined) return deep;
   const nested = readField(triage, field);
   return nested === undefined ? readField(fields, field) : nested;
 }
@@ -289,7 +334,8 @@ export function loadFailureYaml(request: LoadFailureYamlRequest): FailureYaml | 
 
   const fields: Record<string, unknown> = isMappingValue(document) ? { ...document } : {};
   const triage = readField(fields, TRIAGE_MAPPING_FIELD);
-  const { signal, signalField } = resolveSignal(fields, triage);
+  const rca = readField(triage, TRIAGE_RCA_FIELD);
+  const { signal, signalField } = resolveSignal(fields, triage, rca);
 
   if (signal === null && isMappingValue(document)) {
     sink?.report({
@@ -311,10 +357,10 @@ export function loadFailureYaml(request: LoadFailureYamlRequest): FailureYaml | 
     signalField,
     // The single permitted reader of the field, so `"740"` and `740` in a
     // hand-sealed pack normalise identically (design §4.4, R6.8).
-    resultCode: resultCode(fields) ?? resultCode(triage),
-    severity: text(nestedFirst(fields, triage, 'severity')),
-    confidence: finiteNumber(nestedFirst(fields, triage, 'confidence')),
-    oneLiner: text(nestedFirst(fields, triage, 'one_liner')),
+    resultCode: resultCode(fields) ?? resultCode(triage) ?? resultCode(rca),
+    severity: text(nestedFirst(fields, triage, rca, 'severity')),
+    confidence: finiteNumber(nestedFirst(fields, triage, rca, 'confidence')),
+    oneLiner: text(nestedFirst(fields, triage, rca, 'one_liner')),
   };
 }
 

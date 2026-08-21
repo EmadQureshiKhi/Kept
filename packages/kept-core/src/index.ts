@@ -1451,3 +1451,39 @@ export {
   pairMemberDebug,
   parseMemberDebug,
 } from './kane/memberDebug.js';
+
+// The sealed pack, opened (§4.6, §6.3, R6.7, R13.4). Kane seals a pack as a single
+// `.evidence` **zip**, and `kane/evidence.ts` walks a pack *directory*, so the
+// triage note that decides the repair branch sat in a file nothing in KEPT opened.
+// `readPackEntries` is enough of the zip format to read one — `node:zlib`'s raw
+// inflate, no dependency added and no `unzip` spawned — and it lives here because
+// two callers need it: `kept snapshot` curates the artefacts a judge clicks, and
+// `readSealedPackTriage` reads the note that routes a repair.
+export type { PackEntry, ReadPackOptions } from './kane/packArchive.js';
+export { PackFormatError, readPackEntries } from './kane/packArchive.js';
+
+// Attribution is by **identifier**. The note is per failing step under
+// `tests/<slug>/steps/<n-a-b>/failure.yaml` and the slug comes from the document's
+// title, which §7.1 and §4.6 forbid inferring identity from; but the pack's own
+// `tests/<slug>/result.yaml` carries `external_id.test_id`, the same UUID
+// `testrun_member_end` reports. So a note is tied to a member by a UUID match, an
+// archive that is not this run's execution is not read at all, and anything
+// ambiguous is attributed to nobody — a signal on the wrong member would authorise
+// an automatic source patch against a promise nobody tested.
+export type {
+  SealedPackFileSystem,
+  SealedPackTriage,
+  SealedPackTriageRequest,
+  SealedTriageNote,
+} from './kane/packTriage.js';
+export {
+  PACK_RESULT_FILENAME,
+  PACK_TESTS_PREFIX,
+  SEALED_PACK_SUFFIX,
+  SEALED_TRIAGE_DIAGNOSTIC_CODES,
+  SEALED_TRIAGE_DIAGNOSTIC_CODE_VALUES,
+  nodeSealedPackFileSystem,
+  readSealedPackTriage,
+  sealedNoteFor,
+  testIdFromResultManifest,
+} from './kane/packTriage.js';

@@ -71,6 +71,8 @@ import type {
   PromiseRecord,
   RoutedRepair,
   RunOutcome,
+  SealedPackFileSystem,
+  SealedPackTriage,
   StateFileSystem,
   TestDocumentSource,
   TestrunPlan,
@@ -97,6 +99,8 @@ import {
   parseMemberDebug,
   parseStream,
   readPlan,
+  readSealedPackTriage,
+  sealedNoteFor,
   reportMemberStatus,
   resultCode,
   selectRouter,
@@ -227,6 +231,8 @@ export interface VerifyRequest {
   readonly testDocuments?: TestDocumentSource | undefined;
   /** The evidence walk. Defaults to the `node:fs` implementation. */
   readonly evidenceFileSystem?: EvidenceFileSystem | undefined;
+  /** The sealed `.evidence` archive read the triage rung needs. Defaults to `node:fs`. */
+  readonly sealedPackFileSystem?: SealedPackFileSystem | undefined;
   /** The `failure.yaml` read the triage rung may pull. Defaults to `node:fs`. */
   readonly yaml?: FailureYamlFileSystem | undefined;
   readonly diagnostics?: CollectingDiagnosticSink | undefined;
@@ -675,6 +681,33 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
             : { fs: request.evidenceFileSystem }),
         });
 
+  // The triage notes sealed inside this run's own `.evidence` archive, keyed by the
+  // member `test_id` the pack itself declares (§6.3, R6.7).
+  //
+  // This is the other half of the gap `docs/kane/loop/README.md` measured. Kane's
+  // inline verdict object is not stable — for one unchanged failure it has said
+  // `confirmed: true`, said nothing at all, and said `confirmed: false` across six
+  // runs — while the sealed note has said `application_issue/ui_data_defect` at
+  // confidence 0.96 on the first attempt, every time. The note is the signal; it
+  // was simply inside a zip nothing opened.
+  //
+  // Attribution is by identifier, never by name: the pack's `tests/<slug>/
+  // result.yaml` carries `external_id.test_id`, the same UUID `testrun_member_end`
+  // reports, so no member is ever handed another member's judgement. The archive is
+  // located in the family-derived evidence directory and **filtered** by this run's
+  // execution id, so a pack sealed by a previous or parallel run is not read at all.
+  const sealedTriage: SealedPackTriage | null =
+    terminal === null
+      ? null
+      : readSealedPackTriage({
+          evidenceDir: evidence?.dir ?? null,
+          executionId: readString(terminal, 'execution_id') ?? readString(terminal, 'run_id'),
+          diagnostics: sink,
+          ...(request.sealedPackFileSystem === undefined
+            ? {}
+            : { fs: request.sealedPackFileSystem }),
+        });
+
   // ── 2 and 5. Members, mapped and routed. ─────────────────────────────────
   const router = selectRouter({ verdictRouter: request.config.verdictRouter }, sink);
   const byPath = new Map<string, PromiseRecord[]>();
@@ -784,6 +817,8 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
             evidence,
             repoRoot: request.repoRoot,
             verdictObject: memberTerminal?.['verdict'] ?? event.verdict,
+            // Null unless the pack tied a note to *this* member's test id.
+            sealedTriage: sealedNoteFor(sealedTriage, testId),
             diagnostics: sink,
             ...(request.yaml === undefined ? {} : { yaml: request.yaml }),
           }),

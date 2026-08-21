@@ -118,9 +118,11 @@ describe('loadFailureYaml — alias precedence', () => {
     expect(loaded?.signalField).toBe('reason');
   });
 
-  it('prefers each alias over the ones after it', () => {
+  it('prefers each alias over the ones after it, deepest spelling first', () => {
     const all = [
       'triage:',
+      '  rca:',
+      '    category: from_rca',
       '  category: from_triage',
       'category: from_category',
       'classification: from_classification',
@@ -128,16 +130,43 @@ describe('loadFailureYaml — alias precedence', () => {
       '',
     ].join('\n');
 
-    expect(loadFailureYaml({ content: all })?.signalField).toBe('triage.category');
+    // `triage.rca.category` is the spelling every real sealed pack uses, so it
+    // outranks the three shallower ones rather than merely joining them.
+    expect(loadFailureYaml({ content: all })?.signalField).toBe('triage.rca.category');
+    expect(loadFailureYaml({ content: all })?.signal).toBe('from_rca');
 
-    const withoutNested = all.split('\n').slice(2).join('\n');
+    const withoutRca = ['triage:', ...all.split('\n').slice(3)].join('\n');
+    expect(loadFailureYaml({ content: withoutRca })?.signalField).toBe('triage.category');
+
+    const withoutNested = all.split('\n').slice(4).join('\n');
     expect(loadFailureYaml({ content: withoutNested })?.signalField).toBe('category');
 
-    const withoutCategory = all.split('\n').slice(3).join('\n');
+    const withoutCategory = all.split('\n').slice(5).join('\n');
     expect(loadFailureYaml({ content: withoutCategory })?.signalField).toBe('classification');
 
-    const reasonOnly = all.split('\n').slice(4).join('\n');
+    const reasonOnly = all.split('\n').slice(6).join('\n');
     expect(loadFailureYaml({ content: reasonOnly })?.signalField).toBe('reason');
+  });
+
+  it('reads confidence out of triage.rca, which is where a real note puts it', () => {
+    // Measured off a sealed pack: `category` and `confidence` sit under
+    // `triage.rca`, `severity` one level up under `triage`. A reader that knew
+    // only the shallower two published a category with no confidence beside it.
+    const loaded = loadFailureYaml({
+      content: [
+        'triage:',
+        '  rca:',
+        '    category: application_issue/ui_data_defect',
+        '    confidence: 0.96',
+        '  severity: major',
+        '',
+      ].join('\n'),
+    });
+
+    expect(loaded?.signal).toBe('application_issue/ui_data_defect');
+    expect(loaded?.signalField).toBe('triage.rca.category');
+    expect(loaded?.confidence).toBe(0.96);
+    expect(loaded?.severity).toBe('major');
   });
 
   it('does not mistake reason_code for the reason alias', () => {
@@ -372,8 +401,14 @@ describe('composing with the evidence resolver', () => {
 });
 
 describe('exported constants', () => {
-  it('names the four accepted aliases in design precedence order', () => {
-    expect(TRIAGE_SIGNAL_FIELDS).toEqual(['triage.category', 'category', 'classification', 'reason']);
+  it('names the five accepted aliases in design precedence order', () => {
+    expect(TRIAGE_SIGNAL_FIELDS).toEqual([
+      'triage.rca.category',
+      'triage.category',
+      'category',
+      'classification',
+      'reason',
+    ]);
   });
 
   it('names both file spellings the evidence classifier recognises', () => {

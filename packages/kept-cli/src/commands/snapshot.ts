@@ -26,8 +26,10 @@
  * …/sessions/<session_id>/evidence/<execution_id>.evidence` on stderr, the file
  * at that path is a zip archive, and a copy lands under
  * `<cwd>/.testmuai/evidence/<execution_id>.evidence`. `kane/evidence.ts` lists a
- * pack *directory* and therefore resolves nothing here; rather than change a
- * module this command does not own, the curation below reads the archive itself.
+ * pack *directory* and therefore resolves nothing here, so the curation below
+ * reads the archive itself — through `readPackEntries`, which now lives in
+ * `@kept/core` beside the evidence resolver because the triage rung reads the same
+ * archives to find the note that decides a repair branch.
  *
  * `.testmuai/evidence/` is gitignored because the packs are one to three
  * megabytes each. So the curation **unzips the artefacts a judge would actually
@@ -47,7 +49,6 @@
  * which is why no unzip dependency appears in the runtime budget.
  */
 
-import { inflateRawSync } from 'node:zlib';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 import type {
@@ -58,6 +59,7 @@ import type {
   HandoffFile,
   KeptState,
   LedgerSnapshot,
+  PackEntry,
   SnapshotAmendment,
   SnapshotArtifact,
   SnapshotEvidence,
@@ -68,6 +70,7 @@ import type {
 } from '@kept/core';
 import {
   HANDOFF_DIRECTORY_RELATIVE_PATH,
+  SEALED_PACK_SUFFIX,
   classifyArtifact,
   createDiagnosticSink,
   createStateStore,
@@ -76,6 +79,7 @@ import {
   listAmendments,
   nodeStateFileSystem,
   parseHandoff,
+  readPackEntries,
   toSnapshotAmendment,
 } from '@kept/core';
 
@@ -113,8 +117,14 @@ export const CURATED_EVIDENCE_RELATIVE_DIR = 'apps/ledger/public/evidence';
 /** Where Kane leaves a copy of every sealed pack, relative to the repo root. */
 export const SEALED_EVIDENCE_RELATIVE_DIR = '.testmuai/evidence';
 
-/** The suffix Kane gives a sealed pack. The id is the execution id before it. */
-export const SEALED_PACK_SUFFIX = '.evidence';
+/**
+ * The suffix Kane gives a sealed pack. The id is the execution id before it.
+ *
+ * Re-exported from the core package, which now owns both the suffix and the zip
+ * reader: the triage rung reads the same archives this command curates, and one
+ * spelling of the suffix is what keeps the two agreeing about what a pack is.
+ */
+export { SEALED_PACK_SUFFIX } from '@kept/core';
 
 /**
  * The archive file names a snapshot pack id could name, in preference order.
@@ -157,12 +167,15 @@ export const CURATED_ARTIFACT_KINDS: readonly ArtifactKind[] = Object.freeze([
  */
 export const MAX_CURATED_PACK_BYTES = 6 * 1024 * 1024;
 
-/** One file recovered from a sealed pack. */
-export interface CuratedEntry {
-  /** Path inside the archive, POSIX separators. */
-  readonly name: string;
-  readonly bytes: Uint8Array;
-}
+/**
+ * One file recovered from a sealed pack.
+ *
+ * An alias for the core package's `PackEntry`, not a lookalike: the zip reader
+ * moved to `@kept/core` when the triage rung became its second caller, and two
+ * spellings of one shape is how a curation step and a router quietly stop agreeing
+ * about what came out of an archive.
+ */
+export type CuratedEntry = PackEntry;
 
 /** The filesystem seam curation uses, so its tests need no disk. */
 export interface CurationFileSystem {
@@ -188,113 +201,6 @@ export const nodeCurationFileSystem: CurationFileSystem = {
     writeFileSync(path, bytes);
   },
 };
-
-/* ─────────────────────────────── the zip reader ──────────────────────────────
- *
- * Enough of the format to read a sealed pack, and no more. Kane's packs are
- * ordinary single-disk archives whose entries are stored (method 0) or deflated
- * (method 8), so `node:zlib`'s raw inflate is the whole decompressor. A zip64
- * archive, an unsupported method or a truncated file is refused by name rather
- * than half-read, because a pack that curated to garbage would look like evidence
- * until a judge clicked it.
- */
-
-const EOCD_SIGNATURE = 0x06054b50;
-const CENTRAL_SIGNATURE = 0x02014b50;
-const LOCAL_SIGNATURE = 0x04034b50;
-/** A zip comment is at most this long, so the end record is within the tail. */
-const MAX_EOCD_SEARCH = 0xffff + 22;
-const ZIP64_SENTINEL_32 = 0xffffffff;
-const ZIP64_SENTINEL_16 = 0xffff;
-
-/** Thrown inside the reader and turned into a diagnostic by the caller. */
-class PackFormatError extends Error {}
-
-function readU16(bytes: Uint8Array, at: number): number {
-  const a = bytes[at];
-  const b = bytes[at + 1];
-  if (a === undefined || b === undefined) throw new PackFormatError('archive ends mid-field');
-  return a | (b << 8);
-}
-
-function readU32(bytes: Uint8Array, at: number): number {
-  const a = bytes[at];
-  const b = bytes[at + 1];
-  const c = bytes[at + 2];
-  const d = bytes[at + 3];
-  if (a === undefined || b === undefined || c === undefined || d === undefined) {
-    throw new PackFormatError('archive ends mid-field');
-  }
-  return (a | (b << 8) | (c << 16) | (d << 24)) >>> 0;
-}
-
-/** Locate the end-of-central-directory record by scanning the tail backwards. */
-function findEndRecord(bytes: Uint8Array): number {
-  const floor = Math.max(0, bytes.length - MAX_EOCD_SEARCH);
-  for (let at = bytes.length - 22; at >= floor; at -= 1) {
-    if (readU32(bytes, at) === EOCD_SIGNATURE) return at;
-  }
-  throw new PackFormatError('no end-of-central-directory record: this is not a zip archive');
-}
-
-/**
- * Every entry in a sealed pack, decompressed, in central-directory order.
- *
- * Exported because the property and unit suites build archives byte by byte and
- * assert this reader against them, which is the only way to test a format reader
- * without a fixture nobody can regenerate.
- */
-export function readPackEntries(bytes: Uint8Array): readonly CuratedEntry[] {
-  const end = findEndRecord(bytes);
-  const entryCount = readU16(bytes, end + 10);
-  const directoryOffset = readU32(bytes, end + 16);
-  if (entryCount === ZIP64_SENTINEL_16 || directoryOffset === ZIP64_SENTINEL_32) {
-    throw new PackFormatError('zip64 archive: not supported, and no pack this size is curated');
-  }
-
-  const decoder = new TextDecoder();
-  const entries: CuratedEntry[] = [];
-  let cursor = directoryOffset;
-
-  for (let index = 0; index < entryCount; index += 1) {
-    if (readU32(bytes, cursor) !== CENTRAL_SIGNATURE) {
-      throw new PackFormatError(`central directory entry ${index} has the wrong signature`);
-    }
-    const method = readU16(bytes, cursor + 10);
-    const compressedSize = readU32(bytes, cursor + 20);
-    const nameLength = readU16(bytes, cursor + 28);
-    const extraLength = readU16(bytes, cursor + 30);
-    const commentLength = readU16(bytes, cursor + 32);
-    const localOffset = readU32(bytes, cursor + 42);
-    const name = decoder.decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
-    cursor += 46 + nameLength + extraLength + commentLength;
-
-    // A directory entry carries no data and needs none: the write step creates
-    // whatever directories the surviving names imply.
-    if (name.endsWith('/')) continue;
-
-    if (readU32(bytes, localOffset) !== LOCAL_SIGNATURE) {
-      throw new PackFormatError(`local header for ${name} has the wrong signature`);
-    }
-    const localNameLength = readU16(bytes, localOffset + 26);
-    const localExtraLength = readU16(bytes, localOffset + 28);
-    const dataAt = localOffset + 30 + localNameLength + localExtraLength;
-    const raw = bytes.subarray(dataAt, dataAt + compressedSize);
-    if (raw.length < compressedSize) {
-      throw new PackFormatError(`${name} is truncated: the archive ends inside its data`);
-    }
-
-    if (method === 0) {
-      entries.push({ name, bytes: raw });
-    } else if (method === 8) {
-      entries.push({ name, bytes: inflateRawSync(raw) });
-    } else {
-      throw new PackFormatError(`${name} uses compression method ${method}, which is not read`);
-    }
-  }
-
-  return entries;
-}
 
 /* ──────────────────────────────── the curation ─────────────────────────────── */
 

@@ -63,6 +63,7 @@ import {
   type FailureYamlFileSystem,
 } from '../kane/failureYaml.js';
 import type { CommandFamily } from '../kane/family.js';
+import type { SealedTriageNote } from '../kane/packTriage.js';
 import type { RepairAnnotation, RepairBranch, RepairStrategy } from '../model/promise.js';
 
 import type { MemberStatus } from './memberStatus.js';
@@ -155,9 +156,12 @@ export interface FailureContext {
    */
   readonly packDir?: string | null;
   /**
-   * Absolute path of the pack's `failure.yaml`, or null when the pack holds
-   * none. Comes from the evidence listing that was already read, which is what
-   * lets a strategy name the artefact without loading it.
+   * Absolute path of the artefact the triage note comes from, or null when there
+   * is none: the pack's `failure.yaml` when the listing found a pack *directory*,
+   * and otherwise the sealed `.evidence` **archive** the note was read out of
+   * (`kane/packTriage.ts`). Both are real files that exist on disk; neither is
+   * composed here (R6.11). Having it lets a strategy name the artefact without
+   * loading it.
    */
   readonly failureYamlPath?: string | null;
   /** Repository root, so `evidenceRef` can be repo-relative. Absolute, or null. */
@@ -445,6 +449,19 @@ export interface FailureContextRequest {
   readonly verdictObject?: unknown;
   /** The `failure.yaml` read, injected. Defaults to the `node:fs` one. */
   readonly yaml?: FailureYamlFileSystem;
+  /**
+   * The triage note read out of this run's sealed `.evidence` archive and
+   * attributed to *this* member by the test id the pack itself declares
+   * (`kane/packTriage.ts`).
+   *
+   * Preferred over the listing's `failure.yaml` when both exist, because a
+   * `.evidence` archive is what Kane actually seals: a pack *directory* under
+   * `.testmuai/evidence/` is an extraction someone left behind, and it may well
+   * belong to a different run. Passing it is how the note reaches the triage rung
+   * at all — the rung reads text, and this is text, so nothing about the parser or
+   * the ordering changes.
+   */
+  readonly sealedTriage?: SealedTriageNote | null;
   readonly diagnostics?: DiagnosticSink;
 }
 
@@ -462,7 +479,11 @@ export interface FailureContextRequest {
  */
 export function createFailureContext(request: FailureContextRequest): FailureContext {
   const pack: EvidencePack | null = request.evidence?.pack ?? null;
-  const failureYamlPath = findFailureYamlArtifact(pack)?.path ?? null;
+  const sealed = request.sealedTriage ?? null;
+  // The sealed archive wins: it is the file Kane wrote, and the note inside it was
+  // tied to this member by identifier. A pack directory is at best an extraction
+  // of one, at worst another run's.
+  const failureYamlPath = sealed?.archivePath ?? findFailureYamlArtifact(pack)?.path ?? null;
 
   let loaded: FailureYaml | null = null;
   let didLoad = false;
@@ -471,6 +492,7 @@ export function createFailureContext(request: FailureContextRequest): FailureCon
     didLoad = true;
     loaded = loadFailureYaml({
       path: failureYamlPath,
+      ...(sealed === null ? {} : { content: sealed.content }),
       fs: request.yaml,
       diagnostics: request.diagnostics,
     });
