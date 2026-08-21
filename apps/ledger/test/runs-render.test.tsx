@@ -21,17 +21,43 @@
  * an unresolved-source diagnostic reaches the DOM intact and both ids of a fork
  * survive to the page. A truncated message on this page would be worse than no
  * message, because a reviewer would act on the half they were shown.
+ *
+ * The **filter** half is driven against runs constructed here rather than against the
+ * committed snapshot, and that is a fact about the snapshot rather than a shortcut: it
+ * holds fifteen runs of one family with one outcome tone, so a filter exercised on it
+ * could only prove that selecting the single option keeps every row. The two things a
+ * filter must never do are checked instead — narrowing to nothing renders the dashed
+ * empty state naming what is selected, and the heading's count follows the view rather
+ * than the log. Every row's anchor and the `newest` mark are checked against the real
+ * page, because those are claims about the committed data.
  */
 
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import type { CommandFamily, ExitMeaning, SnapshotDiagnostic, SnapshotRun } from '@kept/core';
 import { SnapshotRunSchema, contractFor } from '@kept/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DiagnosticBlock } from '../app/runs/DiagnosticBlock.js';
-import { NOT_REPORTED, RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
-import RunsPage from '../app/runs/page.js';
+import { NEWEST_LABEL, NOT_REPORTED, RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
+import RunsPage, {
+  NO_DIAGNOSTICS_DETAIL,
+  RUNS_TABLE_HEADING_ID,
+  RUNS_TABLE_NOTE,
+  RUNS_TABLE_NOTE_LABEL,
+  RUNS_TABLE_REGION_LABEL,
+  dynamic,
+} from '../app/runs/page.js';
 import {
+  EVERY,
+  FAMILY_FILTER_ID,
+  FAMILY_FILTER_LABEL,
+  NO_MATCH_HEADLINE,
+  RunLog,
+  TONE_FILTER_ID,
+  TONE_FILTER_LABEL,
+} from '../components/RunLog.js';
+import {
+  NO_DIAGNOSTICS,
   NO_RUNS_DETAIL,
   NO_RUNS_HEADLINE,
   OUTCOME_UNKNOWN,
@@ -49,6 +75,7 @@ afterEach(cleanup);
 const AT = '2026-08-20T16:17:09.800Z';
 
 interface RunDraft {
+  readonly id?: string;
   readonly family?: CommandFamily;
   readonly command?: string;
   readonly exitCode?: number | null;
@@ -65,7 +92,7 @@ function makeRun(draft: RunDraft): SnapshotRun {
   const family: CommandFamily = draft.family ?? 'Assurance';
   const terminalSeen = draft.terminalSeen ?? false;
   return SnapshotRunSchema.parse({
-    id: 'tr_20260820T161709Z',
+    id: draft.id ?? 'tr_20260820T161709Z',
     family,
     command: draft.command ?? 'cover --json',
     startedAt: AT,
@@ -94,15 +121,84 @@ function makeDiagnostic(
   return { code, severity, message, file: null, line: null, at: AT };
 }
 
-/** One row, in the table it belongs to — a `<tr>` outside one is not valid DOM. */
+/**
+ * One run, in the table it belongs to — a `<tr>` outside one is not valid DOM.
+ *
+ * `RunRow` supplies its own `<tbody>`: one group per run, so that `runs.css` can band
+ * and highlight a run *and its detail row* as one object. So the helper renders it as
+ * a direct child of `<table>` rather than nesting it inside a `<tbody>` of its own.
+ */
 function renderRow(run: SnapshotRun) {
   return render(
     <table>
-      <tbody>
-        <RunRow run={run} />
-      </tbody>
+      <RunRow run={run} />
     </table>,
   );
+}
+
+/**
+ * The log's interactive shell, with the copy the page owns handed to it.
+ *
+ * `RunLog` is the route's one client component and the page passes it four strings —
+ * see its header for why the copy stays on the server side of the boundary. Rendering
+ * it directly is what lets the filter be exercised against runs constructed here: the
+ * committed snapshot happens to hold one family and one outcome tone, so a filter test
+ * driven off it could only ever prove that selecting the single option keeps all
+ * fifteen rows.
+ */
+function renderLog(runs: readonly SnapshotRun[]) {
+  return render(
+    <RunLog
+      headingId={RUNS_TABLE_HEADING_ID}
+      note={RUNS_TABLE_NOTE}
+      noteLabel={RUNS_TABLE_NOTE_LABEL}
+      regionLabel={RUNS_TABLE_REGION_LABEL}
+      runs={runs}
+    />,
+  );
+}
+
+/** Two families and three tones, so both axes have something to narrow. */
+const MIXED_RUNS: readonly SnapshotRun[] = [
+  makeRun({
+    id: 'tr_failed',
+    family: 'ExecutionTestrun',
+    exitCode: 1,
+    exitMeaning: 'failure',
+    terminalSeen: true,
+    status: 'failed',
+  }),
+  makeRun({
+    id: 'tr_paused',
+    family: 'Assurance',
+    exitCode: 3,
+    exitMeaning: 'paused-resumable',
+    terminalSeen: true,
+    status: 'paused',
+  }),
+  makeRun({
+    id: 'tr_complete',
+    family: 'Assurance',
+    exitCode: 0,
+    exitMeaning: 'success',
+    terminalSeen: true,
+  }),
+];
+
+/** A `<select>`, changed the way a reader changes one. */
+function choose(select: HTMLSelectElement | null, value: string): void {
+  expect(select, 'the control is not in the document').not.toBeNull();
+  act(() => {
+    fireEvent.change(select as HTMLSelectElement, { target: { value } });
+  });
+}
+
+function control(container: HTMLElement, id: string): HTMLSelectElement | null {
+  return container.querySelector<HTMLSelectElement>(`#${id}`);
+}
+
+function headingText(container: HTMLElement): string {
+  return container.querySelector(`#${RUNS_TABLE_HEADING_ID}`)?.textContent ?? '';
 }
 
 /* ─────────────────────── the log, now that it has entries ──────────────────── */
@@ -121,11 +217,109 @@ describe('/runs — the recorded terminal events', () => {
     expect(text).toContain(`Terminal events (${snapshot.runs.length})`);
     expect(container.querySelector('.runs-table'), 'a table for a populated log').not.toBeNull();
     expect(container.querySelectorAll('.runs-table__row')).toHaveLength(snapshot.runs.length);
+    /* one group per run, so the banding and the hover tint cover a run and its detail
+       as one object rather than striping the two apart */
+    expect(container.querySelectorAll('.runs-table__group')).toHaveLength(snapshot.runs.length);
+    /* The frame is the scroll container, so seven columns never overflow the page —
+       and a bounded scroller has to be reachable and named, or it is a region of the
+       document only a pointer can read (§10.8, R10.7). */
+    const frame = container.querySelector('.runs-table-frame');
+    expect(frame, 'the table is not inside a scroll frame').not.toBeNull();
+    expect(frame?.classList.contains('surface-raised')).toBe(true);
+    expect(frame?.getAttribute('role')).toBe('region');
+    expect(frame?.getAttribute('aria-label')).toBe(RUNS_TABLE_REGION_LABEL);
+    expect(frame?.getAttribute('tabindex')).toBe('0');
     for (const run of snapshot.runs) {
       expect(text, `${run.id} is not on the page`).toContain(run.command);
       // A figure the run never reported reads `not reported`, never `0`.
       if (run.durationMs === null) expect(text).toContain(NOT_REPORTED);
     }
+    unmount();
+  });
+
+  /**
+   * The caption that scrolled, and the two halves of the fix.
+   *
+   * A `<caption>` is part of the table box, so it scrolls with the table — and this table
+   * is inside a frame that scrolls in both axes, which is how a sentence of prose came to
+   * slide up into the middle of the log under the sticky header. Both halves are asserted
+   * here rather than trusted:
+   *
+   *   1. **the sentence is out of the scroll frame.** Not merely "no caption element" —
+   *      that would still pass if the words were moved to another element *inside* the
+   *      frame, which is the same bug with a different tag. So the frame's own subtree is
+   *      searched for the words and required not to contain them, and the disclosure that
+   *      does hold them is required to be outside it;
+   *   2. **the table still has an accessible name.** Removing a caption removes a name, and
+   *      an unnamed table is a regression in exactly the population that could not see the
+   *      caption move. The name is `aria-labelledby` the section heading, and the id is
+   *      resolved rather than compared: an `aria-labelledby` pointing at nothing is worse
+   *      than no attribute, because it presents as done.
+   */
+  it('keeps the log note out of the scroll frame and still names the table', () => {
+    const { container, unmount } = render(<RunsPage />);
+
+    /* the words are on the page, and nowhere inside the thing that scrolls */
+    expect(container.textContent).toContain(RUNS_TABLE_NOTE);
+    const frame = container.querySelector('.runs-table-frame');
+    expect(frame).not.toBeNull();
+    expect(
+      frame?.textContent,
+      'the note is back inside the scroll frame, so it will scroll into the log again',
+    ).not.toContain(RUNS_TABLE_NOTE);
+    expect(
+      container.querySelector('caption'),
+      'a caption is part of the table box and scrolls with it',
+    ).toBeNull();
+
+    /* it is a native disclosure, focusable and named without a line of JavaScript */
+    const hint = container.querySelector('details.hint');
+    expect(hint, 'the note is not behind a disclosure').not.toBeNull();
+    expect(hint?.tagName).toBe('DETAILS');
+    expect(frame?.contains(hint ?? null), 'the disclosure is inside the scroller').toBe(false);
+    const summary = hint?.querySelector('summary');
+    expect(summary?.getAttribute('aria-label')).toBe(RUNS_TABLE_NOTE_LABEL);
+    expect(summary?.textContent).toBe('?');
+    expect(hint?.querySelector('.hint__panel')?.textContent).toBe(RUNS_TABLE_NOTE);
+
+    /* and the table's name resolves to the heading a sighted reader sees over it */
+    const table = container.querySelector('.runs-table');
+    const labelledBy = table?.getAttribute('aria-labelledby');
+    expect(labelledBy, 'the table lost its accessible name with its caption').toBe(
+      RUNS_TABLE_HEADING_ID,
+    );
+    const heading = container.querySelector(`#${RUNS_TABLE_HEADING_ID}`);
+    expect(heading, 'aria-labelledby points at nothing, so the table has no name').not.toBeNull();
+    expect(heading?.textContent).toBe(`Terminal events (${snapshot.runs.length})`);
+
+    unmount();
+  });
+
+  it('says nothing about the furniture: the scroll hint sentence is gone', () => {
+    /* "The log scrolls sideways and down; the column headings stay put." described the box
+       rather than the data. The affordance is the frame's own treatment now — a reserved
+       scrollbar gutter, the ink border, the sticky header and the region's focus ring — so
+       the sentence is asserted absent rather than merely deleted, and the table sits
+       directly under the heading rule with nothing between them. */
+    const { container, unmount } = render(<RunsPage />);
+    const text = container.textContent ?? '';
+    expect(text).not.toContain('scrolls sideways');
+    expect(text).not.toContain('the column headings stay put');
+    expect(container.querySelector('.runs-page__hint')).toBeNull();
+
+    const line = container.querySelector('.section-head-line');
+    expect(line, 'the heading and its disclosure do not share a line').not.toBeNull();
+    /* One thing now stands between the heading rule and the table, and it is the filter
+       bar rather than a sentence about scrolling: an instrument, not a description of the
+       furniture. Nothing else is admitted between them. */
+    const filter = line?.nextElementSibling;
+    expect(filter?.classList.contains('runs-filter'), 'the filter bar is not under the heading rule').toBe(
+      true,
+    );
+    expect(
+      filter?.nextElementSibling?.classList.contains('runs-table-frame'),
+      'something stands between the filter bar and the table',
+    ).toBe(true);
     unmount();
   });
 
@@ -143,11 +337,144 @@ describe('/runs — the recorded terminal events', () => {
     unmount();
   });
 
-  it('is a static render with no client boundary and no handler', () => {
+  it('keeps a two-line empty state ready for a snapshot that reports none', () => {
+    /* The committed snapshot carries diagnostics, so this path is not rendered today.
+       The copy still has to exist and still has to be two lines: a lead line that
+       states the fact and a lighter one that says what would put a diagnostic here.
+       A lead line alone is a shrug, and a detail line alone buries the answer. */
+    expect(NO_DIAGNOSTICS.length).toBeGreaterThan(0);
+    expect(NO_DIAGNOSTICS_DETAIL).not.toBe(NO_DIAGNOSTICS);
+    expect(NO_DIAGNOSTICS_DETAIL.length).toBeGreaterThan(NO_DIAGNOSTICS.length);
+  });
+
+  it('is a static render with no props, and keeps its client boundary in one component', () => {
     /* `dynamic` is the only route-segment config the page exports, and it is the
        static one. A page that quietly became dynamic would still render here, so
-       the claim is asserted rather than assumed (§10.1, R8.6). */
+       the claim is asserted rather than assumed (§10.1, R8.6).
+
+       The filter needs `useState`, and the temptation the filter creates is to make this
+       page a client component. It is not one: the interactive shell is `RunLog`, and the
+       page still takes no props, so it can still take no request. */
     expect(RunsPage.length, 'the page takes no props, so it can take no request').toBe(0);
+    expect(dynamic).toBe('force-static');
+  });
+});
+
+/* ──────────────── the filter, and the anchors that make a run linkable ─────── */
+
+describe('/runs — the log can be narrowed, and never lies while narrowed', () => {
+  it('offers only the families and tones the runs carry, and narrows the rows to them', () => {
+    const { container, unmount } = renderLog(MIXED_RUNS);
+
+    /* Both option lists are derived from the runs, so an option can never select
+       nothing and a family the snapshot grew cannot go missing. */
+    const family = control(container, FAMILY_FILTER_ID);
+    const tone = control(container, TONE_FILTER_ID);
+    expect([...(family?.options ?? [])].map((option) => option.value)).toEqual([
+      EVERY,
+      'Assurance',
+      'ExecutionTestrun',
+    ]);
+    expect([...(tone?.options ?? [])].map((option) => option.value)).toEqual([
+      EVERY,
+      'complete',
+      'failed',
+      'paused',
+    ]);
+
+    /* unfiltered: the plain count, and every run */
+    expect(headingText(container)).toBe('Terminal events (3)');
+    expect(container.querySelectorAll('.runs-table__row')).toHaveLength(3);
+
+    /* one axis */
+    choose(family, 'Assurance');
+    expect(headingText(container)).toBe('Terminal events (2 of 3)');
+    expect([...container.querySelectorAll('.runs-table__row')].map((row) => row.id)).toEqual([
+      'tr_paused',
+      'tr_complete',
+    ]);
+
+    /* and both, down to the single run that satisfies them */
+    choose(tone, 'paused');
+    expect(headingText(container)).toBe('Terminal events (1 of 3)');
+    const rows = container.querySelectorAll('.runs-table__row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe('tr_paused');
+    /* the table survives the filter: same grouping, same sticky header, same name */
+    expect(container.querySelectorAll('.runs-table__group')).toHaveLength(1);
+    expect(container.querySelector('.runs-table')?.getAttribute('aria-labelledby')).toBe(
+      RUNS_TABLE_HEADING_ID,
+    );
+    expect(container.querySelectorAll('.runs-table__head-cell')).toHaveLength(RUN_COLUMNS.length);
+
+    unmount();
+  });
+
+  it('renders the dashed empty state, naming the filter, rather than an empty table', () => {
+    const { container, unmount } = renderLog(MIXED_RUNS);
+    /* no run is an ExecutionTestrun that paused, so this combination selects nothing */
+    choose(control(container, FAMILY_FILTER_ID), 'ExecutionTestrun');
+    choose(control(container, TONE_FILTER_ID), 'paused');
+
+    expect(container.querySelectorAll('.runs-table__row')).toHaveLength(0);
+    expect(
+      container.querySelector('.runs-table'),
+      'an empty table under a narrow filter reads as an empty log',
+    ).toBeNull();
+
+    const empty = container.querySelector('.runs-empty');
+    expect(empty, 'a zero-result filter renders no empty state at all').not.toBeNull();
+    const words = empty?.textContent ?? '';
+    expect(words).toContain(NO_MATCH_HEADLINE);
+    /* it says which filter is in force, and how many runs it is hiding */
+    expect(words).toContain('ExecutionTestrun');
+    expect(words).toContain('paused');
+    expect(words).toContain(String(MIXED_RUNS.length));
+    /* and the heading agrees with the empty state rather than with the log */
+    expect(headingText(container)).toBe('Terminal events (0 of 3)');
+
+    unmount();
+  });
+
+  it('gives both controls a real label and puts them on a paper slab', () => {
+    const { container, unmount } = renderLog(MIXED_RUNS);
+    for (const [id, words] of [
+      [FAMILY_FILTER_ID, FAMILY_FILTER_LABEL],
+      [TONE_FILTER_ID, TONE_FILTER_LABEL],
+    ] as const) {
+      const label = container.querySelector(`label[for="${id}"]`);
+      expect(label, `${id} has no label pointing at it`).not.toBeNull();
+      expect(label?.textContent).toBe(words);
+      expect(control(container, id)?.tagName).toBe('SELECT');
+    }
+    expect(container.querySelector('.runs-filter')?.classList.contains('surface-raised')).toBe(true);
+    /* the count is announced, because the heading's own count changes silently */
+    const status = container.querySelector('.runs-filter__status');
+    expect(status?.getAttribute('role')).toBe('status');
+    expect(status?.textContent).toContain(`${MIXED_RUNS.length}`);
+    unmount();
+  });
+
+  it('anchors every row on its own run id, and marks only the newest one', () => {
+    const { container, unmount } = render(<RunsPage />);
+
+    for (const run of snapshot.runs) {
+      const row = container.querySelector(`[data-run="${run.id}"]`);
+      expect(row, `${run.id} is not in the log`).not.toBeNull();
+      /* the id is the run id unchanged, so `/runs#<id>` addresses this row */
+      expect(row?.getAttribute('id'), `${run.id} carries no anchor id`).toBe(run.id);
+      const anchor = row?.querySelector('.runs-table__anchor');
+      expect(anchor?.getAttribute('href')).toBe(`#${run.id}`);
+      expect(anchor?.textContent, 'the affordance is the identifier itself').toBe(run.id);
+    }
+
+    /* newest first, so exactly one mark and it is on the first row */
+    const marks = container.querySelectorAll('.runs-table__newest');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.textContent).toBe(NEWEST_LABEL);
+    expect(marks[0]?.closest('tr')?.id).toBe(snapshot.runs[0]?.id);
+
+    unmount();
   });
 });
 
@@ -364,7 +691,42 @@ describe('/runs — the log is a table, and its headings sit over their columns'
     expect(RUN_COLUMNS.length).toBeGreaterThanOrEqual(6);
     const { container, unmount } = renderRow(makeRun({ exitMeaning: 'success', terminalSeen: true }));
     expect(container.querySelectorAll('tbody tr').length).toBe(1);
-    expect(container.querySelectorAll('tbody td').length).toBe(RUN_COLUMNS.length);
+    /* One of the seven is a `<th scope="row">` — the command family, which is what the
+       row is about — so the cell count is counted over both element types. The
+       guarantee is unchanged: a row has exactly as many cells as there are columns. */
+    expect(container.querySelectorAll('tbody th, tbody td').length).toBe(RUN_COLUMNS.length);
+    unmount();
+  });
+
+  it('marks the family cell as the row header, so a row announces its subject', () => {
+    const { container, unmount } = renderRow(
+      makeRun({ family: 'ExecutionTestrun', exitMeaning: 'success', terminalSeen: true }),
+    );
+    const header = container.querySelector('.runs-table__row-header');
+    expect(header?.tagName).toBe('TH');
+    expect(header?.getAttribute('scope')).toBe('row');
+    /* The cell is the row's identity block now — family, then the run id as its anchor —
+       so the family is asserted on its own element rather than as the whole cell. It is
+       still the first thing in the cell and still what the row is about. */
+    expect(header?.querySelector('.runs-table__family')?.textContent).toBe('ExecutionTestrun');
+    unmount();
+  });
+
+  it('groups each run and its detail row into one tbody, so banding cannot split them', () => {
+    const { container, unmount } = renderRow(
+      makeRun({
+        exitMeaning: 'failure',
+        exitCode: 1,
+        diagnostics: [makeDiagnostic('ndjson-parse', 'line 12 did not parse as JSON')],
+      }),
+    );
+    const groups = container.querySelectorAll('.runs-table__group');
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.tagName).toBe('TBODY');
+    /* the run's own row and its detail row, in that order, inside one group */
+    expect(groups[0]?.querySelectorAll('tr')).toHaveLength(2);
+    expect(groups[0]?.querySelector('.runs-table__row')).not.toBeNull();
+    expect(groups[0]?.querySelector('.runs-table__detail-row')).not.toBeNull();
     unmount();
   });
 

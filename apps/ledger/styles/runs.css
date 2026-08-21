@@ -1,41 +1,90 @@
 /**
  * The terminal-event log — design §10.1 (`/runs`), §10.7 (mono as texture,
- * tabular numerals wherever a number aligns), §14.1 (the vocabulary this page
- * exists to render), R4.9, R4.11, R5.3.
+ * tabular numerals wherever a number aligns), §10.10 (an empty state is a
+ * specified state), §14.1 (the vocabulary this page exists to render), R4.9,
+ * R4.11, R5.3, R10.8.
  *
  * Geometry, type and colour only. No token is declared here — `tokens.css` is the
- * single declaration site — and no depth: the log sits on the page at `--ink-000`
- * and the two blocks that need to read as recessed pick `.surface-well` from
- * `surfaces.css` (§10.5). Every length is `0`, `1px` or a `--s-*` step.
+ * single declaration site — and no depth: the table frame and the two recessed
+ * blocks pick `.surface-raised` and `.surface-well` from `surfaces.css` in the
+ * markup (§10.5), and this file writes no shadow at all.
  *
- * Three decisions worth stating:
+ * ## The log is a table, because it is one
  *
- * 1. **The log is a table, because it is one.** Six aligned facts per run —
- *    family, command, status, result code, credits, exit meaning — read down the
- *    column as much as across the row, and a reader comparing two runs is
- *    comparing columns. Semantic `<table>` also gives the row header and the
- *    column association a screen reader needs for free, which a grid of `<div>`s
- *    would have to reinvent through `aria`.
+ * Seven aligned facts per run — family, command, status, result code, credits,
+ * duration, exit meaning — read down the column as much as across the row, and a
+ * reader comparing two runs is comparing columns. A semantic `<table>` also gives
+ * the row header and the column association a screen reader needs for free, which a
+ * grid of `<div>`s would have to reinvent through `aria`.
  *
- * 2. **Numbers align or they are not a column.** `.credits-column` and
- *    `.run-duration` carry `font-variant-numeric: tabular-nums lining-nums`,
- *    which §10.7 makes non-negotiable: a credits figure with proportional digits
- *    does not form a column, it forms a ragged edge that reads as noise.
+ * It is set as a **ruled sheet**: `border-collapse: separate` with
+ * `border-spacing: 0`, so every cell keeps its own edges and can be ruled on both
+ * axes at `--hairline` — ink at 18% over the page. Collapsed borders would merge
+ * those edges into shared ones, which is what breaks a sticky `thead`: a collapsed
+ * table's header borders are painted by the table, not the cell, and they are left
+ * behind when the cell sticks. So the separate model here is a requirement of the
+ * sticky header rather than a preference about rules.
  *
- * 3. **The log is achromatic, and that is a decision rather than an omission.**
- *    Colour is the verdict channel (§10.4.3), and the "Used for" column of
- *    §10.4.2 spends it on exactly four things: a verdict tag, a graph node label,
- *    the freshness ochre over twenty-four hours, and a diff deletion. A run's
- *    outcome is none of them — it is a statement about an invocation, not about a
- *    promise — so painting `failed` in the red verdict hue would invite a reader
- *    to see a broken promise where there is a tool that exited non-zero. The
- *    vocabulary of §14.1 carries the whole signal instead, in the neutral ramp:
- *    the label at `--text-000`, its reasoning at `--text-200`. `data-tone` stays
- *    on the element as a machine handle, and it deliberately resolves to no
- *    colour here; giving it one is a design change and belongs in §10.4.2 first.
+ * The last column drops its right rule and the last row its bottom one, because the
+ * frame's own 2px ink border is already there and a doubled edge reads as a mistake.
  *
- * Deliberately absent: a row hover lift, a zebra fill, a status dot standing in
- * for a word, and any depth on a row. A log is read, not browsed.
+ * ## One `<tbody>` per run, and that is what makes banding honest
+ *
+ * A run with members or diagnostics carries a **second** `<tr>` beneath its own.
+ * Banding on `tr:nth-child(even)` would therefore stripe a detail row away from the
+ * run it belongs to, which is worse than not banding at all. So `RunRow` emits a
+ * `<tbody class="runs-table__group">` per run — several `<tbody>` elements in one
+ * table is ordinary HTML — and the banding and the hover tint are per *group*. A
+ * run and its detail always share one band, and the band alternates per run.
+ *
+ * The hover tint rises to `--ink-150` rather than darkening. On this paper ramp
+ * elevation reads brighter as it climbs (`tokens.css`), so the row a pointer is over
+ * lifts toward white; a darker tint here would read as the row being pressed.
+ *
+ * ## The frame scrolls so the page never does (R10.8)
+ *
+ * Seven columns do not fit a 320px phone, and the two honest options are to hide
+ * data or to let the reader scroll to it. The table therefore sits inside
+ * `.runs-table-frame`, which is `overflow-x: auto` with a slim scrollbar: below the
+ * table's `min-width` the frame scrolls, above it nothing scrolls at all, and the
+ * *page* has nothing to overflow at any width. The `min-width` is a floor in `rem`
+ * rather than a layout width — it is the point below which the columns would stop
+ * being columns, not a size the table is pinned to.
+ *
+ * ## The log is achromatic, and that is a decision rather than an omission
+ *
+ * Colour is the verdict channel (§10.4.3), and the "Used for" column of §10.4.2
+ * spends it on exactly four things: a verdict tag, a graph node label, the freshness
+ * ochre over twenty-four hours, and a diff deletion. A run's outcome is none of them
+ * — it is a statement about an invocation, not about a promise — so painting
+ * `failed` in the red verdict hue would invite a reader to see a broken promise where
+ * there is a tool that exited non-zero.
+ *
+ * What the outcomes get instead is the badge grammar of §10.11 read without hue:
+ * **fill and border weight**. A settled outcome is a `--line` ink edge on paper; an
+ * outcome that needs attention is an ink fill with paper text; an outcome still in
+ * flight, or one that asserted nothing, is a `--line-heavy` edge. Three shapes, no
+ * hue, and the word is always the full word — `outcome unknown` and
+ * `preflight rejected` are never abbreviated and never replaced by a dot.
+ *
+ * `data-tone` is the machine handle those three shapes are selected through, and it
+ * still resolves to **no colour**: an ink fill is the same ink every border in the
+ * system is drawn in.
+ *
+ * ## The log can be narrowed, and a run can be linked to
+ *
+ * Two additions, and neither of them adds a colour. A **filter bar** sits on a raised
+ * paper slab above the frame: one labelled `<select>` per axis, recessed into the slab
+ * by a 2px ink border and the `--ink-050` step of the ramp — see the note on
+ * `.runs-filter__select` for why the recess is a fill rather than the inset shadow the
+ * reference spec draws. And every **row is addressable**: it carries its run id as its
+ * `id`, renders that id as a link to its own fragment, and takes a `scroll-margin-top`
+ * so a fragment jump does not land it under the sticky masthead. The first row of a
+ * newest-first log is marked `newest` in the same bordered-chip grammar the outcome
+ * labels use.
+ *
+ * Deliberately absent: a status dot standing in for a word, a coloured outcome, and
+ * any depth on a row. A log is read, not browsed.
  */
 
 /* ── the page ───────────────────────────────────────────────────────────────── */
@@ -44,74 +93,287 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-8);
+  min-width: 0;
 }
 
+/* Placement only. The plane and the offset shadow come from `.surface-slab-ink`, the
+   box from `.page-title__slab`, and the size, case and tracking from `shell.css`'s `h1`
+   clamp — so the title is fluid across the whole viewport range and this rule sets a
+   margin. The standfirst under it is the shared `.page-standfirst`. */
 .runs-page__title {
-  margin: 0 0 var(--s-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tight);
-  color: var(--text-000);
+  margin: 0 0 var(--s-4);
 }
 
-.runs-page__lede {
-  max-width: 72ch;
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-base);
-  line-height: var(--lh-body);
-  color: var(--text-100);
-}
+/* The two section heads on this page — `Terminal events (n)` and `Diagnostics (n)` —
+   take `.section-head` from `shell.css`: small caps over a 3px ink rule, so each one
+   opens a block rather than reading as one more line of text on a ruled page. Both
+   were named in the brief as copy that was "just there".
+ *
+ * `Terminal events (n)` additionally sits in `.section-head-line` with the `?` disclosure
+ * that now holds the log's reading note, and both of those classes are in `shell.css` for
+ * the same reason `.section-head` is: they are the product's heading and disclosure
+ * grammar, not this page's. So nothing about either is restated here — this file owns the
+ * log, and one route's stylesheet is the wrong place for a pattern the next route will
+ * want.
+ *
+ * Deliberately absent: the rule that styled a sentence above the frame saying the log
+ * scrolls. The sentence is gone (it described the furniture rather than the data) and the
+ * rule went with it rather than being left behind for a class nothing renders. */
 
-.runs-page__section-title {
-  margin: 0 0 var(--s-3);
-  font-family: var(--font-ui);
-  font-size: var(--fs-md);
-  line-height: var(--lh-tight);
-  color: var(--text-000);
-}
+/* ── the empty state: the one dashed border in the system (§10.10) ──────────── */
 
-/* ── the empty state: a fact, not a shrug (§10.10) ──────────────────────────── */
-
+/* Dashed, and dashed nowhere else. A dashed edge marks a region that is holding
+   nothing — so it means "specified and empty" everywhere it appears, and a reader
+   who has seen one on `/reviews` knows what this one is saying. The fill is the
+   recessed paper surface, because an empty region is cut into the sheet rather than
+   raised off it, and the depth is the border rather than a shadow (§10.5). */
 .runs-empty {
   padding: var(--s-6);
+  border: var(--line-heavy) dashed var(--text-000);
   border-radius: var(--r-card);
+  background-color: var(--ink-050);
 }
 
+/* The lead line states the fact. Bold, because it is the answer. */
 .runs-empty__headline {
   margin: 0 0 var(--s-2);
   font-family: var(--font-ui);
   font-size: var(--fs-md);
+  font-weight: 700;
   line-height: var(--lh-tight);
   color: var(--text-000);
 }
 
+/* The second line explains it. Lighter, because it is the reason. */
 .runs-empty__detail {
-  max-width: 72ch;
+  max-width: 62ch;
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  font-weight: 400;
   line-height: var(--lh-body);
-  color: var(--text-100);
+  color: var(--text-200);
+}
+
+/* ── the filter bar: a paper slab over the log ───────────────────────────────── */
+
+/**
+ * Two labelled controls above the table, on one raised slab.
+ *
+ * The slab is the device rather than decoration: fifteen runs and a filter that
+ * narrows them are two different things, and a reader has to be able to see at a glance
+ * which part of the page is the *instrument* and which part is the *record*. So the
+ * controls sit on `.surface-raised` — the same `--ink-100` plane with a 2px ink edge
+ * that a chip or a node takes — and the log below keeps its own frame. Depth is picked,
+ * not authored: this file writes no shadow (§10.5).
+ *
+ * A wrapping flex row, and both wraps matter. At 320px the two fields and the count
+ * stack rather than overflowing, and `align-items: flex-end` keeps the two controls on
+ * one optical line while their labels sit above them at whatever height the words take.
+ */
+.runs-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-4);
+  align-items: flex-end;
+  margin: 0 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  min-width: 0;
+}
+
+/* Label over control, which is the only arrangement that survives a 320px column: a
+   label beside a `<select>` either truncates the words or pushes the control off the
+   row. The label's own type — small caps at `--fs-xs` in `--text-200` — is the
+   document's `label` rule in `shell.css`, restated nowhere. */
+.runs-filter__field {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+/**
+ * The control itself, and the one place this file knowingly departs from the reference.
+ *
+ * The spec draws an input as *recessed*: a 2px ink border with an inset shadow, the
+ * same inverted ramp `.surface-well` is built out of. The border is here and the inset
+ * shadow is not, because a `box-shadow` may be declared in `styles/surfaces.css` and in
+ * no other file (§10.5) — and a fifth surface class existing only to line two selects
+ * would be a widening of a closed set for one control. So the recess is carried by the
+ * border and by `--ink-050`, the step of the paper ramp that already means "cut into the
+ * sheet" everywhere else in the product: the well's fill, the table's banding, the
+ * footer band. The control reads as set *into* the slab it sits on, which is `--ink-100`
+ * and a step brighter, and it reads that way from the fill alone rather than from a
+ * shadow nobody may write.
+ *
+ * The native disclosure caret is deliberately kept — `appearance` is untouched. It is
+ * the affordance that says this is a control with a list behind it, and replacing it
+ * would mean drawing a glyph of our own for no gain. The focus ring is the shell's, so
+ * nothing about it is restated here either.
+ */
+.runs-filter__select {
+  max-width: 100%;
+  padding: var(--s-1) var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--s-6);
+}
+
+/* The count, as a sentence. It is a live region in the markup, because the heading's
+   own count changes silently — a filter that narrows fifteen runs to four says so out
+   loud once, here, and in the heading for a reader who can see it. */
+.runs-filter__status {
+  max-width: 40ch;
+  margin: 0 0 0 auto;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--s-6);
+  color: var(--text-200);
+}
+
+/* ── the frame: a scroll container only when it actually overflows ───────────── */
+
+/* A scroll container in both axes, and both are load-bearing.
+ *
+ * *Horizontally*, it is what keeps seven columns off a 320px page: below the table's
+ * `min-width` the frame scrolls and the page does not, so there is no viewport at which
+ * the document overflows sideways.
+ *
+ * *Vertically*, it is what makes the sticky header a header. `position: sticky` pins to
+ * the nearest scrollport, so a `thead` in a table that scrolls with the *page* would
+ * either pin to the page — sliding under the sticky masthead, which outranks it — or
+ * pin to nothing at all. Bounding the frame gives the header a scrollport of its own
+ * that the masthead is not in, and fifteen runs then read under a heading that stays
+ * put. The bound is `min(75vh, 44rem)`: three quarters of whatever viewport there is,
+ * and never more than about eleven rows on a tall monitor.
+ *
+ * `overscroll-behavior: contain` stops a flick at the end of the log from carrying on
+ * into the page, which is the one thing that makes a nested scroller feel broken. The
+ * region is labelled and focusable in the markup, so a keyboard reaches it without a
+ * pointer (R10.7). */
+/* ── the scroll affordance, which used to be the frame's weakest part ─────────
+ *
+ * A scroller a reader cannot see is a scroller a reader does not use, and this one was
+ * `scrollbar-width: thin` with a 8px hairline-ish thumb — invisible on a trackpad
+ * machine until it is already moving, on a region holding fifteen runs and seven
+ * columns. Four changes, none of them motion and none of them a shadow:
+ *
+ *   1. `scrollbar-gutter: stable both-edges` reserves the track *always*. So the frame
+ *      does not reflow its columns the moment a scrollbar appears, and — the point —
+ *      the reserved channel is visible at rest, which is what tells a reader the region
+ *      moves before they try to move it.
+ *   2. the track is the recessed paper surface and the thumb is a paper slab with the
+ *      same 2px ink edge every other control in the system has, at `--s-3` rather than
+ *      `--s-2`. It reads as the badge-and-button vocabulary rather than as a system
+ *      widget that wandered in. Paper rather than ink deliberately: an ink *fill* is an
+ *      inversion, and §10.4.3 requires an inverting rule to set the text colour it
+ *      inverts to in the same rule — which a scrollbar thumb, carrying no text, cannot
+ *      honestly do.
+ *   3. `scrollbar-color` names the same pair for the engines that only take the
+ *      standard property, so a Firefox reader gets an ink thumb too rather than the
+ *      user-agent default over a paper track.
+ *   4. the corner where the two bars meet is filled, because an unfilled corner on a
+ *      two-axis scroller is the one place the user agent's own grey shows through.
+ *
+ * The two axes were already load-bearing and still are. *Horizontally*, the frame is
+ * what keeps seven columns off a 320px page: below the table's `min-width` the frame
+ * scrolls and the page does not, so there is no viewport at which the document overflows
+ * sideways. *Vertically*, it is what makes the sticky header a header — `position:
+ * sticky` pins to the nearest scrollport, so a `thead` in a table that scrolled with the
+ * *page* would pin under the sticky masthead, which outranks it. The bound is
+ * `min(75vh, 44rem)`: three quarters of whatever viewport there is, never more than
+ * about eleven rows on a tall monitor.
+ *
+ * `overscroll-behavior: contain` stops a flick at the end of the log carrying on into
+ * the page, which is the one thing that makes a nested scroller feel broken. The region
+ * is labelled and focusable in the markup, so a keyboard reaches it without a pointer
+ * (R10.7).
+ *
+ * The four changes above are also the whole of the affordance now. There used to be a
+ * sentence over the frame saying that the log scrolls sideways and down and that the column
+ * headings stay put — a description of the furniture rather than of the data, and the kind
+ * of copy that exists because the box was not saying it for itself. The box says it: the
+ * reserved gutter is a visible channel at rest, the ink border closes the plane so the
+ * bound is legible as a bound, the ink header stays put while rows move under it, and the
+ * shell's focus ring lands on the region the moment a keyboard reaches it. */
+.runs-table-frame {
+  max-width: 100%;
+  max-height: min(75vh, 44rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-000) var(--ink-050);
+}
+
+.runs-table-frame::-webkit-scrollbar {
+  width: var(--s-3);
+  height: var(--s-3);
+}
+
+.runs-table-frame::-webkit-scrollbar-track {
+  background-color: var(--ink-050);
+}
+
+.runs-table-frame::-webkit-scrollbar-corner {
+  background-color: var(--ink-050);
+}
+
+.runs-table-frame::-webkit-scrollbar-thumb {
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+  border: var(--line) solid var(--text-000);
 }
 
 /* ── the table ──────────────────────────────────────────────────────────────── */
 
 .runs-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 44rem;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
 }
 
+/**
+ * There is no `.runs-table__caption` rule any more, and the reason is worth keeping.
+ *
+ * The log's reading note used to be a `<caption>`. A caption is part of the table box, so
+ * it lives inside whatever scrolls the table — and this frame scrolls in both axes. So
+ * scrolling down through the runs dragged a sentence of prose up into the frame, under the
+ * sticky header, as though it were a row. `caption-side: top` does not help: the caption
+ * scrolls because the table scrolls, and no property inside the frame can move it out of
+ * the frame.
+ *
+ * The sentence is now page copy above the frame, behind the `?` disclosure of `shell.css`,
+ * and the table takes its accessible name from the section heading through
+ * `aria-labelledby`. The class is deleted rather than emptied: a rule for an element
+ * nothing renders is the next author's dead end.
+ *
+ * ── the sticky header ──────────────────────────────────────────────────────── */
+
+/* The sticky header. Ink fill, paper text — one of the two places in this
+   stylesheet where ink is a background rather than a border, and the reason is that
+   a header which scrolls with the log stops being a header. Paper on ink measures
+   19.0:1, the highest-contrast pair in the palette. */
 .runs-table__head-cell {
-  padding: 0 var(--s-3) var(--s-2) 0;
-  border-bottom: 1px solid var(--hairline-strong);
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: var(--line) solid var(--text-000);
+  background-color: var(--text-000);
+  color: var(--ink-000);
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
-  font-weight: 400;
+  font-weight: 800;
   line-height: var(--s-4);
-  color: var(--text-200);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -122,19 +384,179 @@
   text-align: right;
 }
 
-.runs-table__row {
+/* ── the ruling: both axes, at ink's lowest alpha ───────────────────────────── */
+
+.runs-table__cell,
+.runs-table__row-header {
+  padding: var(--s-3) var(--s-4);
+  border-right: 1px solid var(--hairline);
   border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
 }
 
-/* A run's detail sits in a row of its own, so the boundary *between* runs has to
-   read as stronger than the divider between a run and its own detail. */
-.runs-table__detail-row {
-  border-bottom: 1px solid var(--hairline-strong);
+/* The frame's own 2px ink edge is already there, so the last rule on each axis
+   would be a doubled one. */
+.runs-table__cell:last-child,
+.runs-table__row-header:last-child {
+  border-right-width: 0;
+}
+
+.runs-table__group:last-of-type > tr:last-child > .runs-table__cell,
+.runs-table__group:last-of-type > tr:last-child > .runs-table__row-header {
+  border-bottom-width: 0;
+}
+
+/* ── where one run ends and the next begins ─────────────────────────────────── */
+
+/**
+ * The named complaint: with fifteen runs in the log it was hard to tell when a new one
+ * started. Banding alone could not fix that, and the reason is arithmetic rather than
+ * taste — a run is one `<tbody>` holding *one or two* rows, so an alternating fill
+ * produces bands of unequal height, and two adjacent single-row runs read as one
+ * two-row run banded by accident.
+ *
+ * So the boundary is drawn rather than implied: a 3px ink rule across the full width of
+ * the table at the top of every group but the first. It is the same weight `shell.css`
+ * puts under the masthead and `.section-head` puts under a heading, which is the weight
+ * this system already means "a new thing starts here" by. The banding stays underneath
+ * it as the second channel: the rule says where the boundary is and the fill says which
+ * side of it a row is on, so a reader gets the answer from either one.
+ *
+ * `:first-of-type` counts `<tbody>` elements only, so the `<thead>` is not in the
+ * sequence and the first run does not draw a rule against the header's own 2px edge.
+ */
+.runs-table__group:not(:first-of-type) > tr:first-child > .runs-table__cell,
+.runs-table__group:not(:first-of-type) > tr:first-child > .runs-table__row-header {
+  border-top: var(--line-heavy) solid var(--text-000);
+}
+
+/* ── banding and hover, per run rather than per row ─────────────────────────── */
+
+.runs-table__group:nth-of-type(even) > tr > .runs-table__cell,
+.runs-table__group:nth-of-type(even) > tr > .runs-table__row-header {
+  background-color: var(--ink-050);
+}
+
+/* The detail row opts out of the band, and that is what keeps its well a well.
+ *
+ * `.run-detail` is `.surface-well`, filled `--ink-050`. On a banded run the cell around
+ * it was also `--ink-050`, so the recess and its surround were the same paper and the
+ * inset occlusion had nothing to read against — half the runs in the log presented their
+ * members and diagnostics as an unbounded block. Raising the cell to `--ink-150` puts the
+ * brightest paper in the ramp behind the darkest, so the well reads as cut in on every
+ * run rather than on every other one.
+ *
+ * The `tr` in the selector is not decoration: it matches the banding rule's specificity
+ * exactly, so source order decides, and this rule is placed after it deliberately. */
+.runs-table__group > tr.runs-table__detail-row > .runs-table__cell {
+  background-color: var(--ink-150);
+}
+
+/* Later than both rules above on purpose: equal specificity, so source order is
+   what makes hover win over a banded row and over the detail row's own fill. The whole
+   group lifts, which is the object a reader is pointing at. */
+.runs-table__group:hover > tr > .runs-table__cell,
+.runs-table__group:hover > tr > .runs-table__row-header {
+  background-color: var(--ink-150);
+}
+
+/* ── the cells ──────────────────────────────────────────────────────────────── */
+
+/* The row header: the command family, which is what the row is *about*. Mono at
+   `--fs-sm`, because it is an identifier — and explicitly un-shouted, since
+   `shell.css` sets every `th` in small caps for the column headings and a row
+   header that inherited that would read as a second header row. */
+.runs-table__row-header {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  text-transform: none;
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* ── the row is addressable: an anchor, an offset, and a mark on the newest ──── */
+
+/**
+ * `scroll-margin-top`, and why a fragment link needs one at all.
+ *
+ * `/runs#<run id>` asks the user agent to bring this row to the top of its scrollport,
+ * and there are two of those: the frame the table is bounded by, and the page. At the
+ * top of the page sits a sticky masthead, and at the top of the frame sits the sticky
+ * ink header — so a bare jump parks the row *under* one or the other, and the reader
+ * arrives at a link that appears to have done nothing.
+ *
+ * One value clears both, which is the reason it is one declaration rather than two. The
+ * masthead is a 34px lockup in `--s-3` padding over a 3px rule, so it stands about 62px
+ * tall; `--s-16` is 64px, which puts the row just below it. Inside the frame the same
+ * 64px clears the 40px header and leaves the row a line clear of it. Nothing is animated
+ * on the way: `scroll-behavior: smooth` is on the forbidden list of §10.6.3, and a jump
+ * that lands where it was asked to needs no easing.
+ */
+.runs-table__row {
+  scroll-margin-top: var(--s-16);
+}
+
+/* The row header is the run's identity block now, so its three parts stack. The family
+   keeps the mono the cell already sets — it is the contract the row is judged against
+   and it is what a reader scans this column for. */
+.runs-table__family {
+  display: block;
+}
+
+/**
+ * The run id, as a link to its own fragment.
+ *
+ * Ink, underlined, inverting on hover: the document's own link treatment from
+ * `shell.css`, restated in nothing. What this rule contributes is the size — a step down
+ * to `--fs-micro`, because the id is a handle rather than a fact to be read — and the
+ * permission to wrap.
+ *
+ * That permission is a width decision. The enclosing cell is `white-space: nowrap`, which
+ * is right for a family name and wrong for a 36-character identifier: held on one line
+ * the id would set the column's width and push the other six columns sideways at every
+ * viewport. So this one element opts out, and breaks anywhere — every character on both
+ * sides of the break is still the id's own, so nothing is invented at the boundary and
+ * the whole value stays selectable.
+ */
+.runs-table__anchor {
+  display: block;
+  width: fit-content;
+  max-width: 12rem;
+  margin-top: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The newest run, marked. A bordered paper chip at the bottom of the type ramp — the
+   badge grammar of §10.11 read without hue, exactly as the outcome labels are, because
+   "this is the most recent entry" is a fact about position in a log and not a verdict
+   about anything. The fill is the brightest step of the ramp with its text colour in the
+   same rule, so the chip stays legible on a banded row and on a hovered one. */
+.runs-table__newest {
+  display: inline-block;
+  margin-top: var(--s-1);
+  padding: 0 var(--s-1);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
 }
 
 .runs-table__cell {
-  padding: var(--s-3) var(--s-3) var(--s-3) 0;
-  vertical-align: top;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
@@ -152,9 +574,11 @@
 }
 
 /* A command is the longest cell on the row and the one worth reading in full, so
-   it wraps on its own separators rather than being clipped or ellipsised. */
+   it wraps on its own separators rather than being clipped or ellipsised. It is a
+   sentence of tokens, not a single identifier, so it is the one mono cell that is
+   allowed to take two lines. */
 .runs-table__command {
-  min-width: 0;
+  min-width: 12rem;
   overflow-wrap: anywhere;
   color: var(--text-000);
 }
@@ -179,26 +603,65 @@
   color: var(--text-200);
 }
 
-/* ── the outcome: a word, and the neutral ramp behind it ────────────────────── */
+/* ── the outcome: a word, and the badge grammar behind it ───────────────────── */
 
 .run-outcome {
   display: block;
+  min-width: 16rem;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-tight);
 }
 
-/* The brightest text on the row, because it is the one sentence a reader takes
-   away. No verdict token: see the note at the head of this file. */
-.run-outcome__label {
-  display: block;
+/* The badge. A `--line` ink edge on paper is the settled shape, and the word inside
+   it is the full word — the one sentence a reader takes away from the row. No
+   verdict token: see the note at the head of this file. */
+.run-outcome__label,
+.run-member__status {
+  display: inline-block;
+  padding: var(--s-1) var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
   color: var(--text-000);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-mono);
+  white-space: nowrap;
+}
+
+/* **Attention.** An ink fill with paper text — the second and last place ink is a
+   background in this stylesheet. Four run tones and two member statuses mean the
+   same thing here: something did not do what it was asked to, and a reader scanning
+   fifteen rows should find it without reading any of them. `broken` stays
+   distinguishable from `failed` because both keep their own word; the fill says
+   only that both need looking at. */
+.run-outcome[data-tone='failed'] .run-outcome__label,
+.run-outcome[data-tone='rejected'] .run-outcome__label,
+.run-outcome[data-tone='refused'] .run-outcome__label,
+.run-outcome[data-tone='absent'] .run-outcome__label,
+.run-member__status[data-status='broken'],
+.run-member__status[data-status='failed'] {
+  border-color: var(--text-000);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* **In flight, or asserting nothing.** A `--line-heavy` edge: heavier than settled,
+   unfilled because there is nothing to be alarmed about yet. `paused` is resumable
+   and `unknown` is a stream that ended without its terminal event — neither is a
+   failure and §14.1 refuses to let either read as one. */
+.run-outcome[data-tone='paused'] .run-outcome__label,
+.run-outcome[data-tone='unknown'] .run-outcome__label {
+  border-width: var(--line-heavy);
 }
 
 .run-outcome__detail {
   display: block;
   max-width: 60ch;
-  margin: var(--s-1) 0 0;
+  margin: var(--s-2) 0 0;
   font-family: var(--font-ui);
   font-size: var(--fs-xs);
   line-height: var(--lh-body);
@@ -209,91 +672,169 @@
    rendered rather than left to be inferred from a colour. */
 .run-outcome__verdicts {
   display: block;
-  margin: var(--s-1) 0 0;
+  margin: var(--s-2) 0 0;
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
+  font-weight: 700;
   line-height: var(--s-4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 /* ── the detail block under a run: members, reasons, diagnostics ────────────── */
 
 .run-detail {
+  display: grid;
+  gap: var(--s-3);
   margin: 0;
   padding: var(--s-4);
   border-radius: var(--r-card);
+  min-width: 0;
 }
 
+/* `Members (n)` and `Reasons and diagnostics (n)`: the same in-card heading treatment the
+   two card stylesheets use — small caps at the bottom of the ramp over a 1px hairline, so
+   each names the list under it rather than trailing the row above it. */
 .run-detail__title {
-  margin: 0 0 var(--s-2);
+  margin: 0;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--hairline-strong);
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
 .run-detail__list {
+  display: grid;
+  gap: var(--s-2);
   margin: 0;
   padding: 0;
   list-style: none;
+  min-width: 0;
 }
 
 .run-detail__item {
-  margin: 0 0 var(--s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: baseline;
+  margin: 0;
+  min-width: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--text-100);
 }
 
-.run-detail__item:last-child {
-  margin-bottom: 0;
-}
-
-/* A member's status is Kane's own word, kept verbatim so `broken` stays
-   distinguishable from `failed` (§10.7 lists member statuses as mono). */
-.run-member__status {
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-mono);
-  color: var(--text-000);
-}
-
+/* A member's path is one identifier and belongs on one line, so it is given a
+   scrollable box rather than being wrapped into fragments or truncated behind a
+   tooltip — the whole value stays selectable either way. */
 .run-member__path {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   color: var(--text-100);
+  white-space: nowrap;
 }
 
 /* ── diagnostics: the message verbatim, with the producer's own fences kept ─── */
 
-.diagnostic {
-  margin: 0 0 var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  border-left: 1px solid var(--hairline-strong);
+/**
+ * The snapshot-level list, inside one solid container.
+ *
+ * The named complaint was the same one `/coverage`'s promise list had: twenty-nine
+ * recessed blocks separated by gaps of *page*, so the 28px ruling ran between every pair
+ * of them and the list read as debris rather than as a list. It is now
+ * `.surface-raised` in the markup — one opaque `--ink-100` sheet with a 2px ink edge —
+ * with the wells sitting inside it as cells cut into that sheet. The ruling is behind the
+ * page, and the page is now covered where the reading happens.
+ *
+ * A grid rather than a stack of margins, so the gap between two diagnostics is one
+ * declaration and cannot disagree with itself, and the padding is the frame's so a well
+ * never touches the frame's own border.
+ */
+.runs-diagnostics {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-4);
 }
 
-.diagnostic:last-child {
-  margin-bottom: 0;
+/* Margin is zero on purpose: both containers a diagnostic can sit in — the
+   snapshot-level list above and `.run-detail` under a row — are grids with their own
+   gap, so spacing is owned by the container and stated once. */
+.diagnostic {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-left: var(--line-heavy) solid var(--text-000);
+  border-radius: var(--r-chip);
+  min-width: 0;
 }
 
 /* The identity line: code, severity, instant, and the file the diagnostic is
-   about. All four are identifiers, so all four are mono. */
+   about. All four are identifiers, so all four are mono.
+ *
+ * Ruled off from the message beneath it, which is what turns a block of twenty-nine
+ * diagnostics into twenty-nine *records*: the reader's eye lands on a line of chips, and
+ * the prose starts below a boundary rather than continuing the same run of type. */
 .diagnostic__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  align-items: baseline;
   margin: 0;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--hairline-strong);
   line-height: var(--lh-mono);
 }
 
+/* The code, as an inverted chip — the third and last place ink is a background in this
+   stylesheet, after the sticky header and the attention badge.
+ *
+ * It is what makes twenty-nine diagnostics scannable: a reader looking for
+ * `enrichment-assurance-status` among them is looking for one identifier, and an
+ * identifier they can find by shape at a glance beats one they have to read. Paper on ink
+ * measures 19.0:1, and the pair is declared in this one rule because an inversion that
+ * sets a fill without the text colour it inverts to is dark type on dark ink (§10.4.3).
+ * No hue: a diagnostic is a statement about a run, and colour is the verdict channel. */
+/* No `white-space: nowrap`, and that is a width decision rather than an omission. The
+   longest code the committed snapshot carries is `snapshot-repair-evidence-unresolved`,
+   35 characters, which at `--fs-xs` in mono is wider than the whole reading column of a
+   320px phone — held on one line it would push the *page* sideways, which R10.8 forbids
+   outright. A hyphenated slug is the one identifier in the product that breaks honestly:
+   the user agent breaks it after a hyphen that is already in the value, so both halves
+   are still the value's own characters and nothing is invented at the boundary. The chip
+   is `inline`, so a broken code carries its fill onto both lines. */
 .diagnostic__code {
+  padding: 0 var(--s-1);
+  border-radius: var(--r-chip);
+  background-color: var(--text-000);
+  color: var(--ink-000);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  font-weight: 700;
   letter-spacing: var(--tr-mono);
-  color: var(--text-000);
 }
 
+/* The severity beside it: a bordered pill rather than loose grey text, so the identity
+   line reads as two facts with a boundary between them instead of one run of mono. */
 .diagnostic__severity {
-  margin-left: var(--s-2);
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   letter-spacing: var(--tr-mono);
@@ -301,7 +842,6 @@
 }
 
 .diagnostic__at {
-  margin-left: var(--s-2);
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   font-variant-numeric: tabular-nums lining-nums;
@@ -310,10 +850,12 @@
 
 .diagnostic__emphasis {
   display: block;
-  margin: var(--s-2) 0 0;
   font-family: var(--font-ui);
   font-size: var(--fs-micro);
+  font-weight: 800;
   line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-200);
 }
 
@@ -322,7 +864,7 @@
    the sentence around it is not (§10.7). Nothing is edited on the way here. */
 .diagnostic__message {
   max-width: 72ch;
-  margin: var(--s-1) 0 0;
+  margin: 0;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
@@ -332,22 +874,72 @@
 .diagnostic__quoted {
   padding: 0 var(--s-1);
   border-radius: var(--r-chip);
-  background-color: var(--ink-050);
+  background-color: var(--ink-000);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
 }
 
+/* The remedy is a command a reader is going to select and run, so it keeps its
+   spacing byte for byte and scrolls rather than wrapping. A command broken across
+   two lines is a command someone pastes half of. */
 .diagnostic__remedy {
   display: block;
-  margin: var(--s-2) 0 0;
+  max-width: 100%;
+  margin: 0;
   padding: var(--s-2) var(--s-3);
+  border: var(--line) solid var(--text-000);
   border-radius: var(--r-chip);
+  background-color: var(--ink-000);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-000) var(--ink-050);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: var(--lh-mono);
   letter-spacing: var(--tr-mono);
   color: var(--text-000);
-  overflow-wrap: anywhere;
+  white-space: pre;
+  user-select: all;
+}
+
+/* ── narrow viewports: the outcome column stops competing for width ─────────── */
+
+@media (max-width: 56rem) {
+  .runs-page {
+    gap: var(--s-6);
+  }
+
+  .runs-empty {
+    padding: var(--s-4);
+  }
+
+  .runs-table__cell,
+  .runs-table__row-header,
+  .runs-table__head-cell {
+    padding: var(--s-2) var(--s-3);
+  }
+
+  /* The slab keeps its edge and gives back a little gutter, and the count stops being
+     pushed to the far end: at 320px the two controls and the sentence are three stacked
+     rows, so `margin-left: auto` would only indent the sentence for no reason. */
+  .runs-filter {
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .runs-filter__status {
+    margin-left: 0;
+  }
+
+  /* The frame keeps its edge and gives back its gutter. At 320px, 16px of frame padding
+     plus 16px of well padding is 64px of the 288px the shell leaves — a fifth of the
+     reading width spent twice on the same boundary. */
+  .runs-diagnostics {
+    padding: var(--s-2);
+  }
+
+  .diagnostic {
+    padding: var(--s-2) var(--s-3);
+  }
 }
