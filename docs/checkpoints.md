@@ -260,3 +260,102 @@ pass on the committed tree.
   property that reliably runs is worth more than one that samples more and flakes.
 - `degradedReasons` was recorded as the file states it, not as the brief for this pass
   predicted. The snapshot is the artefact; the brief was working from an earlier read.
+
+---
+
+## Checkpoint 16, re-verified after `code-break` landed — 2026-08-21
+
+Checkpoint 16 asks whether the Verified dimension is real. It was cleared once on the
+strength of seven proven verdicts and one red. It is re-recorded here because the
+answer got considerably stronger and because two of the things it rested on turned out
+to be wrong.
+
+### The authoritative run
+
+`npm run check` — `check-readonly.mjs && tsc -b && typecheck:fixture &&
+typecheck:ledger && vitest --run`:
+
+```
+read-only scan: 42 Ledger source files, 11 rules, no violations
+Test Files  135 passed (135)
+     Tests  2288 passed | 3 skipped | 1 todo (2292)
+```
+
+Green, on a quiet tree, with nothing uncommitted but `tasks.md`.
+
+### What changed about "real"
+
+| | before | after |
+|---|---|---|
+| verdicts | 7 proven, 1 red | unchanged |
+| branches ever fired | `docs-lie` only | `code-break`, `test-drift`, `docs-lie` |
+| closed loop | red → proven, branch wrong | red → proven, branch `code-break`, fence granted |
+| committed evidence | `evidence: []`, directory held a README | 1 pack, 37 artefacts, 4.0 MB, every link a static URL |
+| evidence edges | 0 published | 2 published, 6 dropped and diagnosed |
+
+`code-break` had **never fired in this project** — every failure ever routed went to
+`docs-lie`, including a deliberately broken `subtotal`, because the classification
+signal lives in a sealed zip nothing opened. The three-way branch was a one-way branch
+that looked like it worked. `docs/kane/loop/README.md` is the measured write-up and
+`docs/kane/loop/codebreak-*` is the persisted pair.
+
+### The question checkpoint 16 turned out to be hiding
+
+Making `code-break` reachable is not the same as making it safe, and the difference is
+a specification question rather than a bug. **Kane treats the designed test as the
+specification**, so the fixture's deliberately never-true discount claim earns
+`application_issue/ui_data_defect` at 0.95 — the same category the genuinely broken
+`subtotal` earns at 0.96 — and there is no token meaning "the claim is false" because
+from Kane's position the claim cannot be false. One unchanged failure has drawn four
+different Kane answers across three packs and six runs.
+
+Answered in design §8.1.1 and R7.8/R7.9, on evidence Kane does not have: **automatic
+repair is granted only to restore a promise KEPT has itself proven.** You cannot break
+what was never proven to work. It is a condition on §8.1's autonomy column and not on
+the branch, so the router still reports what R6.3–R6.5 require and the Ledger still
+publishes Kane's real conclusion; only the write path is withheld, and the withheld
+fence forbids every glob the granted one allowed.
+
+The live red run is the proof it was needed: T-3 `proven → red` granted the fence, and
+T-7 — the never-true claim, which Kane had just labelled a product fault at 0.95 — was
+named in `handoff-code-break-unproven` and given no path. Without the gate that run
+would have set an agent to implementing a discount nobody designed.
+
+### Defects found by clearing this checkpoint
+
+Five in the evidence chain, each hiding the next: a pack is a **file** and the resolver
+listed only directories; iCloud `<uuid> 2.evidence` conflict copies sorted newest and
+were selected as packs; "the newest pack" is not "this run's pack"; `archiveNamesFor`
+doubled the `.evidence` suffix; and the `ev_`-prefixed node id could never equal Kane's
+bare-UUID pack name, so the projection cleared every reference *and* the schema failed
+the whole snapshot — which meant `kept snapshot` silently refused to write and the
+Ledger went on showing an older state.
+
+One in the handoff: `input.repair ?? promise.repair` could not tell "this run routed
+nothing" from "the caller has no opinion", so a member that **passed** carried the
+previous run's `code-break` into the handoff. A handoff is an instruction; that one was
+telling an agent to repair a promise that had just gone green.
+
+One orphan pack, caught by Property 28 on the very commit that first gave it something
+to find.
+
+### Assumptions made rather than asked
+
+- The prior-verdict gate is a *fence*, not a branch, specifically so no requirement
+  had to be weakened. R6.3, R6.4, R6.5 and R6.9 are untouched.
+- Grant is "at least one proven promise in the radius", not "all". A real regression
+  beside a never-proven promise is still legitimate work, and the second promise is
+  named in a diagnostic either way.
+- On a repository that has never verified anything every promise is `stale`, so the
+  first failing run authorises no patch. That is correct rather than a gap, it is
+  diagnosed rather than silent, and it does not touch the judge path because the
+  committed snapshot ships the baseline.
+- The seven-run credit table in `docs/kane/credits.md` publishes the discarded pairs as
+  well as the kept one. The account paid for all of them.
+
+### Still outstanding, and why
+
+Checkpoint 20 cannot be cleared here: **19.1** (Vercel deployment) and **19.5** (the
+demonstration video) both need the account holder. Everything they depend on is done —
+`vercel.json`, `docs/deploy-ledger.md`, and a README whose only remaining edit is one
+URL on line 9.
