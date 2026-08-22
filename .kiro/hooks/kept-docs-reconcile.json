@@ -1,14 +1,19 @@
 {
   "enabled": true,
   "name": "KEPT · reconcile docs",
-  "description": "On fixture documentation save, reconcile the promise graph and report what the suite now owes.",
+  "description": "On subject documentation save, reconcile the promise graph and report what the suite now owes. The pattern list mirrors subject.docs in .kept/config.json.",
   "version": "1",
   "when": {
     "type": "fileEdited",
-    "patterns": ["apps/fixture/README.md", "apps/fixture/docs/**/*.md"]
+    "patterns": [
+      "README.md",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**/*.md",
+      "apps/fixture/docs/**/*.mdx"
+    ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Run `node bin/kept reconcile --changed <the saved file paths>`. The CLI resolves the Kane source id for each changed document itself and passes `--from` and `--source-id` on your behalf; never invent a source id, never copy one from a document or a log, and never pass one on the command line. Then read `.kept/handoff.json` and report: the count of promises with verdict `undesigned` — the suite debt — each newly added claim with its citation, each removed promise, and every open review card. Do not edit documentation, tests or source: `nextAction.allowedPaths` is empty on this path and `nextAction.forbiddenPaths` covers the fixture, the corpus and KEPT's own code. Never run `kept reconcile apply` — walking a stored plan mutates the suite, and that is a human decision no hook may take. If a diagnostic reports `reconcile-source-unresolved`, report it and quote the suggested `kane-cli context ingest` command verbatim, then change nothing: no run happened, no verdict moved and nothing is degraded. If `command.invoked` is false, or `outcome.exitMeaning` is `paused-resumable`, say so and stop. The process exit code is never the signal — this command exits zero even when no document could be reconciled, so read the handoff, not the status."
+    "prompt": "Run `node bin/kept reconcile --changed <the saved file paths>`. The CLI resolves the Kane source id for each changed document itself and passes `--from` and `--source-id` on your behalf; never invent a source id, never copy one from a document or a log, and never pass one on the command line. Then read `.kept/handoff.json` and report: the count of promises with verdict `undesigned` — the suite debt — each newly added claim with its citation, each removed promise, and every open review card. Do not edit documentation, tests or source: `nextAction.allowedPaths` is empty on this path and `nextAction.forbiddenPaths` covers the configured subject, the corpus root and KEPT's own package roots, all derived from `.kept/config.json`. Never run `kept reconcile apply` — walking a stored plan mutates the suite, and that is a human decision no hook may take. If a diagnostic reports `reconcile-source-unresolved`, report it and quote the suggested `kane-cli context ingest` command verbatim, then change nothing: no run happened, no verdict moved and nothing is degraded. If `command.invoked` is false, or `outcome.exitMeaning` is `paused-resumable`, say so and stop. The process exit code is never the signal — this command exits zero even when no document could be reconciled, so read the handoff, not the status."
   }
 }

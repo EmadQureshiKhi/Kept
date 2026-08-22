@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { FIXTURE_DOC_GLOBS, FIXTURE_SOURCE_GLOBS, matchesAnyGlob, matchesGlob } from '@kept/core';
+import { matchesAnyGlob, matchesGlob } from '@kept/core';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
@@ -29,18 +29,24 @@ import { describe, expect, it } from 'vitest';
  *
  * Three further clauses matter as much as the overlap:
  *
- *   - **Soundness against the fence.** A path the code hook matches must be
- *     inside {@link FIXTURE_SOURCE_GLOBS}, and a path the docs hook matches must
- *     be inside {@link FIXTURE_DOC_GLOBS}. Those two constants are the same lists
- *     the handoff hands back as `nextAction.allowedPaths`/`forbiddenPaths`
- *     (§11.2), so this clause is what makes "the file the save fired on is inside
- *     the fence the handoff declares" a fact rather than a comment. Both hooks'
- *     pattern sets are *derived from* those constants below rather than re-listed,
- *     so drift between a hook file and the fence is a failing test.
- *   - **Nothing outside the fixture fires anything.** A save in `packages/` or
- *     `apps/ledger/` must not start a verification of the fixture. KEPT's own code
- *     is never the repair target on any branch, and it must not be the trigger
- *     either.
+ *   - **Soundness against the fence.** A path the code hook matches must be inside
+ *     {@link SOURCE_GLOBS}, and a path the docs hook matches must be inside
+ *     {@link DOC_GLOBS}. Those two lists are read out of `.kept/config.json` —
+ *     `subject.source` and `subject.docs` — which is the same file the CLI resolves
+ *     `nextAction.allowedPaths`/`forbiddenPaths` from (§11.2, §20.1). They used to be
+ *     `SOURCE_GLOBS` and `DOC_GLOBS` inside `handoff/handoff.ts`, and
+ *     moving them into configuration is exactly the change that could have let the
+ *     hooks and the fence drift apart, so this clause now compares the hook files
+ *     against the config rather than against a constant: three declarations reduced
+ *     to one, checked in both directions.
+ *   - **Nothing outside the configured subject fires anything.** A save in
+ *     `packages/` or `apps/ledger/` must not start a verification of the fixture.
+ *     KEPT's own *code* is never the repair target on any branch, and it must not be
+ *     the trigger either. This clause used to be spelled "outside the fixture tree",
+ *     which stopped being the same statement at task 26.1: the root `README.md` is a
+ *     promise source now (§23.1, R19.1), so a save in it owes a reconciliation while
+ *     everything else at the repository root still owes nothing. The fence lists are
+ *     the authority, and they are read from `.kept/config.json`.
  *   - **The real tree is covered.** Soundness alone is satisfiable by matching
  *     nothing at all, so the fixture is walked on disk and every source and
  *     documentation file that exists today is required to fire exactly one hook.
@@ -80,6 +86,34 @@ function hookPatterns(slug: string): readonly string[] {
 
 const CODE_PATTERNS = hookPatterns('kept-code-verify');
 const DOCS_PATTERNS = hookPatterns('kept-docs-reconcile');
+
+/**
+ * `subject.source` and `subject.docs` from the committed `.kept/config.json`.
+ *
+ * Read as raw JSON rather than through `loadConfig`, deliberately: this suite lives
+ * in `kept-core` and the loader lives in `kept-cli`, so importing it would invert the
+ * dependency the whole of §20 exists to respect. What matters here is the *bytes on
+ * disk* the CLI will read, and a missing or empty list is a failure rather than a
+ * default — a defaulted `subject.docs` of `['README.md']` would make every clause
+ * below pass while describing a repository this one is not.
+ */
+function configuredGlobs(key: 'source' | 'docs'): readonly string[] {
+  const path = resolve(REPO_ROOT, '.kept/config.json');
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
+    subject?: { source?: readonly string[]; docs?: readonly string[] };
+  };
+  const globs = parsed.subject?.[key];
+  if (!Array.isArray(globs) || globs.length === 0) {
+    throw new Error(
+      `.kept/config.json declares no subject.${key}, so the hook patterns have nothing ` +
+        `to mirror and this property would be vacuous`,
+    );
+  }
+  return globs;
+}
+
+const SOURCE_GLOBS = configuredGlobs('source');
+const DOC_GLOBS = configuredGlobs('docs');
 
 /** Whether the code hook fires on `path`. */
 function firesCode(path: string): boolean {
@@ -158,12 +192,24 @@ const arbFixtureLoosePath: fc.Arbitrary<string> = fc
   .map(({ name, ext }) => `${FIXTURE_PREFIX}${name}.${ext}`);
 
 /**
- * Paths that are not the fixture: KEPT's own packages, the Ledger, the Kane
- * corpus at repository root, a root `README.md`, and a `..` traversal that leaves
- * the fixture behind. None of them may fire either hook.
+ * The repository's own root README, which `subject.docs` names since task 26.1
+ * (design §23.1, R19.1).
+ *
+ * It used to be drawn as an *outside* path, and the clause below required it to fire
+ * nothing. That was right while the only promise source was the fixture and is wrong
+ * now: five promises are cited to this file, so a save in it owes the same
+ * reconciliation any other claim surface does. The clause it used to satisfy has been
+ * restated against `subject.source` and `subject.docs` rather than against the
+ * fixture prefix, which is what it was always trying to say.
+ */
+const arbSelfDocPath: fc.Arbitrary<string> = fc.constant('README.md');
+
+/**
+ * Paths that are neither the fixture nor a configured claim surface: KEPT's own
+ * packages, the Ledger, the Kane corpus at repository root, and a `..` traversal that
+ * leaves the fixture behind. None of them may fire either hook.
  */
 const arbOutsidePath: fc.Arbitrary<string> = fc.oneof(
-  fc.constant('README.md'),
   fc.constant('package.json'),
   fc.constant('apps/fixture'),
   fc
@@ -191,8 +237,12 @@ const arbAnyPath: fc.Arbitrary<string> = fc.oneof(
   { weight: 3, arbitrary: arbFixtureSourcePath },
   { weight: 3, arbitrary: arbFixtureDocPath },
   { weight: 1, arbitrary: arbFixtureLoosePath },
+  { weight: 1, arbitrary: arbSelfDocPath },
   { weight: 3, arbitrary: arbOutsidePath },
 );
+
+/** Every glob a hook is allowed to reach: the two configured subject surfaces. */
+const SUBJECT_GLOBS: readonly string[] = [...SOURCE_GLOBS, ...DOC_GLOBS];
 
 // ---------------------------------------------------------------------------
 // The clauses
@@ -216,10 +266,10 @@ describe('Property 27: hook file patterns partition fixture edits', () => {
     fc.assert(
       fc.property(arbAnyPath, (path) => {
         fc.pre(firesCode(path));
-        expect(matchesAnyGlob(FIXTURE_SOURCE_GLOBS, path), `${path} is outside the source fence`).toBe(
+        expect(matchesAnyGlob(SOURCE_GLOBS, path), `${path} is outside the source fence`).toBe(
           true,
         );
-        expect(matchesAnyGlob(FIXTURE_DOC_GLOBS, path), `${path} is fixture documentation`).toBe(
+        expect(matchesAnyGlob(DOC_GLOBS, path), `${path} is fixture documentation`).toBe(
           false,
         );
       }),
@@ -231,21 +281,46 @@ describe('Property 27: hook file patterns partition fixture edits', () => {
     fc.assert(
       fc.property(arbAnyPath, (path) => {
         fc.pre(firesDocs(path));
-        expect(matchesAnyGlob(FIXTURE_DOC_GLOBS, path), `${path} is outside the doc fence`).toBe(
+        expect(matchesAnyGlob(DOC_GLOBS, path), `${path} is outside the doc fence`).toBe(
           true,
         );
-        expect(matchesAnyGlob(FIXTURE_SOURCE_GLOBS, path), `${path} is fixture source`).toBe(false);
+        expect(matchesAnyGlob(SOURCE_GLOBS, path), `${path} is fixture source`).toBe(false);
       }),
       { numRuns: NUM_RUNS },
     );
   });
 
-  it('fires neither hook on any path outside the fixture tree', () => {
+  it('fires neither hook on any path outside the configured subject', () => {
+    // Stated against `subject.source` and `subject.docs` rather than against the
+    // fixture prefix. Those two lists were the same thing until task 26.1 admitted
+    // this repository's own README as a promise source, and the fence is the
+    // authority: a hook may fire exactly where the configuration says a claim or a
+    // subject source lives, and nowhere else.
     fc.assert(
       fc.property(arbAnyPath, (path) => {
-        fc.pre(!path.startsWith(FIXTURE_PREFIX));
-        expect(firesCode(path), `${path} is not the fixture and must not verify it`).toBe(false);
-        expect(firesDocs(path), `${path} is not the fixture and must not reconcile it`).toBe(false);
+        fc.pre(!matchesAnyGlob(SUBJECT_GLOBS, path));
+        expect(firesCode(path), `${path} is outside the subject and must not verify it`).toBe(
+          false,
+        );
+        expect(firesDocs(path), `${path} is outside the subject and must not reconcile it`).toBe(
+          false,
+        );
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  it('fires neither hook anywhere under KEPT\'s own trees', () => {
+    // The narrower half of the clause above, kept explicit: the engine, the Ledger,
+    // the corpus and the scripts are never a trigger, whatever the configuration says.
+    fc.assert(
+      fc.property(arbOutsidePath, (path) => {
+        expect(firesCode(path), `${path} is not a subject and must not verify anything`).toBe(
+          false,
+        );
+        expect(firesDocs(path), `${path} is not a subject and must not reconcile anything`).toBe(
+          false,
+        );
       }),
       { numRuns: NUM_RUNS },
     );
@@ -253,32 +328,41 @@ describe('Property 27: hook file patterns partition fixture edits', () => {
 
   it('fires the docs hook on every Markdown file the doc fence covers', () => {
     fc.assert(
-      fc.property(arbFixtureDocPath, (path) => {
+      fc.property(fc.oneof(arbFixtureDocPath, arbSelfDocPath), (path) => {
         fc.pre(path.endsWith('.md'));
-        expect(firesDocs(path), `${path} is fixture documentation but reconciles nothing`).toBe(true);
+        expect(firesDocs(path), `${path} is a claim surface but reconciles nothing`).toBe(true);
       }),
       { numRuns: NUM_RUNS },
     );
   });
+
+  it('reconciles the root README, which is a promise source now (R19.1)', () => {
+    // The one on-disk instance of the clause above, asserted by name. Five promises
+    // are cited to this file; a save in it that started nothing would leave the graph
+    // claiming things about a document no hook watches.
+    expect(matchesAnyGlob(DOC_GLOBS, 'README.md')).toBe(true);
+    expect(firesDocs('README.md')).toBe(true);
+    expect(firesCode('README.md')).toBe(false);
+  });
 });
 
 describe('Property 27: the hook pattern sets do not drift from the handoff fence', () => {
-  it('watches exactly the three trees the code-break fence allows', () => {
-    // Derived, not re-listed: `FIXTURE_SOURCE_GLOBS` is what the handoff hands
-    // back as `nextAction.allowedPaths`, so a hook that watched a fourth tree
-    // would tell the agent to repair a file it is fenced out of.
+  it('watches exactly the trees subject.source declares', () => {
+    // Derived, not re-listed: `subject.source` is what the CLI resolves
+    // `nextAction.allowedPaths` from, so a hook that watched a tree the config does
+    // not name would tell the agent to repair a file it is fenced out of.
     const stems = new Set(CODE_PATTERNS.map(stemOf));
-    expect([...stems].sort()).toEqual([...FIXTURE_SOURCE_GLOBS].sort());
+    expect([...stems].sort()).toEqual([...SOURCE_GLOBS].sort());
   });
 
-  it('watches exactly the documentation the fence names', () => {
+  it('watches exactly the documentation subject.docs declares', () => {
     const stems = new Set(DOCS_PATTERNS.map(stemOf));
-    expect([...stems].sort()).toEqual([...FIXTURE_DOC_GLOBS].sort());
+    expect([...stems].sort()).toEqual([...DOC_GLOBS].sort());
   });
 
   it('keeps the two fence lists disjoint, which is what makes the hooks separable', () => {
-    for (const source of FIXTURE_SOURCE_GLOBS) {
-      for (const doc of FIXTURE_DOC_GLOBS) {
+    for (const source of SOURCE_GLOBS) {
+      for (const doc of DOC_GLOBS) {
         expect(matchesGlob(source, doc.replace(/\/\*\*$/u, '/x.md'))).toBe(false);
       }
     }
@@ -327,7 +411,7 @@ describe('Property 27: the partition holds over the fixture as it exists on disk
   it('verifies every TypeScript file inside the source fence', () => {
     const sources = FIXTURE_FILES.filter(
       (path) =>
-        matchesAnyGlob(FIXTURE_SOURCE_GLOBS, path) &&
+        matchesAnyGlob(SOURCE_GLOBS, path) &&
         (path.endsWith('.ts') || path.endsWith('.tsx')),
     );
     expect(sources.length).toBeGreaterThan(0);
@@ -338,7 +422,7 @@ describe('Property 27: the partition holds over the fixture as it exists on disk
 
   it('reconciles every Markdown file inside the doc fence', () => {
     const docs = FIXTURE_FILES.filter(
-      (path) => matchesAnyGlob(FIXTURE_DOC_GLOBS, path) && path.endsWith('.md'),
+      (path) => matchesAnyGlob(DOC_GLOBS, path) && path.endsWith('.md'),
     );
     // `apps/fixture/README.md` is the whole claims block of §12.2; there is
     // always at least one.

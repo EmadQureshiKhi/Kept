@@ -3,6 +3,30 @@
   "memberDebug": false,
   "timeouts": {
     "hookMs": 300000,
-    "enrichmentMs": 60000
+    "enrichmentMs": 60000,
+    "doctorMs": 10000
+  },
+  "corpus": {
+    "root": "tests"
+  },
+  "subject": {
+    "source": [
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**"
+    ],
+    "docs": ["README.md", "apps/fixture/README.md", "apps/fixture/docs/**"],
+    "baseUrl": "http://localhost:3100"
+  },
+  "fences": {
+    "code-break": {
+      "allow": [
+        "apps/fixture/app/**",
+        "apps/fixture/components/**",
+        "apps/fixture/lib/**"
+      ]
+    },
+    "test-drift": { "allow": [] },
+    "docs-lie": { "allow": [] }
   }
 }

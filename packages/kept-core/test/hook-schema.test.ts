@@ -127,6 +127,36 @@ const CODE_HOOK = hook('kept-code-verify');
 const DOCS_HOOK = hook('kept-docs-reconcile');
 const BOTH: readonly HookFile[] = [CODE_HOOK, DOCS_HOOK];
 
+/**
+ * `.kept/config.json` as committed, read as bytes (design §20.1).
+ *
+ * Read raw rather than through `loadConfig`, for two reasons. The loader lives in
+ * `kept-cli` and this suite is in `kept-core`, so importing it would invert the
+ * dependency direction the whole of §20 turns on. And the loader *fails closed*: an
+ * absent `subject.docs` resolves to `['README.md']` with a diagnostic, which would make
+ * the mirroring assertion below pass while describing a repository this is not. What
+ * the hooks have to agree with is the file, not the fallback.
+ */
+function keptConfig(): {
+  readonly corpus?: { readonly root?: string };
+  readonly subject?: { readonly source?: readonly string[]; readonly docs?: readonly string[] };
+} {
+  const source = readFileSync(resolve(REPO_ROOT, '.kept/config.json'), 'utf8');
+  return JSON.parse(source) as ReturnType<typeof keptConfig>;
+}
+
+const CONFIG = keptConfig();
+
+/**
+ * The tree one pattern watches: its `/**​/*.ext` or `/*.ext` tail removed, leaving the
+ * configured glob it has to belong to. A literal file pattern like
+ * `apps/fixture/README.md` has no tail and is its own stem, which is how it joins the
+ * same comparison.
+ */
+function stemOf(pattern: string): string {
+  return pattern.replace(/\/\*\*\/\*\.[A-Za-z0-9]+$/u, '/**').replace(/\/\*\.[A-Za-z0-9]+$/u, '');
+}
+
 describe('the hook files Kiro loads exist and are the two the handoff names', () => {
   it('names exactly the hooks the handoff contract knows about', () => {
     // `HANDOFF_HOOKS` is the trigger vocabulary of the handoff file (§11.2). A
@@ -203,6 +233,64 @@ describe('both hook files conform to the Kiro hook JSON schema', () => {
       expect(prompt).toContain('.kept/handoff.json');
     },
   );
+});
+
+describe('the hook pattern lists mirror subject.* and cannot drift from it (§20.1, R15.2)', () => {
+  /**
+   * The fourth load-bearing claim in this file, and the newest.
+   *
+   * Until §20.1 the two pattern lists were checked against `FIXTURE_SOURCE_GLOBS` and
+   * `FIXTURE_DOC_GLOBS`, constants inside `handoff/handoff.ts`. Those constants are
+   * gone: the paths are `subject.source` and `subject.docs` in `.kept/config.json`, and
+   * the CLI resolves `nextAction.allowedPaths` and `nextAction.forbiddenPaths` from
+   * them. That move is exactly the change that could leave the hooks watching a tree
+   * the fence no longer covers, and the damage is quiet in both directions: a hook
+   * watching a tree the config omits tells an agent to repair a file it is fenced out
+   * of, and a config naming a tree no hook watches means a save there starts nothing at
+   * all. So the two lists are one list, checked here against the file the CLI reads.
+   */
+  it('declares the config keys the hooks are a projection of', () => {
+    // Not defaults. A `subject` key that resolved to the fallback would make every
+    // clause below vacuously true about the wrong repository.
+    expect(Array.isArray(CONFIG.subject?.source)).toBe(true);
+    expect(Array.isArray(CONFIG.subject?.docs)).toBe(true);
+    expect((CONFIG.subject?.source ?? []).length).toBeGreaterThan(0);
+    expect((CONFIG.subject?.docs ?? []).length).toBeGreaterThan(0);
+    expect(typeof CONFIG.corpus?.root).toBe('string');
+  });
+
+  it('watches exactly the trees subject.source declares', () => {
+    const stems = [...new Set(patternsOf(CODE_HOOK).map(stemOf))].sort();
+    expect(stems).toEqual([...(CONFIG.subject?.source ?? [])].sort());
+  });
+
+  it('watches exactly the documentation subject.docs declares', () => {
+    const stems = [...new Set(patternsOf(DOCS_HOOK).map(stemOf))].sort();
+    expect(stems).toEqual([...(CONFIG.subject?.docs ?? [])].sort());
+  });
+
+  it('watches neither the corpus root nor anything under it, on either hook', () => {
+    // The corpus is forbidden on every branch (§8.1). A hook that fired on a
+    // `*_test.md` save would start a verification of the very document that defines
+    // the assertion, which is the loop's one prohibited repair path.
+    const root = CONFIG.corpus?.root ?? '';
+    expect(root.length).toBeGreaterThan(0);
+    for (const file of BOTH) {
+      for (const pattern of patternsOf(file)) {
+        expect(pattern.startsWith(`${root}/`), `${file.path} watches the corpus`).toBe(false);
+        expect(pattern).not.toBe(root);
+      }
+    }
+  });
+
+  it('watches no path under either package root, on either hook', () => {
+    // KEPT's own code is never the repair target and must not be the trigger either.
+    for (const file of BOTH) {
+      for (const pattern of patternsOf(file)) {
+        expect(pattern.startsWith('packages/'), `${file.path} watches the engine`).toBe(false);
+      }
+    }
+  });
 });
 
 describe('the code hook prompt repairs inside the fence the handoff declares', () => {

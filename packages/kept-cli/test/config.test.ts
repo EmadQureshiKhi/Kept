@@ -56,10 +56,14 @@ describe('loading the committed config', () => {
       }),
     );
     expect(loaded).toBe(true);
+    // Spread over the defaults rather than listed: the portability keys of §20.1
+    // are optional and resolve to §20.4's fail-closed values, which is what this
+    // three-key document is asserting about them.
     expect(config).toEqual({
+      ...DEFAULT_CONFIG,
       verdictRouter: 'failureYamlTriage',
       memberDebug: true,
-      timeouts: { hookMs: 120_000, enrichmentMs: 30_000 },
+      timeouts: { ...DEFAULT_CONFIG.timeouts, hookMs: 120_000, enrichmentMs: 30_000 },
     });
   });
 

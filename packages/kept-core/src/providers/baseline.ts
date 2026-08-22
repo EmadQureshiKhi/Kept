@@ -742,6 +742,19 @@ export interface BaselineContext extends ProviderContext {
    * text and the admitted citation text came from the same bytes.
    */
   readonly citations?: CitationSource | undefined;
+  /**
+   * The directory the `*_test.md` walk starts from — `corpus.root` from
+   * `Kept_Config` (design §20.1, R15.9).
+   *
+   * `''` means the repository root, and that is the default *because it is not a
+   * guess*: scanning everything finds every designed test wherever it lives, which
+   * is the behaviour this provider has always had and the only one that is correct
+   * without being told anything. What would be a guess, and what this module no
+   * longer contains, is the literal `tests`. A caller that has read a config passes
+   * its `corpus.root` and the walk narrows to it; a caller that has not passes
+   * nothing and the walk stays total.
+   */
+  readonly corpusRoot?: string | undefined;
 }
 
 /** A sink that also hands back what it recorded, so the result can carry it. */
@@ -760,9 +773,15 @@ function describeCause(cause: unknown): string {
 }
 
 /** Depth-capped, skip-set traversal for `*_test.md`. Never throws. */
-function scanTestDocuments(fs: BaselineFileSystem, sink: DiagnosticSink): readonly string[] {
+function scanTestDocuments(
+  fs: BaselineFileSystem,
+  sink: DiagnosticSink,
+  corpusRoot: string,
+): readonly string[] {
   const found: string[] = [];
-  const queue: { readonly dir: string; readonly depth: number }[] = [{ dir: '', depth: 0 }];
+  const queue: { readonly dir: string; readonly depth: number }[] = [
+    { dir: corpusRoot, depth: 0 },
+  ];
 
   while (queue.length > 0) {
     const current = queue.shift();
@@ -966,7 +985,11 @@ export async function collectBaseline(context: BaselineContext): Promise<Baselin
     const fs = context.fs ?? nodeBaselineFileSystem(context.repoRoot);
     const citations = context.citations ?? nodeCitationSource(context.repoRoot);
 
-    const files = scanTestDocuments(fs, sink);
+    // Normalised here rather than at every use: a config may spell the root with a
+    // leading or trailing slash, and `''` (the whole repository) has to survive that
+    // normalisation as itself.
+    const corpusRoot = (context.corpusRoot ?? '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    const files = scanTestDocuments(fs, sink, corpusRoot);
 
     if (files.length === 0) {
       // Not a failure and not a degradation: a repository with no test documents
@@ -977,8 +1000,11 @@ export async function collectBaseline(context: BaselineContext): Promise<Baselin
         code: BASELINE_DIAGNOSTIC_CODES.noTestDocuments,
         severity: 'info',
         message:
-          `No ${TEST_DOCUMENT_SUFFIX} documents were found under the repository root, so the ` +
-          `baseline provider derived no promises. This is a valid repository state.`,
+          `No ${TEST_DOCUMENT_SUFFIX} documents were found under ` +
+          `${corpusRoot === '' ? 'the repository root' : corpusRoot}, so the baseline provider ` +
+          `derived no promises. This is a valid repository state. The directory is named here ` +
+          `on purpose: "no promises" and "the corpus root points somewhere else" read ` +
+          `identically in a ledger unless the diagnostic says where it looked.`,
         file: null,
       });
       return {
