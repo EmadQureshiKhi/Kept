@@ -1,9 +1,25 @@
 {
   "name": "@kept/cli",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "KEPT CLI — build, verify, reconcile, evolve, amend, snapshot, handoff, doctor.",
+  "keywords": [
+    "kept",
+    "kane",
+    "cli",
+    "promises",
+    "documentation",
+    "verification",
+    "ledger"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EmadQureshiKhi/Kept",
+    "directory": "packages/kept-cli"
+  },
+  "engines": {
+    "node": ">=20.19.4"
+  },
   "type": "module",
   "bin": {
     "kept": "dist/index.js"
@@ -14,9 +30,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@kept/core": "0.0.0"
+    "@kept/core": "^0.1.0"
   }
 }
