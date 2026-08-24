@@ -52,8 +52,8 @@
  * per JSON line, `step`-first classification, unknown-type retention — over
  * *arbitrary* line sequences, and most arbitrary sequences are crashed. So the
  * per-line views (`events`, `progress`, `unknown`, `members`, `plan`,
- * `coverage`) are shared by both arms, and the sole asymmetry is the one that
- * has to be asymmetric: `terminal` against `expectedTerminal`.
+ * `coverage`, `gaps`) are shared by both arms, and the sole asymmetry is the one
+ * that has to be asymmetric: `terminal` against `expectedTerminal`.
  */
 
 import type { Diagnostic, DiagnosticDraft, DiagnosticSink } from '../diagnostics.js';
@@ -96,6 +96,7 @@ export const PROGRESS_KEY = 'step';
 const MEMBER_END_TYPE = 'testrun_member_end';
 const TESTRUN_PLAN_TYPE = 'testrun_plan';
 const COVERAGE_TYPE = 'coverage';
+const GAPS_TYPE = 'gaps';
 
 /**
  * Everything both arms expose: the lossless, per-line view of the stream.
@@ -134,6 +135,23 @@ export interface ParsedStreamShared<F extends CommandFamily> {
    * deliberate.
    */
   readonly coverage: KaneEvent | null;
+  /**
+   * The last `gaps` event, exposed **raw**, on exactly the terms `coverage` is.
+   *
+   * `cover gaps` is where the dual coverage axes actually come from on this
+   * repository (§5.3.0): the singular `cover` reads its depth axis out of a sealed
+   * Evidence_Pack and refuses on a replay pack, which is every pack here. So this
+   * is the payload `providers/enrichment.ts` gates on, and it is exposed as its own
+   * view rather than being left for a consumer to fish out of `events`, the same
+   * reason `coverage` has one.
+   *
+   * Raw, and for the same reason: the payload's internal schema is observed rather
+   * than documented, so lifting the nested `design_completeness` and `proven`
+   * blocks out here would be this module inventing a schema and dropping `stage`,
+   * `rollup_version` and the per-use-case dossier on the way. `providers/coverage.ts`
+   * reads it tolerantly.
+   */
+  readonly gaps: KaneEvent | null;
   /** Everything recorded while parsing, in report order. */
   readonly diagnostics: readonly Diagnostic[];
 }
@@ -149,7 +167,7 @@ export interface CompleteStream<F extends CommandFamily> extends ParsedStreamSha
    * `testrun_done` for `ExecutionTestrun`, `done` for `Assurance`.
    *
    * The **last** event of that type wins; earlier ones stay in `events`.
-   * `complete` says the stream ended properly, not that it succeeded — a refusal
+   * `complete` says the stream ended properly, not that it succeeded, a refusal
    * and a failure are both complete. The verdict is `terminal.status`, and the
    * exit-code half of the story is `exitMeaning()` in `kane/exit.ts`.
    */
@@ -257,8 +275,8 @@ function parseFailureReason(error: unknown): string {
  *    verdict off a progress line.
  * 2. `type === contract.terminalType` makes it the terminal candidate. The last
  *    such event wins; earlier ones are retained in `events`.
- * 3. `testrun_member_end`, `testrun_plan` and `coverage` additionally land in
- *    their own typed bucket. Unconditionally, not gated on family: only an
+ * 3. `testrun_member_end`, `testrun_plan`, `coverage` and `gaps` additionally
+ *    land in their own typed bucket. Unconditionally, not gated on family: only an
  *    `ExecutionTestrun` stream carries members in practice, and R3.3's rule that
  *    verdict data comes from the terminal event plus this family's members is
  *    enforced by the verdict layer naming a family, not by this module silently
@@ -291,6 +309,7 @@ export function parseStream<F extends CommandFamily>(
   const members: MemberEndEvent[] = [];
   let plan: TestrunPlanEvent | null = null;
   let coverage: KaneEvent | null = null;
+  let gaps: KaneEvent | null = null;
   let terminal: KaneEvent | null = null;
 
   let seenFirstBrace = false;
@@ -352,6 +371,7 @@ export function parseStream<F extends CommandFamily>(
     if (type === MEMBER_END_TYPE) members.push(value as MemberEndEvent);
     if (type === TESTRUN_PLAN_TYPE) plan = value as TestrunPlanEvent;
     if (type === COVERAGE_TYPE) coverage = event;
+    if (type === GAPS_TYPE) gaps = event;
 
     // Step 4: recognition, not an allow-list. Retention is unconditional.
     if (!isKnownEventType(type)) unknown.push(event);
@@ -365,6 +385,7 @@ export function parseStream<F extends CommandFamily>(
     members: Object.freeze(members),
     plan,
     coverage,
+    gaps,
   } as const;
 
   if (terminal === null) {

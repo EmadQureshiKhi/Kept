@@ -3,8 +3,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
+  COVER_SINGULAR_ARGV,
   ENRICHMENT_ARGV,
   ENRICHMENT_DEGRADED_REASONS,
+  ENRICHMENT_DEGRADED_REASON_VALUES,
   ENRICHMENT_DIAGNOSTIC_CODES,
   ENRICHMENT_FAMILY,
   ENRICHMENT_PROVIDER_NAME,
@@ -65,14 +67,41 @@ const COVER_DONE_LINES = fixtureLines('assurance-cover-done.ndjson');
 const COVER_REFUSED_LINES = fixtureLines('assurance-cover-refused.ndjson');
 const PAUSED_LINES = fixtureLines('assurance-paused.ndjson');
 
+/**
+ * The `cover gaps` fixtures (§5.3.0). `assurance-gaps-complete.ndjson` and
+ * `assurance-gaps-refused.ndjson` are both **real captured stdout** from
+ * `kane-cli cover gaps --json --mode agent`, the first in this repository, the
+ * second in an empty directory with no `.context/` store. The other three are
+ * derived from the first line of the real capture and say so in the fixtures README:
+ * Kane does not pause or truncate this command here, and a degradation path asserted
+ * against a stream nobody ever produced is still the degradation path that has to
+ * hold.
+ */
+const GAPS_COMPLETE_LINES = fixtureLines('assurance-gaps-complete.ndjson');
+const GAPS_REFUSED_LINES = fixtureLines('assurance-gaps-refused.ndjson');
+const GAPS_PAUSED_LINES = fixtureLines('assurance-gaps-paused.ndjson');
+const GAPS_TRUNCATED_LINES = fixtureLines('assurance-gaps-truncated.ndjson');
+const GAPS_NO_ROWS_LINES = fixtureLines('assurance-gaps-no-rows.ndjson');
+
 /** The recorded refusal, decoded without the parser's help. */
 const REFUSAL_OBJECTS = COVER_REFUSED_LINES.map(
   (line) => JSON.parse(line) as Record<string, unknown>,
 );
 const REFUSAL_MESSAGE = REFUSAL_OBJECTS[0]?.['message'] as string;
 
+const GAPS_REFUSAL_OBJECTS = GAPS_REFUSED_LINES.map(
+  (line) => JSON.parse(line) as Record<string, unknown>,
+);
+const GAPS_REFUSAL_MESSAGE = GAPS_REFUSAL_OBJECTS[0]?.['message'] as string;
+
 /** The recorded success payload's own `coverage` event, decoded independently. */
 const DONE_COVERAGE_EVENT = JSON.parse(COVER_DONE_LINES[0] as string) as Record<string, unknown>;
+
+/** The recorded `gaps` event, decoded independently of the parser. */
+const GAPS_PAYLOAD_EVENT = JSON.parse(GAPS_COMPLETE_LINES[0] as string) as Record<
+  string,
+  unknown
+>;
 
 const BIN = '/stub/bin/kane-cli';
 const REPO = '/repo';
@@ -354,61 +383,95 @@ describe('entries key onto promises by test id, then by normalised path (§5.3)'
 });
 
 // ---------------------------------------------------------------------------
-// enrichment.ts — the acceptance gate
+// enrichment.ts, the acceptance gate, over the `gaps` payload (§5.3.0)
 // ---------------------------------------------------------------------------
 
-describe('the invocation is `cover --json` under the Assurance family (R2.5)', () => {
+describe('the invocation is `cover gaps --json` under the Assurance family (R9.9)', () => {
   it('lets the invoker append --mode agent, and never --agent', async () => {
-    const { invoker, argv } = stub({ lines: COVER_DONE_LINES, exitCode: 0 });
+    const { invoker, argv } = stub({ lines: GAPS_COMPLETE_LINES, exitCode: 0 });
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
 
-    expect(ENRICHMENT_ARGV).toEqual(['cover', '--json']);
+    expect(ENRICHMENT_ARGV).toEqual(['cover', 'gaps', '--json']);
     expect(ENRICHMENT_FAMILY).toBe('Assurance');
     expect(contractFor(ENRICHMENT_FAMILY).terminalType).toBe('done');
-    expect(argv[0]).toEqual(['cover', '--json', '--mode', 'agent']);
-    expect(result.effectiveArgv).toEqual(['cover', '--json', '--mode', 'agent']);
+    expect(argv[0]).toEqual(['cover', 'gaps', '--json', '--mode', 'agent']);
+    expect(result.effectiveArgv).toEqual(['cover', 'gaps', '--json', '--mode', 'agent']);
     expect(result.provider).toBe(ENRICHMENT_PROVIDER_NAME);
+  });
+
+  it('keeps the singular `cover` argv spelled once, as the documented first choice', () => {
+    // §5.3.0: `cover` is right for a repository whose packs were *authored*. It is
+    // not invoked here, and the constant exists so the choice survives as code
+    // rather than only as prose, and so the committed refusal fixture has
+    // something to name.
+    expect(COVER_SINGULAR_ARGV).toEqual(['cover', '--json']);
+    expect(ENRICHMENT_ARGV).not.toEqual(COVER_SINGULAR_ARGV);
   });
 });
 
-describe('the gate accepts only complete + done + status complete + a payload (§5.3)', () => {
-  it('accepts the recorded success stream and overlays the matched promises', async () => {
-    const { invoker } = stub({ lines: COVER_DONE_LINES, exitCode: 0 });
+describe('the gate accepts only complete + done + status complete + rows (§5.3.0)', () => {
+  it('accepts the recorded `cover gaps` stream and reads both axes verbatim', async () => {
+    const { invoker } = stub({ lines: GAPS_COMPLETE_LINES, exitCode: 0 });
     const sink = createDiagnosticSink();
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       diagnostics: sink,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
 
     expect(result.ok).toBe(true);
     expect(result.degradedReason).toBeNull();
     // Enrichment supplies no candidates, so it can supply no citations (§5.4).
     expect(result.candidates).toEqual([]);
-    expect(result.projection?.entries).toHaveLength(7);
-    expect([...result.axes.keys()].sort()).toEqual([
-      'p_aaaaaaaaaaaa',
-      'p_bbbbbbbbbbbb',
-      'p_cccccccccccc',
-    ]);
-    expect(result.axes.get('p_cccccccccccc')?.verdict).toBe('proven');
-    expect(result.axes.get('p_aaaaaaaaaaaa')?.verdict).toBe('red');
+    // And no per-promise overlay: `gaps` names use cases, not test documents.
+    expect(result.axes.size).toBe(0);
+
+    const axes = result.coverageAxes;
+    expect(axes).not.toBeNull();
+    if (axes === null) throw new Error('expected the axes on the accepting path');
+
+    // Verbatim, compared against the bytes on disk rather than against a literal
+    // written here.
+    const design = GAPS_PAYLOAD_EVENT['design_completeness'] as Record<string, unknown>;
+    const proven = GAPS_PAYLOAD_EVENT['proven'] as Record<string, unknown>;
+    expect(axes.designCompleteness.pct).toBe(design['pct']);
+    expect(axes.designCompleteness.ratio.text).toBe(design['acs_designed']);
+    expect(axes.designCompleteness.usecasesComplete.text).toBe(design['usecases_complete']);
+    expect(axes.designCompleteness.ucsNeedingScenarios).toBe(design['ucs_needing_scenarios']);
+    expect(axes.proven.pct).toBe(proven['pct']);
+    expect(axes.proven.ratio.text).toBe(proven['acs_proven']);
+    expect(axes.proven.source).toBe('graph_execution_facts');
+    expect(axes.proven.denominatorBasis).toBe('current_live_acs');
+    expect(axes.rows).toHaveLength((GAPS_PAYLOAD_EVENT['usecases'] as unknown[]).length);
     expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.accepted)).toBe(true);
-    // Two of the seven recorded entries key onto promises; the other five name
-    // test documents this graph does not cite, and each is diagnosed, never fatal.
-    expect(sink.withCode(ENRICHMENT_DIAGNOSTIC_CODES.coverageEntryUnmatched)).toHaveLength(5);
   });
 
-  it('degrades when a complete, accepting stream carried no coverage event', async () => {
+  it('publishes the debt rather than rounding it away', async () => {
+    const { invoker } = stub({ lines: GAPS_COMPLETE_LINES, exitCode: 0 });
+    const result = await collectEnrichment({ repoRoot: REPO, invoker, timeoutMs: BUDGET_MS });
+    const axes = result.coverageAxes;
+    if (axes === null) throw new Error('expected the axes on the accepting path');
+
+    // `1/9` use cases complete with eight needing scenarios: the honest number, and
+    // the whole reason the ribbon exists. A projection that dropped it would report
+    // 100% of the acceptance criteria that exist and nothing about the designs owed.
+    expect(axes.designCompleteness.usecasesComplete.text).toBe('1/9');
+    expect(axes.designCompleteness.usecasesComplete.numerator).toBe(1);
+    expect(axes.designCompleteness.usecasesComplete.denominator).toBe(9);
+    expect(axes.designCompleteness.ucsNeedingScenarios).toBe(8);
+    expect(
+      axes.rows.filter((row) => row.designCompleteness.status === 'undesigned'),
+    ).toHaveLength(8);
+  });
+
+  it('degrades when a complete, accepting stream carried no gaps event', async () => {
     const { invoker } = stub({
-      lines: ['{"type":"done","v":1,"verb":"cover","status":"complete","exit_code":0}'],
+      lines: ['{"type":"done","v":1,"verb":"gaps","status":"complete","exit_code":0}'],
       exitCode: 0,
     });
     const sink = createDiagnosticSink();
@@ -420,82 +483,93 @@ describe('the gate accepts only complete + done + status complete + a payload (�
     });
 
     expect(result.ok).toBe(false);
-    expect(result.degradedReason).toBe(
-      ENRICHMENT_DEGRADED_REASONS.coveragePayloadUnreadable,
-    );
-    expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.coverageMissing)).toBe(true);
-    expect(result.axes.size).toBe(0);
+    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.gapsPayloadUnreadable);
+    expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.gapsMissing)).toBe(true);
+    expect(result.coverageAxes).toBeNull();
   });
 
-  it('degrades when the payload projects zero entries', async () => {
-    const { invoker } = stub({
-      lines: [
-        '{"type":"coverage","v":1,"verb":"cover","coverage":{"totals":{"tests":0},"tests":[]}}',
-        '{"type":"done","v":1,"verb":"cover","status":"complete","exit_code":0}',
-      ],
-      exitCode: 0,
-    });
+  it('degrades when the payload projects zero rows, withholding rather than zeroing', async () => {
+    const { invoker } = stub({ lines: GAPS_NO_ROWS_LINES, exitCode: 0 });
     const sink = createDiagnosticSink();
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       diagnostics: sink,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
 
-    // Better a visibly baseline-only ledger than a silently wrong proven number.
-    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.coveragePayloadUnreadable);
-    expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.coverageUnprojectable)).toBe(true);
+    // The payload's own axes read 100 and 100 in this fixture, which is exactly the
+    // trap: an empty ribbon under a green pair of figures reads as "nothing owed".
+    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.gapsPayloadUnreadable);
+    expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.gapsUnprojectable)).toBe(true);
+    expect(result.coverageAxes).toBeNull();
+    expect(result.gaps?.axes.rows).toEqual([]);
   });
 
   it('degrades when a payload arrived but the stream never reached done (R2.7)', async () => {
-    const { invoker } = stub({ lines: [COVER_DONE_LINES[0] as string], exitCode: 0 });
+    const { invoker } = stub({ lines: GAPS_TRUNCATED_LINES, exitCode: 0 });
     const sink = createDiagnosticSink();
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       diagnostics: sink,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
 
     expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.crashedStream);
     expect(result.stream?.kind).toBe('crashed');
     expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.crashedStream)).toBe(true);
     // A perfectly readable payload is still discarded: the outcome is unknown.
-    expect(result.axes.size).toBe(0);
+    expect(result.coverageAxes).toBeNull();
+    expect(result.gaps).toBeNull();
   });
-});
 
-describe('degradedReason: assurance-status:refused — the debt task 2.16 left (§5.3.1)', () => {
-  it('maps the real captured refusal to ok false and that exact reason', async () => {
-    const { invoker } = stub({ lines: COVER_REFUSED_LINES, exitCode: 2 });
+  it('degrades when the gaps run pauses at exit 3, and moves nothing (R2.9)', async () => {
+    const { invoker } = stub({ lines: GAPS_PAUSED_LINES, exitCode: 3 });
     const sink = createDiagnosticSink();
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       diagnostics: sink,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
 
-    // The two assertions 2.16 deferred, against the same committed fixture.
+    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.pausedResumable);
+    expect(result.exitMeaning).toBe('paused-resumable');
+    expect(result.coverageAxes).toBeNull();
+    expect(sink.hasSeverity('error')).toBe(false);
+  });
+});
+
+describe('degradedReason: assurance-status:refused, for `cover gaps` too (§5.3.1)', () => {
+  it('maps the real captured gaps refusal to ok false and that exact reason', async () => {
+    const { invoker } = stub({ lines: GAPS_REFUSED_LINES, exitCode: 2 });
+    const sink = createDiagnosticSink();
+    const result = await collectEnrichment({
+      repoRoot: REPO,
+      invoker,
+      diagnostics: sink,
+      timeoutMs: BUDGET_MS,
+    });
+
     expect(result.ok).toBe(false);
     expect(result.degradedReason).toBe('assurance-status:refused');
+    expect(result.coverageAxes).toBeNull();
 
-    // And the inputs 2.16 pinned, re-read here so the mapping is visibly keyed on
-    // them: a *complete* stream — `done` arrived — whose status is `refused`, and
-    // a process exit that means only the generic `failure`.
+    // A *complete* stream, `done` arrived, whose status is `refused`, and a
+    // process exit that means only the generic `failure`. Both read from the
+    // fixture, whose `verb` is `gaps`: the envelope §5.3.1 verified for `cover`,
+    // observed for the command KEPT now runs.
     expect(result.stream?.kind).toBe('complete');
     expect(result.exitMeaning).toBe('failure');
-    const parsed = parseStream(contractFor('Assurance'), COVER_REFUSED_LINES);
+    expect(GAPS_REFUSAL_OBJECTS.every((event) => event['verb'] === 'gaps')).toBe(true);
+    const parsed = parseStream(contractFor('Assurance'), GAPS_REFUSED_LINES);
     if (parsed.kind !== 'complete') throw new Error('expected a complete stream');
     expect(assuranceStatusReason(parsed.terminal.status as string)).toBe(result.degradedReason);
   });
 
   it('quotes Kane’s own remedy verbatim so the reviewer is told what to run', async () => {
-    const { invoker } = stub({ lines: COVER_REFUSED_LINES, exitCode: 2 });
+    const { invoker } = stub({ lines: GAPS_REFUSED_LINES, exitCode: 2 });
     const sink = createDiagnosticSink();
     await collectEnrichment({
       repoRoot: REPO,
@@ -507,8 +581,23 @@ describe('degradedReason: assurance-status:refused — the debt task 2.16 left (
     const reported = sink.withCode(ENRICHMENT_DIAGNOSTIC_CODES.status);
     expect(reported).toHaveLength(1);
     // Verbatim by construction: compared against the bytes on disk.
-    expect(reported[0]?.message).toContain(REFUSAL_MESSAGE);
+    expect(reported[0]?.message).toContain(GAPS_REFUSAL_MESSAGE);
     expect(reported[0]?.message).toContain('context ingest');
+  });
+
+  it('keeps the singular `cover` refusal a passing regression (§5.3.1)', () => {
+    // `assurance-cover-refused.ndjson` is the envelope the singular command produced
+    // with no `.context/` store. Nothing invokes `cover` any more, and the
+    // classification of its stream must not have moved: still a *complete* stream
+    // carrying `refused`, and still read that way, because `providers/coverage.ts`
+    // has to stay usable by a repository whose packs *are* authored.
+    const parsed = parseStream(contractFor('Assurance'), COVER_REFUSED_LINES);
+    expect(parsed.kind).toBe('complete');
+    if (parsed.kind !== 'complete') return;
+    expect(parsed.terminal.status).toBe('refused');
+    expect(parsed.coverage).toBeNull();
+    expect(parsed.gaps).toBeNull();
+    expect(REFUSAL_MESSAGE).toContain('context ingest');
   });
 });
 
@@ -523,6 +612,7 @@ describe('every other observation gets its own reason from §5.3', () => {
     expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.kaneNotFound);
     expect(result.exitMeaning).toBe('kane-not-found');
     expect(result.stream).toBeNull();
+    expect(result.coverageAxes).toBeNull();
     expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.kaneNotFound)).toBe(true);
   });
 
@@ -553,17 +643,18 @@ describe('every other observation gets its own reason from §5.3', () => {
   it('assurance-status:<status> for each of the four failing statuses', async () => {
     for (const status of ['error', 'refused', 'interrupted', 'aborted'] as const) {
       const { invoker } = stub({
-        lines: [`{"type":"done","v":1,"verb":"cover","status":"${status}","exit_code":2}`],
+        lines: [`{"type":"done","v":1,"verb":"gaps","status":"${status}","exit_code":2}`],
         exitCode: 2,
       });
       const result = await collectEnrichment({ repoRoot: REPO, invoker, timeoutMs: BUDGET_MS });
       expect(result.degradedReason).toBe(`assurance-status:${status}`);
+      expect(result.coverageAxes).toBeNull();
     }
   });
 
   it('assurance-status:unknown when done carried no readable status', async () => {
     const { invoker } = stub({
-      lines: ['{"type":"done","v":1,"verb":"cover","exit_code":0}'],
+      lines: ['{"type":"done","v":1,"verb":"gaps","exit_code":0}'],
       exitCode: 0,
     });
     const result = await collectEnrichment({ repoRoot: REPO, invoker, timeoutMs: BUDGET_MS });
@@ -573,21 +664,14 @@ describe('every other observation gets its own reason from §5.3', () => {
   });
 
   it('assurance-exit:<meaning> for a failing exit under an accepting envelope (R2.8)', async () => {
-    const { invoker } = stub({
-      lines: [
-        COVER_DONE_LINES[0] as string,
-        '{"type":"done","v":1,"verb":"cover","status":"complete","exit_code":0}',
-      ],
-      exitCode: 130,
-    });
+    const { invoker } = stub({ lines: GAPS_COMPLETE_LINES, exitCode: 130 });
     const result = await collectEnrichment({
       repoRoot: REPO,
       invoker,
       timeoutMs: BUDGET_MS,
-      targets: targets(),
     });
     expect(result.degradedReason).toBe('assurance-exit:force-interrupted');
-    expect(result.axes.size).toBe(0);
+    expect(result.coverageAxes).toBeNull();
   });
 
   it('enrichment-timeout when the budget elapses, using the budget it was given', async () => {
@@ -614,11 +698,11 @@ describe('every other observation gets its own reason from §5.3', () => {
     expect(sink.withCode(ENRICHMENT_DIAGNOSTIC_CODES.timeout)[0]?.message).toContain('3 ms');
   });
 
-  it('coverage-payload-unreadable when lines failed JSON parsing and no payload arrived', async () => {
+  it('gaps-payload-unreadable when lines failed JSON parsing and no payload arrived', async () => {
     const { invoker } = stub({
       lines: [
-        '{"type":"coverage","v":1',
-        '{"type":"done","v":1,"verb":"cover","status":"complete","exit_code":0}',
+        '{"type":"gaps","v":1',
+        '{"type":"done","v":1,"verb":"gaps","status":"complete","exit_code":0}',
       ],
       exitCode: 0,
     });
@@ -629,8 +713,17 @@ describe('every other observation gets its own reason from §5.3', () => {
       diagnostics: sink,
       timeoutMs: BUDGET_MS,
     });
-    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.coveragePayloadUnreadable);
+    expect(result.degradedReason).toBe(ENRICHMENT_DEGRADED_REASONS.gapsPayloadUnreadable);
     expect(sink.has(ENRICHMENT_DIAGNOSTIC_CODES.streamLinesUnparsed)).toBe(true);
+  });
+
+  it('names the reason `gaps-payload-unreadable`, and the old spelling is gone', () => {
+    // The rename is part of the contract: the string reaches `graph.degradedReasons`,
+    // the committed snapshot and a page a reviewer reads, and telling them a
+    // `coverage` payload was unreadable when the run was `cover gaps` sends them to
+    // read the wrong output.
+    expect(ENRICHMENT_DEGRADED_REASON_VALUES).toContain('gaps-payload-unreadable');
+    expect(ENRICHMENT_DEGRADED_REASON_VALUES).not.toContain('coverage-payload-unreadable');
   });
 });
 

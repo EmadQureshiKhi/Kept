@@ -1,0 +1,2 @@
+{"type":"error","v":1,"verb":"gaps","message":"error: no context store here (run `kane-cli context ingest <files>` first)"}
+{"type":"done","v":1,"verb":"gaps","status":"refused","exit_code":2}

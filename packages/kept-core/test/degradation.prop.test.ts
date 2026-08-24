@@ -165,13 +165,25 @@ class FakeChild {
 // ---------------------------------------------------------------------------
 
 const DONE = (status: string, exitCode: number): string =>
-  `{"type":"done","v":1,"verb":"cover","status":"${status}","exit_code":${exitCode}}`;
+  `{"type":"done","v":1,"verb":"gaps","status":"${status}","exit_code":${exitCode}}`;
 
-const COVERAGE = (tests: string): string =>
-  `{"type":"coverage","v":1,"verb":"cover","pack":".testmuai/evidence/ev_1","coverage":{"tests":${tests}}}`;
+/**
+ * A `gaps` payload with `usecases` set to whatever is passed. The axes are the ones
+ * the real capture carries, so the "projects nothing" arm below is the honest trap:
+ * two green figures over an empty row list, which is exactly the shape that would
+ * read as "nothing owed" if it were ever accepted.
+ */
+const GAPS = (usecases: string): string =>
+  `{"type":"gaps","v":1,"verb":"gaps","stage":"all",` +
+  `"design_completeness":{"pct":100,"acs_designed":"6/6","usecases_complete":"1/9","ucs_needing_scenarios":8},` +
+  `"proven":{"pct":100,"acs_proven":"6/6","failing":0,"blocked":0,"not_run":0,` +
+  `"config":{"source":"graph_execution_facts","denominator":"current_live_acs"}},` +
+  `"usecases":${usecases}}`;
 
-const PAYLOAD = COVERAGE(
-  '[{"test_id":"T-1","path":"tests/cart_subtotal_test.md","designed":true,"proven":true,"status":"passed"}]',
+const PAYLOAD = GAPS(
+  '[{"id":"uc-2","title":"Manage cart pricing and discounts","risk":"high",' +
+    '"design_completeness":{"pct":100,"status":"complete"},"stale_acs":0,' +
+    '"proven":{"pct":100,"status":"proven"},"pending":[]}]',
 );
 
 interface Cause {
@@ -220,7 +232,7 @@ const CAUSES: readonly Cause[] = [
   cause({
     label: 'done status refused — the verified envelope',
     lines: [
-      '{"type":"error","v":1,"verb":"cover","message":"error: no context store here (run `kane-cli context ingest <files>` first)"}',
+      '{"type":"error","v":1,"verb":"gaps","message":"error: no context store here (run `kane-cli context ingest <files>` first)"}',
       DONE('refused', 2),
     ],
     exitCode: 2,
@@ -258,15 +270,15 @@ const CAUSES: readonly Cause[] = [
   }),
   cause({
     label: 'unparseable output and no payload',
-    lines: ['{"type":"coverage","v":1', '{{{', DONE('complete', 0)],
+    lines: ['{"type":"gaps","v":1', '{{{', DONE('complete', 0)],
     exitCode: 0,
-    reason: ENRICHMENT_DEGRADED_REASONS.coveragePayloadUnreadable,
+    reason: ENRICHMENT_DEGRADED_REASONS.gapsPayloadUnreadable,
   }),
   cause({
-    label: 'a payload that projects nothing',
-    lines: [COVERAGE('[]'), DONE('complete', 0)],
+    label: 'a payload that projects no use-case rows',
+    lines: [GAPS('[]'), DONE('complete', 0)],
     exitCode: 0,
-    reason: ENRICHMENT_DEGRADED_REASONS.coveragePayloadUnreadable,
+    reason: ENRICHMENT_DEGRADED_REASONS.gapsPayloadUnreadable,
   }),
   cause({
     label: 'a complete envelope with a non-zero exit for the family',
@@ -449,7 +461,7 @@ describe('Feature: kept, Property 6: Degradation preserves state and never fails
         'crashed-stream: outcome unknown',
         'paused-resumable',
         'enrichment-timeout',
-        'coverage-payload-unreadable',
+        'gaps-payload-unreadable',
         'assurance-status:error',
         'assurance-status:refused',
         'assurance-status:interrupted',
