@@ -43,6 +43,7 @@ import { layoutSnapshot, promiseNodes } from '../../lib/layout.js';
 import { renderFreshness } from '../../lib/relativeTime.js';
 import { snapshot } from '../../lib/snapshot.js';
 
+import { CoverageRibbon } from './CoverageRibbon.js';
 import { PromiseRow } from './PromiseRow.js';
 
 import '../../styles/coverage.css';
@@ -144,6 +145,17 @@ export default function CoveragePage() {
           {'.'}
         </p>
       ) : null}
+
+      {/* The dual-axis ribbon (R9.12). It sits above the promise list because it is
+          the coarser statement — nine use cases against six acceptance criteria —
+          and because R9.15's disambiguation has to be read *before* a reader meets a
+          second figure called proven. Withheld rather than zeroed whenever the
+          assurance graph was not read (R9.13). */}
+      <CoverageRibbon
+        axes={snapshot.coverageAxes ?? null}
+        degradedReasons={degradedReasons}
+        promiseCounts={{ proven: metrics.provenCount, total: metrics.totalPromises }}
+      />
 
       <section>
         {/* `.section-head` is the shared strip in `shell.css`: small caps over a 3px ink
