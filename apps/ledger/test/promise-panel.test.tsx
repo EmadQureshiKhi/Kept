@@ -17,12 +17,15 @@
  * credibility claim — which makes it worth a character-exact assertion rather than a
  * `toContain`.
  *
- * **Absence is stated, never omitted.** Every promise in the committed snapshot is
- * `stale` with no verdict source and no evidence pack, so the empty paths are the
- * paths a judge sees first. They are asserted against the words in `PANEL_WORDS`
- * rather than against structure, because an empty section that stopped explaining
- * itself would still satisfy a structural assertion and would silently become the
- * blank §10.10 forbids.
+ * **Absence is stated, never omitted.** The committed snapshot is mixed now: seven of
+ * its thirteen promises are `proven` with a run behind them, one is `red`, and the five
+ * cited to this repository's own README are `stale` with no verdict source and no
+ * evidence pack at all. So both the populated and the empty paths are live on the same
+ * page, and the last block of this file walks every committed promise and requires
+ * whichever one applies. The empty paths are asserted against the words in
+ * `PANEL_WORDS` rather than against structure, because an empty section that stopped
+ * explaining itself would still satisfy a structural assertion and would silently
+ * become the blank §10.10 forbids.
  */
 
 import { cleanup, render } from '@testing-library/react';
@@ -369,8 +372,17 @@ describe('PromisePanel — against the committed snapshot, verdicts and all', ()
         }
 
         const source = promise.verdictSource;
-        expect(source, `${promise.id} carries a verdict with no source`).not.toBeNull();
-        if (source === null) continue;
+        if (source === null) {
+          // A promise no run has touched. Since task 26.1 the committed snapshot
+          // carries five of them: the claims cited to this repository's own README,
+          // designed by a corpus document Kane has never been paid to author, so they
+          // are `stale` with nothing to attribute. The panel says that in words rather
+          // than rendering an empty provenance block, which is the whole reason
+          // `PANEL_WORDS.noVerdictSource` exists.
+          expect(promise.verdict).toBe('stale');
+          expect(text).toContain(PANEL_WORDS.noVerdictSource);
+          continue;
+        }
         expect(text).not.toContain(PANEL_WORDS.noVerdictSource);
         expect(text).toContain(source.runId);
         expect(text).toContain(source.terminalEventType);

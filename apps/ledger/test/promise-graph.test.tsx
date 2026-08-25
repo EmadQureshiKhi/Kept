@@ -716,17 +716,22 @@ describe('/ — the hero page composes the rail, the graph and the list', () => 
     }
   });
 
-  it('shows the honest degraded state the snapshot is actually in', () => {
-    // Verified and degraded at once, which is the state worth rendering correctly:
-    // the replay of 15.3 wrote verdicts, and the assurance axis is still discarded,
-    // so the proven *tile* stays absent even though seven promises are proven.
-    expect(snapshot.degraded).toBe(true);
+  it('shows the honest state the snapshot is actually in', () => {
+    // Which state that is moves with Kane, so the invariant is asserted rather than
+    // the state. `degraded` and a null proven figure travel together in both
+    // directions (the schema's own rule), and the rail either replaces the tile with
+    // words or renders the figure in the file. Neither arm renders a zero.
     expect(snapshot.freshness.terminalEventAt).not.toBeNull();
-    expect(snapshot.metrics.provenCoverage).toBeNull();
+    expect(snapshot.metrics.provenCoverage === null).toBe(snapshot.degraded);
     const { container, unmount } = render(<LedgerPage />);
     try {
-      expect(container.querySelector('[data-degraded="true"]')).not.toBeNull();
-      expect(container.querySelector('[data-metric="proven-coverage"]')).toBeNull();
+      if (snapshot.degraded) {
+        expect(container.querySelector('[data-degraded="true"]')).not.toBeNull();
+        expect(container.querySelector('[data-metric="proven-coverage"]')).toBeNull();
+      } else {
+        expect(container.querySelector('[data-degraded="true"]')).toBeNull();
+        expect(container.querySelector('[data-metric="proven-coverage"]')).not.toBeNull();
+      }
     } finally {
       unmount();
     }

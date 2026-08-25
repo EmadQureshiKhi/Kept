@@ -313,7 +313,10 @@ describe('ordering', () => {
 
   it('breaks a rank tie by id, ascending', () => {
     const promises = promiseNodes(layout);
-    // Every promise in the committed snapshot is `stale`, so this is a pure id sort.
+    // Five promises in the committed snapshot share the `stale` rank, so within that
+    // band there is no verdict left to sort on and what remains is a pure id sort. The
+    // filter is what makes this a tie-break assertion rather than a restatement of the
+    // clause above: the other eight promises carry two different ranks between them.
     const stale = promises.filter((node) => node.verdict === 'stale').map((node) => node.id);
     expect(stale).toStrictEqual([...stale].sort());
   });

@@ -9,13 +9,16 @@
  * annotation. *What can be inspected* — every artefact in the evidence pack, as a
  * plain static link.
  *
- * **Absence is stated, never omitted.** Today every promise in the committed snapshot
- * is `stale` with no verdict source and no evidence pack, because no verification run
- * has been recorded yet — so the sections that would carry a result code and a list of
- * artefacts say, in prose, that there is nothing sealed and why. That is the honest
- * state of the repository and it is the first thing a judge sees, so it is written as
- * a specified state (§10.10) rather than left as three empty headings. An empty
- * section and a withheld one must not look the same.
+ * **Absence is stated, never omitted.** The committed snapshot is mixed, so both halves
+ * of that rule are live on the same page. Eight of its thirteen promises carry a verdict
+ * with a real terminal event behind it and two of those have an evidence pack sealed;
+ * the other five, the claims cited to this repository's own root README, are `stale` with
+ * no verdict source and no pack at all, because nothing has ever been run against them.
+ * So the sections that would carry a result code and a list of artefacts say, in prose,
+ * that there is nothing sealed and why. That is the honest state of the repository and a
+ * judge meets both versions of the panel on one visit, so the absence is written as a
+ * specified state (§10.10) rather than left as three empty headings. An empty section and
+ * a withheld one must not look the same.
  *
  * **The quote is bytes, not prose we tidied.** `citation.text` is the line the
  * admission gate read off disk (R1.3), and it is rendered with `white-space: pre-wrap`
