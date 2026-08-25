@@ -12,12 +12,16 @@
  *   3. **replaced** — the proven coverage tile swapped for `baseline data only` when
  *      the snapshot is degraded, at the same footprint rather than as a dimmed number.
  *
- * The fixtures are the live snapshot's numbers, written out here rather than imported
- * from `data/ledger.snapshot.json`: task 9.1 is landing the loader concurrently, and a
- * component test that depended on a file being committed by another commit would fail
- * for a reason that has nothing to do with the component. The values are the real
- * ones — degraded on `assurance-status:refused`, designed coverage 1, suite debt 0,
- * never verified — so the degraded path under test is the path a judge sees first.
+ * The fixtures are written out here rather than imported from
+ * `data/ledger.snapshot.json`: task 9.1 landed the loader concurrently, and a component
+ * test that depended on a file being committed by another commit would fail for a reason
+ * that has nothing to do with the component. They were the committed snapshot's own
+ * numbers when this file was written; the snapshot has since gone clean, `degraded:
+ * false` with a real `provenCoverage`, so the withheld and replaced states below are no
+ * longer the ones a judge meets first. They are kept exactly as they are on purpose.
+ * This suite exists to hold all three states of §10.10 and R9.3 at once, and a fixture
+ * that tracked whichever state happened to be committed would stop covering the other
+ * two the moment the snapshot moved.
  *
  * The count-up of §10.6.2 arrives in task 17.7 and must not change this DOM, so the
  * accessible name is asserted to be the *final* value here, at first paint, with no
@@ -38,14 +42,24 @@ import { MetricFigure, countDigits, metricFigureLabel } from '../components/Metr
 import { MetricRail, type RailMetrics } from '../components/MetricRail.js';
 import { METRIC_RAIL_CLASSES } from '../lib/metricRail.js';
 
-/** The committed snapshot's metrics, verbatim. Degraded, so proven is withheld. */
+/**
+ * A withheld proven figure beside a measured designed one. It was the committed
+ * snapshot's own metrics when this file was written, which is where the name comes
+ * from; the snapshot has since gone clean and this is now the state under test rather
+ * than the state on disk.
+ */
 const LIVE_METRICS: RailMetrics = {
   designedCoverage: 1,
   provenCoverage: null,
   undesignedCount: 0,
 };
 
-/** The committed snapshot's freshness: no terminal event has ever been consumed. */
+/**
+ * Freshness with no terminal event consumed. Also historical rather than live: the
+ * committed snapshot names a real `terminalEventAt` now, so the chip on the deployed
+ * page reports an age. The `never verified` tone is exercised here because it is the
+ * state a fresh repository renders, and nothing on disk exercises it any more.
+ */
 const LIVE_FRESHNESS: FreshnessChipProps = {
   relative: 'never verified',
   tone: 'unverified',

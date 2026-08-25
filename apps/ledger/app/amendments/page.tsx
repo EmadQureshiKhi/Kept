@@ -21,10 +21,12 @@
  * asserts that over this directory with eleven rules, and it runs both in the test suite
  * and in the build.
  *
- * Statically rendered from the committed snapshot, like every other route. Today that
- * snapshot carries no amendments — no verification run has been recorded against the
- * fixture yet — so the page renders its specified empty state (§10.10) rather than a
- * blank. That state is the honest one, and it says what would put an amendment here.
+ * Statically rendered from the committed snapshot, like every other route. That snapshot
+ * carries one amendment now, the staged `docs-lie` stage 15.5 proposed off T-7's red
+ * verdict, so the page a reader meets is a pending card rather than the empty state. The
+ * empty state is still specified (§10.10) rather than left as a blank, because a
+ * repository on its first build has nothing to show here, and the copy names what would
+ * put a card on the page instead of shrugging.
  */
 
 import type { Metadata } from 'next';

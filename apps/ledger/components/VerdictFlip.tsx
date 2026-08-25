@@ -36,11 +36,13 @@
  * settled on. It adds no new `--verdict-*` *selector*, so the two-consumer allowlist
  * of `verdict-presentation.prop.test.tsx` is untouched.
  *
- * **Today it is a no-op, deliberately.** The committed snapshot is `degraded: true`
- * with all eight promises `stale`, so nothing on the page has a verdict to flip
- * *from* — verdict movement arrives with stage 15. `playVerdictFlip` therefore
- * returns an already-resolved promise when the two verdicts are equal, and the hook
- * fires only on a change, never on mount. What is tested is the change itself:
+ * **Today it is a no-op, deliberately.** The committed snapshot spreads its thirteen
+ * promises across three verdicts, seven `proven`, five `stale` and one `red`, but it is a
+ * single instant: nothing on the page has a verdict to flip *from*, because there is no
+ * earlier snapshot to have moved away from. Verdict movement arrives with stage 15.
+ * `playVerdictFlip` therefore returns an already-resolved promise when the two verdicts
+ * are equal, and the hook fires only on a change, never on mount. What is tested is the
+ * change itself:
  * every ordered pair of verdicts, on a real node, in `motion-m5-verdict-flip.test.tsx`.
  */
 

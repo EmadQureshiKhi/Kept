@@ -40,27 +40,40 @@ function messageFor(document: unknown): string {
 describe('the committed snapshot', () => {
   it('validates at import time', () => {
     expect(snapshot.schemaVersion).toBe(1);
-    expect(snapshot.promises).toHaveLength(8);
-    expect(snapshot.metrics.totalPromises).toBe(8);
+    // Thirteen since task 26.1: the fixture's eight claims plus the five this
+    // repository's own root README makes about itself (design §23.1, R19.1).
+    expect(snapshot.promises).toHaveLength(13);
+    expect(snapshot.metrics.totalPromises).toBe(13);
   });
 
   it('carries every promise cited to a real file and line', () => {
+    // Two cited documents rather than one, and the Ledger has to render both. The
+    // set is asserted rather than a single path, because a promise cited to a third
+    // file would mean the graph grew a source nothing configured.
+    const cited = new Set(snapshot.promises.map((promise) => promise.citation.file));
+    expect([...cited].sort()).toEqual(['README.md', 'apps/fixture/README.md']);
     for (const promise of snapshot.promises) {
-      expect(promise.citation.file).toBe('apps/fixture/README.md');
       expect(promise.citation.line).toBeGreaterThanOrEqual(1);
       expect(promise.citation.text.trim()).not.toBe('');
     }
   });
 
-  it('is degraded, and withholds the proven figure rather than reporting zero', () => {
-    // Not an error state: there is no context store yet, so the assurance axis was
-    // refused and the ledger says so instead of publishing a number (§10.10, R2.11).
-    expect(snapshot.degraded).toBe(true);
-    // The *reason* moves with Kane's state and is not pinned to one token: it has
-    // been `assurance-status:refused` and is now `coverage-payload-unreadable`. What
-    // R2.11 requires is a reason, and a withheld figure.
-    expect(snapshot.degradedReasons.length).toBeGreaterThan(0);
-    expect(snapshot.metrics.provenCoverage).toBeNull();
+  it('either reports a proven figure or names a reason for withholding it', () => {
+    // Whether the assurance axis was delivered moves with Kane, so the *invariant* is
+    // asserted rather than the state. It ran both ways in this repository's history:
+    // degraded with `assurance-status:refused` while `cover --json` refused on a
+    // replay pack, and clean once §5.3.0 moved the axes to `cover gaps`. What R2.11
+    // requires either way is that a withheld figure comes with a reason and a
+    // reported one comes with none.
+    expect(snapshot.metrics.provenCoverage === null).toBe(snapshot.degraded);
+    if (snapshot.degraded) {
+      expect(snapshot.degradedReasons.length).toBeGreaterThan(0);
+      // R9.13: the coverage axes are withheld with the figure, never zeroed.
+      expect(snapshot.coverageAxes ?? null).toBeNull();
+    } else {
+      expect(snapshot.degradedReasons).toEqual([]);
+      expect(snapshot.metrics.provenCoverage).toBeGreaterThan(0);
+    }
     expect(snapshot.metrics.designedCoverage).toBe(1);
   });
 

@@ -18,9 +18,10 @@
  *
  * ── What the snapshot cannot supply ──────────────────────────────────────────
  *
- * The committed snapshot is `degraded: true` with all eight promises `stale`, so the
- * page has no verdict variety and today's build has no verdict *change* to show —
- * that arrives with stage 15. So the change is supplied here: a `PromiseNode` is
+ * The committed snapshot has verdict variety now, seven `proven`, five `stale` and one
+ * `red` across its thirteen promises, but it still has no verdict *change* to show: it
+ * is one instant, and a flip needs two. That arrives with stage 15. So the change is
+ * supplied here: a `PromiseNode` is
  * rendered at one verdict and re-rendered at another, which is exactly the update
  * `PromiseGraph` will pass down when the snapshot moves, and the orchestration is
  * also driven directly against a rendered node for the pairs a single re-render

@@ -286,9 +286,11 @@ interface Orchestration {
  * the page comparison still inspects a page where nothing moves.
  *
  * **M5 is driven at a verdict it cannot reach today, on purpose.** The committed
- * snapshot is `degraded: true` with all eight promises `stale`, so no promise on this
- * page has a *previous* verdict — verdict movement arrives with stage 15. Driving the
- * flip with `from` set to some other verdict and `to` set to the one the page
+ * snapshot is clean, `degraded: false`, and its thirteen promises resolve to seven
+ * `proven`, five `stale` and one `red`. What none of them carries is a *previous*
+ * verdict: the snapshot is one instant, so nothing on this page has moved, and
+ * verdict movement arrives with stage 15. Driving the flip with `from` set to some
+ * other verdict and `to` set to the one the page
  * actually states is exactly the update `PromiseGraph` will pass down when a snapshot
  * moves: the DOM already shows the destination, and the animation travels from where
  * the promise used to be. That makes the comparison below a real one — a page whose
@@ -362,10 +364,13 @@ const ORCHESTRATIONS: readonly Orchestration[] = [
     /**
      * M2 — the metric count-up (§10.6.2). Driven over the rail of the real page, one
      * figure at a time, because that is the orchestration's unit: a tile has a figure or
-     * it does not. Two of the four members have one today — the degraded chip replaces
-     * proven coverage and carries a word instead of digits, and a withheld ratio carries
-     * `n/a` — so the count is asserted rather than assumed, and the tiles that decline are
-     * the point of the assertion as much as the ones that count.
+     * it does not. Two of the four members have one today, both coverage figures, and the
+     * two that decline decline for different reasons: suite debt reads zero, which is not
+     * a positive figure to climb to, and the freshness tile is prose rather than digits.
+     * The count is therefore asserted rather than assumed, and the tiles that decline are
+     * the point of the assertion as much as the ones that count. Neither declining reason
+     * is the degraded chip any more, because the committed snapshot is clean, which is
+     * why `motion-m2-metric-count-up.test.tsx` drives that arm against a rail it builds.
      */
     site: 'apps/ledger/components/MetricCountUp.tsx',
     drive: async (container) => {

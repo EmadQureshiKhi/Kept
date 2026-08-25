@@ -23,8 +23,10 @@
  *   snapshot is degraded — `DegradedChip` renders no figure and therefore no digit run, so
  *   {@link countUpDigitRun} finds nothing and there is nothing to animate. The same
  *   mechanism covers `n/a` (R9.3): a withheld ratio has no number, so it does not count.
- *   The committed snapshot is `degraded: true` with `provenCoverage: null`, so that is the
- *   live path and the one a judge sees first.
+ *   The committed snapshot is `degraded: false` with a real `provenCoverage`, so the tile
+ *   a judge sees first does carry a digit run and does count up. The declining paths are
+ *   structural rather than live, which is exactly why they are worth stating: neither one
+ *   needs a snapshot to be in a particular state to keep holding.
  *
  * **Why the end state is a string.** Every other orchestration ends at a style
  * declaration; this one ends at *text*, which is already correct on the server. So `to` is

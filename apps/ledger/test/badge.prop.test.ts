@@ -14,10 +14,13 @@
  * schema-valid and weights in both structural edge cases — the empty graph, whose
  * coverage figures are null because no division may be performed (R9.3), and the
  * graph with promises but no designed tests. A generator over bare ratios would
- * miss the way a null actually arises, and the null path is the live one: the
- * committed snapshot is degraded, so `provenCoverage` is null and today's badge
- * reads `n/a`. Generating snapshots also means the property exercises the same
- * field the route reads rather than a number invented beside it.
+ * miss the way a null actually arises, and that is precisely why the null has to be
+ * generated rather than observed: the committed snapshot is clean, `degraded: false`
+ * with a real `provenCoverage`, so today's badge reads a percentage and the withheld
+ * arm has no live example to lean on. Generating snapshots also means the property
+ * exercises the same field the route reads rather than a number invented beside it,
+ * and the clause below asserts that both a null and a numeric ratio were actually
+ * drawn, so the `n/a` path cannot quietly stop being covered.
  *
  * **Well-formedness is checked by a parser, not by a regular expression.** The
  * ledger project runs under jsdom, which supplies `DOMParser`; a malformed document

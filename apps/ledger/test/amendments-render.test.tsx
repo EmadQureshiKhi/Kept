@@ -4,11 +4,12 @@
  *
  * Two halves.
  *
- * The **empty** half renders the route against the committed snapshot, which carries
- * `amendments: []` because nothing has been proposed against the fixture yet. That is the
- * live path today and the first thing a reader sees, so it is asserted to *state* the
- * fact and to name what would put an amendment there — §10.10 makes an empty state a
- * specified state, and a blank page here would read as a surface that does not work.
+ * The **live** half renders the route against the committed snapshot, which carries the
+ * one staged `docs-lie` amendment stage 15.5 proposed off T-7's red verdict. So a reader
+ * meets a card rather than the empty state, and what is still asserted about the empty
+ * state is that `AMENDMENTS_EMPTY` keeps naming what would put a card here: a repository
+ * on its first build renders it, §10.10 makes an empty state a specified state, and a
+ * blank page here would read as a surface that does not work.
  *
  * The **populated** half renders a card against an amendment built here and parsed
  * through `SnapshotAmendmentSchema`, so the fixture cannot drift from the shape the

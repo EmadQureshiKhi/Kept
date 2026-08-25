@@ -13,21 +13,24 @@
  * different pages — the same jitter `lib/layout.ts` exists to keep out of the graph.
  * The chip's `title` carries the exact ISO instant either way.
  *
- * The state a judge sees first is **partly** degraded, and the mixture is the point. The
- * committed snapshot carries `degraded: true` for `assurance-status:refused`, so the rail
- * replaces the proven coverage tile with `baseline data only` at the same footprint
- * (§10.10) — a withheld figure rendered as a phrase rather than as a zero. Everything
- * else on the page is measured: `freshness.terminalEventAt` is set, so the chip reports a
- * real age against `generatedAt` instead of `never verified`; the eight promises resolve
- * to seven `proven` and one `red`, not eight `stale`; and two of them have an evidence
- * pack sealed and linkable.
+ * The state a judge sees first is **measured and uneven**, and the unevenness is the
+ * point. The committed snapshot carries `degraded: false` with no reasons, so the rail
+ * renders a real proven coverage figure rather than replacing the tile with the
+ * `baseline data only` chip of §10.10, and `freshness.terminalEventAt` is set, so the
+ * chip reports a real age against `generatedAt` instead of `never verified`. What the
+ * figure says is that seven of the thirteen promises are `proven`. The remaining six are
+ * the debt, and they are two different kinds of it: five are `stale`, claims this
+ * repository makes about itself in its own root README that nothing has ever run, and
+ * one is `red`, the discount claim the fixture is designed never to satisfy. Two
+ * promises have an evidence pack sealed and linkable.
  *
  * That combination is the honest state of this repository rather than a fallback, and it
- * is worth stating because the two halves come from different places: the verdicts are
- * replayed from committed Kane recordings, while the proven-coverage figure is withheld
- * because the assurance store refused. A snapshot can be degraded and still have proven
- * promises in it, and the rail has to say both things at once without either one implying
- * the other. Every one of those paths is first-class in the components.
+ * is worth stating because the numbers come from different places: the verdicts are
+ * replayed from committed Kane recordings, while the coverage axes beside them are read
+ * off the live graph by `cover gaps`. The rail has to report a measured figure and an
+ * unpaid debt at the same time without either one implying the other, and it has to keep
+ * the withheld arm working for the run where those axes are discarded again. Every one
+ * of those paths is first-class in the components.
  */
 
 import { MetricRail } from '../components/MetricRail.js';

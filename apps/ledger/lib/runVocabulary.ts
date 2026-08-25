@@ -455,12 +455,15 @@ export const EMPHASIS_HEADINGS: Readonly<Record<'remedy' | 'conflict', string>> 
 /**
  * What `/runs` says when there is nothing to list.
  *
- * The committed snapshot carries `runs: []` today, so this is the live path and
- * the first thing a reader sees. It states the fact rather than shrugging: no
- * terminal event has been consumed, which is also why the freshness chip reads
- * `never verified` and why the proven figure is withheld instead of being
- * reported as zero. An empty log is a true statement about this repository, and
- * saying so is the same honesty the rest of the page is for.
+ * This is no longer the live path. The committed snapshot carries a log of real
+ * recorded terminal events, so what a reader meets on `/runs` is the table, and the
+ * freshness chip reports an age rather than `never verified`. The empty state is kept
+ * as a *specified* state all the same (§10.10), because the repository a judge clones
+ * and runs `kept init` in has an empty log on its first build, and a region that says
+ * nothing when it holds nothing reads as a surface that does not work. It states the
+ * fact rather than shrugging: no terminal event has been consumed, so nothing is
+ * claimed about any promise, and saying so is the same honesty the rest of the page is
+ * for.
  */
 export const NO_RUNS_HEADLINE = 'No verification run has been recorded yet.';
 

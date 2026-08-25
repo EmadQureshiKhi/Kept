@@ -17,8 +17,12 @@
  * coverage tile for `DegradedChip`, which occupies the identical footprint through
  * the one box rule `.metric-tile` and `.metric-rail__chip` share (§10.10). So the
  * rail has four members in both states, the same rhythm, and no conditional spacing
- * anywhere. That is the live path today: the committed snapshot is degraded with
- * `assurance-status:refused`, so this branch is what a judge sees first.
+ * anywhere. That branch is not the live path today: the committed snapshot carries
+ * `degraded: false` and no reasons, so what a judge sees first is four tiles with a
+ * real proven figure in the first of them, seven promises out of thirteen. The
+ * replacement still has to hold its footprint, because a single refusal upstream
+ * brings it back, and a rail that only kept its rhythm in the state it happened to
+ * be committed in would break on the day it mattered.
  *
  * `<ul>`/`<li>` because the rail is a list of figures, and `.metric-rail` already
  * removes the markers and lays the row out as a grid of

@@ -16,8 +16,10 @@
  *      all.
  *   4. **A figure that has no number does not count.** The degraded chip that replaces the
  *      proven-coverage tile (R2.11) and the `n/a` of a withheld ratio (R9.3) both decline,
- *      structurally — they render no digit run — and the committed snapshot is degraded, so
- *      that is the live path.
+ *      structurally, by rendering no digit run at all. Neither is the live path any
+ *      more: the committed snapshot carries `degraded: false` and a real
+ *      `provenCoverage`, so the tile a reader meets does count up. That is why both
+ *      declining paths are driven here rather than left to the committed data to show.
  *   5. **Motion off is a state.** The end state is applied synchronously, the digits read
  *      their final value with no frame in between, and no inline declaration is written at
  *      any point, so the resting DOM is the server's bytes.
@@ -190,12 +192,12 @@ describe('a figure counts only when it carries a number', () => {
   });
 
   it('counts exactly the tiles of the committed rail that carry a figure', async () => {
-    /* The real snapshot, whatever state it is in. Today it is `degraded: true` with
-       `provenCoverage: null`, so the chip stands where a figure would and two tiles count —
-       but the assertion is written against the rail as rendered rather than against that
-       state, because which figures the snapshot carries is the snapshot's business and this
-       flourish's rule is the same either way: a tile counts if and only if it shows a
-       positive number. */
+    /* The real snapshot, whatever state it is in. Today it is `degraded: false` with a
+       real `provenCoverage`, so no chip stands in for a tile and the proven figure is one
+       of the ones that counts. The assertion is written against the rail as rendered
+       rather than against that state, because which figures the snapshot carries is the
+       snapshot's business and this flourish's rule is the same either way: a tile counts
+       if and only if it shows a positive number. */
     const { container } = render(
       <MetricRail
         degraded={snapshot.degraded}

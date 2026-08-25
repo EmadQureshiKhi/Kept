@@ -3,11 +3,11 @@
  *
  * Three halves, and the middle one is the point of the page.
  *
- * The **empty** half renders the route against the committed snapshot, which
- * carries `runs: []`. That is the live path today and the first thing a reader
- * sees, so it is asserted to state the fact rather than shrug — and to keep saying
- * so with a stylesheet's worth of colour taken away, since jsdom applies none of
- * the CSS.
+ * The **empty** half is no longer the live path: since 15.6 the committed snapshot
+ * projects a real log off the persisted handoffs, so the route renders a table and
+ * the empty state is what a repository sees on its first build. It is still asserted
+ * to state the fact rather than shrug, and to keep saying so with a stylesheet's
+ * worth of colour taken away, since jsdom applies none of the CSS.
  *
  * The **populated** half renders `RunRow` against runs constructed here, one per
  * row of §14.1. Stage 15 fills this page with real recorded runs and it has to
@@ -24,7 +24,7 @@
  *
  * The **filter** half is driven against runs constructed here rather than against the
  * committed snapshot, and that is a fact about the snapshot rather than a shortcut: it
- * holds fifteen runs of one family with one outcome tone, so a filter exercised on it
+ * holds seventeen runs of one family with one outcome tone, so a filter exercised on it
  * could only prove that selecting the single option keeps every row. The two things a
  * filter must never do are checked instead — narrowing to nothing renders the dashed
  * empty state naming what is selected, and the heading's count follows the view rather

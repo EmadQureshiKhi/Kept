@@ -2,11 +2,11 @@
  * The failure and degradation matrix, row by row — design §14.1, §4.1, §4.5,
  * §5.3.1, §13.2.2, R4.9, R4.11, R5.3.
  *
- * `/runs` has nothing to list today: the committed snapshot carries `runs: []`.
- * That is precisely why this suite constructs the runs instead of reading them.
- * Stage 15 will fill the page with recorded invocations and it has to render them
- * correctly the first time, so every row of §14.1 gets a `SnapshotRun` built here
- * and asserted against the words it must produce.
+ * The committed snapshot has a log now, but every run in it is one family with one
+ * outcome, so reading it would exercise a single row of §14.1 and leave the rest
+ * unchecked. That is why this suite constructs its runs instead: every row gets a
+ * `SnapshotRun` built here and asserted against the words it must produce, including
+ * the rows this repository has never produced and hopes not to.
  *
  * Each constructed run is **parsed by the snapshot schema** before it is used. A
  * run shape the schema would reject proves nothing about a page that only ever

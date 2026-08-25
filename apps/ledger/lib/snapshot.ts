@@ -33,11 +33,17 @@
  * stands in for it.
  *
  * A degraded snapshot is **valid**, and this module renders it. The committed
- * snapshot right now carries `degraded: true`, `assurance-status:refused` and a
- * null `provenCoverage`, because there is no context store to measure against
- * yet. That is the honest state of the repository, not a broken artefact: the
- * metric rail replaces the proven tile with the `baseline data only` chip (§10.10)
- * and the number is withheld rather than reported as zero.
+ * snapshot is not one today: it carries `degraded: false`, an empty
+ * `degradedReasons`, a real `provenCoverage` of seven proven promises out of
+ * thirteen, and the dual coverage axes beside it, because §5.3.0 moved those axes
+ * to `cover gaps`, which reads them off the live graph and needs no sealed pack to
+ * measure against. So the metric rail renders the proven tile with a figure in it,
+ * and the `baseline data only` chip of §10.10 is the arm nobody sees first.
+ *
+ * That arm still has to be right, which is why it is a state of the data and not a
+ * flag on a component. One refusal upstream brings it back, the schema requires
+ * `provenCoverage` to be null the moment it does (R2.11), and the number is then
+ * withheld rather than reported as zero.
  */
 
 import type { LedgerSnapshot } from '@kept/core';
