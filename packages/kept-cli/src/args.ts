@@ -30,6 +30,7 @@
 
 /** The command table of design §13.1, in table order. */
 export const KEPT_COMMANDS = Object.freeze([
+  'init',
   'build',
   'verify',
   'reconcile',
@@ -58,6 +59,10 @@ export const BOOLEAN_FLAGS: readonly string[] = Object.freeze([
   'all',
   'apply',
   'dry-run',
+  // `kept init --force` replaces the config and only the config (R16.3). Boolean,
+  // so it cannot swallow the next word: `kept init --force --json` has to parse as
+  // two flags rather than as a `--force` whose value is `--json`.
+  'force',
   'help',
   'json',
   'member-debug',

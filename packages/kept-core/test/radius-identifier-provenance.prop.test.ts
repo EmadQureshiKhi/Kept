@@ -374,6 +374,9 @@ async function run(scenario: Scenario): Promise<Outcome> {
   const planOfRecord = await readPlan({
     invoker,
     cwd: REPO,
+    // `corpus.root`, required rather than guessed since §20.1 moved it into the
+    // config: the mtime walk has to be told where this repository's corpus is.
+    corpusRoot: 'tests',
     fs,
     sink,
     now: () => NOW,

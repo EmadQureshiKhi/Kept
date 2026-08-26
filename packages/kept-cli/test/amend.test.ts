@@ -186,6 +186,10 @@ function repositoryWith(options: {
   ];
   writeHandoff({
     repoRoot: REPO,
+    // The fence surfaces this fixture repository would resolve from its config
+    // (§20.1). `amend` reads the handoff rather than the fence, so the exact globs
+    // are immaterial here; what matters is that they are stated rather than assumed.
+    fences: { allow: ['apps/fixture/lib/**'], forbid: ['tests', 'apps/fixture/README.md'] },
     runId: RUN_ID,
     run: outcomeOf(options.lines ?? FAILING, 1),
     exitCode: 1,
@@ -480,6 +484,75 @@ describe('the command surface (§13.1)', () => {
     });
     expect(exitCode).toBe(EXIT_OK);
     expect(out.join('')).toContain('kept amend propose');
+  });
+
+  /**
+   * The human summary says why `propose` staged nothing, which it used not to.
+   *
+   * Task 22.2's live cycle pointed `propose` at a run whose failure the router had
+   * settled as `test-drift`. There was no docs-lie to amend, so nothing was staged,
+   * which is correct: §8.1.1's rule is that an amendment is only ever proposed for the
+   * branch the router already settled. The command reported that at `info`, and the
+   * human form drops `info` on purpose so its output is not flooded, so what a reader
+   * actually got was two lines, the command's own name and the repository path, and a
+   * zero exit. A refusal and a success were indistinguishable.
+   *
+   * The fix is narrow rather than making every `info` visible: `propose` surfaces the
+   * one diagnostic that explains an empty proposal, and it reuses that diagnostic's own
+   * text so the summary and the payload cannot drift. This asserts the reader is told
+   * three things: that nothing was staged, which branch the run actually settled, and
+   * that the two facts are connected.
+   */
+  it('says why propose staged nothing, naming the branch the router did settle', async () => {
+    const fileSystem = repositoryWith({ branch: 'test-drift' });
+    const out: string[] = [];
+    const errors: string[] = [];
+    const exitCode = await main(
+      ['amend', 'propose', '--run', RUN_ID, '--text', REPLACEMENT],
+      {
+        write: (text: string) => out.push(text),
+        writeError: (text: string) => errors.push(text),
+        cwd: REPO,
+        env: {},
+        fileSystem,
+        now: () => new Date(AT),
+        kane: false,
+      },
+    );
+    expect(exitCode).toBe(EXIT_OK);
+    const text = out.join('');
+    expect(text).toContain('kept amend propose');
+    expect(
+      text,
+      'the human summary is silent about a proposal that staged nothing, so a reader ' +
+        'cannot tell a refusal from a success',
+    ).toContain('outcome');
+    expect(text).toContain("settled no promise as 'docs-lie'");
+    expect(text, 'the branch the run did settle is not named').toContain("'test-drift'");
+    // Still nothing staged, and the diagnostic stream is unchanged: this adds a line to
+    // the summary and changes no behaviour.
+    expect(
+      fileSystem.writes.filter((path) =>
+        path.startsWith(`${REPO}/${AMENDMENTS_DIRECTORY_RELATIVE_PATH}`),
+      ),
+    ).toEqual([]);
+    expect(errors.join('')).not.toContain('amend-no-docs-lie');
+  });
+
+  it('stays silent about it when the proposal actually staged something', async () => {
+    // The other half, so the line above cannot be printed unconditionally.
+    const fileSystem = repositoryWith();
+    const out: string[] = [];
+    await main(['amend', 'propose', '--run', RUN_ID, '--text', REPLACEMENT], {
+      write: (text: string) => out.push(text),
+      writeError: () => undefined,
+      cwd: REPO,
+      env: {},
+      fileSystem,
+      now: () => new Date(AT),
+      kane: false,
+    });
+    expect(out.join('')).not.toContain("settled no promise as 'docs-lie'");
   });
 
   it('carries --text through the parser verbatim, spaces and all', async () => {

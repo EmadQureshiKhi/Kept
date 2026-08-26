@@ -54,9 +54,9 @@
  * `maxAgeMs` (default ten minutes), or **any `*_test.md` is newer than it**. The
  * third is the one that matters in the loop: authoring or editing a test document
  * changes what Kane would run, and a ten-minute window would hand `--from-context`
- * an identifier set that predates the edit. Kane's test documents live at the
- * repository-root `tests/` directory, which is what {@link newestTestDocument}
- * walks.
+ * an identifier set that predates the edit. Where those documents live is the host
+ * repository's `corpus.root`, handed in rather than assumed, and it is what
+ * {@link newestTestDocument} walks.
  *
  * Nothing here throws for the state of the world (§14.2): an unreadable cache, an
  * absent binary, a refusal, a crash, a timeout and an unwritable `.kept/` are all
@@ -102,8 +102,14 @@ export const PLAN_MAX_AGE_MS = 600_000;
 /** The refresh budget (§7.2): 60 s. A dry run enumerates; it does not execute. */
 export const PLAN_REFRESH_TIMEOUT_MS = 60_000;
 
-/** Where Kane's Markdown test suite lives — the repository root, not the app. */
-export const TEST_DOCUMENT_ROOT = 'tests';
+/* Where Kane's Markdown test suite lives used to be declared here as the literal
+   `tests`. It is `corpus.root` in `Kept_Config` now (§20.1, R15.2), and it reaches
+   this module as a required argument on {@link newestTestDocument} and
+   {@link ReadPlanRequest.corpusRoot}. A default here would be a second home for the
+   value, and the failure it would cause is invisible: the mtime walk would look in a
+   directory the host repository does not use, find nothing newer than the cache, and
+   never refresh — so `--from-context` would keep spending identifiers that predate
+   the edit that changed them. */
 
 /** Depth cap on the `*_test.md` mtime walk. Insurance against a cyclic tree. */
 export const MAX_TEST_DOCUMENT_DEPTH = 8;
@@ -437,11 +443,12 @@ export function normalisePlanEvent(
  * and treats an unreadable directory as empty — a plan refresh must not fail
  * because a directory could not be listed, it should just not see a reason to
  * refresh from it.
+ *
+ * `root` is required: it is `corpus.root` from `Kept_Config`, and `''` is a
+ * legitimate value meaning the whole repository. There is nothing sensible for this
+ * function to guess, and a guess would refresh nothing rather than fail loudly.
  */
-export function newestTestDocument(
-  fs: PlanFileSystem,
-  root: string = TEST_DOCUMENT_ROOT,
-): TestDocumentStamp | null {
+export function newestTestDocument(fs: PlanFileSystem, root: string): TestDocumentStamp | null {
   let newest: TestDocumentStamp | null = null;
   const queue: { readonly dir: string; readonly depth: number }[] = [
     { dir: toPosix(root), depth: 0 },
@@ -557,8 +564,15 @@ export interface ReadPlanRequest {
   readonly sink?: DiagnosticSink | undefined;
   /** Injected clock, so `capturedAt` and the age window are deterministic. */
   readonly now?: (() => number) | undefined;
-  /** Where Kane's test documents live. Defaults to {@link TEST_DOCUMENT_ROOT}. */
-  readonly testDocumentRoot?: string | undefined;
+  /**
+   * Where Kane's test documents live — `corpus.root` from `Kept_Config` (§20.1).
+   *
+   * Required, because the staleness trigger that matters in the loop is "a
+   * `*_test.md` is newer than the cache", and a walk rooted at the wrong directory
+   * answers that question `no` forever without ever saying it looked in the wrong
+   * place.
+   */
+  readonly corpusRoot: string;
   /** Force a refresh regardless of staleness. `kept verify --refresh-plan`. */
   readonly force?: boolean | undefined;
 }
@@ -658,7 +672,7 @@ export async function readPlan(request: ReadPlanRequest): Promise<TestrunPlan | 
         plan: cached.plan,
         malformed: cached.malformed,
         cacheMtimeMs: cached.mtimeMs,
-        newestTestDocument: newestTestDocument(fs, request.testDocumentRoot ?? TEST_DOCUMENT_ROOT),
+        newestTestDocument: newestTestDocument(fs, request.corpusRoot),
         nowMs,
         maxAgeMs,
       });

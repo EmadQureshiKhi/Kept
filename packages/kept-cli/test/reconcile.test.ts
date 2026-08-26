@@ -15,7 +15,6 @@ import type {
   StoreSource,
 } from '@kept/core';
 import {
-  FIXTURE_DOC_GLOBS,
   FORK_GUARD_DIAGNOSTIC_CODE,
   HANDOFF_DIAGNOSTIC_CODES,
   HANDOFF_FILE_RELATIVE_PATH,
@@ -35,6 +34,7 @@ import {
   inMemorySourceCacheFileSystem,
   isHandoffFile,
   parseHandoff,
+  parseSnapshot,
   serialiseSourcesCache,
   serialiseState,
   sourcesListingSignature,
@@ -43,6 +43,7 @@ import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG, FIXTURE_DOC_GLOBS } from './fixture-config.js';
 import { main } from '../src/main.js';
 import {
   RECONCILE_CHECK_FOR_REASON,
@@ -91,6 +92,20 @@ const NOW_MS = Date.parse(AT);
 
 /** The one document the docs hook fires on, and it is really there. */
 const README = 'apps/fixture/README.md';
+
+/**
+ * `subject.docs` for this repository, as `.kept/config.json` declares it.
+ *
+ * The filter takes this as an argument now rather than reading a constant out of
+ * the handoff module (§20.1, R15.2): the pattern set is a fact about the repository
+ * under verification, and this suite is verifying one.
+ *
+ * It was a second hand-written copy of the same list until it went one entry short of
+ * the config, so it comes through `fixture-config.ts` now, which reads the committed
+ * bytes. One authority, and this alias is kept only because the clauses below read
+ * better naming the thing the filter takes.
+ */
+const DOC_GLOBS: readonly string[] = FIXTURE_DOC_GLOBS;
 
 const STATE_PATH = `${REPO}/${STATE_FILE_RELATIVE_PATH}`;
 const HANDOFF_PATH = `${REPO}/${HANDOFF_FILE_RELATIVE_PATH}`;
@@ -397,11 +412,41 @@ interface Run {
   readonly sink: CollectingDiagnosticSink;
 }
 
+/** Every review-card file in an injected tree. Empty is the usual, correct answer. */
+function cardPathsIn(tree: Map<string, string>): readonly string[] {
+  return [...tree.keys()].filter((path) => path.startsWith(REVIEW_CARDS_DIR));
+}
+
+/**
+ * A directory listing derived from the injected map, for `projectStore` below.
+ *
+ * The snapshot's three store projections **list a directory**, and that seam is
+ * separate from the file reads: injecting a filesystem redirects the reads and
+ * leaves the listing on real disk. So a run that mirrors its cards into a map and
+ * then asks `.kept/review-cards/` for its contents is asking the working tree,
+ * which is empty. Pointing the listing at the same map is what makes the snapshot
+ * this command writes assertable at all.
+ */
+function listingOfTree(tree: Map<string, string>): (path: string) => readonly string[] {
+  return (path: string): readonly string[] => {
+    const prefix = path.endsWith('/') ? path : `${path}/`;
+    return [...tree.keys()]
+      .filter((key) => key.startsWith(prefix) && !key.slice(prefix.length).includes('/'))
+      .map((key) => key.slice(prefix.length));
+  };
+}
+
 async function reconcile(
   options: StubOptions & {
     readonly changed?: readonly string[];
     readonly seed?: Readonly<Record<string, string>>;
     readonly withKane?: boolean;
+    /**
+     * Point the snapshot's store projections at the injected map rather than at
+     * real disk. Off by default so every existing assertion sees exactly the world
+     * it was written against.
+     */
+    readonly projectStore?: boolean;
   } = {},
 ): Promise<Run> {
   const kane = stub(options);
@@ -409,9 +454,12 @@ async function reconcile(
   const sink = createDiagnosticSink();
   const result = await runReconcile({
     repoRoot: REPO,
-    config: DEFAULT_CONFIG,
+    config: FIXTURE_CONFIG,
     changed: options.changed ?? [README],
     fileSystem,
+    ...(options.projectStore === true
+      ? { readDirectory: listingOfTree(fileSystem.files) }
+      : {}),
     baselineFileSystem: baseline(),
     citations: citations(),
     diagnostics: sink,
@@ -425,9 +473,27 @@ async function reconcile(
   return { result, spawns: kane.spawns, files: fileSystem.files, sink };
 }
 
+/**
+ * This repository's committed configuration, as bytes.
+ *
+ * `main` loads the config through the injected filesystem, so a run with nothing
+ * seeded gets §20.4's closed default, whose `subject.docs` is `['README.md']` alone,
+ * and every `--changed apps/fixture/README.md` through `main` is then filtered as
+ * out of scope before anything is invoked. Seeding the real bytes is what lets the
+ * summary a human reads be asserted on a document this repository actually watches.
+ */
+const COMMITTED_CONFIG = readFileSync(
+  fileURLToPath(new URL('../../../.kept/config.json', import.meta.url)),
+  'utf8',
+);
+
 /** The same command through `main`, so the exit code is the CLI's own. */
 async function throughMain(
-  options: StubOptions & { readonly argv: readonly string[] },
+  options: StubOptions & {
+    readonly argv: readonly string[];
+    /** Seed `.kept/config.json`, so the doc globs are this repository's own. */
+    readonly withConfig?: boolean;
+  },
 ): Promise<{
   readonly exitCode: number;
   readonly out: string;
@@ -436,7 +502,9 @@ async function throughMain(
   readonly files: Map<string, string>;
 }> {
   const kane = stub(options);
-  const fileSystem = files();
+  const fileSystem = files(
+    options.withConfig === true ? { [`${REPO}/.kept/config.json`]: COMMITTED_CONFIG } : {},
+  );
   const out: string[] = [];
   const err: string[] = [];
   const exitCode = await main(options.argv, {
@@ -570,14 +638,24 @@ describe('the Docs_Hook pattern set is the filter (§13.2.1, R5.1)', () => {
         'apps/fixture/lib/cart.ts',
         '   ',
       ],
+      DOC_GLOBS,
       REPO,
     );
     expect(filtered.docs).toEqual([README, 'apps/fixture/docs/pricing.md']);
     expect(filtered.outOfScope).toEqual(['apps/fixture/lib/cart.ts']);
   });
 
-  it('uses the handoff module’s glob list rather than a second copy of it', () => {
-    expect([...FIXTURE_DOC_GLOBS]).toEqual(['apps/fixture/README.md', 'apps/fixture/docs/**']);
+  it('takes its glob list from subject.docs rather than from a constant', () => {
+    // §20.1: the pattern set used to be `FIXTURE_DOC_GLOBS` in the handoff module.
+    // It is configuration now, and the filter is a function of it — a host
+    // repository that keeps its claims in `documentation/` gets that filtered.
+    const host = filterChangedDocs(
+      ['documentation/product.md', 'apps/fixture/README.md'],
+      ['documentation/**/*.md'],
+      REPO,
+    );
+    expect(host.docs).toEqual(['documentation/product.md']);
+    expect(host.outOfScope).toEqual(['apps/fixture/README.md']);
   });
 
   it('invokes nothing at all when no changed doc survives filtering', async () => {
@@ -699,7 +777,10 @@ interface FailureRung {
 
 const FAILURE_RUNGS: readonly FailureRung[] = [
   {
-    // The live path in this repository today: there is no `.context/` store yet,
+    // The path any repository that has not run `context ingest` takes. It was this
+    // repository's own live path for most of the project, and is no longer: a
+    // `context list --type source --json` here now answers with a `readme` source
+    // node. The rung stays first because it is still the state a stranger meets,
     // and a refusal is a *complete* stream carrying its own remedy (§5.3.1).
     reason: 'no-store',
     stub: { listing: NO_STORE, listingExit: 2 },
@@ -861,6 +942,88 @@ describe('a completed reconciliation (§13.2.3, R5.2, R5.7)', () => {
   it('exits 0 through the CLI and writes the snapshot', async () => {
     const run = await reconcile();
     expect(run.result.snapshot.valid).toBe(true);
+  });
+
+  /**
+   * The composition, which is the assertion whose absence let a defect ship.
+   *
+   * The test above and the one before it were both green while `/reviews` could not
+   * render a held change at all. One asserted that the card is mirrored to disk; the
+   * other asserted that a valid snapshot is written. Neither asserted that the
+   * snapshot written by the same call carries the card mirrored by that call, and
+   * that was the broken half: `runSnapshot` took `reviewCards` only as a request
+   * field, nothing projected the store, and this command did not pass it, so the
+   * committed file said `reviewCards: []` on every path a human could reach.
+   *
+   * Found by running the docs-triggered loop live: nine changes staged, nine cards on
+   * disk, "9 held change(s) recorded" in the output, and a snapshot generated in the
+   * same second carrying none of them.
+   */
+  it('writes a snapshot carrying the very card the same call mirrored (R5.7, §8.2)', async () => {
+    const run = await reconcile({ projectStore: true });
+
+    // The two halves, each of which was already correct on its own.
+    expect(run.result.reviewCards).toHaveLength(1);
+    const card = run.result.reviewCards[0];
+    expect(card).toBeDefined();
+    expect(cardPathsIn(run.files)).toHaveLength(1);
+    expect(run.result.snapshot.valid).toBe(true);
+
+    // And the composition, which was not.
+    expect(run.result.snapshot.snapshot.reviewCards.map((held) => held.id)).toEqual([card?.id]);
+    const held = run.result.snapshot.snapshot.reviewCards[0];
+    expect(held?.kind).toBe('reconcile');
+    expect(held?.status).toBe('open');
+    expect(held?.promiseId).toBe(card?.promiseId);
+    expect(held?.proposedChanges).toEqual(card?.proposedChanges);
+
+    // Read back off the committed bytes, because those are what the Ledger builds
+    // from and an in-memory result the writer also produced proves less.
+    const text = run.files.get(run.result.snapshot.path);
+    expect(text, 'no snapshot bytes were written').toBeDefined();
+    expect(parseSnapshot(text as string).reviewCards.map((entry) => entry.id)).toEqual([card?.id]);
+  });
+
+  it('names the number of held changes it recorded rather than asserting none was', async () => {
+    // `reconcile-completed` used to end with the literal words "no review card
+    // created", hard-coded, on a command whose entire job on this branch is to
+    // create review cards. The count is read off the result now, so a summary that
+    // contradicts the artefact it summarises is a test failure.
+    const run = await reconcile({ reconcile: PLAN_ROWS_DONE });
+    const completed = run.result.diagnostics.find(
+      (entry) => entry.code === RECONCILE_DIAGNOSTIC_CODES.completed,
+    );
+    expect(completed).toBeDefined();
+    expect(run.result.reviewCards).toHaveLength(2);
+    expect(completed?.message).toContain('2 held change(s) recorded');
+    expect(completed?.message).not.toContain('no review card');
+
+    // And the same figure in the summary a human reads, not only in the JSON.
+    const cli = await throughMain({
+      argv: ['reconcile', '--changed', README],
+      reconcile: PLAN_ROWS_DONE,
+      withConfig: true,
+    });
+    expect(cli.exitCode).toBe(EXIT_OK);
+    expect(cli.out).toContain('review cards 2 staged');
+    expect(cli.out).toContain('every change is held (R5.7)');
+    expect(cli.out).not.toContain('review cards none created');
+  });
+
+  it('says none was created when none was, so the count is read and not decorated', async () => {
+    const run = await reconcile({ reconcile: PLAN_ROWS_EMPTY });
+    expect(run.result.reviewCards).toEqual([]);
+    expect(
+      run.result.diagnostics.find(
+        (entry) => entry.code === RECONCILE_DIAGNOSTIC_CODES.completed,
+      )?.message,
+    ).toContain('0 held change(s) recorded');
+    const cli = await throughMain({
+      argv: ['reconcile', '--changed', README],
+      reconcile: PLAN_ROWS_EMPTY,
+      withConfig: true,
+    });
+    expect(cli.out).toContain('review cards none created');
   });
 });
 

@@ -7,12 +7,14 @@ import {
   KaneInvoker,
   STATE_FILE_RELATIVE_PATH,
   createDiagnosticSink,
+  createKeptState,
   designedTestId,
   documentId,
   inMemoryBaselineFileSystem,
   inMemoryCitationSource,
   inMemoryStateFileSystem,
   isKeptState,
+  serialiseState,
 } from '@kept/core';
 import { describe, expect, it } from 'vitest';
 
@@ -26,8 +28,9 @@ import { DEFAULT_CONFIG } from '../src/config.js';
  * `*_test.md` walk, the cited-document reads and the child process are all
  * injected. What is being asserted is the *composition* — that baseline is the
  * citation authority, that a degraded enrichment axis costs exactly the proven
- * figure and nothing else, and that the freshness triple moves only when a
- * terminal event was actually consumed into the graph.
+ * figure and the coverage axes and nothing else, and that the freshness triple is
+ * left alone by this command in every case, `cover gaps` reads the assurance graph
+ * and proves nothing, so "last verified" is not its to advance.
  */
 const REPO = '/repo';
 const STATE_PATH = `${REPO}/${STATE_FILE_RELATIVE_PATH}`;
@@ -132,19 +135,52 @@ function fakeInvoker(
   return { invoker, argv };
 }
 
-/** A `cover` run the acceptance gate takes: complete, `done`, one entry. */
+/**
+ * A `cover gaps` run the acceptance gate takes: complete, `done`, one use-case row.
+ *
+ * Shaped like the real capture (§5.3.0) and deliberately smaller: this suite is
+ * about what `kept build` does with an accepted run, and the projection itself is
+ * asserted against the committed nine-row stream in `packages/kept-core`.
+ */
 const ACCEPTED_LINES: readonly string[] = [
   JSON.stringify({
-    type: 'coverage',
-    coverage: { tests: [{ test_id: 'T-3', path: TEST_DOC, status: 'proven' }] },
+    type: 'gaps',
+    v: 1,
+    verb: 'gaps',
+    stage: 'all',
+    design_completeness: {
+      pct: 100,
+      acs_designed: '6/6',
+      usecases_complete: '1/9',
+      ucs_needing_scenarios: 8,
+    },
+    proven: {
+      pct: 100,
+      acs_proven: '6/6',
+      failing: 0,
+      blocked: 0,
+      not_run: 0,
+      config: { source: 'graph_execution_facts', denominator: 'current_live_acs' },
+    },
+    usecases: [
+      {
+        id: 'uc-2',
+        title: 'Manage cart pricing and discounts',
+        risk: 'high',
+        design_completeness: { pct: 100, status: 'complete' },
+        stale_acs: 0,
+        proven: { pct: 100, status: 'proven' },
+        pending: [],
+      },
+    ],
   }),
   JSON.stringify({
     type: 'done',
     v: 1,
-    verb: 'cover',
+    verb: 'gaps',
     status: 'complete',
     exit_code: 0,
-    run_id: 'run-cover-1',
+    run_id: 'run-gaps-1',
   }),
 ];
 
@@ -255,8 +291,8 @@ describe('kept build derives the graph lanes from the promises', () => {
   });
 });
 
-describe('kept build with a cover run the gate accepts', () => {
-  it('issues `cover --json --mode agent` and advances the freshness triple', async () => {
+describe('kept build with a cover gaps run the gate accepts', () => {
+  it('issues `cover gaps --json --mode agent` and advances the freshness triple', async () => {
     const { fileSystem, sink, baselineFileSystem, citations } = seams();
     const { invoker, argv } = fakeInvoker(ACCEPTED_LINES, 0);
 
@@ -273,16 +309,148 @@ describe('kept build with a cover run the gate accepts', () => {
 
     // The enabler is `--mode agent`, appended by the invoker from the contract
     // table — never `--agent`, which the Assurance family does not accept.
-    expect(argv[0]).toEqual(['cover', '--json', '--mode', 'agent']);
+    expect(argv[0]).toEqual(['cover', 'gaps', '--json', '--mode', 'agent']);
     expect(result.enrichment.ok).toBe(true);
     expect(result.degraded).toBe(false);
-    expect(result.freshnessMoved).toBe(true);
+
+    // And it holds the freshness triple even though the gate accepted the run.
+    // `cover gaps` reads the assurance graph and proves nothing, its own proven
+    // axis is derived from execution facts whose `latest_run` is an *earlier* run,
+    // so advancing the Ledger's "last verified" chip here would restate an old proof
+    // as new. The triple belongs to `kept verify`.
+    expect(result.freshnessMoved).toBe(false);
+    expect(result.freshnessRefusals).toEqual([]);
     expect(result.state.freshness).toEqual({
-      terminalEventAt: '2026-08-20T12:00:00.000Z',
-      terminalEventType: 'done',
-      commandFamily: 'Assurance',
+      terminalEventAt: null,
+      terminalEventType: null,
+      commandFamily: null,
     });
+    expect(sink.has(BUILD_DIAGNOSTIC_CODES.freshnessHeld)).toBe(true);
   });
+
+  it('leaves a prior freshness triple exactly where a verification run left it', async () => {
+    const { fileSystem, sink, baselineFileSystem, citations } = seams();
+    const prior = createKeptState({
+      updatedAt: '2026-08-19T00:00:00.000Z',
+      freshness: {
+        terminalEventAt: '2026-08-19T00:00:00.000Z',
+        terminalEventType: 'testrun_done',
+        commandFamily: 'ExecutionTestrun',
+      },
+    });
+    fileSystem.writeFile(STATE_PATH, serialiseState(prior));
+    const { invoker } = fakeInvoker(ACCEPTED_LINES, 0);
+
+    const result = await runBuild({
+      repoRoot: REPO,
+      config: DEFAULT_CONFIG,
+      fileSystem,
+      baselineFileSystem,
+      citations,
+      invoker,
+      diagnostics: sink,
+      at: '2026-08-20T12:00:00.000Z',
+    });
+
+    expect(result.enrichment.ok).toBe(true);
+    expect(result.state.freshness).toEqual(prior.freshness);
+  });
+
+  it('records the axes in the state, so `kept snapshot` needs no Kane (R9.14)', async () => {
+    const { fileSystem, sink, baselineFileSystem, citations } = seams();
+    const { invoker } = fakeInvoker(ACCEPTED_LINES, 0);
+
+    const result = await runBuild({
+      repoRoot: REPO,
+      config: DEFAULT_CONFIG,
+      fileSystem,
+      baselineFileSystem,
+      citations,
+      invoker,
+      diagnostics: sink,
+      at: '2026-08-20T12:00:00.000Z',
+    });
+
+    expect(result.coverageAxes).not.toBeNull();
+    expect(result.coverageAxes?.designCompleteness.ratio.text).toBe('6/6');
+    expect(result.coverageAxes?.designCompleteness.usecasesComplete.text).toBe('1/9');
+    expect(result.coverageAxes?.proven.ratio.text).toBe('6/6');
+    expect(result.coverageAxes?.rows.map((row) => row.id)).toEqual(['uc-2']);
+
+    // And they survived the write, which is the only thing that carries them across
+    // to the second process of `npm run build:snapshot`.
+    expect(result.state.coverageAxes).toEqual(result.coverageAxes);
+    const written = JSON.parse(fileSystem.readFile(STATE_PATH) as string) as unknown;
+    expect(isKeptState(written)).toBe(true);
+    expect((written as { coverageAxes: unknown }).coverageAxes).toEqual(result.coverageAxes);
+  });
+});
+
+describe('kept build withholds the axes on every degraded path (R9.13)', () => {
+  const degradations: readonly {
+    readonly what: string;
+    readonly lines: readonly string[];
+    readonly exitCode: number | null;
+    readonly reason: string;
+  }[] = [
+    { what: 'a refusal', lines: REFUSED_LINES, exitCode: 2, reason: 'assurance-status:refused' },
+    {
+      what: 'a pause at exit 3',
+      lines: [
+        ACCEPTED_LINES[0] as string,
+        JSON.stringify({ type: 'done', v: 1, verb: 'gaps', status: 'paused', exit_code: 3 }),
+      ],
+      exitCode: 3,
+      reason: 'paused-resumable',
+    },
+    {
+      what: 'a stream truncated before done',
+      lines: [ACCEPTED_LINES[0] as string],
+      exitCode: 0,
+      reason: 'crashed-stream: outcome unknown',
+    },
+    {
+      what: 'a payload with no use-case rows',
+      lines: [
+        JSON.stringify({
+          type: 'gaps',
+          v: 1,
+          verb: 'gaps',
+          design_completeness: { pct: 100, acs_designed: '6/6' },
+          proven: { pct: 100, acs_proven: '6/6' },
+          usecases: [],
+        }),
+        JSON.stringify({ type: 'done', v: 1, verb: 'gaps', status: 'complete', exit_code: 0 }),
+      ],
+      exitCode: 0,
+      reason: 'gaps-payload-unreadable',
+    },
+  ];
+
+  for (const degradation of degradations) {
+    it(`withholds them on ${degradation.what}, and never writes a zero`, async () => {
+      const { fileSystem, sink, baselineFileSystem, citations } = seams();
+      const { invoker } = fakeInvoker(degradation.lines, degradation.exitCode);
+
+      const result = await runBuild({
+        repoRoot: REPO,
+        config: DEFAULT_CONFIG,
+        fileSystem,
+        baselineFileSystem,
+        citations,
+        invoker,
+        diagnostics: sink,
+        at: '2026-08-20T12:00:00.000Z',
+      });
+
+      expect(result.degraded).toBe(true);
+      expect(result.degradedReasons).toEqual([degradation.reason]);
+      expect(result.coverageAxes).toBeNull();
+      expect(result.state.coverageAxes).toBeNull();
+      // Nothing here is an error-severity diagnostic, so the build still exits 0.
+      expect(sink.hasSeverity('error')).toBe(false);
+    });
+  }
 });
 
 describe('kept build with the verified cover refusal (§5.3.1)', () => {

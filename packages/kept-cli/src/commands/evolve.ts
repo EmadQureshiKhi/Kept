@@ -43,6 +43,43 @@
  * flag, and pinning it is what makes the day it lands a one-line change instead of
  * a rediscovery.
  *
+ * ## The decisive finding: the flag is not the obstacle, and no flag ever will be
+ *
+ * Task 21.1 set out to correct the argv and wire this branch for real. The argv was
+ * already right, and correcting it changes nothing, because **`maintain evolve`
+ * refuses to run headlessly at all**. Probed once, deliberately, against a fresh
+ * target with nothing designed under it so that a success could supersede nothing:
+ *
+ * ```console
+ * $ kane-cli maintain evolve uc-10 --because "…" > capture.ndjson
+ * evolving uc-10: reading the graph…                      # the only stdout line
+ * error: evolve needs a TTY — the blast-radius confirm is the point; headless
+ *   evolution rides `kane-cli maintain reconcile`          # stderr, exit 2
+ * ```
+ *
+ * Three things fall out of that one probe, all recorded under `docs/kane/evolve/`:
+ *
+ * 1. **Piped stdout is not an NDJSON enabler for this verb.** It produced one line
+ *    of human prose and then refused. So there was never a machine-readable stream
+ *    to consume, with or without `--mode`.
+ * 2. **The refusal is a design decision, not a gap.** Kane says why: the
+ *    blast-radius confirm *is* the point. This verb supersedes a use case's
+ *    scenario and test pairs, and Kane will not do that without a human looking at
+ *    what is about to be superseded. That is the same instinct as §8.1's `hold`
+ *    autonomy on this very branch, arrived at independently on the other side of
+ *    the process boundary, and it would be perverse for KEPT to try to defeat it.
+ * 3. **Kane names the headless route, and KEPT already takes it.** "Headless
+ *    evolution rides `kane-cli maintain reconcile`", which is §13.2's command,
+ *    which `kept reconcile` already invokes, and whose staged rows already become
+ *    held review cards through `mirrorReconcileStagedChanges`. The capability this
+ *    task wanted — Kane proposes a re-design, KEPT holds it for a human — exists
+ *    and is exercised; it simply arrives through the other verb.
+ *
+ * The probe cost **nothing**: exit 2 before any model call, `.context/` still at 39
+ * records, and the graph's `context list --json` byte-identical either side. So the
+ * degradation path below is not a workaround for a missing flag. It is the correct
+ * and only headless behaviour for this verb, and the remedy it names is Kane's own.
+ *
  * ## What the degradation does, and what it refuses to do
  *
  * When the flag is unsupported the invocation is **skipped entirely**: no process,
@@ -120,7 +157,7 @@ import {
   writeReviewCard,
 } from '@kept/core';
 
-import type { KeptConfig } from '../config.js';
+import { handoffFenceSurfaces, type KeptConfig } from '../config.js';
 
 /** The family `maintain evolve` belongs to (§4.1, §13.1). Terminal: `done`. */
 export const EVOLVE_FAMILY = 'Assurance' as const;
@@ -639,6 +676,7 @@ export async function runEvolve(request: EvolveRequest): Promise<EvolveResult> {
       runId: resolvedRunId,
       handoff: writeHandoff({
         repoRoot: request.repoRoot,
+        fences: handoffFenceSurfaces(request.config),
         runId: resolvedRunId,
         at,
         // `hook: null` is the point: no hook invokes this command (§11.1).
@@ -736,11 +774,14 @@ export async function runEvolve(request: EvolveRequest): Promise<EvolveResult> {
         `The verdict router settled this promise on the test-drift branch, so ` +
         `\`maintain evolve\` was the repair. The installed ${KANE_BINARY_NAME} exposes no ` +
         `${MODE_FLAG} option on that verb — its option table lists ` +
-        `${probe.flags.join(', ') || 'no long flags'} — and without ${MODE_FLAG} ${AGENT_MODE} ` +
-        `there is no machine-readable stream to consume, so the invocation was skipped and no ` +
-        `change was proposed. Nothing was applied and nothing was written outside .kept/. ` +
-        `Re-run this command once the verb accepts ${MODE_FLAG}, or drive the evolution ` +
-        `interactively and review its pair diff by hand.`,
+        `${probe.flags.join(', ') || 'no long flags'} — and the verb also refuses to run ` +
+        `without a TTY at all: \`evolve needs a TTY — the blast-radius confirm is the point; ` +
+        `headless evolution rides \`kane-cli maintain reconcile\`\`. So the invocation was ` +
+        `skipped and no change was proposed. Nothing was applied and nothing was written ` +
+        `outside .kept/. Two routes forward, and neither is waiting for a flag: drive the ` +
+        `evolution interactively and review its pair diff by hand, or save the documentation ` +
+        `and let \`kept reconcile\` take Kane's own headless path, which stages the same ` +
+        `re-design as held review cards nothing applies.`,
       // Empty on purpose: Kane rendered no change, and a card that listed one would
       // be the ledger asserting a repair nobody proposed.
       proposedChanges: [],

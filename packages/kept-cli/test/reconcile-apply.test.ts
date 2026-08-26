@@ -1,18 +1,24 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { ChildProcessLike, StateFileSystem } from '@kept/core';
+import type { ChildProcessLike, ReviewCard, StateFileSystem } from '@kept/core';
 import {
+  HANDOFF_DIRECTORY_RELATIVE_PATH,
   HANDOFF_FILE_RELATIVE_PATH,
   KaneInvoker,
+  REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
   STATE_FILE_RELATIVE_PATH,
+  buildReviewCard,
   createDiagnosticSink,
   inMemorySourceCacheFileSystem,
+  reviewCardPath,
+  serialiseReviewCard,
 } from '@kept/core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK, EXIT_USAGE, parseArgv } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG } from './fixture-config.js';
 import { main } from '../src/main.js';
 import {
   RECONCILE_DIAGNOSTIC_CODES,
@@ -20,6 +26,7 @@ import {
   reconcileUsageErrors,
   runReconcileApply,
 } from '../src/commands/reconcile.js';
+import { SNAPSHOT_COMMAND_DIAGNOSTIC_CODES } from '../src/commands/snapshot.js';
 
 /**
  * Task 12.7 — `kept reconcile apply [planPath]`, and the mutually-exclusive-flag
@@ -128,7 +135,7 @@ describe('the argv kept reconcile apply issues (§13.2.3, §13.1)', () => {
     const kane = stub();
     const result = await runReconcileApply({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       invoker: kane.invoker,
       fileSystem: files(),
       at: AT,
@@ -145,7 +152,7 @@ describe('the argv kept reconcile apply issues (§13.2.3, §13.1)', () => {
     const kane = stub();
     const result = await runReconcileApply({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       planPath: '.kept/plans/rp_7c1e04a9.json',
       invoker: kane.invoker,
       fileSystem: files(),
@@ -186,7 +193,7 @@ describe('the command is human-only', () => {
     const fileSystem = files();
     const result = await runReconcileApply({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       invoker: kane.invoker,
       fileSystem,
       at: AT,
@@ -221,7 +228,7 @@ describe('the command is human-only', () => {
   it('reports honestly when there is no Kane boundary at all (R2.12)', async () => {
     const result = await runReconcileApply({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       fileSystem: files(),
       at: AT,
     });
@@ -239,6 +246,143 @@ function then_(raw: { readonly then?: { readonly prompt?: unknown } }): string {
   const prompt = raw.then?.prompt;
   return typeof prompt === 'string' ? prompt : '';
 }
+
+// ---------------------------------------------------------------------------
+// The snapshot this command writes reads the injected store, not the disk
+// ---------------------------------------------------------------------------
+
+/**
+ * An in-memory run must read **nothing** off the real filesystem, and until the
+ * `readDirectory` seam was threaded through `runReconcileApply` it read plenty.
+ *
+ * The snapshot has three projections: the run log from `.kept/handoff/`, the
+ * amendments from `.kept/amendments/`, and the held changes from
+ * `.kept/review-cards/`. Each of them needs **two** seams: `fileSystem` for
+ * the file reads and `readDirectory` for the directory listing. They are separate
+ * because `StateFileSystem` reads and writes whole files by path and has no listing
+ * operation at all, so a projection that starts by enumerating a directory cannot
+ * get that answer from the injected filesystem. `runReconcile` and `amend` already
+ * threaded both. `ReconcileApplyRequest` did not even declare the field.
+ *
+ * This is the call site where the omission was live, and `REPO` above is why: every
+ * test in this file sets the repository root to the **real repository root**, because
+ * the hook prompts and the argv assertions want the real tree. So an in-memory apply
+ * listed the developer's own `.kept/handoff/`, tried to read each name it found out
+ * of a map that had never held them, and reported one `snapshot-run-unreadable`
+ * warning per real file: twenty-seven on the machine this was found on, none on a
+ * fresh clone. Nothing failed, because every assertion in this file used `toContain`
+ * on a code rather than asking what the whole diagnostic list was. The first
+ * assertion that did would have been a test whose result depended on the machine it
+ * ran on.
+ *
+ * So these two tests assert the composition rather than either half: the projections
+ * come from the seeded map alone, and the diagnostic list is exactly as long as the
+ * seeded map makes it.
+ */
+describe('an injected apply projects the seeded store and touches no real directory', () => {
+  /** One held change, built through the only constructor so the fixture cannot drift. */
+  function cardOf(): ReviewCard {
+    const draft = buildReviewCard({
+      kind: 'reconcile',
+      title: 'the walked plan staged a change to the subtotal document',
+      detail: 'reconcile staged the change into Kane’s own plan; nothing was applied',
+      proposedChanges: [
+        {
+          file: 'tests/cart_subtotal_test.md',
+          summary: 'ADD uc-10: cover the new claim',
+          diff: '+ - The Shop screen lists eight roasts.',
+        },
+      ],
+      context: {
+        // `^p_[0-9a-f]{12}$`: the snapshot's own promise-id rule, so the card is
+        // admitted by the same guard a real one goes through.
+        promiseId: 'p_0f3a9c1147bd',
+        createdAt: AT,
+        strategy: 'resultCode740',
+        // Null deliberately: a reference to a pack this snapshot does not carry is
+        // cleared by `buildSnapshot`, which would make these assertions about
+        // evidence curation rather than about which directory was listed.
+        evidenceRef: null,
+      },
+    });
+    if (!draft.ok) throw new Error('the fixture card could not be built');
+    return draft.card;
+  }
+
+  /**
+   * Run an apply over a seeded map, recording every directory the projections asked
+   * about. The reader answers **only** out of the map, so a directory that exists on
+   * the real disk and not in the map comes back empty: if the seam were not threaded
+   * this reader would never be called at all and `listed` would be empty.
+   */
+  async function apply(seed: Record<string, string>): Promise<{
+    readonly result: Awaited<ReturnType<typeof runReconcileApply>>;
+    readonly listed: readonly string[];
+    readonly files: Map<string, string>;
+  }> {
+    const fileSystem = inMemorySourceCacheFileSystem(seed);
+    const listed: string[] = [];
+    const result = await runReconcileApply({
+      repoRoot: REPO,
+      config: FIXTURE_CONFIG,
+      invoker: stub().invoker,
+      fileSystem,
+      readDirectory: (path: string): readonly string[] => {
+        listed.push(path);
+        const prefix = path.endsWith('/') ? path : `${path}/`;
+        return [...fileSystem.files.keys()]
+          .filter((key) => key.startsWith(prefix) && !key.slice(prefix.length).includes('/'))
+          .map((key) => key.slice(prefix.length));
+      },
+      at: AT,
+    });
+    return { result, listed, files: fileSystem.files };
+  }
+
+  it('carries the seeded held change and the run it just wrote, and nothing else', async () => {
+    const card = cardOf();
+    const { result, listed, files } = await apply({
+      [reviewCardPath(REPO, card.id)]: serialiseReviewCard(card),
+    });
+
+    // The seam was reached at all, which is the half that used to be missing.
+    expect(listed).toContain(`${REPO}/${HANDOFF_DIRECTORY_RELATIVE_PATH}`);
+    expect(listed).toContain(`${REPO}/${REVIEW_CARDS_DIRECTORY_RELATIVE_PATH}`);
+
+    const snapshot = result.snapshot.snapshot;
+    // The held change came out of the map, so the listing answered from the map.
+    expect(snapshot.reviewCards.map((held) => held.id)).toEqual([card.id]);
+    // The run log is exactly this run's own handoff: the one `.kept/handoff/` entry
+    // the map holds. On the real directory it was however many the machine had.
+    expect(snapshot.runs.map((run) => run.id)).toEqual([result.runId]);
+    // Nothing seeded an amendment, and the real `.kept/amendments/` is not consulted.
+    expect(snapshot.amendments).toEqual([]);
+    // Every file this run wrote landed in the map rather than on disk.
+    expect(files.has(`${REPO}/${HANDOFF_FILE_RELATIVE_PATH}`)).toBe(true);
+  });
+
+  it('reports the same diagnostics on a fresh clone as on a machine with a full .kept/', async () => {
+    const { result } = await apply({});
+
+    // The code that used to fire once per real handoff file. Not "fewer than
+    // before": none, because no directory outside the seeded map was listed.
+    const unreadable = result.diagnostics.filter(
+      (entry) => entry.code === SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.runUnreadable,
+    );
+    expect(unreadable).toEqual([]);
+
+    // And the whole list, by code, in order. This is the assertion the finding said
+    // was impossible to write before: with the listing on real disk its length was a
+    // fact about the developer's machine, so nobody could pin it. It is now a fact
+    // about the seeded map, which this test owns.
+    expect(result.diagnostics.map((entry) => entry.code)).toEqual([
+      RECONCILE_DIAGNOSTIC_CODES.applyStarted,
+      SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.recordsProjected,
+      SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.written,
+      RECONCILE_DIAGNOSTIC_CODES.completed,
+    ]);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // The one non-zero exit in the product (§13.2.3, §14.1's last row)

@@ -29,14 +29,17 @@ import { resolve } from 'node:path';
 
 import type { CollectingDiagnosticSink, Diagnostic } from '@kept/core';
 import { KaneInvoker, createDiagnosticSink } from '@kept/core';
+import { handoffPaths, parseHandoff, serialiseHandoff } from '@kept/core';
 import { nodeStateFileSystem, type StateFileSystem } from '@kept/core';
 
 import type { ParsedArgv } from './args.js';
 import { EXIT_OK, EXIT_USAGE, parseArgv, readList, readString } from './args.js';
 import type { KeptConfig } from './config.js';
 import { applyOverrides, loadConfig, memberDebugEnv } from './config.js';
-import { runAmend } from './commands/amend.js';
+import { AMEND_DIAGNOSTIC_CODES, runAmend, type AmendResult } from './commands/amend.js';
 import { runBuild } from './commands/build.js';
+import { runDoctor } from './commands/doctor.js';
+import { runInit } from './commands/init.js';
 import type { EvolveHelpProbe } from './commands/evolve.js';
 import { runEvolve } from './commands/evolve.js';
 import {
@@ -46,6 +49,7 @@ import {
 } from './commands/reconcile.js';
 import { runSnapshot } from './commands/snapshot.js';
 import { runVerify } from './commands/verify.js';
+import { WATCH_LOCAL_ENV_VALUE, runWatch } from './commands/watch.js';
 import { KEPT_VERSION } from './version.js';
 
 /** Everything {@link main} needs from the outside world. */
@@ -89,20 +93,34 @@ export interface CliIo {
 
 /** The commands this stage implements. The rest report honestly and exit 0. */
 export const IMPLEMENTED_COMMANDS: readonly string[] = Object.freeze([
+  'init',
   'build',
   'snapshot',
   'verify',
   'reconcile',
   'evolve',
   'amend',
+  'doctor',
+  'watch',
+  'handoff',
 ]);
 
-/** Which task lands each unimplemented command, so the message can say so. */
-const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({
-  handoff: 'task 12.11',
-  doctor: 'task 16.2',
-  watch: 'task 16.4',
-});
+/**
+ * Which task lands each unimplemented command, so the message can say so.
+ *
+ * **Empty, and that is the point of the guard rather than a reason to delete it.** It
+ * held `handoff: 'task 12.11'` until an audit checked the pointer: task 12.11 is
+ * `Write the hook-schema validation test`, complete, and about something else entirely,
+ * and no task in the plan implemented `kept handoff` at all. So the help text advertised
+ * a command that did not dispatch and sent anyone who tried it to a finished task about
+ * hook schemas. The command is implemented now (see {@link dispatchHandoff}), which is
+ * the honest resolution: the pieces were all in `handoff/handoff.ts` already.
+ *
+ * `argv-contract.test.ts` asserts this table against `KEPT_COMMANDS` and
+ * {@link IMPLEMENTED_COMMANDS}, so a command may be in exactly one of the two states and
+ * an entry here has to name a task that exists and is open.
+ */
+const PENDING_TASKS: Readonly<Record<string, string>> = Object.freeze({});
 
 /**
  * Run the CLI.
@@ -154,6 +172,10 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
   const at = (io.now?.() ?? new Date()).toISOString();
 
   switch (parsed.command) {
+    case 'init':
+      return dispatchInit(parsed, { repoRoot, fileSystem, sink, at, io });
+    case 'doctor':
+      return await dispatchDoctor(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'build':
       return await dispatchBuild(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'snapshot':
@@ -166,6 +188,10 @@ export async function main(argv: readonly string[], io: CliIo): Promise<number> 
       return await dispatchEvolve(parsed, { repoRoot, config, fileSystem, sink, at, io });
     case 'amend':
       return await dispatchAmend(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'watch':
+      return await dispatchWatch(parsed, { repoRoot, config, fileSystem, sink, at, io });
+    case 'handoff':
+      return dispatchHandoff(parsed, { repoRoot, fileSystem, sink, at, io });
     default:
       return reportPending(parsed, { repoRoot, config, sink, io });
   }
@@ -178,6 +204,165 @@ interface Dispatch {
   readonly sink: CollectingDiagnosticSink;
   readonly at: string;
   readonly io: CliIo;
+}
+
+/**
+ * `kept init [--force]` (design §21.1, R16.1 to R16.8).
+ *
+ * Synchronous and unlike every other arm here it takes **no invoker**, because
+ * {@link runInit} has no process seam at all (R16.6). That is deliberate and it is
+ * why this arm cannot accidentally grow one: there is no parameter to pass.
+ *
+ * The config is not read into this arm either. `init` is the command a repository
+ * runs *before* it has a config, so a dispatch that resolved one first would be
+ * reporting defaults at the reader before writing the file that replaces them.
+ */
+function dispatchInit(parsed: ParsedArgv, context: Dispatch): number {
+  const result = runInit({
+    repoRoot: context.repoRoot,
+    // Read off `flags` rather than `options`: `CommonOptions` is the four flags
+    // every command takes, and `--force` belongs to exactly one of them.
+    force: parsed.flags.has('force'),
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'init',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          configPath: result.configPath,
+          configWritten: result.configWritten,
+          replacedConfigPath: result.replacedConfigPath,
+          alreadyConfigured: result.alreadyConfigured,
+          examplePath: result.examplePath,
+          exampleWritten: result.exampleWritten,
+          corpusRoot: result.detection.corpusRoot,
+          documents: result.detection.documents,
+          corpusFiles: result.detection.corpusFiles,
+          docGlobs: result.detection.docGlobs,
+          writes: result.writes,
+          nextCommand: result.nextCommand,
+          kaneInvocations: result.kaneInvocations,
+          credits: result.credits,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else if (result.alreadyConfigured) {
+    context.io.write(
+      [
+        `kept init`,
+        `  repository   ${context.repoRoot}`,
+        `  config       ${result.configPath} already exists, so nothing was written`,
+        ``,
+        `  Run \`kept init --force\` to replace it, or \`${result.nextCommand}\` to see what`,
+        `  this repository still needs.`,
+        '',
+      ].join('\n'),
+    );
+  } else {
+    context.io.write(
+      [
+        `kept init`,
+        `  repository   ${context.repoRoot}`,
+        `  config       ${result.configPath}${result.configWritten ? '' : ' (not written)'}`,
+        `  corpus root  ${result.detection.corpusRoot}`,
+        `  example      ${result.examplePath}${
+          result.exampleWritten ? '' : ' (left as it was)'
+        }`,
+        `  documents    ${result.detection.documents.length} candidate${
+          result.detection.documents.length === 1 ? '' : 's'
+        }, no citation written for any of them`,
+        `  designed     ${result.detection.corpusFiles.length} existing \`*_test.md\``,
+        `  Kane         ${result.kaneInvocations} invocations, ${result.credits} credits`,
+        ``,
+        `  Next: ${result.nextCommand}`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // Nothing `init` can meet is a failure of KEPT: a config that already exists, a
+  // repository with no documentation, a read-only checkout (§14.2, R16.2).
+  return EXIT_OK;
+}
+
+/**
+ * `kept doctor` (design §21.2, R18.1 to R18.10).
+ *
+ * The invoker is resolved the way `kept build` resolves it, so a real run probes a
+ * real binary, and `io.kane === false` exercises the R2.12 "no Kane at all" path.
+ * `runDoctor` bounds it to one spawn by the shape of the seam it accepts, so this
+ * arm cannot widen that by passing something richer.
+ */
+async function dispatchDoctor(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const result = await runDoctor({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    at: context.at,
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'doctor',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          checks: result.checks,
+          spawns: result.spawns,
+          kane: result.kane,
+          corpus: result.corpus,
+          snapshot: result.snapshot,
+          subject: result.subject,
+          contextStore: result.contextStore,
+          fences: result.fences,
+          handoff: result.handoff.paths,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    const pad = (text: string, width: number): string => text.padEnd(width, ' ');
+    context.io.write(
+      [
+        `kept doctor`,
+        `  repository   ${context.repoRoot}`,
+        '',
+        ...result.checks.flatMap((check) => {
+          const head = `  ${check.number}. ${pad(check.title, 18)} ${pad(check.status, 16)} ${
+            check.detail
+          }`;
+          return check.remedy === null ? [head] : [head, `     remedy: ${check.remedy}`];
+        }),
+        '',
+        `  ${result.spawns} Kane invocation${result.spawns === 1 ? '' : 's'}, 0 credits. ` +
+          `Exit code 0 in every case.`,
+        '',
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // R18.8, and the field is the literal 0, so this cannot return anything else.
+  return result.exitCode;
 }
 
 async function dispatchBuild(
@@ -268,6 +453,14 @@ async function dispatchVerify(
     all: parsed.flags.has('all'),
     changed: readList(parsed.flags, 'changed'),
     fileSystem: context.fileSystem,
+    /* Both seams or neither. `fileSystem` reads files by path and cannot list a
+       directory, and the snapshot this command writes projects three stores by
+       enumerating one each, so passing only `fileSystem` leaves those listings on real
+       disk while the reads go to the injected map. Threading it here is what makes the
+       chain complete from the process boundary rather than only from `runSnapshot`. */
+    ...(context.io.readDirectory === undefined
+      ? {}
+      : { readDirectory: context.io.readDirectory }),
     diagnostics: context.sink,
     at: context.at,
     ...(invoker === undefined ? {} : { invoker }),
@@ -386,6 +579,10 @@ async function dispatchReconcile(
       config: context.config,
       planPath,
       fileSystem: context.fileSystem,
+      // Both seams or neither, for the reason at `SnapshotRequest.readDirectory`.
+      ...(context.io.readDirectory === undefined
+        ? {}
+        : { readDirectory: context.io.readDirectory }),
       diagnostics: context.sink,
       at: context.at,
       ...(invoker === undefined ? {} : { invoker }),
@@ -445,6 +642,10 @@ async function dispatchReconcile(
     config: context.config,
     changed: readList(parsed.flags, 'changed'),
     fileSystem: context.fileSystem,
+    // Both seams or neither, for the reason at `SnapshotRequest.readDirectory`.
+    ...(context.io.readDirectory === undefined
+      ? {}
+      : { readDirectory: context.io.readDirectory }),
     diagnostics: context.sink,
     at: context.at,
     ...(invoker === undefined ? {} : { invoker }),
@@ -524,7 +725,20 @@ async function dispatchReconcile(
             ? `rebuilt, ${result.state.graph.promises.length} promise(s)`
             : 'unchanged — no accepted terminal event'
         }`,
-        `  review cards none created; every change is held (R5.7)`,
+        /* Read off the result, never asserted. This line used to be the literal string
+           "none created; every change is held (R5.7)", which was half true in the worst
+           available way: the held claim was correct and the count was not. On the run
+           that exercised the docs trigger end to end, Kane staged nine changes, the JSON
+           output reported nine review cards, and this summary said none had been created
+           while the ledger rendered all nine. A summary that contradicts the artefact it
+           summarises is worse than no summary, because it is the one a human reads. The
+           `evolve` renderer below already spelled this correctly, which is what made the
+           divergence findable at all. */
+        `  review cards ${
+          result.reviewCards.length === 0
+            ? 'none created'
+            : `${result.reviewCards.length} staged`
+        }; every change is held (R5.7)`,
         `  handoff      ${result.handoffs[result.handoffs.length - 1]?.paths.newest ?? 'none'}`,
         '',
       ].join('\n'),
@@ -745,6 +959,18 @@ async function dispatchAmend(
         ...(result.pending.length === 0
           ? []
           : [`  docs-lie     ${result.pending.length} claim(s) the router settled`]),
+        // `propose` staging nothing is an outcome, not a debug note, so it is said
+        // here rather than left to a diagnostic the human form never prints.
+        //
+        // Task 22.2's live cycle found this the hard way. The run it was pointed at
+        // had settled its failure as `test-drift`, so there was no docs-lie to amend
+        // and nothing was staged, which is correct. `amend-no-docs-lie` said exactly
+        // that at `info`, and `writeDiagnostics` drops `info` on purpose so the human
+        // output is not flooded. The result was a command that printed two lines, its
+        // own name and the repository path, exited 0, and left a reader with no way to
+        // tell a refusal from a success. Surfacing the one diagnostic that explains an
+        // empty `propose` is narrower than making `info` visible everywhere.
+        ...proposeRefusalLines(result),
         ...result.amendments.map(
           (amendment) =>
             `  ${amendment.id}   ${amendment.status}  ` +
@@ -775,6 +1001,92 @@ async function dispatchAmend(
   writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
   // A stale interlock, a missing run, a claim with no replacement: all data (§14.2).
   return EXIT_OK;
+}
+
+/**
+ * `kept watch` (design §8.5, §13.1, R7.5, R7.6).
+ *
+ * The one arm that returns while its work is still running: a bound listener keeps
+ * the event loop alive, and `index.ts` sets `process.exitCode` rather than calling
+ * `process.exit`, so the process stays up until the reader stops it. That is the
+ * command doing what it says. When the gate is absent, or the port is taken, or the
+ * bind comes back on the wrong interface, nothing is listening, there is nothing to
+ * keep alive, and the process ends normally with the same exit code of 0 (§14.2).
+ *
+ * The host and port are not read from here, from a flag or from the environment.
+ * `runWatch` owns them as constants and refuses to serve any address that is not
+ * loopback, so this arm has no way to widen the bind even by mistake.
+ */
+async function dispatchWatch(
+  parsed: ParsedArgv,
+  context: Dispatch & { readonly config: KeptConfig },
+): Promise<number> {
+  const invoker =
+    context.io.invoker ??
+    (context.io.kane === false ? undefined : new KaneInvoker({ sink: context.sink }));
+
+  const handle = await runWatch({
+    repoRoot: context.repoRoot,
+    config: context.config,
+    env: context.io.env,
+    fileSystem: context.fileSystem,
+    diagnostics: context.sink,
+    now: () => (context.io.now?.() ?? new Date()).toISOString(),
+    ...(invoker === undefined ? {} : { invoker }),
+  });
+  const result = handle.result;
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'watch',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          listening: result.listening,
+          host: result.host,
+          port: result.port,
+          route: result.route,
+          local: result.local,
+          envVar: result.envVar,
+          refusal: result.refusal,
+          error: result.error,
+          diagnostics: result.diagnostics,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    context.io.write(
+      [
+        `kept watch`,
+        `  repository   ${context.repoRoot}`,
+        `  listening    ${
+          result.listening
+            ? `${result.host}:${result.port}, loopback only`
+            : `nothing was bound (${result.refusal ?? 'unreported'})`
+        }`,
+        `  route        ${result.route}, and no other method or path`,
+        `  gate         ${result.envVar}=${
+          result.local ? WATCH_LOCAL_ENV_VALUE : 'unset, so nothing was started'
+        }`,
+        `  ledger       unchanged: this listener adds no route to it (design §8.5)`,
+        '',
+        ...(result.listening
+          ? [`  Accepting an amendment here runs the same path as \`kept amend accept <id>\`.`, '']
+          : [
+              `  \`kept amend accept <id>\` is unaffected and is the path the deployed`,
+              `  Ledger's accept control copies either way.`,
+              '',
+            ]),
+      ].join('\n'),
+    );
+  }
+  writeDiagnostics(context.io, result.diagnostics, parsed.options.json);
+  // An occupied port and a missing gate variable are states of the world (§14.2),
+  // and the field is the literal 0, so this cannot return anything else.
+  return result.exitCode;
 }
 
 function dispatchSnapshot(parsed: ParsedArgv, context: Dispatch): number {
@@ -833,6 +1145,97 @@ function dispatchSnapshot(parsed: ParsedArgv, context: Dispatch): number {
   return EXIT_OK;
 }
 
+/**
+ * `kept handoff [--run <id>]` (design §13.1, R11.4, R11.7).
+ *
+ * Prints the agent handoff: the file an agent's next move comes from, rather than an exit
+ * code. `.kept/handoff.json` is always the newest one, and `.kept/handoff/<run>.json` is
+ * the immutable per-run copy, so `--run` reads the archive and no argument reads the
+ * newest.
+ *
+ * **Why this arm exists now.** The help text has advertised this command since §13.1 was
+ * written, it never dispatched, and `PENDING_TASKS` pointed anyone who tried it at task
+ * 12.11, which is a completed test about hook schemas. An audit checked the pointer.
+ * Nothing in the plan implemented the command, so it was advertised, absent, and
+ * misdirecting all at once, which is three claims a reader could act on and none of them
+ * true. Every piece it needs was already in `handoff/handoff.ts`: `handoffPaths` resolves
+ * both spellings, `parseHandoff` validates, `readNewestHandoff` reads the live one. The
+ * command is thirty lines of wiring over machinery that was already tested.
+ *
+ * **It spawns nothing and writes nothing.** A handoff is a record of a run that already
+ * happened, so reading one costs no credits and touches no state. That is also what makes
+ * it safe for a hook prompt to quote: the two agent hooks tell an agent to read this file,
+ * and a command that re-ran anything to show it would turn a read into a side effect.
+ *
+ * Absent is not an error. A repository that has never verified anything has no handoff,
+ * which is an ordinary state, so it is reported by name and the exit code stays zero
+ * (§14.2).
+ */
+function dispatchHandoff(parsed: ParsedArgv, context: Dispatch): number {
+  const runId = readString(parsed.flags, 'run');
+  const paths = handoffPaths(context.repoRoot, runId ?? '');
+  const path = runId === null ? paths.newest : paths.archive;
+  const contents = context.fileSystem.readFile(path);
+  const handoff = contents === null ? null : parseHandoff(contents);
+
+  if (handoff === null) {
+    const reason =
+      contents === null
+        ? `no handoff exists at ${path}`
+        : `the handoff at ${path} is not a handoff this build recognises`;
+    const message =
+      `kept handoff: ${reason}. A repository that has not verified anything yet has no ` +
+      `handoff, which is an ordinary state rather than a failure; run \`kept verify\` or ` +
+      `\`kept reconcile\` to produce one.`;
+    context.sink.report({ code: 'handoff-absent', severity: 'warn', message });
+    if (parsed.options.json) {
+      context.io.write(
+        `${JSON.stringify(
+          {
+            command: 'handoff',
+            implemented: true,
+            repoRoot: context.repoRoot,
+            path,
+            runId,
+            handoff: null,
+            diagnostics: context.sink.entries,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      context.io.write(`${message}\n`);
+    }
+    return EXIT_OK;
+  }
+
+  if (parsed.options.json) {
+    context.io.write(
+      `${JSON.stringify(
+        {
+          command: 'handoff',
+          implemented: true,
+          repoRoot: context.repoRoot,
+          path,
+          runId,
+          handoff,
+          diagnostics: context.sink.entries,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    /* The whole file, verbatim, through the writer's own serialiser. An agent reading
+       this needs the fence and the instruction exactly as written, and a summary would
+       be a second, lossier spelling of a contract that already has one. */
+    context.io.write(serialiseHandoff(handoff));
+  }
+  writeDiagnostics(context.io, context.sink.entries, parsed.options.json);
+  return EXIT_OK;
+}
+
 function reportPending(
   parsed: ParsedArgv,
   context: {
@@ -877,6 +1280,23 @@ function formatCoverage(value: number | null): string {
 }
 
 /**
+ * The reason `kept amend propose` staged nothing, for the human summary.
+ *
+ * Empty for every other verb and for a `propose` that did stage something, so the
+ * summary gains a line exactly when it would otherwise say nothing at all. The text
+ * is the command's own diagnostic rather than a second wording of it, so the two
+ * cannot drift apart.
+ */
+function proposeRefusalLines(result: AmendResult): readonly string[] {
+  if (result.subcommand !== 'propose') return [];
+  if (result.amendments.length > 0 || result.pending.length > 0) return [];
+  const explained = result.diagnostics.find(
+    (entry) => entry.code === AMEND_DIAGNOSTIC_CODES.noDocsLie,
+  );
+  return explained === undefined ? [] : [`  outcome      ${explained.message}`];
+}
+
+/**
  * Diagnostics go to stderr so stdout stays a clean `--json` payload, and are
  * suppressed under `--json` because the payload already carries them.
  */
@@ -902,6 +1322,7 @@ export const USAGE = [
   'Usage: kept <command> [options]',
   '',
   'Commands:',
+  '  init [--force]             write .kept/config.json and scaffold one designed test',
   '  build                      run both promise providers and write .kept/state.json',
   '  snapshot                   write apps/ledger/data/ledger.snapshot.json',
   '  verify --changed <p…>      re-verify the blast radius of changed files',
@@ -913,7 +1334,7 @@ export const USAGE = [
   '  amend list|show|accept|reject <id>      review, apply or decline one',
   '  handoff [--run <id>]       print the agent handoff for a run',
   '  doctor                     report the environment, including kane-cli',
-  '  watch                      tail NDJSON and listen for loopback accepts',
+  '  watch                      listen on loopback for one-click amendment accepts',
   '',
   'Common options:',
   '  --repo <root>              repository root (default: the working directory)',

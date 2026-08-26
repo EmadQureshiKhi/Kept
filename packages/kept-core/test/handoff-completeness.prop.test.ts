@@ -4,17 +4,12 @@ import { describe, expect, it } from 'vitest';
 import {
   AUTOMATIC_REPAIR_REQUIRES_VERDICT,
   BRANCH_FENCES,
-  FIXTURE_DOC_GLOBS,
-  FIXTURE_SOURCE_GLOBS,
   KEPT_LAUNCHER,
-  KEPT_OWN_GLOBS,
   MEMBER_END_STATUSES,
   REPAIR_BRANCHES,
   REPAIR_STRATEGIES,
-  TEST_CORPUS_GLOBS,
-  UNPROVEN_CODE_BREAK_FENCE,
   WRITE_PERMITTING_EXIT_MEANINGS,
-  buildHandoff,
+  buildHandoff as buildHandoffWith,
   contractFor,
   exitMeaning,
   fenceFor,
@@ -28,7 +23,9 @@ import {
   normaliseVerdictObject,
   parseHandoff,
   parseStream,
-  writeHandoff,
+  unprovenCodeBreakFence,
+  writeHandoff as writeHandoffWith,
+  type BuildHandoffRequest,
   type CommandFamily,
   type EvidenceArtifact,
   type EvidenceListing,
@@ -37,6 +34,7 @@ import {
   type RepairBranch,
   type RoutedRepair,
   type RunOutcome,
+  type WriteHandoffRequest,
 } from '@kept/core';
 
 import {
@@ -108,6 +106,49 @@ import {
 
 /** Design §Testing Strategy floor is 100 runs; stated so it cannot regress. */
 const NUM_RUNS = 300;
+
+/**
+ * The fence surfaces this suite quantifies over, declared once.
+ *
+ * These four lists were `FIXTURE_SOURCE_GLOBS`, `FIXTURE_DOC_GLOBS`,
+ * `TEST_CORPUS_GLOBS` and `KEPT_OWN_GLOBS` inside `handoff/handoff.ts` until §20.1
+ * moved them into `Kept_Config`. Property 26's clauses are about *containment* —
+ * allowed and forbidden disjoint, non-empty allowed only on `code-break`, a withheld
+ * grant strictly narrower than a granted one — and every one of them is a statement
+ * about the composition rather than about these particular globs. Spelling them here
+ * keeps the clauses concrete without putting a repository's paths back in the engine.
+ */
+const FENCE_ALLOW: readonly string[] = Object.freeze([
+  'apps/fixture/app/**',
+  'apps/fixture/components/**',
+  'apps/fixture/lib/**',
+]);
+const FENCE_FORBID: readonly string[] = Object.freeze([
+  'apps/fixture/README.md',
+  'apps/fixture/docs/**',
+  'tests/**',
+  'apps/ledger/**',
+  'packages/**',
+]);
+const FENCES = Object.freeze({ allow: FENCE_ALLOW, forbid: FENCE_FORBID });
+
+/** {@link buildHandoffWith} against {@link FENCES}; `fences` is required now. */
+function buildHandoff<F extends CommandFamily = CommandFamily>(
+  request: Omit<BuildHandoffRequest<F>, 'fences'> & {
+    readonly fences?: BuildHandoffRequest<F>['fences'];
+  },
+): ReturnType<typeof buildHandoffWith<F>> {
+  return buildHandoffWith<F>({ fences: FENCES, ...request });
+}
+
+/** {@link writeHandoffWith} against {@link FENCES}. */
+function writeHandoff<F extends CommandFamily = CommandFamily>(
+  request: Omit<WriteHandoffRequest<F>, 'fences'> & {
+    readonly fences?: WriteHandoffRequest<F>['fences'];
+  },
+): ReturnType<typeof writeHandoffWith<F>> {
+  return writeHandoffWith<F>({ fences: FENCES, ...request });
+}
 
 const REPO_ROOT = '/repo';
 
@@ -373,7 +414,7 @@ describe('Feature: kept, Property 26: The handoff file is complete for every run
           // `fenceForResults`, not `fenceFor`: §8.1.1 withholds `code-break`'s write
           // path when KEPT never proved the promise, and the file is built from the
           // conditional row. `fenceFor` remains §8.1's table, unconditionally.
-          const fence = fenceForResults(handoff.nextAction.branch, handoff.results);
+          const fence = fenceForResults(handoff.nextAction.branch, handoff.results, FENCES);
           expect(handoff.nextAction.allowedPaths).toEqual(fence.allowedPaths);
           expect(handoff.nextAction.forbiddenPaths).toEqual(fence.forbiddenPaths);
           expect(handoff.nextAction.autonomy).toBe(fence.autonomy);
@@ -531,7 +572,7 @@ describe('Feature: kept, Property 26 (fencing clause): a code-break repair reach
   it('admits a path only if it is fixture source, and forbids the other three trees', () => {
     fc.assert(
       fc.property(arbTreePath, fc.constantFrom(...REPAIR_BRANCHES, null), ({ tree, path }, branch) => {
-        const fence = fenceFor(branch);
+        const fence = fenceFor(branch, FENCES);
         const allowed = matchesAnyGlob(fence.allowedPaths, path);
         const forbidden = matchesAnyGlob(fence.forbiddenPaths, path);
 
@@ -589,13 +630,13 @@ describe('Feature: kept, Property 26 (fencing clause): a code-break repair reach
   });
 
   it('names the required globs on code-break, and never a path in both sets', () => {
-    const fence = fenceFor('code-break');
-    expect(fence.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
-    for (const glob of [...FIXTURE_DOC_GLOBS, ...TEST_CORPUS_GLOBS, ...KEPT_OWN_GLOBS]) {
+    const fence = fenceFor('code-break', FENCES);
+    expect(fence.allowedPaths).toEqual(FENCE_ALLOW);
+    for (const glob of FENCE_FORBID) {
       expect(fence.forbiddenPaths).toContain(glob);
     }
     for (const branch of [...REPAIR_BRANCHES, null]) {
-      const each = fenceFor(branch);
+      const each = fenceFor(branch, FENCES);
       for (const glob of each.allowedPaths) expect(each.forbiddenPaths).not.toContain(glob);
       // Non-empty allowed set **only** on `code-break`: it is the one branch §8.1
       // applies automatically, and the other two are held for a human.
@@ -633,10 +674,10 @@ describe('Feature: kept, Property 26 (fencing clause): a code-break repair reach
           // which is what makes this clause a statement about the rule instead of
           // about the generator.
           const expected = grantsAutomaticRepair(branch, handoff.results)
-            ? BRANCH_FENCES[branch]
+            ? fenceFor(branch, FENCES)
             : branch === 'code-break'
-              ? UNPROVEN_CODE_BREAK_FENCE
-              : BRANCH_FENCES[branch];
+              ? unprovenCodeBreakFence(FENCES)
+              : fenceFor(branch, FENCES);
           expect(handoff.nextAction.allowedPaths).toEqual(expected.allowedPaths);
           expect(handoff.nextAction.forbiddenPaths).toEqual(expected.forbiddenPaths);
           expect(handoff.nextAction.autonomy).toBe(expected.autonomy);

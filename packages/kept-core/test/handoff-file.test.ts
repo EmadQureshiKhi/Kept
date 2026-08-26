@@ -3,19 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
   AUTOMATIC_REPAIR_REQUIRES_VERDICT,
   BRANCH_FENCES,
-  FIXTURE_DOC_GLOBS,
-  FIXTURE_SOURCE_GLOBS,
   HANDOFF_DIAGNOSTIC_CODES,
   HANDOFF_DIRECTORY_RELATIVE_PATH,
   HANDOFF_FILE_RELATIVE_PATH,
   HANDOFF_SCHEMA_VERSION,
   KEPT_LAUNCHER,
-  KEPT_OWN_GLOBS,
   NEXT_ACTION_BRANCH_PRECEDENCE,
   REPAIR_BRANCHES,
-  TEST_CORPUS_GLOBS,
-  UNPROVEN_CODE_BREAK_FENCE,
-  buildHandoff,
+  buildHandoff as buildHandoffWith,
   contractFor,
   createPromiseRecord,
   exitMeaning,
@@ -30,7 +25,9 @@ import {
   parseStream,
   readNewestHandoff,
   serialiseHandoff,
-  writeHandoff,
+  unprovenCodeBreakFence,
+  writeHandoff as writeHandoffWith,
+  type BuildHandoffRequest,
   type CommandFamily,
   type EvidenceListing,
   type HandoffResultInput,
@@ -40,6 +37,7 @@ import {
   type RoutedRepair,
   type RunOutcome,
   type Verdict,
+  type WriteHandoffRequest,
 } from '@kept/core';
 
 /**
@@ -65,6 +63,57 @@ import {
 
 const REPO_ROOT = '/repo';
 const AT = '2026-08-20T18:40:44.902Z';
+
+/**
+ * The fence surfaces this suite runs against, declared once.
+ *
+ * These globs used to live in `handoff/handoff.ts` as `FIXTURE_ALLOW`,
+ * `FIXTURE_DOC_GLOBS`, `TEST_CORPUS_GLOBS` and `KEPT_OWN_GLOBS`. They are
+ * `Kept_Config`'s business now (§20.1, R15.2) and the module takes them as an
+ * argument, so a *test* is exactly the right place for them to be spelled: the
+ * scan of §20.2 permits fixture paths under `packages/*​/test/**` because a fixture
+ * naming a path is a fixture.
+ *
+ * `allow` is what a `code-break` fence would be granted here; `forbid` is what
+ * `derivedForbidden` computes for this repository — the corpus root, both
+ * documentation paths and the package roots.
+ */
+const FIXTURE_ALLOW: readonly string[] = Object.freeze([
+  'apps/fixture/app/**',
+  'apps/fixture/components/**',
+  'apps/fixture/lib/**',
+]);
+const FIXTURE_DOCS: readonly string[] = Object.freeze([
+  'apps/fixture/README.md',
+  'apps/fixture/docs/**',
+]);
+const FIXTURE_FORBID: readonly string[] = Object.freeze([
+  ...FIXTURE_DOCS,
+  'tests/**',
+  'apps/ledger/**',
+  'packages/**',
+]);
+const FENCES = Object.freeze({ allow: FIXTURE_ALLOW, forbid: FIXTURE_FORBID });
+
+/**
+ * `buildHandoff` and `writeHandoff` against {@link FENCES}.
+ *
+ * `fences` is a required field on the request now, deliberately — a default would
+ * let a forgetful call site hand an agent an empty fence and silently stop the loop.
+ * Spreading `request` *after* the default means any single test can still state its
+ * own surfaces, which two of them below do.
+ */
+function buildHandoff<F extends CommandFamily = CommandFamily>(
+  request: Omit<BuildHandoffRequest<F>, 'fences'> & { readonly fences?: BuildHandoffRequest<F>['fences'] },
+): ReturnType<typeof buildHandoffWith<F>> {
+  return buildHandoffWith<F>({ fences: FENCES, ...request });
+}
+
+function writeHandoff<F extends CommandFamily = CommandFamily>(
+  request: Omit<WriteHandoffRequest<F>, 'fences'> & { readonly fences?: WriteHandoffRequest<F>['fences'] },
+): ReturnType<typeof writeHandoffWith<F>> {
+  return writeHandoffWith<F>({ fences: FENCES, ...request });
+}
 
 const CLAIM =
   '- The Cart screen shows a running subtotal that updates immediately when a quantity changes.';
@@ -202,14 +251,14 @@ function resultInput(
 // ---------------------------------------------------------------------------
 
 describe('the handoff fence is by branch (design §8.1, §11.2, R7.1)', () => {
-  it('lets a code-break repair touch fixture source and nothing else', () => {
-    const fence = fenceFor('code-break');
+  it('lets a code-break repair touch the configured source and nothing else', () => {
+    const fence = fenceFor('code-break', FENCES);
     expect(fence.allowedPaths).toEqual([
       'apps/fixture/app/**',
       'apps/fixture/components/**',
       'apps/fixture/lib/**',
     ]);
-    expect(fence.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(fence.allowedPaths).toEqual(FIXTURE_ALLOW);
     expect(fence.forbiddenPaths).toEqual([
       'apps/fixture/README.md',
       'apps/fixture/docs/**',
@@ -220,34 +269,54 @@ describe('the handoff fence is by branch (design §8.1, §11.2, R7.1)', () => {
   });
 
   it('forbids the four things a code-break repair must never reach', () => {
-    const forbidden = fenceFor('code-break').forbiddenPaths;
-    // The fixture's own documentation: editing the claim to match broken code is
-    // the one failure mode that would make the ledger worthless.
-    for (const glob of FIXTURE_DOC_GLOBS) expect(forbidden).toContain(glob);
-    // The Kane corpus at the repository root — not `apps/fixture/tests/`.
+    const forbidden = fenceFor('code-break', FENCES).forbiddenPaths;
+    // The documentation the claim is written in: editing the claim to match broken
+    // code is the one failure mode that would make the ledger worthless.
+    for (const glob of FIXTURE_DOCS) expect(forbidden).toContain(glob);
+    // The corpus root, wherever the configuration says it is.
     expect(forbidden).toContain('tests/**');
-    expect(TEST_CORPUS_GLOBS).toEqual(['tests/**']);
     // KEPT's own code is never the repair target.
-    for (const glob of KEPT_OWN_GLOBS) expect(forbidden).toContain(glob);
+    expect(forbidden).toContain('packages/**');
+  });
+
+  it('takes its globs from the surfaces it is handed, not from a constant', () => {
+    // The portability clause of §20.1 as a single assertion: the same branch, two
+    // repositories, two fences, no literal in between. A host repository that keeps
+    // its source in `src/` and its claims in `docs/` gets exactly that back.
+    const host = { allow: ['src/**'], forbid: ['suite', 'docs/**/*.md', 'packages/**'] };
+    const fence = fenceFor('code-break', host);
+    expect(fence.allowedPaths).toEqual(['src/**']);
+    expect(fence.forbiddenPaths).toEqual(['suite', 'docs/**/*.md', 'packages/**']);
+    expect(fence.allowedPaths.join()).not.toContain('fixture');
   });
 
   it('holds test-drift and never writes docs-lie silently, per §8.1', () => {
-    expect(fenceFor('test-drift').allowedPaths).toEqual([]);
-    expect(fenceFor('test-drift').autonomy).toBe('hold');
-    expect(fenceFor('test-drift').artefact).toBe('review-card');
+    expect(fenceFor('test-drift', FENCES).allowedPaths).toEqual([]);
+    expect(fenceFor('test-drift', FENCES).autonomy).toBe('hold');
+    expect(fenceFor('test-drift', FENCES).artefact).toBe('review-card');
 
-    expect(fenceFor('docs-lie').allowedPaths).toEqual([]);
-    expect(fenceFor('docs-lie').autonomy).toBe('propose');
-    expect(fenceFor('docs-lie').artefact).toBe('amendment');
+    expect(fenceFor('docs-lie', FENCES).allowedPaths).toEqual([]);
+    expect(fenceFor('docs-lie', FENCES).autonomy).toBe('propose');
+    expect(fenceFor('docs-lie', FENCES).artefact).toBe('amendment');
 
     // And the difference from `code-break`, which is applied automatically.
-    expect(fenceFor('code-break').autonomy).toBe('apply');
-    expect(fenceFor('code-break').artefact).toBe('patch');
+    expect(fenceFor('code-break', FENCES).autonomy).toBe('apply');
+    expect(fenceFor('code-break', FENCES).artefact).toBe('patch');
+
+    // A held branch forbids what `code-break` would have been allowed, which is
+    // what makes "held" narrower than "applied" rather than merely different.
+    for (const glob of FIXTURE_ALLOW) {
+      expect(fenceFor('test-drift', FENCES).forbiddenPaths).toContain(glob);
+      expect(fenceFor('docs-lie', FENCES).forbiddenPaths).toContain(glob);
+    }
   });
 
   it('answers a fence for a null branch rather than an absent one', () => {
-    const fence = fenceFor(null);
-    expect(fence).toBe(BRANCH_FENCES.none);
+    const fence = fenceFor(null, FENCES);
+    expect(fence.autonomy).toBe(BRANCH_FENCES.none.autonomy);
+    expect(fence.artefact).toBe(BRANCH_FENCES.none.artefact);
+    expect(fence.instruction).toBe(BRANCH_FENCES.none.instruction);
+    expect(BRANCH_FENCES.none.grantsAllow).toBe(false);
     expect(fence.allowedPaths).toEqual([]);
     expect(fence.autonomy).toBe('none');
     expect(fence.artefact).toBeNull();
@@ -256,7 +325,7 @@ describe('the handoff fence is by branch (design §8.1, §11.2, R7.1)', () => {
 
   it('never lists a path as both allowed and forbidden, on any branch', () => {
     for (const branch of [...REPAIR_BRANCHES, null]) {
-      const fence = fenceFor(branch);
+      const fence = fenceFor(branch, FENCES);
       for (const allowed of fence.allowedPaths) {
         expect(fence.forbiddenPaths, `${String(branch)} allows and forbids ${allowed}`).not.toContain(
           allowed,
@@ -311,7 +380,7 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
     expect(handoff.nextAction.branch).toBe('code-break');
     expect(handoff.nextAction.autonomy).toBe('apply');
     expect(handoff.nextAction.artefact).toBe('patch');
-    expect(handoff.nextAction.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(handoff.nextAction.allowedPaths).toEqual(FIXTURE_ALLOW);
     expect(
       handoff.diagnostics.map((entry) => entry.code),
     ).not.toContain(HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven);
@@ -358,8 +427,8 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
         results: [resultInput(branch, 'stale')],
       });
       expect(held.nextAction.branch).toBe(branch);
-      expect(held.nextAction.autonomy).toBe(fenceFor(branch).autonomy);
-      expect(held.nextAction.artefact).toBe(fenceFor(branch).artefact);
+      expect(held.nextAction.autonomy).toBe(fenceFor(branch, FENCES).autonomy);
+      expect(held.nextAction.artefact).toBe(fenceFor(branch, FENCES).artefact);
       expect(held.nextAction.allowedPaths).toEqual([]);
       expect(grantsAutomaticRepair(branch, held.results)).toBe(false);
     }
@@ -382,7 +451,7 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
       ],
     });
     expect(mixed.nextAction.autonomy).toBe('apply');
-    expect(mixed.nextAction.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(mixed.nextAction.allowedPaths).toEqual(FIXTURE_ALLOW);
     expect(
       mixed.diagnostics.filter(
         (entry) => entry.code === HANDOFF_DIAGNOSTIC_CODES.codeBreakUnproven,
@@ -393,17 +462,17 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
   it('only ever narrows: the withheld row allows nothing the granted row forbade', () => {
     // The whole safety argument depends on this direction. `fenceFor` still says
     // exactly what §8.1's table says, so the table is assertable without the gate.
-    expect(UNPROVEN_CODE_BREAK_FENCE.allowedPaths).toEqual([]);
-    expect(fenceFor('code-break').allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
-    for (const glob of fenceFor('code-break').forbiddenPaths) {
-      expect(UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths).toContain(glob);
+    expect(unprovenCodeBreakFence(FENCES).allowedPaths).toEqual([]);
+    expect(fenceFor('code-break', FENCES).allowedPaths).toEqual(FIXTURE_ALLOW);
+    for (const glob of fenceFor('code-break', FENCES).forbiddenPaths) {
+      expect(unprovenCodeBreakFence(FENCES).forbiddenPaths).toContain(glob);
     }
     // Every source glob the granted row allowed is forbidden by the withheld one.
-    for (const glob of FIXTURE_SOURCE_GLOBS) {
-      expect(UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths).toContain(glob);
+    for (const glob of FIXTURE_ALLOW) {
+      expect(unprovenCodeBreakFence(FENCES).forbiddenPaths).toContain(glob);
     }
-    expect(UNPROVEN_CODE_BREAK_FENCE.allowedPaths).not.toContain(
-      UNPROVEN_CODE_BREAK_FENCE.forbiddenPaths[0],
+    expect(unprovenCodeBreakFence(FENCES).allowedPaths).not.toContain(
+      unprovenCodeBreakFence(FENCES).forbiddenPaths[0],
     );
   });
 
@@ -470,11 +539,11 @@ describe('automatic repair is granted only to restore a proven promise (§8.1.1)
           results,
         });
         const expected = grantsAutomaticRepair(branch, built.results)
-          ? fenceFor(branch)
+          ? fenceFor(branch, FENCES)
           : branch === 'code-break'
-            ? UNPROVEN_CODE_BREAK_FENCE
-            : fenceFor(branch);
-        expect(fenceForResults(branch, built.results)).toEqual(expected);
+            ? unprovenCodeBreakFence(FENCES)
+            : fenceFor(branch, FENCES);
+        expect(fenceForResults(branch, built.results, FENCES)).toEqual(expected);
       }
     }
   });
@@ -764,7 +833,7 @@ describe('a proven failing run produces the instruction of design §11.2', () =>
     expect(handoff.nextAction.instruction).toBe(
       'Restore the behaviour the cited claim describes. Edit product source only.',
     );
-    expect(handoff.nextAction.allowedPaths).toEqual(FIXTURE_SOURCE_GLOBS);
+    expect(handoff.nextAction.allowedPaths).toEqual(FIXTURE_ALLOW);
     expect(handoff.nextAction.command).toBeNull();
     expect(handoff.diagnostics).toEqual([]);
     expect(handoff.blastRadius.testIds).toEqual(['T-3']);

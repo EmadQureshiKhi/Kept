@@ -134,7 +134,18 @@ export interface AmendRequest {
   /** The Kane boundary the rebuild after `accept` uses. Absent is supported. */
   readonly invoker?: KaneInvoker | undefined;
   readonly fileSystem?: StateFileSystem | undefined;
-  /** The `.kept/amendments/` listing `list` enumerates. Defaults to `node:fs`. */
+  /**
+   * The `.kept/amendments/` listing `list` enumerates, and the same listing the
+   * snapshot's three projections enumerate after `propose`, `accept` and `reject`
+   * write one. Defaults to `node:fs`.
+   *
+   * It reaches `runSnapshot` as well as `listAmendments` because a directory
+   * listing is a seam `StateFileSystem` does not cover: that interface reads files
+   * by path, and the runs, amendments and held-change projections each start by
+   * enumerating a directory. A caller that injected `fileSystem` here and not this
+   * got a snapshot whose reads were in the seeded map and whose listings were on
+   * real disk, which is not an isolated run however much it looks like one.
+   */
   readonly readDirectory?: ((path: string) => readonly string[]) | undefined;
   /** The atomic rename `accept` finishes with (§8.4 step 5). Defaults to `rename(2)`. */
   readonly rename?: AtomicRenamer | undefined;
@@ -275,6 +286,7 @@ export async function runAmend(request: AmendRequest): Promise<AmendResult> {
       fileSystem,
       generatedAt: at,
       diagnostics: sink,
+      ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
     });
     return {
       ...empty(subcommand),
@@ -327,6 +339,7 @@ export async function runAmend(request: AmendRequest): Promise<AmendResult> {
       fileSystem,
       generatedAt: at,
       diagnostics: sink,
+      ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
     });
 
     return {
@@ -449,6 +462,7 @@ export async function runAmend(request: AmendRequest): Promise<AmendResult> {
     fileSystem,
     generatedAt: at,
     diagnostics: sink,
+    ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
   });
 
   return {

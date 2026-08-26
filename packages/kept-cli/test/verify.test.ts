@@ -32,6 +32,7 @@ import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG } from './fixture-config.js';
 import { main } from '../src/main.js';
 import {
   VERIFY_DIAGNOSTIC_CODES,
@@ -358,7 +359,7 @@ async function run(
   const fake = fakeInvoker(options.lines ?? MIXED, options.exitCode ?? 1, options.planLines);
   const result = await runVerify({
     repoRoot: REPO,
-    config: DEFAULT_CONFIG,
+    config: FIXTURE_CONFIG,
     ...(options.all === undefined ? {} : { all: options.all }),
     changed: options.changed ?? [],
     fileSystem: io.fileSystem,
@@ -518,7 +519,7 @@ describe('the argv of a replay (§7.4, §13.1, R3.5)', () => {
     const debug = fakeInvoker(MIXED, 1);
     await runVerify({
       repoRoot: REPO,
-      config: { ...DEFAULT_CONFIG, memberDebug: true },
+      config: { ...FIXTURE_CONFIG, memberDebug: true },
       changed: ['apps/fixture/lib/cart.ts'],
       fileSystem: harness().fileSystem,
       planFileSystem: planFileSystem(),

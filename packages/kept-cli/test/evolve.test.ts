@@ -50,6 +50,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { EXIT_OK } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
 import { main } from '../src/main.js';
+import { SNAPSHOT_FILE_RELATIVE_PATH } from '../src/snapshot.js';
+import {
+  SNAPSHOT_COMMAND_DIAGNOSTIC_CODES,
+  runSnapshot,
+} from '../src/commands/snapshot.js';
 import type { EvolveHelpProbe } from '../src/commands/evolve.js';
 import {
   EVOLVE_ARGV_HEAD,
@@ -473,6 +478,69 @@ describe('a probe that could not run says so, and holds nothing', () => {
     expect(result.probe?.ran).toBe(false);
     expect(result.probe?.failure).toContain('EACCES');
     expect(result.reviewCards).toEqual([]);
+  });
+});
+
+/* ──────── the card this command holds is the card /reviews renders ─────────── */
+
+/**
+ * The other end of the held-change path (task 22.2, R5.7, §13.1).
+ *
+ * Everything above asserts that a card lands in `.kept/review-cards/`. Nothing
+ * asserted that the snapshot `/reviews` renders is projected from that store, and
+ * for a while it was not: `runSnapshot` took `reviewCards` only as a request field,
+ * no caller filled it from disk, and the committed file said `reviewCards: []`
+ * however many changes were held. `listReviewCards` was tested, `toSnapshotReviewCard`
+ * was tested, and the wire between them and the snapshot did not exist.
+ *
+ * `kept evolve` writes no snapshot of its own, deliberately: §13.1's `Writes` column
+ * for this row reads `review cards, handoff` and nothing else, because an evolution
+ * verifies nothing and has no business advancing freshness. So the composition to
+ * assert here is store to snapshot, driven by the next command that projects it,
+ * rather than one call doing both. `reconcile.test.ts` asserts the single-call form.
+ */
+describe('the card kept evolve holds reaches the snapshot the Ledger reads', () => {
+  it('is projected out of the store by the next snapshot, with its kind intact', async () => {
+    const fileSystem = files();
+    const evolved = await runEvolve({
+      repoRoot: REPO,
+      config: DEFAULT_CONFIG,
+      ref: REF,
+      fileSystem,
+      helpProbe: observedProbe,
+      at: AT,
+    });
+    expect(evolved.reviewCards).toHaveLength(1);
+    const card = evolved.reviewCards[0];
+
+    // This command wrote no snapshot, which is the §13.1 row rather than an omission.
+    expect(fileSystem.files.has(`${REPO}/${SNAPSHOT_FILE_RELATIVE_PATH}`)).toBe(false);
+
+    // And the next command that does write one carries the held change, reading the
+    // store rather than being handed a list. The state comes off the same map, so
+    // the promise the card names is a promise the snapshot carries.
+    const sink = createDiagnosticSink();
+    const projected = runSnapshot({
+      repoRoot: REPO,
+      fileSystem,
+      generatedAt: AT,
+      evidence: [],
+      runs: [],
+      amendments: [],
+      readDirectory: fileSystem.readDirectory,
+      diagnostics: sink,
+    });
+
+    expect(projected.valid).toBe(true);
+    expect(projected.written).toBe(true);
+    expect(projected.snapshot.reviewCards.map((held) => held.id)).toEqual([card?.id]);
+    const held = projected.snapshot.reviewCards[0];
+    // `kind` is provenance: which command produced the card (§8.2). A card from
+    // `kept evolve` labelled `reconcile` would send a reviewer to the wrong command.
+    expect(held?.kind).toBe('test-drift');
+    expect(held?.status).toBe('open');
+    expect(held?.promiseId).toBe(card?.promiseId);
+    expect(sink.has(SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.recordsProjected)).toBe(true);
   });
 });
 

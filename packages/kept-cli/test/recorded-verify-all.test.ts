@@ -23,6 +23,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG } from './fixture-config.js';
 import { VERIFY_DIAGNOSTIC_CODES, runVerify } from '../src/commands/verify.js';
 
 /**
@@ -381,7 +382,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
     const sink = createDiagnosticSink();
     const result = await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       all: true,
       fileSystem: stateFileSystem(),
       planFileSystem: planFileSystem(),
@@ -426,7 +427,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
     const sink = createDiagnosticSink();
     const result = await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       all: true,
       fileSystem: stateFileSystem(),
       planFileSystem: planFileSystem(),
@@ -479,7 +480,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
     const kane = recordedInvoker();
     const result = await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       all: true,
       fileSystem: stateFileSystem(),
       planFileSystem: planFileSystem(),
@@ -503,7 +504,7 @@ describe('the recorded whole-suite replay — what it does to eight stale verdic
     const kane = recordedInvoker();
     await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       all: true,
       fileSystem: stateFileSystem(),
       planFileSystem: planFileSystem(),

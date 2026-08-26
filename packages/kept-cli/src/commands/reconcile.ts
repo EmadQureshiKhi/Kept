@@ -148,7 +148,6 @@ import type {
 } from '@kept/core';
 import {
   ACCEPTED_ASSURANCE_STATUS,
-  FIXTURE_DOC_GLOBS,
   FORK_GUARD_DIAGNOSTIC_CODE,
   SOURCE_REASON_DIAGNOSTIC_CODE,
   absoluteSourcePath,
@@ -160,6 +159,7 @@ import {
   mirrorReconcileStagedChanges,
   normaliseAssuranceStatus,
   normaliseChangedPath,
+  outcomeFromInvocation,
   parseStream,
   resolveSourceIdCached,
   writeHandoff,
@@ -168,7 +168,7 @@ import {
 
 import type { ParsedArgv } from '../args.js';
 import { MUTUALLY_EXCLUSIVE_FLAGS } from '../args.js';
-import type { KeptConfig } from '../config.js';
+import { handoffFenceSurfaces, type KeptConfig } from '../config.js';
 
 import type { BuildResult } from './build.js';
 import { runBuild } from './build.js';
@@ -446,10 +446,12 @@ export interface ChangedDocs {
 /**
  * Filter the hook's saved paths to the Docs_Hook pattern set (§13.2.1).
  *
- * `FIXTURE_DOC_GLOBS` is the pattern set, imported from the handoff module rather
- * than re-listed here, so the fence the handoff hands back and the filter that
- * selects a document cannot drift apart. Matching goes through `matchesGlob`, the
- * repository's one glob grammar — there is no `micromatch` in the dependency
+ * `docsGlobs` is `subject.docs` from `Kept_Config` (§20.1, R15.2), passed in rather
+ * than read from a constant in the handoff module as it used to be. The same list
+ * reaches `derivedForbidden`, so the documentation this filter selects and the
+ * documentation the handoff forbids a repair from touching are one list read twice
+ * rather than two lists kept in step by hand. Matching goes through `matchesGlob`,
+ * the repository's one glob grammar — there is no `micromatch` in the dependency
  * budget of §2.2 and no second notion of what `docs/**` means.
  *
  * Order is the caller's, because §13.2.1 issues one invocation per changed doc
@@ -458,6 +460,7 @@ export interface ChangedDocs {
  */
 export function filterChangedDocs(
   changed: readonly string[],
+  docsGlobs: readonly string[],
   repoRoot?: string | undefined,
 ): ChangedDocs {
   const docs: string[] = [];
@@ -467,7 +470,7 @@ export function filterChangedDocs(
   for (const raw of changed) {
     const path = normaliseChangedPath(raw, repoRoot);
     if (path.length === 0) continue;
-    if (!matchesAnyGlob(FIXTURE_DOC_GLOBS, path)) {
+    if (!matchesAnyGlob(docsGlobs, path)) {
       if (!outOfScope.includes(path)) outOfScope.push(path);
       continue;
     }
@@ -607,6 +610,20 @@ export interface ReconcileRequest {
   readonly invoker?: KaneInvoker | undefined;
   /** State, source cache, handoff and snapshot reads and writes. Defaults to `node:fs`. */
   readonly fileSystem?: StateFileSystem | undefined;
+  /**
+   * The directory listing the snapshot's own projections enumerate, handed
+   * straight to `runSnapshot`. Defaults to `node:fs`.
+   *
+   * Present for one reason: without it, no test that injects a filesystem can see
+   * the snapshot this command writes carry the review cards this command just
+   * mirrored. `fileSystem` covers the card *reads*, but the held-change and
+   * amendment projections **list a directory**, and that seam defaulted to real
+   * disk however the reads were injected. So an in-memory run mirrored its cards
+   * into a map and then projected `.kept/review-cards/` off the working tree,
+   * which is empty. Production is unaffected either way, and that is exactly why
+   * the composition could ship broken with every unit test passing (task 22.2).
+   */
+  readonly readDirectory?: ((path: string) => readonly string[]) | undefined;
   /** Ladder check 3. Defaults to {@link nodeReconcileFileProbe}. */
   readonly probe?: ReconcileFileProbe | undefined;
   /**
@@ -818,6 +835,7 @@ async function reconcileOneDoc(options: {
     runId,
     handoff: writeHandoff({
       repoRoot: request.repoRoot,
+      fences: handoffFenceSurfaces(request.config),
       runId,
       at,
       trigger: {
@@ -1056,9 +1074,15 @@ async function reconcileOneDoc(options: {
     runId: kaneRunId,
     handoff: writeHandoff({
       repoRoot: request.repoRoot,
+      fences: handoffFenceSurfaces(request.config),
       runId: kaneRunId,
       at,
-      run: { runId: kaneRunId, exitMeaning: invocation.exitMeaning, stream },
+      // Paired by core's own function rather than as a literal here, so the exit
+      // meaning is read off the invocation in exactly one place (§4.5's exit-3
+      // rule). The literal it replaces was already reading the field verbatim; what
+      // it was not doing was keeping the single-site guarantee the function's doc
+      // comment makes.
+      run: outcomeFromInvocation(kaneRunId, invocation, stream),
       exitCode: invocation.exitCode,
       trigger: {
         hook: request.trigger?.hook ?? RECONCILE_HOOK,
@@ -1088,8 +1112,9 @@ async function reconcileOneDoc(options: {
  * §13.2.4 #7 exists to refuse.
  *
  * Never throws for any state of the world: no changed docs, a doc that is not
- * there, a doc that is not ingestable, no `.context/` store (the live state of
- * this repository today), an unreadable listing, a crashed listing, no match, an
+ * there, a doc that is not ingestable, no `.context/` store (the state a stranger's
+ * repository is in, and the state this one was in until it grew one), an
+ * unreadable listing, a crashed listing, no match, an
  * ambiguous match, a retired source, a fork, no `kane-cli`, a crashed reconcile
  * stream, a pause, our own timeout. Every one of those is a diagnostic plus a
  * handoff, and the exit code stays zero.
@@ -1099,7 +1124,8 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
   const at = request.at ?? new Date().toISOString();
   const probe = request.probe ?? nodeReconcileFileProbe;
   const changed = request.changed ?? [];
-  const filtered = filterChangedDocs(changed, request.repoRoot);
+  const docsGlobs = request.config.subject.docs;
+  const filtered = filterChangedDocs(changed, docsGlobs, request.repoRoot);
 
   const store = createStateStore({
     repoRoot: request.repoRoot,
@@ -1123,7 +1149,8 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
       severity: 'info',
       message:
         `${path} is not one of the documentation files reconciliation owns ` +
-        `(${FIXTURE_DOC_GLOBS.join(', ')}), so it was ignored. A code change is ` +
+        `(${docsGlobs.length === 0 ? 'subject.docs is empty' : docsGlobs.join(', ')}), so it ` +
+        `was ignored. A code change is ` +
         `\`kept verify --changed\`'s, not this command's.`,
       file: path,
     });
@@ -1140,13 +1167,15 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
       code: RECONCILE_DIAGNOSTIC_CODES.noChangedDocs,
       severity: 'info',
       message:
-        `no changed documentation file survived filtering to ${FIXTURE_DOC_GLOBS.join(', ')}, so ` +
+        `no changed documentation file survived filtering to ` +
+        `${docsGlobs.length === 0 ? 'an empty subject.docs' : docsGlobs.join(', ')}, so ` +
         `\`maintain reconcile\` was not invoked at all: no process, no credits, no review card, ` +
         `and every verdict and the freshness triple stand.`,
     });
     handoffs.push(
       writeHandoff({
         repoRoot: request.repoRoot,
+        fences: handoffFenceSurfaces(request.config),
         runId: `${SYNTHETIC_RUN_ID_PREFIX}${at}`,
         at,
         trigger: {
@@ -1251,12 +1280,16 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
     });
   }
 
+  // `reviewCards` is deliberately not passed: `runSnapshot` reads
+  // `.kept/review-cards/` itself, which is the store `writeReviewCard` above just
+  // wrote into, so the snapshot cannot disagree with the disk about what is held.
   const snapshot = runSnapshot({
     repoRoot: request.repoRoot,
     state,
     generatedAt: at,
     diagnostics: sink,
     ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+    ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
   });
 
   const invocations = docs.filter((doc) => doc.invoked).length;
@@ -1266,8 +1299,8 @@ export async function runReconcile(request: ReconcileRequest): Promise<Reconcile
     message:
       `kept reconcile --changed: ${filtered.docs.length} document(s), ${invocations} ` +
       `invocation(s), ${docs.filter((doc) => doc.refusal !== null).length} refusal(s), ` +
-      `${docs.reduce((total, doc) => total + doc.staged.length, 0)} staged item(s), no review ` +
-      `card created and no verdict written`,
+      `${docs.reduce((total, doc) => total + doc.staged.length, 0)} staged item(s), ` +
+      `${reviewCards.length} held change(s) recorded and no verdict written`,
   });
 
   return {
@@ -1297,6 +1330,25 @@ export interface ReconcileApplyRequest {
   readonly planPath?: string | null | undefined;
   readonly invoker?: KaneInvoker | undefined;
   readonly fileSystem?: StateFileSystem | undefined;
+  /**
+   * The directory listing the snapshot's own projections enumerate, handed
+   * straight to `runSnapshot`. Defaults to `node:fs`.
+   *
+   * The field was missing here while {@link ReconcileRequest} had carried it since
+   * task 22.2, and this is the call site where the omission was doing something:
+   * `test/reconcile-apply.test.ts` sets its repo root to the **real repository
+   * root**, so an in-memory run listed the developer's own `.kept/handoff/`,
+   * failed to read each name it found out of a map that never held them, and
+   * emitted one `snapshot-run-unreadable` warning per real file. Twenty-seven on
+   * the machine this was found on, none on a fresh clone, and nothing red either
+   * way because the assertions only ever asked whether a code was present.
+   *
+   * Two seams exist because `StateFileSystem` reads files by path and cannot list
+   * a directory, and all three projections start by enumerating one. Injecting one
+   * without the other is the trap: it isolates the reads, leaves the listing on
+   * real disk, and looks hermetic.
+   */
+  readonly readDirectory?: ((path: string) => readonly string[]) | undefined;
   readonly diagnostics?: CollectingDiagnosticSink | undefined;
   readonly at?: string | undefined;
 }
@@ -1421,10 +1473,11 @@ export async function runReconcileApply(
   const outcome: RunOutcome<typeof RECONCILE_FAMILY> | null =
     invocation === null || stream === null
       ? null
-      : { runId: resolvedRunId, exitMeaning: invocation.exitMeaning, stream };
+      : outcomeFromInvocation(resolvedRunId, invocation, stream);
 
   const handoff = writeHandoff({
     repoRoot: request.repoRoot,
+    fences: handoffFenceSurfaces(request.config),
     runId: resolvedRunId,
     at,
     run: outcome,
@@ -1445,6 +1498,10 @@ export async function runReconcileApply(
     generatedAt: at,
     diagnostics: sink,
     ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+    // Both seams or neither, for the reason written at
+    // {@link ReconcileApplyRequest.readDirectory}: passing `fileSystem` alone
+    // redirects the projections' reads and leaves their listings on real disk.
+    ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
   });
 
   sink.report({

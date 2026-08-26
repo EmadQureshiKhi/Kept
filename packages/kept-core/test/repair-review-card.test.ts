@@ -108,8 +108,9 @@ describe('the branch is read off the fence table, never passed in', () => {
       const fence = BRANCH_FENCES[draft.card.branch];
       expect(fence.autonomy).toBe('hold');
       expect(fence.artefact).toBe('review-card');
-      // Nothing writable on the allowed side: §8.1's held branches fence everything.
-      expect(fence.allowedPaths).toEqual([]);
+      // Nothing writable on the allowed side: §8.1's held branches fence everything,
+      // which is `grantsAllow: false` now that the globs live in the config (§20.1).
+      expect(fence.grantsAllow).toBe(false);
       expect(draft.card.status).toBe('open');
     }
   });

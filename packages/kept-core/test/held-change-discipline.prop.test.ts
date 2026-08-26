@@ -180,7 +180,10 @@ function assertHeld(cards: readonly ReviewCard[], recorder: RecordingFileSystem)
     const fence = BRANCH_FENCES[card.branch];
     expect(fence.autonomy).toBe('hold');
     expect(fence.artefact).toBe('review-card');
-    expect(fence.allowedPaths).toEqual([]);
+    // The table carries no glob any more (§20.1): `grantsAllow` is the bit that
+    // decides whether a row is handed the configured allow set, and a held branch
+    // is never handed it.
+    expect(fence.grantsAllow).toBe(false);
     expect(['open', 'dismissed']).toContain(card.status);
     expect(card.status).toBe('open');
   }

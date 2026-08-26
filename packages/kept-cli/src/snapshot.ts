@@ -89,7 +89,36 @@ export interface BuildSnapshotRequest {
   readonly state: KeptState;
   /** ISO 8601 instant. Defaults to now; a test passes a fixed one. */
   readonly generatedAt?: string | undefined;
-  /** `kane-cli --version`, when the caller has probed it. `kept doctor` does. */
+  /**
+   * `kane-cli --version`, when the caller has probed it. **No command passes it
+   * today, so `generator.kaneCli` is `null` in every committed snapshot.**
+   *
+   * The comment here used to read "`kept doctor` does", and that was false in the
+   * way this repository has learned to watch for: `kept doctor` really is the one
+   * command that probes the version (`probeKane`, R18.2), and it does not call
+   * `runSnapshot` at all. It writes a handoff and nothing else (R18.10). All six
+   * `runSnapshot` call sites omit this field, so the value can only ever be the
+   * `?? null` default, and the comment named a caller that does not exist. That is
+   * the shape `listReviewCards` had at task 22.2, minus the user impact: nothing in
+   * the Ledger renders `generator.kaneCli`, so a null here misleads no reader.
+   *
+   * **Why it was left as a correction rather than wired up.** `kept snapshot` is
+   * documented throughout as needing no Kane, no Chrome and no network (§13.1's
+   * invocation column reads `none`), so this command must not grow a probe. The
+   * version would therefore have to arrive through `.kept/state.json`, written by a
+   * command that already spawns Kane. `kept build` is that command, and the route is
+   * not cheap: the one stream it consumes, `cover gaps --json --mode agent`, carries
+   * no version anywhere in the Assurance envelope, so build would need a **second
+   * spawn** purely for `--version`. That contradicts the published invocation tables
+   * in the README and design §13.1, which give `kept build` exactly one invocation,
+   * and it buys a field nothing renders. So the honest fix was the comment.
+   *
+   * The seam stays, because it is how the value would arrive if that changed: read
+   * the version off the state in `runSnapshot` and pass it here. What would have to
+   * land first is a persisted field on {@link KeptState}, tolerant of a state file
+   * written before it existed, and a decision about whether a version probed by an
+   * earlier command may be published as the generator of this snapshot.
+   */
   readonly kaneCliVersion?: string | null | undefined;
   /**
    * Sealed packs already committed under `apps/ledger/public/evidence/`. Every
@@ -271,7 +300,40 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     });
     return { ...run, evidencePackId: null };
   });
-  const runs = allRuns.slice(0, MAX_SNAPSHOT_RUNS);
+  /**
+   * The newest runs, **plus every run a promise names as its verdict source**.
+   *
+   * This used to be `allRuns.slice(0, MAX_SNAPSHOT_RUNS)`, and that dropped a run six
+   * promises were citing. The log grew past the cap for the first time at task 22.2,
+   * and `108dbb62`, the whole-suite replay that earned six of the seven proven
+   * verdicts, fell off the end of it. Every one of those promises went on carrying
+   * `verdictSource.runId: '108dbb62…'` while `/runs` no longer listed the run and the
+   * row a reader clicked through to did not exist.
+   *
+   * That is the same fault the evidence rules of §9.1 already refuse in three other
+   * places: a reference to something the snapshot does not carry is worse than an
+   * absent reference, because the absent one is honest and the dangling one looks
+   * like a bug in the page. A verdict whose provenance cannot be opened is not a
+   * traceable verdict, and traceability is the point of recording the run id at all.
+   *
+   * So the cap is a cap on *history*, not on provenance. Cited runs are kept
+   * unconditionally, even if they alone exceed the cap: a longer committed file is a
+   * cost, and an unopenable verdict is a lie. The remaining places go to the newest
+   * uncited runs, and the order the caller gave is preserved so the log still reads
+   * newest first.
+   */
+  const citedRunIds = new Set(
+    graph.promises
+      .map((promise) => promise.verdictSource?.runId)
+      .filter((id): id is string => typeof id === 'string' && id !== ''),
+  );
+  const cited = allRuns.filter((run) => citedRunIds.has(run.id));
+  const uncited = allRuns.filter((run) => !citedRunIds.has(run.id));
+  const keep = new Set([
+    ...cited.map((run) => run.id),
+    ...uncited.slice(0, Math.max(0, MAX_SNAPSHOT_RUNS - cited.length)).map((run) => run.id),
+  ]);
+  const runs = allRuns.filter((run) => keep.has(run.id));
 
   // ── amendments and review cards, under the same rule ──────────────────────
   //
@@ -307,8 +369,11 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
       code: SNAPSHOT_DIAGNOSTIC_CODES.runsTruncated,
       severity: 'info',
       message:
-        `${allRuns.length} runs were offered and the committed file carries the newest ` +
-        `${MAX_SNAPSHOT_RUNS} (design §9.1), so ${allRuns.length - runs.length} were dropped.`,
+        `${allRuns.length} runs were offered and the committed file carries ${runs.length} ` +
+        `(design §9.1): the newest up to ${MAX_SNAPSHOT_RUNS}, plus every run a promise ` +
+        `names as its verdict source, so ${allRuns.length - runs.length} were dropped. ` +
+        `${cited.length} run(s) were retained as cited provenance regardless of age, ` +
+        `because a verdict pointing at a run this file does not carry cannot be opened.`,
       file: null,
     });
   }
@@ -316,11 +381,21 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
   const snapshot: LedgerSnapshot = {
     schemaVersion: SNAPSHOT_SCHEMA_VERSION,
     generatedAt: request.generatedAt ?? new Date().toISOString(),
+    // `kaneCli` is `null` in every snapshot this repository has written, because no
+    // caller passes the version. See {@link BuildSnapshotRequest.kaneCliVersion} for
+    // why that is a documented gap rather than a probe waiting to be added here.
     generator: { kept: KEPT_VERSION, kaneCli: request.kaneCliVersion ?? null },
     degraded: graph.degraded,
     degradedReasons: [...graph.degradedReasons],
     freshness: { ...request.state.freshness },
     metrics: computeMetrics(graph),
+    // R9.14: recorded in the committed file so the shareable page renders both axes
+    // with Kane invoked zero times. Withheld, `null`, never an empty ribbon,
+    // whenever the graph is degraded, which is the schema's own rule 6 and which
+    // this projection satisfies by construction rather than by trusting the state:
+    // a degraded build already cleared the field, and clearing it again here means
+    // a hand-edited state file cannot publish axes the graph does not support.
+    coverageAxes: graph.degraded ? null : coverageAxesOf(request.state),
     promises,
     edges: edges.map((edge) => ({ ...edge })),
     documents: [...documents],
@@ -328,7 +403,7 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     runs: [...runs],
     reviewCards,
     amendments,
-    // The graph's own diagnostics first — they happened first — then this
+    // The graph's own diagnostics first, they happened first, then this
     // module's, so `/runs` reads in the order the build discovered things.
     diagnostics: [...graph.diagnostics, ...sink.entries],
   };
@@ -351,6 +426,50 @@ export function buildSnapshot(request: BuildSnapshotRequest): BuildSnapshotResul
     });
     return { snapshot, text, valid: false, error: message, diagnostics: sink.entries };
   }
+}
+
+/**
+ * The axes the state carries, in the snapshot's own shape, or null.
+ *
+ * A projection rather than a pass-through, and the reason is `undefined`: a state
+ * file written before the field existed has no key, the canonical serialiser throws
+ * on an `undefined` value (§9.2), and `?? null` at the one place the value enters
+ * the snapshot is cheaper than a migration. The shape is otherwise identical, the
+ * core projection already produced the field names the schema declares, so this
+ * copies rather than converts, and every array is copied so the snapshot cannot
+ * share a frozen structure with the state.
+ */
+function coverageAxesOf(state: KeptState): LedgerSnapshot['coverageAxes'] {
+  const axes = state.coverageAxes ?? null;
+  if (axes === null || axes.rows.length === 0) return null;
+  return {
+    designCompleteness: {
+      pct: axes.designCompleteness.pct,
+      ratio: { ...axes.designCompleteness.ratio },
+      usecasesComplete: { ...axes.designCompleteness.usecasesComplete },
+      ucsNeedingScenarios: axes.designCompleteness.ucsNeedingScenarios,
+    },
+    proven: {
+      pct: axes.proven.pct,
+      ratio: { ...axes.proven.ratio },
+      failing: axes.proven.failing,
+      blocked: axes.proven.blocked,
+      notRun: axes.proven.notRun,
+      latestRunExecutionId: axes.proven.latestRunExecutionId,
+      source: axes.proven.source,
+      denominatorBasis: axes.proven.denominatorBasis,
+    },
+    rows: axes.rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      risk: row.risk,
+      riskRank: row.riskRank,
+      designCompleteness: { ...row.designCompleteness },
+      proven: { ...row.proven },
+      staleAcs: row.staleAcs,
+      pending: row.pending.map((item) => ({ ...item })),
+    })),
+  };
 }
 
 /** {@link writeSnapshot}'s input. */

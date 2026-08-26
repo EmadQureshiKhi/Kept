@@ -80,15 +80,41 @@ describe('the demo command boots exactly two applications', () => {
     expect(corpus.length, 'the designed test corpus is empty; nothing to agree with').toBeGreaterThan(
       0,
     );
+
+    // Split by what the document cites, not by what it happens to contain.
+    //
+    // Until task 26.1 every corpus document verified a claim in the fixture's README,
+    // so "names the fixture's port" and "names a port the demo serves" were the same
+    // sentence. They are not any more: three documents verify claims in *this
+    // repository's* README (§23.1, R19.1), and two of those claims are about the
+    // Ledger and the demo command rather than about Kepler Coffee, so they navigate to
+    // 3000. Requiring 3100 of them would be requiring a test to target the wrong
+    // application. What the clause is actually for survives intact either way: a
+    // designed test must name a socket `scripts/demo.mjs` brings up, or it targets
+    // nothing while staying green.
+    const demoOrigins = SERVICES.map((entry) => serviceUrl(entry));
+    let fixtureCited = 0;
     for (const name of corpus) {
       const text = readFileSync(resolve(REPO_ROOT, 'tests', name), 'utf8');
+      const citesFixture = /@verifies\s+apps\/fixture\//.test(text);
+      if (citesFixture) {
+        fixtureCited += 1;
+        expect(
+          text,
+          `${name} verifies a fixture claim and does not navigate to the fixture's demo ` +
+            `port. The corpus and scripts/demo.mjs must name the same socket, or every ` +
+            `designed test targets nothing while staying green.`,
+        ).toContain(`http://localhost:${fixture.port}`);
+        continue;
+      }
       expect(
-        text,
-        `${name} does not navigate to the fixture's demo port. The corpus and ` +
-          `scripts/demo.mjs must name the same socket, or every designed test targets ` +
-          `nothing while staying green.`,
-      ).toContain(`http://localhost:${fixture.port}`);
+        demoOrigins.some((origin) => text.includes(origin)),
+        `${name} navigates to no origin the demo command serves (${demoOrigins.join(', ')}), ` +
+          `so it targets nothing while staying green.`,
+      ).toBe(true);
     }
+    // The fixture corpus is still the bulk of it, so the clause above is not vacuous.
+    expect(fixtureCited).toBeGreaterThanOrEqual(8);
   });
 
   it('runs next dev with the port and nothing else', () => {

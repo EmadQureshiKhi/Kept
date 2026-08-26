@@ -95,6 +95,7 @@ import {
   MEMBER_DEBUG_PREFIX,
   nodeBaselineFileSystem,
   nodeStateFileSystem,
+  outcomeFromInvocation,
   pairMemberDebug,
   parseMemberDebug,
   parseStream,
@@ -111,7 +112,7 @@ import {
 } from '@kept/core';
 
 import type { KeptConfig } from '../config.js';
-import { memberDebugEnv } from '../config.js';
+import { handoffFenceSurfaces, memberDebugEnv } from '../config.js';
 
 import type { SnapshotResult } from './snapshot.js';
 import { runSnapshot } from './snapshot.js';
@@ -225,6 +226,18 @@ export interface VerifyRequest {
   readonly invoker?: KaneInvoker | undefined;
   /** State, handoff and snapshot reads and writes. Defaults to `node:fs`. */
   readonly fileSystem?: StateFileSystem | undefined;
+  /**
+   * The directory listing the snapshot's own projections enumerate, handed
+   * straight to `runSnapshot`. Defaults to `node:fs`.
+   *
+   * It is a second seam beside `fileSystem` because `StateFileSystem` reads files
+   * by path and cannot list a directory, while the runs, amendments and held-change
+   * projections all begin by enumerating one. Injecting `fileSystem` alone
+   * therefore redirects the reads and leaves the listing on real disk, which is a
+   * silent read of the developer's own `.kept/` from a test that believed it was
+   * hermetic. See `SnapshotRequest.readDirectory` for the fuller account.
+   */
+  readonly readDirectory?: ((path: string) => readonly string[]) | undefined;
   /** The plan cache and the `*_test.md` mtime walk. Defaults to `node:fs`. */
   readonly planFileSystem?: PlanFileSystem | undefined;
   /** `covers:` reads. Defaults to `nodeBaselineFileSystem(repoRoot)`. */
@@ -546,6 +559,9 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
   const plan = await readPlan({
     cwd: request.repoRoot,
     repoRoot: request.repoRoot,
+    // `corpus.root`, so the staleness walk looks where this repository's designed
+    // tests actually live rather than at a directory the engine invented (§20.1).
+    corpusRoot: request.config.corpus.root,
     sink,
     ...(request.invoker === undefined ? {} : { invoker: request.invoker }),
     ...(request.planFileSystem === undefined
@@ -871,10 +887,18 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
   }
 
   // ── 3 and 6. The guard. A crashed stream writes nothing, by construction. ──
+  //
+  // Through `outcomeFromInvocation` rather than as an object literal. The literal
+  // read `invocation.exitMeaning` verbatim and was therefore correct, but core's
+  // own doc comment says the pairing exists so the exit meaning is read from the
+  // result and never recomputed, which only holds while every caller goes through
+  // it. Three call sites spelling the pairing by hand made that a convention, and
+  // a convention is what the exit-3 rule cannot afford: an Assurance pause read as
+  // a failure overwrites good verdicts with red ones.
   const outcome: RunOutcome<typeof VERIFY_FAMILY> | null =
     invocation === null || stream === null
       ? null
-      : { runId, exitMeaning: invocation.exitMeaning, stream };
+      : outcomeFromInvocation(runId, invocation, stream);
 
   const applied =
     outcome === null
@@ -906,6 +930,7 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
   // ── 7. Handoff, then snapshot (R4.14). The handoff is written every run. ──
   const handoff = writeHandoff({
     repoRoot: request.repoRoot,
+    fences: handoffFenceSurfaces(request.config),
     runId,
     run: outcome,
     exitCode: invocation?.exitCode ?? null,
@@ -931,6 +956,9 @@ export async function runVerify(request: VerifyRequest): Promise<VerifyResult> {
     generatedAt: at,
     diagnostics: sink,
     ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+    // Both seams or neither. `fileSystem` alone redirects the projections' file
+    // reads and leaves their directory listings on real disk.
+    ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
   });
 
   sink.report({

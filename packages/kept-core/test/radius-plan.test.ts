@@ -2,6 +2,16 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+/**
+ * The corpus root these fixtures use.
+ *
+ * `plan.ts` used to declare `TEST_DOCUMENT_ROOT = 'tests'`. It is `corpus.root` in
+ * `Kept_Config` now (§20.1, R15.2), required on `readPlan` and on
+ * `newestTestDocument`, so a test states the directory it seeded rather than relying
+ * on the module having guessed the same one.
+ */
+const CORPUS_ROOT = 'tests';
+
 import {
   AGENT_FLAG,
   KaneInvoker,
@@ -11,7 +21,6 @@ import {
   PLAN_MAX_AGE_MS,
   PLAN_REFRESH_ARGV,
   PLAN_REFRESH_TIMEOUT_MS,
-  TEST_DOCUMENT_ROOT,
   contractFor,
   createDiagnosticSink,
   inMemoryPlanFileSystem,
@@ -155,6 +164,7 @@ describe('the plan refresh is an ExecutionTestrun invocation (§7.2, R3.5)', () 
   it('issues `testrun run --dry-run` with no NDJSON flag appended', async () => {
     const kane = stub({ lines: MIXED_LINES });
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs: fsWith(null),
@@ -190,6 +200,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ lines: MIXED_LINES });
     const fs = fsWith(null);
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -220,6 +231,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ lines: CRASHED_LINES });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -245,6 +257,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ lines: CRASHED_LINES, exitCode: 1 });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -264,6 +277,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ lines: [JSON.stringify({ type: 'testrun_done', status: 'passed' })] });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -278,6 +292,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
   it('answers null and says so when there is no cache and the refresh crashed', async () => {
     const kane = stub({ lines: CRASHED_LINES, exitCode: 1 });
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs: fsWith(null),
@@ -295,6 +310,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ lines: PREFLIGHT_LINES, exitCode: 2 });
     const fs = fsWith(null);
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -316,6 +332,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
     const kane = stub({ binary: null });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -330,7 +347,7 @@ describe('a plan is trusted when the refresh ended cleanly and carried one (§7.
 
   it('records that no invoker was supplied rather than pretending it refreshed', async () => {
     const sink = createDiagnosticSink();
-    const plan = await readPlan({ cwd: REPO, fs: fsWith(null), sink, now: () => NOW });
+    const plan = await readPlan({ corpusRoot: CORPUS_ROOT, cwd: REPO, fs: fsWith(null), sink, now: () => NOW });
 
     expect(plan).toBeNull();
     expect(sink.has(PLAN_DIAGNOSTIC_CODES.refreshUnavailable)).toBe(true);
@@ -385,11 +402,12 @@ describe('the three refresh triggers (§7.2)', () => {
   it('refreshes on a newly saved test document even inside the window', async () => {
     const previous = cachedPlan(1_000);
     const fs = fsWith(previous, {
-      [`${TEST_DOCUMENT_ROOT}/cart_subtotal_test.md`]: { text: '---\n---\n', mtimeMs: NOW },
+      [`${CORPUS_ROOT}/cart_subtotal_test.md`]: { text: '---\n---\n', mtimeMs: NOW },
     });
     const kane = stub({ lines: MIXED_LINES });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -404,11 +422,12 @@ describe('the three refresh triggers (§7.2)', () => {
   it('does not refresh a current cache at all', async () => {
     const previous = cachedPlan(1_000);
     const fs = fsWith(previous, {
-      [`${TEST_DOCUMENT_ROOT}/cart_subtotal_test.md`]: { text: '---\n---\n', mtimeMs: NOW - 5_000 },
+      [`${CORPUS_ROOT}/cart_subtotal_test.md`]: { text: '---\n---\n', mtimeMs: NOW - 5_000 },
     });
     const kane = stub({ lines: MIXED_LINES });
 
     const plan = await readPlan({
+      corpusRoot: CORPUS_ROOT,
       invoker: kane.invoker,
       cwd: REPO,
       fs,
@@ -427,8 +446,14 @@ describe('the three refresh triggers (§7.2)', () => {
       'tests/notes.md': { text: '', mtimeMs: 90 },
       'tests/node_modules/c_test.md': { text: '', mtimeMs: 99 },
     });
-    expect(newestTestDocument(fs)).toEqual({ path: 'tests/nested/b_test.md', mtimeMs: 40 });
-    expect(newestTestDocument(inMemoryPlanFileSystem({}))).toBeNull();
+    expect(newestTestDocument(fs, CORPUS_ROOT)).toEqual({
+      path: 'tests/nested/b_test.md',
+      mtimeMs: 40,
+    });
+    expect(newestTestDocument(inMemoryPlanFileSystem({}), CORPUS_ROOT)).toBeNull();
+    // A root that names no directory answers null rather than throwing, which is
+    // what makes the required argument safe to hand a host repository's config.
+    expect(newestTestDocument(fs, 'suite')).toBeNull();
   });
 
   it('discards a cache that is not the shape this version writes', async () => {
@@ -436,7 +461,14 @@ describe('the three refresh triggers (§7.2)', () => {
       [PLAN_FILE_RELATIVE_PATH]: { text: '{"members":[{"path":"tests/a_test.md"}]}' },
     });
     const kane = stub({ lines: MIXED_LINES });
-    await readPlan({ invoker: kane.invoker, cwd: REPO, fs, sink: kane.sink, now: () => NOW });
+    await readPlan({
+      corpusRoot: CORPUS_ROOT,
+      invoker: kane.invoker,
+      cwd: REPO,
+      fs,
+      sink: kane.sink,
+      now: () => NOW,
+    });
     expect(kane.sink.has(PLAN_DIAGNOSTIC_CODES.cacheMalformed)).toBe(true);
     expect(kane.argv).toHaveLength(1);
   });

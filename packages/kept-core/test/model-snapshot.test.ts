@@ -228,8 +228,127 @@ describe('Feature: kept, ledger snapshot schema (design §9.1)', () => {
     expect(LedgerSnapshotSchema.safeParse(runs).success).toBe(true);
   });
 
-  it('caps the run log so the committed file stays reviewable', () => {
-    expect(MAX_SNAPSHOT_RUNS).toBe(20);
+  describe('the run cap, which provenance raises rather than breaks (rule 7)', () => {
+    /** `count` runs with distinct ids, valid against the run schema. */
+    function runsOf(count: number): readonly Record<string, unknown>[] {
+      return Array.from({ length: count }, (_unused, index) => ({
+        id: `tr_${String(index).padStart(3, '0')}`,
+        family: 'ExecutionTestrun',
+        command: 'testrun run',
+        startedAt: null,
+        endedAt: AT,
+        durationMs: null,
+        exitCode: 0,
+        exitMeaning: 'success',
+        terminalSeen: true,
+        terminalEventType: 'testrun_done',
+        status: 'passed',
+        resultCode: null,
+        reasonCode: null,
+        credits: null,
+        verdictObject: null,
+        evidencePackId: null,
+        members: [],
+        diagnostics: [],
+      }));
+    }
+
+    it('caps the run log so the committed file stays reviewable', () => {
+      expect(MAX_SNAPSHOT_RUNS).toBe(20);
+      expect(
+        issuePaths(
+          broken((s) => {
+            s.runs = runsOf(MAX_SNAPSHOT_RUNS + 1) as never;
+          }),
+        ),
+        'a log longer than the cap, cited by nothing, is still refused',
+      ).toContain('runs');
+    });
+
+    it('accepts exactly the cap', () => {
+      const value = broken((s) => {
+        s.runs = runsOf(MAX_SNAPSHOT_RUNS) as never;
+      });
+      expect(issuePaths(value)).not.toContain('runs');
+    });
+
+    /**
+     * The scenario that used to make `kept snapshot` refuse to write and exit zero.
+     *
+     * The projection keeps every run a promise names as its verdict source, regardless of
+     * age, so that no verdict points at a run the file does not carry. A flat `max` on
+     * this field contradicted that outright: past the cap the two rules could not both
+     * hold, the self-check failed, the file was never written, the previously committed
+     * snapshot stood forever, and the command exited zero with nothing red anywhere. It
+     * is unreachable at thirteen promises and ordinary on a host repository that verifies
+     * twenty-one of them across separate runs.
+     *
+     * So the cap is raised to the cited count when the cited count is larger, and this
+     * asserts the raise rather than the absence of a bound: one run past the raised
+     * allowance is still refused, and it is refused naming `runs`.
+     */
+    it('raises the cap to the number of runs the promises cite', () => {
+      const cited = MAX_SNAPSHOT_RUNS + 5;
+      const withCitations = (count: number) =>
+        broken((s) => {
+          const runs = runsOf(count);
+          s.runs = runs as never;
+          // One promise per run, each citing its own, so the cited count is the log length.
+          const template = s.promises[0];
+          if (template === undefined) throw new Error('the fixture carries no promise to clone');
+          s.promises = runs.map((run, index) => ({
+            ...template,
+            id: `p_${String(index).padStart(12, '0')}`,
+            verdict: 'proven',
+            verdictSource: {
+              runId: String(run['id']),
+              terminalEventType: 'testrun_done',
+              at: AT,
+              memberStatus: 'passed',
+              resultCode: null,
+              reasonCode: null,
+            },
+            repair: null,
+            evidencePackId: null,
+          })) as never;
+          // The counts rule is independent of this one and would otherwise mask it.
+          s.metrics = {
+            totalPromises: count,
+            designedCount: count,
+            undesignedCount: 0,
+            provenCount: count,
+            redCount: 0,
+            staleCount: 0,
+            designedCoverage: 1,
+            provenCoverage: 1,
+          } as never;
+          s.edges = [] as never;
+          s.documents = [] as never;
+          s.coverageAxes = null as never;
+        });
+
+      expect(
+        issuePaths(withCitations(cited)),
+        'a log of cited runs longer than the flat cap must be accepted, or no verdict is openable',
+      ).not.toContain('runs');
+
+      // And it is still a cap: one uncited run past the raised allowance is refused.
+      const overrun = withCitations(cited) as unknown as { runs: unknown[] };
+      overrun.runs = [...overrun.runs, ...runsOf(1).map((run) => ({ ...run, id: 'tr_extra' }))];
+      expect(issuePaths(overrun)).toContain('runs');
+    });
+
+    it('names the arithmetic in the message, so a build says what to drop', () => {
+      const value = broken((s) => {
+        s.runs = runsOf(MAX_SNAPSHOT_RUNS + 2) as never;
+      });
+      const result = LedgerSnapshotSchema.safeParse(value);
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      const issue = result.error.issues.find((entry) => entry.path[0] === 'runs');
+      expect(issue?.message).toContain(`at most ${MAX_SNAPSHOT_RUNS} are allowed`);
+      expect(issue?.message).toContain('Drop the oldest run no promise cites.');
+    });
   });
 
   describe('explicit null, never undefined (design §9.1)', () => {

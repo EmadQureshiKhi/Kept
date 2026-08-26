@@ -1,49 +1,48 @@
 /**
- * `kept build` — both providers, one canonical graph, one state file
+ * `kept build`, both providers, one canonical graph, one state file
  * (design §5.4, §13.1, §14.1, R2.10, R2.12).
  *
  * Six steps, and the order is the design's:
  *
  * 1. **baseline** (`providers/baseline.ts`) scans `**\/*_test.md` and produces
- *    candidates. It cannot fail — `BaselineResult` types `ok` as the literal
- *    `true` — which is what makes the rest of this function safe to write without
+ *    candidates. It cannot fail, `BaselineResult` types `ok` as the literal
+ *    `true`, which is what makes the rest of this function safe to write without
  *    a fallback path for "no promises could be found at all".
- * 2. **targets** are derived from those candidates, so the coverage payload can
- *    be keyed to promises by the ids the records will actually have.
- * 3. **enrichment** (`providers/enrichment.ts`) invokes `cover --json` under the
- *    Assurance family with the budget from `.kept/config.json`. Absence, refusal,
- *    pause, crash and timeout all arrive as `ok: false` with their own
- *    `degradedReason` — never as a throw, never as a non-zero exit from `kept`.
+ * 2. the prior state is loaded, so the verdicts a verification run earned survive a
+ *    rebuild (step 4b) and so the freshness triple is carried rather than reset.
+ * 3. **enrichment** (`providers/enrichment.ts`) invokes `cover gaps --json` under
+ *    the Assurance family with the budget from `.kept/config.json`, and projects
+ *    the dual coverage axes out of its `gaps` payload (§5.3.0, R9.9). Absence,
+ *    refusal, pause, crash, timeout and an unreadable payload all arrive as
+ *    `ok: false` with their own `degradedReason`, never as a throw, never as a
+ *    non-zero exit from `kept`, and every one of them leaves the axes withheld.
  * 4. **merge** (`providers/merge.ts`) runs the citation gate over baseline's
  *    candidates, unions in enrichment's axes, defaults undesigned promises, and
  *    sets `degraded` from enrichment alone.
  * 5. **edges** are derived from the merged promises and the graph is rebuilt
  *    through `createPromiseGraph`, which is the single authority on canonical
  *    order.
- * 6. **state** is written through `state.ts` — the single write guard — and only
+ * 6. **state** is written through `state.ts`, the single write guard, and only
  *    through it.
  *
- * Step 6 is the one worth being explicit about. `kept build` does not write
- * verdicts: the enrichment provider's coverage overlays are applied by the merge,
- * behind that provider's own four-clause acceptance gate (§5.3). What this command
- * *can* move is **freshness**, because a `cover` run whose axes were accepted is a
- * terminal event consumed into the graph — which is what the Freshness_Timestamp
- * is defined as (R9.6). So the triple is moved by handing that invocation's
- * outcome to `applyRun` with an empty write list, and by nothing else.
+ * Step 6 is the one worth being explicit about. `kept build` writes **no verdict
+ * and no freshness**. It writes the graph, the carried verdicts and the coverage
+ * axes, and nothing else.
  *
- * Two conditions gate it, and both are load-bearing. `applyRun`'s own guard is the
- * necessary one: a crashed stream, a pause, a timeout or a force-interrupt returns
- * the prior state **by reference**, so the prior freshness stands by construction
- * rather than by an `if`. Enrichment *acceptance* is the additional one, and it is
- * narrower on purpose — a `cover` refusal is a **complete** stream (§5.3.1) whose
- * exit reads as `failure`, so the guard alone would authorise the move, and taking
- * it would advance the Ledger's "last verified" chip for a run that verified
- * nothing. §14.1 counts `freshness.terminalEventAt` among the things its refusal
- * rows leave unchanged, and this is where that is honoured.
+ * The freshness half used to be conditional: an accepted `cover` run was treated as
+ * a terminal event consumed into the graph, which is how R9.6 defines the
+ * Freshness_Timestamp. That was safe only because acceptance never happened,
+ * `cover --json` refused on every invocation here. `cover gaps` is accepted on every
+ * build, and it **verifies nothing**: it reads the assurance graph, and its proven
+ * axis is derived from execution facts whose `latest_run` is an *earlier* run. So
+ * advancing the Ledger's "last verified" chip on it would restate an old proof as
+ * new, which is the overstatement §14.1 keeps `freshness.terminalEventAt` out of.
+ * The triple therefore belongs to `kept verify`, whose runs prove things, and this
+ * command has nothing to contribute to it.
  *
  * The command's exit code is not a function of any of this. `degraded: true` with
- * `degradedReason: assurance-status:refused` — the honest state of a repository
- * with no `.context/` store — exits 0 (R2.10), and so does a missing `kane-cli`
+ * `degradedReason: assurance-status:refused`, the honest state of a repository
+ * with no `.context/` store, exits 0 (R2.10), and so does a missing `kane-cli`
  * (R2.12).
  */
 
@@ -51,14 +50,12 @@ import type {
   BaselineFileSystem,
   CitationSource,
   CollectingDiagnosticSink,
+  CoverageAxes,
   Diagnostic,
-  ExitMeaning,
   KaneInvoker,
   KeptState,
   MergeResult,
-  ParsedStream,
   ProviderResult,
-  RunOutcome,
   StateFileSystem,
   WriteRefusalReason,
 } from '@kept/core';
@@ -69,16 +66,12 @@ import {
   createKeptState,
   createPromiseGraph,
   createStateStore,
-  enrichmentTargetsFromCandidates,
-  isExitMeaning,
   mergeGraph,
+  readCoverageAxes,
 } from '@kept/core';
 
 import type { KeptConfig } from '../config.js';
 import { deriveEdges } from '../graph.js';
-
-/** The synthetic run id used when Kane reported none of its own. */
-export const SYNTHETIC_RUN_ID_PREFIX = 'kept-build:';
 
 /** Diagnostic codes this command reports. Stable; the Ledger keys off them. */
 export const BUILD_DIAGNOSTIC_CODES = Object.freeze({
@@ -127,27 +120,24 @@ export interface BuildResult {
   /** `!enrichment.ok`, and nothing else (§5.4 step 5). */
   readonly degraded: boolean;
   readonly degradedReasons: readonly string[];
-  /** True when the `cover` outcome was proven and freshness advanced. */
+  /**
+   * The dual coverage axes this run accepted, or null on every degraded path
+   * (R9.13, R9.14). Also written into the state file, which is what carries them
+   * across to `kept snapshot`.
+   */
+  readonly coverageAxes: CoverageAxes | null;
+  /**
+   * Always `false`. `kept build` moves no freshness at all, see step 6b: a
+   * `cover gaps` run reads the assurance graph and proves nothing, so the "last
+   * verified" chip is not its to advance. Kept on the result because the command
+   * reports it, and reporting `false` truthfully is better than dropping a field a
+   * reader has learned to look for.
+   */
   readonly freshnessMoved: boolean;
-  /** Why the freshness move was refused, when it was. Empty when it moved. */
+  /** Always empty: there is no freshness move to refuse. */
   readonly freshnessRefusals: readonly WriteRefusalReason[];
   /** Everything every step reported, in order. */
   readonly diagnostics: readonly Diagnostic[];
-}
-
-/**
- * Kane's own `run_id` for a completed Assurance stream, or null.
- *
- * Read through the event's index signature because `run_id` is not a declared
- * field of the `done` envelope — §5.3.1's verified capture carries
- * `{ type, v, verb, status, exit_code, message }` and nothing else — and an
- * invented field name would be a claim about the wire this repository has not
- * observed.
- */
-function kaneRunId(stream: ParsedStream<'Assurance'>): string | null {
-  if (stream.kind !== 'complete') return null;
-  const value = (stream.terminal as Record<string, unknown>)['run_id'];
-  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 /**
@@ -184,15 +174,26 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
   // claim and the admitted citation text came from the same bytes (§5.2).
   const baseline = await collectBaseline({
     repoRoot: request.repoRoot,
+    // `corpus.root` from the config, so the scan looks where this repository keeps
+    // its designed tests (§20.1, R15.9). The provider's own fallback is the
+    // repository root, which finds everything; what it no longer contains is a
+    // literal directory name that happened to be true here.
+    corpusRoot: request.config.corpus.root,
     diagnostics: sink,
     ...(request.citations === undefined ? {} : { citations: request.citations }),
     ...(request.baselineFileSystem === undefined ? {} : { fs: request.baselineFileSystem }),
   });
 
-  // ── 2 and 3. Enrichment, keyed to what baseline found. ────────────────────
+  // ── 2 and 3. Enrichment: the dual coverage axes, from the live graph. ──────
+  //
+  // No keying targets are derived any more, and that is a fact about the payload
+  // rather than a simplification. `cover gaps` reports use cases, not test
+  // documents: it carries no `test_id` and no path, so there is nothing a promise
+  // could be keyed by and no axis overlay to write (§5.3.0). The promise-level
+  // proven axis comes from real verification runs through the write guard of §4.8,
+  // which is where it always belonged.
   const enrichment = await createEnrichmentProvider({
     timeoutMs: request.config.timeouts.enrichmentMs,
-    targets: enrichmentTargetsFromCandidates(baseline.candidates),
   }).collect({
     repoRoot: request.repoRoot,
     diagnostics: sink,
@@ -214,7 +215,7 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
   // baseline scan reads claims out of Markdown and enrichment supplies coverage
   // axes. So a rebuilt promise arrives `stale`, with no `verdictSource`, no
   // repair, no pack and no credits. Writing that graph would mean `kept build`
-  // silently discarding every verdict `kept verify` earned — measured, not
+  // silently discarding every verdict `kept verify` earned, measured, not
   // theorised: a `--all` replay that had just written eight verdicts came back
   // eight times `stale` from the next `npm run build:snapshot` (15.3). The header
   // above and the two diagnostics below both promise that "every prior verdict is
@@ -224,7 +225,7 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
   // id is derived from the citation file plus the **normalised claim** and nothing
   // else, so an id that matches is the same sentence in the same file: the verdict
   // it earned is still about the thing being described. Edit the claim and the id
-  // changes, no prior record matches, and the new promise is `stale` — which is
+  // changes, no prior record matches, and the new promise is `stale`, which is
   // exactly right, because nothing has verified the new wording.
   const priorById = new Map(prior.graph.promises.map((promise) => [promise.id, promise]));
   const carried = merge.graph.promises.map((promise) => {
@@ -256,60 +257,53 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
 
   // ── 6. State, through the single write guard. ─────────────────────────────
   // Freshness carried forward first: it moves only if the guard says so, below.
-  const candidate = createKeptState({ updatedAt: at, freshness: prior.freshness, graph });
-  const stream = readEnrichmentStream(enrichment);
-  let state = candidate;
-  let freshnessMoved = false;
-  let freshnessRefusals: readonly WriteRefusalReason[] = [];
+  //
+  // The coverage axes are taken from **this** run and never carried forward from
+  // the prior state. `readCoverageAxes` answers null on every degraded path, so a
+  // refusal, a pause, a crash, a timeout or an unreadable payload clears the field
+  //, which is R9.13 at the persistence layer: axes from a previous run presented
+  // as current would be exactly the withheld figure filled in with a stale one.
+  const coverageAxes = enrichment.ok ? readCoverageAxes(enrichment) : null;
+  const candidate = createKeptState({
+    updatedAt: at,
+    freshness: prior.freshness,
+    graph,
+    coverageAxes,
+  });
+  // ── 6b. Freshness is held, in every case, and `cover gaps` is why. ─────────
+  //
+  // The freshness triple is what the Ledger's `last verified` chip renders, and a
+  // `cover gaps` run **verifies nothing**. It reads the assurance graph: its own
+  // proven axis is derived from `graph_execution_facts` and its
+  // `latest_run.execution_id` names an *earlier* run, the one that actually proved
+  // something. Advancing the chip to the instant we asked the question would
+  // restate that older proof as new, the exact overstatement §14.1 keeps
+  // `freshness.terminalEventAt` out of, and the reason the previous version of this
+  // code refused the move on every degraded path.
+  //
+  // What changed is that acceptance is now reachable. While `cover --json` refused
+  // on every invocation the accepting arm never ran, so an accepted-run freshness
+  // move looked harmless. With `cover gaps` accepted on every build it would fire
+  // every time, and "last verified" would come to mean "last built". So the move is
+  // gone rather than gated: the triple belongs to `kept verify`, whose runs prove
+  // things, and this command has nothing to contribute to it.
+  //
+  // `freshnessMoved` and `freshnessRefusals` stay on the result because `kept build`
+  // reports them; they are now constants, and that is the honest reading.
+  const state = candidate;
+  const freshnessMoved = false;
+  const freshnessRefusals: readonly WriteRefusalReason[] = [];
 
-  if (enrichment.ok && stream !== null) {
-    const outcome: RunOutcome<'Assurance'> = {
-      runId: kaneRunId(stream) ?? `${SYNTHETIC_RUN_ID_PREFIX}${at}`,
-      exitMeaning: readExitMeaning(enrichment),
-      stream,
-    };
-    // No writes: `kept build` moves no verdict. What it can move is the freshness
-    // triple, and only when the guard authorises it.
-    const applied = store.applyRun(candidate, { outcome, writes: [], at, sink });
-    state = applied.state;
-    freshnessMoved = applied.wrote;
-    freshnessRefusals = applied.refusals;
-    if (!applied.wrote) {
-      sink.report({
-        code: BUILD_DIAGNOSTIC_CODES.freshnessHeld,
-        severity: 'info',
-        message:
-          `The cover run did not prove an outcome (${applied.refusals.join(', ')}), so the ` +
-          `freshness triple stands at ` +
-          `${prior.freshness.terminalEventAt ?? 'never verified'} and every prior verdict is ` +
-          `preserved`,
-      });
-    }
-  } else {
-    // The requirements define the Freshness_Timestamp as the instant of the newest
-    // terminal event **consumed into the snapshot** (R9.6, and the glossary entry
-    // it draws on), and §14.1 counts `freshness.terminalEventAt` as one of the
-    // "verdicts" its refusal rows leave unchanged. A degraded enrichment run
-    // consumed nothing: its axes were discarded, so the graph below is baseline's
-    // alone and no terminal event entered it.
-    //
-    // That makes this arm strictly *narrower* than the write guard, deliberately.
-    // A `cover` refusal is a **complete** stream (§5.3.1) whose exit reads as
-    // `failure`, so the guard would authorise a write — and taking it would move
-    // the Ledger's "last verified" chip forward for a run that verified nothing,
-    // which is precisely the overstatement the ledger exists not to make. The
-    // guard stays the necessary condition; acceptance is the additional one.
-    sink.report({
-      code: BUILD_DIAGNOSTIC_CODES.freshnessHeld,
-      severity: 'info',
-      message:
-        `No terminal event was consumed into the graph` +
-        `${merge.degradedReasons.length > 0 ? ` (${merge.degradedReasons.join(', ')})` : ''}, so ` +
-        `the freshness triple stands at ` +
-        `${prior.freshness.terminalEventAt ?? 'never verified'} and every prior verdict is ` +
-        `preserved`,
-    });
-  }
+  sink.report({
+    code: BUILD_DIAGNOSTIC_CODES.freshnessHeld,
+    severity: 'info',
+    message:
+      `\`cover gaps\` reads the assurance graph and proves nothing` +
+      `${merge.degradedReasons.length > 0 ? ` (${merge.degradedReasons.join(', ')})` : ''}, so ` +
+      `the freshness triple stands at ` +
+      `${prior.freshness.terminalEventAt ?? 'never verified'} and every prior verdict is ` +
+      `preserved`,
+  });
 
   const written = store.save(state);
 
@@ -331,37 +325,9 @@ export async function runBuild(request: BuildRequest): Promise<BuildResult> {
     merge,
     degraded: merge.degraded,
     degradedReasons: merge.degradedReasons,
+    coverageAxes,
     freshnessMoved,
     freshnessRefusals,
     diagnostics: sink.entries,
   };
-}
-
-/**
- * The enrichment result's parsed stream, when it has one.
- *
- * `ProviderResult` does not declare `stream` — only `EnrichmentResult` does, and
- * the merge is deliberately blind to which implementation it holds (§5.1). So the
- * field is read through a widened view and validated structurally: a provider that
- * ran no process at all answers `null`, and there is then no outcome to hand the
- * guard, which is right — nothing was consumed, so nothing about freshness changed.
- */
-function readEnrichmentStream(result: ProviderResult): ParsedStream<'Assurance'> | null {
-  const value = (result as { readonly stream?: unknown }).stream;
-  if (typeof value !== 'object' || value === null) return null;
-  const stream = value as { readonly kind?: unknown; readonly family?: unknown };
-  if (stream.family !== 'Assurance') return null;
-  if (stream.kind !== 'complete' && stream.kind !== 'crashed') return null;
-  return value as ParsedStream<'Assurance'>;
-}
-
-/**
- * The enrichment result's exit meaning, already interpreted against the Assurance
- * family by the invoker (§4.5). Never recomputed here: interpreting the code a
- * second time would be a second place for the exit-3-is-a-pause rule to be got
- * wrong.
- */
-function readExitMeaning(result: ProviderResult): ExitMeaning {
-  const value = (result as { readonly exitMeaning?: unknown }).exitMeaning;
-  return isExitMeaning(value) ? value : 'kane-not-found';
 }

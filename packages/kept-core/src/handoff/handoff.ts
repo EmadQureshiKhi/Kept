@@ -33,12 +33,22 @@
  * `nextAction.allowedPaths` and `forbiddenPaths` are what make branch-specific
  * autonomy (§8.1) real rather than rhetorical.
  *
- * On `code-break` the product is wrong, so the agent may edit fixture source and
- * **nothing else**. Not the fixture's documentation — that would let the loop
- * "fix" a red promise by editing the claim, which is the precise dishonesty this
- * product exists to prevent. Not `tests/**`, where the Kane corpus lives — that
- * would let it weaken the test instead of fixing the bug. Not `apps/ledger/**`
- * or `packages/**` — KEPT's own code is never the repair target.
+ * On `code-break` the product is wrong, so the agent may edit the configured
+ * subject source and **nothing else**. Not the documentation the claim is written
+ * in — that would let the loop "fix" a red promise by editing the claim, which is
+ * the precise dishonesty this product exists to prevent. Not the corpus root,
+ * where the designed tests live — that would let it weaken the test instead of
+ * fixing the bug. Not the engine's own package roots — KEPT's code is never the
+ * repair target.
+ *
+ * Which paths those are is **not decided here** (§20.1, R15.2, R15.7). This module
+ * used to spell three fixture source globs, two fixture documentation paths, a
+ * corpus root and two package roots, every one of them a fact about a single
+ * repository sitting in a package a stranger installs. They arrive now as
+ * {@link FenceSurfaces}, resolved by the CLI from `.kept/config.json` and already
+ * past the intersection guard of §20.3. The dependency direction forces it as much
+ * as the design does: `kept-cli` depends on `kept-core`, so core cannot read the
+ * config and must be handed what it may not invent.
  *
  * On `test-drift` and `docs-lie` the fence is empty on the allowed side, because
  * §8.1 says those repairs are *held* and *never silent*: `kept evolve` produces a
@@ -127,43 +137,36 @@ export const HANDOFF_DIAGNOSTIC_CODE_VALUES: readonly string[] = Object.freeze(
 // ---------------------------------------------------------------------------
 
 /**
- * Fixture **source** — the only paths a `code-break` repair may touch.
+ * The two glob sets every fence in this module is made of, **resolved by the
+ * caller from `Kept_Config` and never spelled here** (design §20.1, R15.2, R15.7).
  *
- * The same three globs the code hook watches (§11.1), so the file the save
- * fired on is by construction inside the fence the handoff hands back.
- */
-export const FIXTURE_SOURCE_GLOBS: readonly string[] = Object.freeze([
-  'apps/fixture/app/**',
-  'apps/fixture/components/**',
-  'apps/fixture/lib/**',
-]);
-
-/**
- * Fixture **documentation** — where the promises are claimed.
+ * This module used to declare four constants: the three fixture source trees, the
+ * two fixture documentation paths, `tests/**` and KEPT's own package roots. All
+ * seven were facts about *one repository*, sitting in a package a host repository
+ * installs as a dependency, which made the fence table a lie the moment the engine
+ * ran anywhere else. They are now parameters, for a reason the dependency graph
+ * decides rather than taste: `handoff.ts` lives in `kept-core` and the config
+ * loader lives in `kept-cli`, so core *cannot* read the config. Values it must not
+ * invent have to arrive as arguments.
  *
- * Forbidden on `code-break`. A red promise means the product stopped doing what
- * the claim says; letting the agent edit the claim would make the README agree
- * with broken code, which is the one failure mode that would make the whole
- * ledger worthless.
+ * `allow` is `fences['code-break'].allow` as the loader resolved it — already past
+ * the intersection guard of §20.3, so by the time it reaches here it provably
+ * cannot reach the corpus or the documentation. `forbid` is `derivedForbidden`:
+ * the corpus root, every documentation glob, both package roots and every
+ * `subject.source` glob this branch was not granted.
+ *
+ * Both are required, everywhere, with no default in this module. A fail-closed
+ * `{ allow: [], forbid: [] }` default would be tempting and is exactly wrong: a
+ * caller that forgot to thread the config would silently hand the agent an empty
+ * fence, `code-break` would stop repairing anything, and the loop would look alive
+ * while doing nothing. A missing argument should be a compile error.
  */
-export const FIXTURE_DOC_GLOBS: readonly string[] = Object.freeze([
-  'apps/fixture/README.md',
-  'apps/fixture/docs/**',
-]);
-
-/**
- * The Kane designed-test corpus. Repository-root `tests/`, not
- * `apps/fixture/tests/` — that is where `kane-cli` authors and reads
- * `*_test.md`. Forbidden on every branch: an agent that can edit the test can
- * weaken the assertion instead of fixing the bug.
- */
-export const TEST_CORPUS_GLOBS: readonly string[] = Object.freeze(['tests/**']);
-
-/** KEPT's own code. Never the repair target, on any branch. */
-export const KEPT_OWN_GLOBS: readonly string[] = Object.freeze([
-  'apps/ledger/**',
-  'packages/**',
-]);
+export interface FenceSurfaces {
+  /** Globs a `code-break` repair may write. Empty means no autonomy is granted. */
+  readonly allow: readonly string[];
+  /** Globs no branch may ever write. Disjoint from `allow`, by derivation. */
+  readonly forbid: readonly string[];
+}
 
 /** What the agent is permitted to do about a branch — §8.1's Autonomy column. */
 export type HandoffAutonomy = 'apply' | 'hold' | 'propose' | 'none';
@@ -183,16 +186,30 @@ export interface HandoffFence {
 }
 
 /**
- * Everything an agent must not write when it is not repairing source: the whole
- * fixture, the corpus and KEPT itself. Used by the two held branches and by the
- * no-branch case, where the correct action is to report and change nothing.
+ * One row of §8.1's table: what a branch is permitted to do, what it produces,
+ * what the agent is told, and whether it is the branch that receives the
+ * configured allow set.
+ *
+ * **No glob appears here**, which is the whole point of the split. Autonomy,
+ * artefact and instruction are facts about the *mechanism* and are the same in
+ * every repository; the paths are facts about *this* repository and arrive as
+ * {@link FenceSurfaces}. `grantsAllow` is the one bit of the table that decides
+ * which side of that line a row falls on, and it is true for exactly one branch.
  */
-const EVERYTHING_FENCED: readonly string[] = Object.freeze([
-  ...FIXTURE_SOURCE_GLOBS,
-  ...FIXTURE_DOC_GLOBS,
-  ...TEST_CORPUS_GLOBS,
-  ...KEPT_OWN_GLOBS,
-]);
+export interface BranchFenceRow {
+  readonly autonomy: HandoffAutonomy;
+  readonly artefact: HandoffArtefact;
+  readonly instruction: string;
+  /**
+   * Whether this row is handed `surfaces.allow`. `code-break` only.
+   *
+   * §8.1 makes `test-drift` and `docs-lie` *held*, so their allowed side is empty
+   * regardless of what a configuration says — a user who writes an allow set under
+   * a held branch has expressed a wish the design already answered, and the loader
+   * reports it while this table keeps refusing it (§20.1, R15.7).
+   */
+  readonly grantsAllow: boolean;
+}
 
 /**
  * The fence table. Every branch-dependent autonomy fact is written here once,
@@ -205,19 +222,14 @@ const EVERYTHING_FENCED: readonly string[] = Object.freeze([
  * allowed, not an absent fence.
  */
 export const BRANCH_FENCES: {
-  readonly [B in RepairBranch | 'none']: HandoffFence;
+  readonly [B in RepairBranch | 'none']: BranchFenceRow;
 } = Object.freeze({
   'code-break': Object.freeze({
     autonomy: 'apply',
     artefact: 'patch',
     // Verbatim from design §11.2.
     instruction: 'Restore the behaviour the cited claim describes. Edit product source only.',
-    allowedPaths: FIXTURE_SOURCE_GLOBS,
-    forbiddenPaths: Object.freeze([
-      ...FIXTURE_DOC_GLOBS,
-      ...TEST_CORPUS_GLOBS,
-      ...KEPT_OWN_GLOBS,
-    ]),
+    grantsAllow: true,
   }),
   'test-drift': Object.freeze({
     autonomy: 'hold',
@@ -225,8 +237,7 @@ export const BRANCH_FENCES: {
     instruction:
       'The test mechanics drifted, not the product. Run the evolve command and stop: the ' +
       'proposed change is held as a review card for a human. Write no file yourself.',
-    allowedPaths: Object.freeze([]),
-    forbiddenPaths: EVERYTHING_FENCED,
+    grantsAllow: false,
   }),
   'docs-lie': Object.freeze({
     autonomy: 'propose',
@@ -235,8 +246,7 @@ export const BRANCH_FENCES: {
       'The documentation claims something the product never did. Run the amend command and ' +
       'stop: the replacement text is proposed as a rendered diff and is never written until a ' +
       'human accepts it. Never edit documentation directly.',
-    allowedPaths: Object.freeze([]),
-    forbiddenPaths: EVERYTHING_FENCED,
+    grantsAllow: false,
   }),
   none: Object.freeze({
     autonomy: 'none',
@@ -244,14 +254,55 @@ export const BRANCH_FENCES: {
     instruction:
       'This run proved nothing that can be repaired automatically. Report the diagnostics and ' +
       'change nothing.',
-    allowedPaths: Object.freeze([]),
-    forbiddenPaths: EVERYTHING_FENCED,
+    grantsAllow: false,
   }),
 });
 
-/** The fence for a branch, with `null` answering the `none` row. Total. */
-export function fenceFor(branch: RepairBranch | null): HandoffFence {
-  return BRANCH_FENCES[branch ?? 'none'];
+/** Deduplicate, preserving first-seen order, and freeze. */
+function globSet(globs: readonly string[]): readonly string[] {
+  const seen: string[] = [];
+  for (const glob of globs) {
+    if (glob.length > 0 && !seen.includes(glob)) seen.push(glob);
+  }
+  return Object.freeze(seen);
+}
+
+/**
+ * Compose one row against one repository's surfaces.
+ *
+ * The granted row gets `allow` on the allowed side and `forbid` on the other, with
+ * any glob that appears in both dropped from the forbidden side — disjointness is
+ * Property 26's clause and it must hold as *written*, not merely as intended, so it
+ * is enforced here rather than assumed of the loader.
+ *
+ * Every other row gets nothing allowed and **`forbid` unioned with `allow`**, which
+ * is what makes a withheld repair strictly narrower than a granted one: the globs
+ * the granted row would have handed over are named on the forbidden side instead.
+ */
+function composeFence(row: BranchFenceRow, surfaces: FenceSurfaces): HandoffFence {
+  const allow = globSet(surfaces.allow);
+  const forbid = globSet(surfaces.forbid);
+  return Object.freeze({
+    autonomy: row.autonomy,
+    artefact: row.artefact,
+    instruction: row.instruction,
+    allowedPaths: row.grantsAllow ? allow : Object.freeze([]),
+    forbiddenPaths: row.grantsAllow
+      ? Object.freeze(forbid.filter((glob) => !allow.includes(glob)))
+      : globSet([...forbid, ...allow]),
+  });
+}
+
+/**
+ * The fence for a branch against one repository's configured surfaces, with `null`
+ * answering the `none` row. Total.
+ *
+ * `surfaces` is required and there is no overload without it. That is the design
+ * decision of §20.1 made unforgeable: a default here would be the second home for
+ * the values the config is supposed to be the only home for.
+ */
+export function fenceFor(branch: RepairBranch | null, surfaces: FenceSurfaces): HandoffFence {
+  return composeFence(BRANCH_FENCES[branch ?? 'none'], surfaces);
 }
 
 /**
@@ -313,7 +364,7 @@ export function fenceFor(branch: RepairBranch | null): HandoffFence {
  * documentation may well be right and the product may well be at fault — a human
  * has to look). The instruction says which promise and why.
  */
-export const UNPROVEN_CODE_BREAK_FENCE: HandoffFence = Object.freeze({
+export const UNPROVEN_CODE_BREAK_ROW: BranchFenceRow = Object.freeze({
   autonomy: 'hold',
   artefact: null,
   instruction:
@@ -322,9 +373,21 @@ export const UNPROVEN_CODE_BREAK_FENCE: HandoffFence = Object.freeze({
     'and an automatic patch would be implementing the claim rather than repairing a ' +
     'regression. Report the diagnostics and change nothing. Automatic repair resumes for ' +
     'this promise once a verification has proven it once.',
-  allowedPaths: Object.freeze([]),
-  forbiddenPaths: EVERYTHING_FENCED,
+  grantsAllow: false,
 });
+
+/**
+ * The withheld `code-break` fence for one repository's surfaces.
+ *
+ * `grantsAllow: false` is doing all the work: {@link composeFence} empties the
+ * allowed side and moves the globs the granted row would have handed over onto the
+ * forbidden side. So the withheld fence is a strict narrowing of the granted one by
+ * construction, which is the direction Property 31 asserts, and no second list is
+ * maintained anywhere to make it so.
+ */
+export function unprovenCodeBreakFence(surfaces: FenceSurfaces): HandoffFence {
+  return composeFence(UNPROVEN_CODE_BREAK_ROW, surfaces);
+}
 
 /**
  * The prior verdict that earns a promise automatic repair. One value, named once,
@@ -339,9 +402,8 @@ export const AUTOMATIC_REPAIR_REQUIRES_VERDICT: Verdict = 'proven';
  * {@link AUTOMATIC_REPAIR_REQUIRES_VERDICT} before this run. "At least one" rather
  * than "all", deliberately: a radius can hold one regressed promise beside one that
  * was never proven, and restoring the regression is legitimate work that the second
- * promise's history has no standing to forbid. The fence is glob-scoped to fixture
- * source either way, so the grant widens nothing beyond the one branch that already
- * had it.
+ * promise's history has no standing to forbid. The fence is glob-scoped to the
+ * grant widens nothing beyond the one branch that already had it.
  *
  * Total, and `false` for every branch that is not `code-break` — those never had
  * automatic autonomy to grant.
@@ -361,7 +423,7 @@ export function grantsAutomaticRepair(
 /**
  * The fence this run actually hands back: {@link fenceFor} for every branch, except
  * a `code-break` whose promises KEPT has never proven, which gets
- * {@link UNPROVEN_CODE_BREAK_FENCE}.
+ * {@link unprovenCodeBreakFence}.
  *
  * This is the single site the handoff reads, so the condition cannot be forgotten by
  * a second caller — and `fenceFor` stays exactly what §8.1's table says, so a test
@@ -370,11 +432,12 @@ export function grantsAutomaticRepair(
 export function fenceForResults(
   branch: RepairBranch | null,
   results: readonly HandoffResult[],
+  surfaces: FenceSurfaces,
 ): HandoffFence {
   if (branch === 'code-break' && !grantsAutomaticRepair(branch, results)) {
-    return UNPROVEN_CODE_BREAK_FENCE;
+    return unprovenCodeBreakFence(surfaces);
   }
-  return fenceFor(branch);
+  return fenceFor(branch, surfaces);
 }
 
 /**
@@ -633,10 +696,21 @@ export interface HandoffResultInput {
   readonly evidence?: EvidenceListing | null;
 }
 
-/** What {@link buildHandoff} takes. Everything but `runId` has an honest default. */
+/**
+ * What {@link buildHandoff} takes. Everything but `runId` and `fences` has an
+ * honest default.
+ */
 export interface BuildHandoffRequest<F extends CommandFamily = CommandFamily> {
   /** Kane's `run_id`, or the synthetic id of the invocation. */
   readonly runId: string;
+  /**
+   * The repository's fence surfaces, from `Kept_Config` (§20.1, R15.7).
+   *
+   * Required, and deliberately not defaulted. A `{ allow: [], forbid: [] }` fallback
+   * would make a forgotten thread look like a repository that granted no autonomy,
+   * and the loop would go quiet instead of failing to compile.
+   */
+  readonly fences: FenceSurfaces;
   /**
    * The finished run: the exit meaning paired with the parsed stream. `null` or
    * absent means no process was started, which is a supported outcome and not a
@@ -872,7 +946,7 @@ export function buildHandoff<F extends CommandFamily = CommandFamily>(
   // §8.1.1: `code-break` keeps its branch and loses its write path when KEPT has
   // never proven the promise it would repair. `fenceForResults` is the only site
   // that decides it, so a second caller cannot forget the condition.
-  const fence = fenceForResults(branch, results);
+  const fence = fenceForResults(branch, results, request.fences);
 
   const nextAction: HandoffNextAction = {
     branch,

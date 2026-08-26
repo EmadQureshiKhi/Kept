@@ -354,6 +354,10 @@ export type {
   LedgerSnapshotShape,
   SnapshotAmendment,
   SnapshotArtifact,
+  SnapshotCoverageAxes,
+  SnapshotCoveragePending,
+  SnapshotCoverageRatio,
+  SnapshotCoverageRow,
   SnapshotDiagnostic,
   SnapshotDocument,
   SnapshotEdge,
@@ -377,6 +381,14 @@ export {
   SnapshotAmendmentSchema,
   SnapshotArtifactSchema,
   SnapshotCitationSchema,
+  SnapshotCoverageAxesSchema,
+  SnapshotCoverageAxisSchema,
+  SnapshotCoverageDesignAxisSchema,
+  SnapshotCoveragePendingSchema,
+  SnapshotCoverageProvenAxisSchema,
+  SnapshotCoverageRatioSchema,
+  SnapshotCoverageRowAxisSchema,
+  SnapshotCoverageRowSchema,
   SnapshotDesignedTestSchema,
   SnapshotDiagnosticSchema,
   SnapshotDocumentSchema,
@@ -631,14 +643,33 @@ export {
 // entry names a test document, and only baseline knows which claim a document
 // verifies. `coverageVerdict` returns **null** when the entry says nothing about
 // the proven axis, so an unrecognised payload shape can never move a verdict.
+//
+// The same file also holds the **`gaps`** projection (§5.3.0, R9.10, R9.11), which
+// is where the axes actually come from: `cover --json` reads its depth axis out of a
+// sealed pack and refuses on a replay pack, which is every pack this repository has,
+// so the singular projection above serves the repository whose packs *are* authored
+// and `projectGaps` serves this one. Percentages and `n/m` ratio strings are carried
+// **verbatim**, a figure this build cannot read is `null` and never `0`, rows are
+// ordered by risk band then identifier, and `pending[].readyCommand` is a literal
+// `kane-cli …` string published as **text** — the Ledger has no mutating route (§9,
+// R8.4) and a rendered control that spent credits would break that outright.
 export type {
+  CoverageAxes,
   CoverageAxesRequest,
   CoverageAxesResult,
+  CoverageAxisFigure,
   CoverageAxisTarget,
+  CoverageDesignAxis,
   CoverageEntry,
   CoverageMatch,
   CoverageMatchKind,
+  CoveragePendingItem,
   CoverageProjection,
+  CoverageProvenAxis,
+  CoverageRatio,
+  CoverageRow,
+  CoverageRowAxis,
+  GapsProjection,
 } from './providers/coverage.js';
 export {
   COVERAGE_DESIGNED_KEYS,
@@ -647,27 +678,45 @@ export {
   COVERAGE_PROVEN_KEYS,
   COVERAGE_PROVEN_STATUSES,
   COVERAGE_RED_STATUSES,
+  COVERAGE_RISK_BANDS,
   COVERAGE_STALE_STATUSES,
   COVERAGE_STATUS_KEYS,
   COVERAGE_TEST_ID_KEYS,
   COVERAGE_UNDESIGNED_STATUSES,
   MAX_COVERAGE_ENTRIES,
   MAX_COVERAGE_WALK_DEPTH,
+  MAX_GAPS_ROWS,
+  MAX_GAPS_WALK_DEPTH,
+  NO_COVERAGE_AXES,
+  NO_COVERAGE_RATIO,
+  UNKNOWN_RISK_RANK,
   buildCoverageAxes,
+  compareCoverageRowIds,
+  compareCoverageRows,
+  coverageAxesDenominator,
+  coverageRiskRank,
   coverageVerdict,
+  isCoverageAxes,
   normaliseCoveragePath,
   projectCoverage,
+  projectGaps,
+  readCoverageRatio,
+  readPercent,
 } from './providers/coverage.js';
 
-// The enrichment promise provider (3.7) — `cover`, gated on the Assurance `done`
-// event (design §5.3, §5.3.1, R2.5–R2.9, R2.12). It contributes exactly one thing,
-// the assurance axes, and deliberately no candidates and no citations at all:
+// The enrichment promise provider (3.7, 21.5) — `cover gaps`, gated on the Assurance
+// `done` event (design §5.3, §5.3.0, §5.3.1, R2.5–R2.9, R2.12, R9.9–R9.14). argv is
+// `['cover', 'gaps', '--json']`, because the singular `cover` reads its depth axis out
+// of a sealed Evidence_Pack and refuses at exit 2 on a **replay** pack, which is every
+// pack this repository seals; `cover gaps` answers the same two axes from the live
+// assurance graph. It contributes exactly one thing, the Coverage_Axes, and
+// deliberately no candidates and no citations at all:
 // §5.4 makes baseline the sole citation authority, and the cheapest way to
 // guarantee a Kane outage can never move a citation is for the outage-prone
 // provider to have none to move — so `candidates` is typed as the empty tuple.
 // The acceptance gate is conjunctive and narrow: `stream.kind === 'complete'`
 // **and** a `done` event **and** `terminal.status === 'complete'` **and** a
-// `coverage` payload that projects at least one entry. Every near-miss looks
+// `gaps` payload that projects at least one use-case row. Every near-miss looks
 // successful from one angle — a refusal is a *complete* stream (§5.3.1), a pause
 // exits 3 and is resumable, a crashed run may have emitted plenty of progress, an
 // empty payload parses perfectly — and accepting any of them publishes a proven
@@ -676,8 +725,10 @@ export {
 // string to tell a reviewer why they are looking at baseline data only: the
 // verified refusal answers `assurance-status:refused` plus a diagnostic quoting
 // Kane's own remedy ("run `context ingest`"), which a generic failure would have
-// thrown away. argv is `cover --json` and the `--mode agent` enabler is appended
-// by the invoker from the contract table, never restated here. The 60 s budget is
+// thrown away, and an unreadable payload answers `gaps-payload-unreadable` rather
+// than the `coverage-payload-unreadable` of a command this provider no longer runs.
+// The `--mode agent` enabler is appended by the invoker from the contract table,
+// never restated here. The 60 s budget is
 // **required and never defaulted** in this module: `timeouts.enrichmentMs` lives
 // in `.kept/config.json` and a default here would be a second home for it, which
 // is why the provider is a factory. Nothing throws: absence (R2.12), refusal,
@@ -698,6 +749,7 @@ export {
   ENRICHMENT_DIAGNOSTIC_CODE_VALUES,
   ENRICHMENT_FAMILY,
   ENRICHMENT_PROVIDER_NAME,
+  COVER_SINGULAR_ARGV,
   assuranceExitReason,
   assuranceStatusReason,
   collectEnrichment,
@@ -705,6 +757,7 @@ export {
   enrichmentTargetsFromCandidates,
   enrichmentTargetsFromPromises,
   normaliseAssuranceStatus,
+  readCoverageAxes,
 } from './providers/enrichment.js';
 
 // The canonical provider merge (3.8) — design §5.4, R1.7, R2.1, R5.5. Six rules,
@@ -886,8 +939,9 @@ export {
 // `context ingest` remedy) while a payload with no array of objects anywhere is
 // `listing-unreadable` — failing to read a store is not the same fact as reading
 // an empty one. Three failure reasons, each from its own observation: a
-// **complete** stream whose `done.status` is `refused` is `no-store`, which is
-// the live path in this repository today and is a refusal rather than a crash
+// **complete** stream whose `done.status` is `refused` is `no-store`, which was
+// the live path here until this repository grew a `.context/` store of its own,
+// and which stays the live path on any tree that has not, and is a refusal rather than a crash
 // (§5.3.1), so Kane's own remedy is quoted verbatim instead of being thrown away;
 // a stream that never reached `done` is `crashed-stream`; everything else that
 // left us without a listing — no invoker, no binary, our own timeout kill, a
@@ -946,9 +1000,10 @@ export {
 // plan event — **the previous cache is left exactly as it was**, unwritten and
 // undeleted, so a transient Kane hiccup cannot turn a working verify path into a
 // no-op. Staleness has three triggers (§7.2): missing or malformed, older than
-// `maxAgeMs` (ten minutes), or older than any `*_test.md` — the last read from the
-// repository-root `tests/` tree, because editing a test document changes what Kane
-// would run and a ten-minute window would hand `--from-context` a pre-edit set.
+// `maxAgeMs` (ten minutes), or older than any `*_test.md` — the last walked under
+// the host repository's own `corpus.root`, a required argument rather than a guessed
+// directory (§20.1), because editing a test document changes what Kane would run and
+// a ten-minute window would hand `--from-context` a pre-edit set.
 // `PlanMember.testId` is `string | null` and never blank, so "Kane has no id for
 // this document" has exactly one representation.
 export type {
@@ -970,7 +1025,6 @@ export {
   PLAN_MAX_AGE_MS,
   PLAN_REFRESH_ARGV,
   PLAN_REFRESH_TIMEOUT_MS,
-  TEST_DOCUMENT_ROOT,
   inMemoryPlanFileSystem,
   isTestrunPlan,
   newestTestDocument,
@@ -1039,12 +1093,16 @@ export {
 // itself when the caller supplied none, so a null branch with an empty
 // `diagnostics` is not expressible, and `isHandoffFile` re-checks it on the way
 // back in. **And the fence is by branch**, which is what makes §8.1's autonomy
-// table real: on `code-break` `allowedPaths` is the three fixture-source globs
-// and nothing else, while `forbiddenPaths` names the fixture documentation (or
-// the loop could "fix" a red promise by editing the claim — the exact dishonesty
-// this product exists to prevent), the repository-root `tests/**` corpus (or it
-// could weaken the assertion instead of the bug), and `apps/ledger/**` plus
-// `packages/**`, because KEPT's own code is never the repair target. `test-drift`
+// table real: on `code-break` `allowedPaths` is the configured subject source and
+// nothing else, while `forbiddenPaths` names the documentation the claim is written
+// in (or the loop could "fix" a red promise by editing the claim — the exact
+// dishonesty this product exists to prevent), the corpus root (or it could weaken
+// the assertion instead of the bug), and the engine's own package roots, because
+// KEPT's code is never the repair target. Which paths those are is **not decided
+// here**: §20.1 moved them into `Kept_Config` and they arrive as `FenceSurfaces`,
+// required on `fenceFor`, `fenceForResults` and `buildHandoff`, because `kept-cli`
+// depends on `kept-core` and so core cannot read the config it must not invent
+// values for. `test-drift`
 // and `docs-lie` fence with an **empty** allowed set, since §8.1 holds the one as
 // a review card and never writes the other silently; the difference between all
 // three is encoded three ways at once — in `allowedPaths`, in `autonomy` and
@@ -1064,6 +1122,8 @@ export type {
   BuildHandoffRequest,
   HandoffArtefact,
   HandoffArtifacts,
+  BranchFenceRow,
+  FenceSurfaces,
   HandoffAutonomy,
   HandoffBlastRadius,
   HandoffCommand,
@@ -1083,8 +1143,6 @@ export type {
 } from './handoff/handoff.js';
 export {
   BRANCH_FENCES,
-  FIXTURE_DOC_GLOBS,
-  FIXTURE_SOURCE_GLOBS,
   HANDOFF_DIAGNOSTIC_CODES,
   HANDOFF_DIAGNOSTIC_CODE_VALUES,
   HANDOFF_DIRECTORY_RELATIVE_PATH,
@@ -1092,9 +1150,7 @@ export {
   HANDOFF_HOOKS,
   HANDOFF_SCHEMA_VERSION,
   KEPT_LAUNCHER,
-  KEPT_OWN_GLOBS,
   NEXT_ACTION_BRANCH_PRECEDENCE,
-  TEST_CORPUS_GLOBS,
   buildHandoff,
   fenceFor,
   handoffArchiveFileName,
@@ -1532,9 +1588,10 @@ export {
 // Property 26's containment holds more strictly than before.
 export {
   AUTOMATIC_REPAIR_REQUIRES_VERDICT,
-  UNPROVEN_CODE_BREAK_FENCE,
+  UNPROVEN_CODE_BREAK_ROW,
   fenceForResults,
   grantsAutomaticRepair,
+  unprovenCodeBreakFence,
 } from './handoff/handoff.js';
 
 // What Kane actually seals, and what a sync client leaves beside it (§4.6, R4.13).

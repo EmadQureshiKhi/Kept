@@ -1,5 +1,7 @@
 import type { StateFileSystem } from '@kept/core';
 import { STATE_FILE_RELATIVE_PATH, inMemoryStateFileSystem, parseSnapshot } from '@kept/core';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK, EXIT_USAGE, KEPT_COMMANDS } from '../src/args.js';
@@ -67,13 +69,29 @@ describe('help and usage', () => {
   });
 
   it('names which commands this build implements', () => {
+    // `init` (task 24.1) and `doctor` (task 24.3) joined the list together, because
+    // they are the two halves of one thing: the surface a stranger meets before this
+    // repository has a config, a corpus or a snapshot (§21, A18).
+    //
+    // `watch` (task 21.8) is the loopback accept listener of §8.5. It is on this list
+    // because the command runs and reports; with no `NEXT_PUBLIC_KEPT_LOCAL=1` in the
+    // environment it binds nothing, which is the path every test in this file takes.
     expect([...IMPLEMENTED_COMMANDS]).toEqual([
+      'init',
       'build',
       'snapshot',
       'verify',
       'reconcile',
       'evolve',
       'amend',
+      'doctor',
+      'watch',
+      // `handoff` was the last one outstanding. It was advertised in the help text,
+      // dispatched nowhere, and its pending entry pointed at task 12.11, which is a
+      // completed test about hook schemas. Every piece it needed was already in
+      // `handoff/handoff.ts`, so implementing it was cheaper than the three false
+      // claims a reader could act on.
+      'handoff',
     ]);
     for (const command of IMPLEMENTED_COMMANDS) expect(USAGE).toContain(command);
   });
@@ -181,21 +199,46 @@ describe('the common flags reach the commands', () => {
   });
 
   it('honours --router for one invocation and warns on an unknown one', async () => {
-    const io = harness({
-      [`${REPO}/${CONFIG_FILE_RELATIVE_PATH}`]: JSON.stringify({
-        verdictRouter: 'resultCode740',
-        memberDebug: false,
-        timeouts: { hookMs: 300_000, enrichmentMs: 60_000 },
-      }),
-    });
-    expect(await io.run(['handoff', '--router', 'failureYamlTriage', '--json'])).toBe(EXIT_OK);
-    const payload = JSON.parse(io.out.join('')) as Record<string, unknown>;
-    expect(payload['router']).toBe('failureYamlTriage');
+    /**
+     * Driven through `kept doctor` rather than `kept handoff`.
+     *
+     * It used to use `handoff`, for the accidental reason that `handoff` was the one
+     * unimplemented command and `reportPending`'s payload happened to carry a `router`
+     * field. `handoff` is implemented now, and it reads a file rather than routing
+     * anything, so a `router` key in its output would have been noise kept alive only to
+     * satisfy this test.
+     *
+     * `doctor` is the honest vehicle and a better one: its second check reports the
+     * router **in force for this invocation**, and its own source comment explains that
+     * reporting the file's value instead would tell a reader the run used a router it did
+     * not use. So this now asserts the override where the override is actually observable.
+     */
+    function routerOf(out: readonly string[]): string {
+      const payload = JSON.parse(out.join('')) as {
+        readonly checks: readonly { readonly id: string; readonly detail: string }[];
+      };
+      const check = payload.checks.find((entry) => entry.id === 'configuration');
+      expect(check, 'kept doctor no longer reports a configuration check').toBeDefined();
+      const named = /'([A-Za-z0-9]+)' router/.exec(check?.detail ?? '');
+      expect(named, `no router named in: ${check?.detail ?? '(none)'}`).not.toBeNull();
+      return named?.[1] ?? '';
+    }
 
-    const bad = harness();
-    expect(await bad.run(['handoff', '--router', 'magic', '--json'])).toBe(EXIT_OK);
-    const badPayload = JSON.parse(bad.out.join('')) as Record<string, unknown>;
-    expect(badPayload['router']).toBe('resultCode740');
+    const config = JSON.stringify({
+      verdictRouter: 'resultCode740',
+      memberDebug: false,
+      timeouts: { hookMs: 300_000, enrichmentMs: 60_000 },
+    });
+
+    const io = harness({ [`${REPO}/${CONFIG_FILE_RELATIVE_PATH}`]: config });
+    expect(await io.run(['doctor', '--router', 'failureYamlTriage', '--json'])).toBe(EXIT_OK);
+    expect(routerOf(io.out)).toBe('failureYamlTriage');
+
+    // An unknown name is warned about and the configured one stands, rather than the
+    // run proceeding on a router nothing implements.
+    const bad = harness({ [`${REPO}/${CONFIG_FILE_RELATIVE_PATH}`]: config });
+    expect(await bad.run(['doctor', '--router', 'magic', '--json'])).toBe(EXIT_OK);
+    expect(routerOf(bad.out)).toBe('resultCode740');
   });
 
   it('resolves --repo relative to the working directory', async () => {
@@ -204,5 +247,112 @@ describe('the common flags reach the commands', () => {
     expect(
       io.fileSystem.readFile(`${REPO}/nested/${SNAPSHOT_FILE_RELATIVE_PATH}`),
     ).not.toBeNull();
+  });
+});
+
+/**
+ * `kept handoff` (design §13.1, R11.4, R11.7).
+ *
+ * The last command in the help text that did not dispatch. It was advertised, absent, and
+ * pointed anyone who ran it at task 12.11, a completed test about hook schemas, so the
+ * three claims a reader could act on were all false at once. These assertions are the ones
+ * whose absence let that stand: that it dispatches at all, that both spellings of the path
+ * are reachable, that a repository with no handoff is an ordinary state rather than an
+ * error, and that the printed bytes are the file rather than a summary of it.
+ */
+describe('kept handoff prints the record an agent acts on', () => {
+  /**
+   * A real handoff, re-idded.
+   *
+   * Read from `docs/kane/loop/green-57591bff.handoff.json`, which a live verification
+   * actually wrote, rather than hand-built. A hand-built one was tried first and did not
+   * satisfy `parseHandoff`, which is exactly the right outcome: a fixture that passes a
+   * validator the real writer's output would fail proves nothing about the command, and
+   * the temptation would then have been to loosen the validator.
+   */
+  const REAL_HANDOFF = readFileSync(
+    fileURLToPath(new URL('../../../docs/kane/loop/green-57591bff.handoff.json', import.meta.url)),
+    'utf8',
+  );
+
+  function handoffJson(runId: string): string {
+    const parsed = JSON.parse(REAL_HANDOFF) as Record<string, unknown>;
+    return `${JSON.stringify({ ...parsed, runId }, null, 2)}\n`;
+  }
+
+  it('is dispatched rather than reported as pending', async () => {
+    const io = harness({ [`${REPO}/.kept/handoff.json`]: handoffJson('run-newest') });
+    expect(await io.run(['handoff', '--json'])).toBe(EXIT_OK);
+    const payload = JSON.parse(io.out.join('')) as Record<string, unknown>;
+    expect(payload['command']).toBe('handoff');
+    // The claim that used to be false.
+    expect(payload['implemented']).toBe(true);
+    expect((payload['handoff'] as Record<string, unknown>)['runId']).toBe('run-newest');
+  });
+
+  it('reads the newest handoff with no argument and the archive with --run', async () => {
+    const io = harness({
+      [`${REPO}/.kept/handoff.json`]: handoffJson('run-newest'),
+      [`${REPO}/.kept/handoff/run-older.json`]: handoffJson('run-older'),
+    });
+
+    expect(await io.run(['handoff', '--json'])).toBe(EXIT_OK);
+    const newest = JSON.parse(io.out.join('')) as Record<string, unknown>;
+    expect((newest['handoff'] as Record<string, unknown>)['runId']).toBe('run-newest');
+    expect(newest['path']).toBe(`${REPO}/.kept/handoff.json`);
+
+    const archived = harness({
+      [`${REPO}/.kept/handoff.json`]: handoffJson('run-newest'),
+      [`${REPO}/.kept/handoff/run-older.json`]: handoffJson('run-older'),
+    });
+    expect(await archived.run(['handoff', '--run', 'run-older', '--json'])).toBe(EXIT_OK);
+    const older = JSON.parse(archived.out.join('')) as Record<string, unknown>;
+    // R11.7: the per-run copy is immutable, so asking for a run must never answer
+    // with the newest one, which is the mistake that would make the flag useless.
+    expect((older['handoff'] as Record<string, unknown>)['runId']).toBe('run-older');
+    expect(older['runId']).toBe('run-older');
+  });
+
+  it('prints the file itself, not a summary of it', async () => {
+    const text = handoffJson('run-newest');
+    const io = harness({ [`${REPO}/.kept/handoff.json`]: text });
+    expect(await io.run(['handoff'])).toBe(EXIT_OK);
+    // An agent needs the fence and the instruction exactly as written; a paraphrase
+    // would be a second, lossier spelling of a contract that already has one.
+    const printed = io.out.join('');
+    expect(JSON.parse(printed)).toEqual(JSON.parse(text));
+    expect(printed).toContain('"forbiddenPaths"');
+    expect(printed).toContain('"instruction"');
+  });
+
+  it('treats an absent handoff as an ordinary state and still exits 0', async () => {
+    const io = harness();
+    expect(await io.run(['handoff'])).toBe(EXIT_OK);
+    const printed = io.out.join('');
+    expect(printed).toContain('no handoff exists at');
+    expect(printed).toContain('ordinary state rather than a failure');
+    // Named rather than crashed, and the remedy is the command that makes one.
+    expect(printed).toContain('kept verify');
+  });
+
+  it('says so rather than throwing when the file is not a handoff', async () => {
+    const io = harness({ [`${REPO}/.kept/handoff.json`]: '{ "schemaVersion": 99 }\n' });
+    expect(await io.run(['handoff', '--json'])).toBe(EXIT_OK);
+    const payload = JSON.parse(io.out.join('')) as Record<string, unknown>;
+    expect(payload['handoff']).toBeNull();
+    expect(
+      (payload['diagnostics'] as readonly { readonly code: string }[]).map((d) => d.code),
+    ).toContain('handoff-absent');
+  });
+
+  it('spawns nothing and writes nothing, so a hook prompt can quote it', async () => {
+    // A handoff records a run that already happened. A command that re-ran anything to
+    // show it would turn the two agent hooks' read into a side effect.
+    const before = handoffJson('run-newest');
+    const io = harness({ [`${REPO}/.kept/handoff.json`]: before });
+    expect(await io.run(['handoff'])).toBe(EXIT_OK);
+    expect(io.fileSystem.readFile(`${REPO}/.kept/handoff.json`)).toBe(before);
+    expect(io.fileSystem.readFile(`${REPO}/${STATE_FILE_RELATIVE_PATH}`)).toBeNull();
+    expect(io.fileSystem.readFile(`${REPO}/${SNAPSHOT_FILE_RELATIVE_PATH}`)).toBeNull();
   });
 });

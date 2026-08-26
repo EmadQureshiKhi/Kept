@@ -312,6 +312,10 @@ function reconcileRefusal(options: {
     runId: options.runId,
     at: AT,
     repoRoot: REPO,
+    // A refusal carries no branch, so the fence is the `none` row whatever the
+    // surfaces are; they are required rather than defaulted so a forgotten thread
+    // fails to compile instead of silently emptying a real fence (§20.1).
+    fences: { allow: [], forbid: ['tests', 'apps/fixture/README.md', 'packages/**'] },
     fileSystem,
     trigger: { hook: 'kept-docs-reconcile', event: 'fileEdited', paths: [options.file] },
     // The family is recorded so `/runs` can say what *would* have run; `invoked`

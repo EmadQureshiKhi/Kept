@@ -26,6 +26,7 @@ import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG } from './fixture-config.js';
 import { IMPLEMENTED_COMMANDS, main } from '../src/main.js';
 import type { EvolveHelpObservation } from '../src/commands/evolve.js';
 import { clearEvolveHelpProbeCache, parseEvolveHelp } from '../src/commands/evolve.js';
@@ -58,20 +59,19 @@ import { runVerify } from '../src/commands/verify.js';
  *
  * ## Live rows and pending rows
  *
- * Five commands exist today and are asserted directly: `kept build`, the plan
- * refresh, `kept verify` in both scopes, `kept reconcile --changed`, and — since
- * task 14.2 — `kept evolve`. One does not exist yet: `kept doctor` is task 21.2,
- * and for it a skipped test that quietly passes would be worse than no test, since
- * the row it is meant to protect would land unprotected.
+ * Every command that spawns is now asserted at the process boundary: `kept build`,
+ * the plan refresh, `kept verify` in both scopes, `kept reconcile --changed`, and
+ * since task 14.2 `kept evolve`, and since task 24.3 `kept doctor`. There are no
+ * pending rows left.
  *
- * So each pending row is guarded two ways. {@link PENDING_ARGV} pins the argv
- * §13.1 requires, and a **live** assertion states that the command is not
- * implemented and spawns nothing at all. The moment either one lands, that
- * assertion fails loudly and its author is sent here to replace it with the real
- * process-boundary check beside the pinned argv. The `it.skip` body carries the
- * assertion to promote, so promoting it is a deletion and a rename. `kept evolve`
- * went through exactly that: its two pending guards are gone and the block below
- * asserts the effective argv instead.
+ * The mechanism that got them here is worth recording, because it worked twice. A
+ * pending row was guarded two ways: a pinned argv literal, and a **live** assertion
+ * that the command was not implemented and spawned nothing at all. A skipped test
+ * that quietly passes would have been worse than no test, since the row it protects
+ * would land unprotected. Instead the live assertion failed the moment the command
+ * started working, which sent its author here to replace the literal with a real
+ * boundary check. `kept evolve` went through it at task 14.2 and `kept doctor` at
+ * task 24.3.
  *
  * ## `kept evolve` needs a second seam injected, and that is the point
  *
@@ -140,10 +140,16 @@ function listingFor(entries: readonly (readonly [string, string])[]): readonly s
  * landed — its row is now asserted at the process boundary further down, which is
  * strictly stronger than a pinned literal.
  */
-const PENDING_ARGV = Object.freeze({
-  /** Task 21.2. No family, no enabler, a 10 s budget (§13.1). */
-  doctor: Object.freeze(['--version']),
-});
+/*
+ * `PENDING_ARGV` used to live here with one entry, `doctor: ['--version']`.
+ *
+ * It is gone because the row it protected landed in task 24.3, and the guard did its
+ * job: the live "not implemented, spawns nothing" assertion failed the moment the
+ * command started working, which sent its author here to replace a pinned literal
+ * with a real process-boundary check. That check is at the bottom of this file. The
+ * table is deliberately not left behind as an empty object, because a mechanism with
+ * no members is a mechanism the next reader has to work out is inert.
+ */
 
 /**
  * The evolve reference §13.1 spells `<testPath>`, and the promise that cites it.
@@ -320,7 +326,7 @@ function testDocuments(): TestDocumentSource {
 // kept build (§13.1, R3.4)
 // ---------------------------------------------------------------------------
 
-describe('kept build → cover --json --mode agent', () => {
+describe('kept build → cover gaps --json --mode agent', () => {
   it('issues exactly that argv, with the Assurance enabler appended by the invoker', async () => {
     const kane = recorder();
     const exitCode = await main(['build'], {
@@ -334,7 +340,12 @@ describe('kept build → cover --json --mode agent', () => {
     });
 
     expect(exitCode).toBe(EXIT_OK);
-    expect(spawnsOf(kane.spawns, 'cover')).toEqual([['cover', '--json', '--mode', 'agent']]);
+    // `gaps`, not the singular `cover` (§5.3.0, R9.9): `cover` reads its depth axis
+    // out of a sealed Evidence_Pack and refuses on a replay pack, which is every
+    // pack this repository seals, so it can never deliver the axes here.
+    expect(spawnsOf(kane.spawns, 'cover')).toEqual([
+      ['cover', 'gaps', '--json', '--mode', 'agent'],
+    ]);
     // `--agent` is `ExecutionRun`'s enabler. On this family it is simply wrong.
     for (const argv of kane.spawns) expect(argv).not.toContain('--agent');
   });
@@ -350,7 +361,7 @@ describe('the plan refresh → testrun run --dry-run, with no --agent', () => {
     // No cached plan, so the identifiers must be obtained first (§7.2, R4.4).
     await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       changed: ['apps/fixture/lib/cart.ts'],
       fileSystem: files(),
       planFileSystem: inMemoryPlanFileSystem({}),
@@ -384,7 +395,7 @@ describe('kept verify --changed → testrun run <plan members> --on-failure cont
     const kane = recorder();
     const result = await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       changed: ['apps/fixture/lib/cart.ts'],
       fileSystem: files(),
       planFileSystem: inMemoryPlanFileSystem({
@@ -428,7 +439,7 @@ describe('kept verify --all → testrun run <plan members> --on-failure continue
     const kane = recorder();
     await runVerify({
       repoRoot: REPO,
-      config: DEFAULT_CONFIG,
+      config: FIXTURE_CONFIG,
       all: true,
       fileSystem: files(),
       planFileSystem: inMemoryPlanFileSystem({
@@ -479,7 +490,7 @@ async function reconcile(options: {
   const kane = recorder(options.listing === undefined ? {} : { listing: options.listing });
   const result = await runReconcile({
     repoRoot: REPO,
-    config: DEFAULT_CONFIG,
+    config: FIXTURE_CONFIG,
     changed: options.changed,
     fileSystem: files(),
     baselineFileSystem: inMemoryBaselineFileSystem({}),
@@ -670,9 +681,15 @@ describe('kept evolve → maintain evolve <ref> --mode agent', () => {
   });
 });
 
-describe('kept doctor → --version (task 21.2, pending)', () => {
-  it('is not implemented yet, and spawns nothing — this fails the moment it lands', async () => {
-    expect(IMPLEMENTED_COMMANDS).not.toContain('doctor');
+describe('kept doctor → --version (task 24.3)', () => {
+  /**
+   * Promoted from the pending guard when task 24.3 landed, which is exactly what the
+   * guard existed to force. The pinned literal is gone: the argv is now asserted at
+   * the process boundary, which is strictly stronger than a constant agreeing with
+   * itself.
+   */
+  it('issues --version and nothing else, on no family and therefore no enabler', async () => {
+    expect(IMPLEMENTED_COMMANDS).toContain('doctor');
 
     const kane = recorder();
     const exitCode = await main(['doctor'], {
@@ -686,26 +703,29 @@ describe('kept doctor → --version (task 21.2, pending)', () => {
     });
 
     expect(exitCode).toBe(EXIT_OK);
-    expect(kane.spawns).toEqual([]);
+    // One spawn, and the whole argv. `--version` belongs to no family, so the
+    // invoker appends nothing: no `--mode agent`, no `--agent`, no piped-stdout
+    // enabler to speak of (§13.1, R18.2).
+    expect(kane.spawns).toEqual([['--version']]);
+    for (const spawn of kane.spawns) {
+      expect(spawn).not.toContain('--mode');
+      expect(spawn).not.toContain('agent');
+    }
   });
 
-  it('pins the argv §13.1 requires: no family, so no enabler', () => {
-    expect([...PENDING_ARGV.doctor]).toEqual(['--version']);
-    expect(PENDING_ARGV.doctor).not.toContain('--mode');
-    expect(PENDING_ARGV.doctor).not.toContain('--agent');
-  });
-
-  it.skip('promote when 21.2 lands: issues --version and nothing else', async () => {
+  it('exits 0 with no Kane boundary at all, having spawned nothing (R18.8, R2.12)', async () => {
     const kane = recorder();
-    await main(['doctor'], {
+    const exitCode = await main(['doctor'], {
       write: () => undefined,
       writeError: () => undefined,
       cwd: REPO,
       env: {},
       fileSystem: files(),
       now: () => new Date(AT),
-      invoker: kane.invoker,
+      kane: false,
     });
-    expect(kane.spawns).toEqual([['--version']]);
+
+    expect(exitCode).toBe(EXIT_OK);
+    expect(kane.spawns).toEqual([]);
   });
 });

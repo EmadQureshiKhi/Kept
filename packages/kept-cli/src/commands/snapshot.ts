@@ -78,10 +78,13 @@ import {
   evidencePackIdFromRef,
   isMemberStatus,
   listAmendments,
+  listReviewCards,
   nodeStateFileSystem,
   parseHandoff,
   readPackEntries,
   toSnapshotAmendment,
+  toSnapshotReviewCard,
+  REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
 } from '@kept/core';
 
 import { joinPath } from '../config.js';
@@ -621,6 +624,46 @@ export function collectAmendments(request: {
   return Object.freeze(amendments.map(toSnapshotAmendment));
 }
 
+/**
+ * Every held change in `.kept/review-cards/`, in the snapshot's own shape.
+ *
+ * **This projection was missing, and its absence was the reason `/reviews` could not
+ * render a held change through the CLI at all.** `listReviewCards` was written,
+ * exported and unit-tested, and its own doc comment says it "is the seam
+ * `kept snapshot` fills its `reviewCards` field from and `/reviews` renders". Nothing
+ * called it. `runSnapshot` accepted `reviewCards` only as a request field, and the two
+ * commands that produce cards, `reconcile` and `evolve`, did not pass it, so the
+ * snapshot wrote `[]` on every path a human could reach.
+ *
+ * It was found by running the docs-triggered loop live (task 22.2): a documentation
+ * edit made Kane stage nine changes, KEPT mirrored nine cards into `.kept/review-cards/`,
+ * the reconcile output reported nine, and the snapshot it wrote in the same second
+ * carried none. Every unit test passed, because each half was correct on its own and
+ * no test asserted the composition. That is the same shape as the undeclared `yaml`
+ * and `zod` dependencies of `@kept/core`, and it is the third time in this repository
+ * that the defect has been in the wiring rather than in a part.
+ *
+ * Symmetric with {@link collectAmendments} deliberately: omit the field and the store
+ * is read, pass it, even as `[]`, and no directory is touched. A held change nobody
+ * can see is not held, it is lost, and the ledger's whole claim is that it shows what
+ * it owes.
+ */
+function collectReviewCards(request: {
+  readonly repoRoot: string;
+  readonly fileSystem?: StateFileSystem | undefined;
+  readonly readDirectory?: DirectoryReader | undefined;
+  readonly diagnostics?: DiagnosticSink | undefined;
+}): readonly SnapshotReviewCard[] {
+  const cards = listReviewCards(request.repoRoot, {
+    ...(request.fileSystem === undefined ? {} : { fileSystem: request.fileSystem }),
+    ...(request.readDirectory === undefined
+      ? {}
+      : { readDirectory: request.readDirectory as (path: string) => readonly string[] }),
+    ...(request.diagnostics === undefined ? {} : { diagnostics: request.diagnostics }),
+  });
+  return Object.freeze(cards.map(toSnapshotReviewCard));
+}
+
 /* ──────────────────────────────── the command ──────────────────────────────── */
 
 /** {@link runSnapshot}'s input. Every seam has a production default. */
@@ -635,6 +678,13 @@ export interface SnapshotRequest {
    */
   readonly state?: KeptState | undefined;
   readonly generatedAt?: string | undefined;
+  /**
+   * `kane-cli --version`, passed straight to `buildSnapshot`. **Nothing passes it**,
+   * so `generator.kaneCli` reads `null` in every committed snapshot; the seam is
+   * here rather than a probe because this command invokes no Kane at all. The
+   * reason it is a documented gap rather than a wiring job is written at
+   * `BuildSnapshotRequest.kaneCliVersion` in `../snapshot.js`.
+   */
   readonly kaneCliVersion?: string | null | undefined;
   /**
    * Curated packs. Omit it and the command curates the packs the graph references
@@ -652,10 +702,41 @@ export interface SnapshotRequest {
    * a state without reading the persisted handoffs.
    */
   readonly runs?: readonly SnapshotRun[] | undefined;
+  /**
+   * Held changes. Omit it and the command reads `.kept/review-cards/`.
+   *
+   * That sentence was not true until task 22.2: the field existed, nothing filled it
+   * from the store, and the two commands that produce cards did not pass it, so
+   * `/reviews` rendered nothing however many changes were held. See
+   * {@link collectReviewCards}.
+   */
   readonly reviewCards?: readonly SnapshotReviewCard[] | undefined;
   /** Staged amendments. Omit it and the command reads `.kept/amendments/`. */
   readonly amendments?: readonly SnapshotAmendment[] | undefined;
-  /** Directory listing for both projections above. Defaults to `node:fs`. */
+  /**
+   * Directory listing for all three projections above. Defaults to `node:fs`.
+   *
+   * **This is a second seam, and it has to be, which is why omitting it is a
+   * trap.** `fileSystem` is a `StateFileSystem`: it reads and writes whole files
+   * by path, and it has no way to answer "what is in this directory", because
+   * nothing else in the product needs it to. The three projections start by
+   * *enumerating* `.kept/handoff/`, `.kept/amendments/` and `.kept/review-cards/`,
+   * so they need a listing seam that `fileSystem` cannot provide. Two seams for
+   * one store is the cost of that, and the cost is paid at every call site.
+   *
+   * The trap is that injecting only `fileSystem` looks like it isolated the run
+   * and did not. The reads are redirected into the seeded map while the listing
+   * stays on real disk, so the projection enumerates the developer's own
+   * `.kept/handoff/`, tries to read each name it found out of a map that has none
+   * of them, and reports one `snapshot-run-unreadable` warning per real file. The
+   * count tracks whatever is on that machine: 27 on the machine this was found
+   * on, 0 on a fresh clone. Nothing fails, because nothing asserted on the exact
+   * diagnostic list, and the moment something does the test is machine-dependent.
+   *
+   * So a caller that injects `fileSystem` must inject `readDirectory` too, and a
+   * caller that threads one down to `runSnapshot` must thread both. Every request
+   * type on the way here declares the field for that reason.
+   */
   readonly readDirectory?: DirectoryReader | undefined;
   readonly diagnostics?: CollectingDiagnosticSink | undefined;
 }
@@ -733,16 +814,76 @@ export function runSnapshot(request: SnapshotRequest): SnapshotResult {
       diagnostics: sink,
       ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
     });
-  if (request.runs === undefined || request.amendments === undefined) {
+  const reviewCards =
+    request.reviewCards ??
+    collectReviewCards({
+      repoRoot: request.repoRoot,
+      fileSystem,
+      diagnostics: sink,
+      ...(request.readDirectory === undefined ? {} : { readDirectory: request.readDirectory }),
+    });
+  if (
+    request.runs === undefined ||
+    request.amendments === undefined ||
+    request.reviewCards === undefined
+  ) {
+    // The diagnostic fires when **any** of the three fields was omitted, and it used
+    // to close by asserting "All three are projections of persisted records" while
+    // printing a caller-supplied count for whichever field was passed. On the
+    // partial case that sentence was false about the very number beside it: a
+    // caller passing `runs: []` and omitting the other two got a line claiming the
+    // run count came off `.kept/handoff/` when nothing had listed that directory.
+    // Only a caller can reach the partial case, so this was latent rather than
+    // live, and a latent false statement is still the thing this command exists to
+    // refuse. Each field now says which of the two it was, and the closing sentence
+    // is scoped to the fields that really were read.
+    const clause = (
+      count: number,
+      noun: string,
+      directory: string,
+      projected: boolean,
+    ): string =>
+      `${count} ${noun}${count === 1 ? '' : 's'} ` +
+      (projected
+        ? `from ${directory}/`
+        : `supplied by the caller rather than read from ${directory}/`);
+    const projectedFrom: string[] = [];
+    if (request.runs === undefined) projectedFrom.push(`${HANDOFF_DIRECTORY_RELATIVE_PATH}/`);
+    if (request.amendments === undefined) projectedFrom.push('.kept/amendments/');
+    if (request.reviewCards === undefined) {
+      projectedFrom.push(`${REVIEW_CARDS_DIRECTORY_RELATIVE_PATH}/`);
+    }
+    const allThree = projectedFrom.length === 3;
+    const clauses = [
+      clause(
+        runs.length,
+        'terminal event',
+        HANDOFF_DIRECTORY_RELATIVE_PATH,
+        request.runs === undefined,
+      ),
+      clause(amendments.length, 'amendment', '.kept/amendments', request.amendments === undefined),
+      clause(
+        reviewCards.length,
+        'held change',
+        REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
+        request.reviewCards === undefined,
+      ),
+    ];
+
     sink.report({
       code: SNAPSHOT_COMMAND_DIAGNOSTIC_CODES.recordsProjected,
       severity: 'info',
       message:
-        `kept snapshot: projected ${runs.length} terminal event` +
-        `${runs.length === 1 ? '' : 's'} from ${HANDOFF_DIRECTORY_RELATIVE_PATH}/ and ` +
-        `${amendments.length} amendment${amendments.length === 1 ? '' : 's'} from ` +
-        `.kept/amendments/. Both are projections of persisted records; neither is a source ` +
-        `of truth this command invents.`,
+        // `projected` leads the sentence only when all three were, because it is a
+        // verb this command has to have earned for every count that follows it.
+        `kept snapshot: ${allThree ? 'projected ' : ''}` +
+        `${clauses.slice(0, -1).join(', ')} and ${clauses[clauses.length - 1] as string}. ` +
+        `${
+          allThree
+            ? 'All three are projections of persisted records; none is'
+            : `What was read off ${projectedFrom.join(' and ')} is a projection of persisted ` +
+              `records, and none of the three is`
+        } a source of truth this command invents.`,
       file: null,
     });
   }
@@ -753,9 +894,9 @@ export function runSnapshot(request: SnapshotRequest): SnapshotResult {
     evidence,
     runs,
     amendments,
+    reviewCards,
     ...(request.generatedAt === undefined ? {} : { generatedAt: request.generatedAt }),
     ...(request.kaneCliVersion === undefined ? {} : { kaneCliVersion: request.kaneCliVersion }),
-    ...(request.reviewCards === undefined ? {} : { reviewCards: request.reviewCards }),
   });
 
   if (!built.valid) {

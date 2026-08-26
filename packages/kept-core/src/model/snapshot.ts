@@ -415,6 +415,118 @@ export const SnapshotMetricsSchema = z.strictObject({
   provenCoverage: coverageField,
 });
 
+/* ── the Coverage_Axes (R9.10 through R9.15) ────────────────────────────────── */
+
+/**
+ * An `n/m` ratio, verbatim beside the pair it parses to (R9.10).
+ *
+ * `text` may be present with both numbers null: the string is what Kane said, and
+ * refusing to carry it because this build could not parse it would lose information
+ * for no gain. `denominator` is at least 1 when present, so nothing downstream can
+ * reach a division by zero.
+ */
+export const SnapshotCoverageRatioSchema = z.strictObject({
+  text: z.string().min(1).nullable(),
+  numerator: nonNegativeInt.nullable(),
+  denominator: z.number().int().min(1).nullable(),
+});
+
+/**
+ * One axis of the ribbon: a whole-number percentage and its ratio.
+ *
+ * A **percentage** here, not a ratio in `[0, 1]`, unlike `metrics.designedCoverage`
+ * and `metrics.provenCoverage`, which are ratios the badge rounds at render time.
+ * The difference is deliberate and it is the point of R9.15: these two figures are
+ * read verbatim out of Kane's payload and are not KEPT's own division, so storing
+ * them in KEPT's units would mean converting a number this build did not compute.
+ * `pct` is null when the payload carried nothing readable, never `0`.
+ */
+export const SnapshotCoverageAxisSchema = z.strictObject({
+  pct: z.number().min(0).max(100).nullable(),
+  ratio: SnapshotCoverageRatioSchema,
+});
+
+/**
+ * The design-completeness axis, with the two figures that make it debt.
+ *
+ * `usecasesComplete` reads `1/9` on this repository and `ucsNeedingScenarios` reads
+ * `8`. Both are carried because `acs_designed: 6/6` alone would report 100% of the
+ * acceptance criteria that exist and say nothing about the eight use-case designs
+ * the graph still owes. A ledger that shows what it owes is the product.
+ */
+export const SnapshotCoverageDesignAxisSchema = SnapshotCoverageAxisSchema.extend({
+  usecasesComplete: SnapshotCoverageRatioSchema,
+  ucsNeedingScenarios: nonNegativeInt.nullable(),
+});
+
+/**
+ * The proven axis: **acceptance criteria Kane's graph holds execution facts for.**
+ *
+ * Not promises. `metrics.provenCoverage` counts promises this repository verified,
+ * over a different denominator and about different objects. `source` and
+ * `denominatorBasis` are carried verbatim, `graph_execution_facts` over
+ * `current_live_acs`, so the page can state what the figure counts rather than
+ * leaving a reader to assume it is the other one (R9.15).
+ */
+export const SnapshotCoverageProvenAxisSchema = SnapshotCoverageAxisSchema.extend({
+  failing: nonNegativeInt.nullable(),
+  blocked: nonNegativeInt.nullable(),
+  notRun: nonNegativeInt.nullable(),
+  latestRunExecutionId: z.string().min(1).nullable(),
+  source: z.string().min(1).nullable(),
+  denominatorBasis: z.string().min(1).nullable(),
+});
+
+/**
+ * One pending item on a use-case row (R9.11).
+ *
+ * `readyCommand` is a literal `kane-cli …` string Kane composed. It is carried as
+ * **text** and the Ledger renders it as text: the deployed app has no mutating route
+ * (§9, R8.4), and a rendered control that spent credits would break that outright.
+ */
+export const SnapshotCoveragePendingSchema = z.strictObject({
+  kind: z.string().min(1).nullable(),
+  why: z.string().min(1).nullable(),
+  risk: z.string().min(1).nullable(),
+  stage: z.string().min(1).nullable(),
+  tag: z.string().min(1).nullable(),
+  /** Text only, never a control. */
+  readyCommand: z.string().min(1).nullable(),
+});
+
+/** A per-use-case axis: the percentage and the word Kane put on it. */
+export const SnapshotCoverageRowAxisSchema = z.strictObject({
+  pct: z.number().min(0).max(100).nullable(),
+  status: z.string().min(1).nullable(),
+});
+
+/** One row of the ribbon (R9.11). Ordered by risk band then identifier (R9.12). */
+export const SnapshotCoverageRowSchema = z.strictObject({
+  id: z.string().min(1),
+  title: z.string(),
+  risk: z.string().min(1).nullable(),
+  riskRank: nonNegativeInt,
+  designCompleteness: SnapshotCoverageRowAxisSchema,
+  proven: SnapshotCoverageRowAxisSchema,
+  staleAcs: nonNegativeInt.nullable(),
+  pending: z.array(SnapshotCoveragePendingSchema),
+});
+
+/**
+ * The Coverage_Axes as the shareable page renders them, with Kane invoked zero
+ * times (R9.14).
+ *
+ * `rows` is `.min(1)`: an axis block with no rows is exactly the state R9.13 calls
+ * *withheld*, and the field is `null` for it. An empty ribbon reads as "nothing
+ * owed", which on this repository would be false, so the schema makes it
+ * unrepresentable rather than leaving it to a render-time check.
+ */
+export const SnapshotCoverageAxesSchema = z.strictObject({
+  designCompleteness: SnapshotCoverageDesignAxisSchema,
+  proven: SnapshotCoverageProvenAxisSchema,
+  rows: z.array(SnapshotCoverageRowSchema).min(1),
+});
+
 /** Which `kept` and which `kane-cli` produced the file. */
 export const SnapshotGeneratorSchema = z.strictObject({
   kept: z.string().min(1),
@@ -430,11 +542,41 @@ const LedgerSnapshotShape = z.strictObject({
   degradedReasons: z.array(z.string().min(1)),
   freshness: SnapshotFreshnessSchema,
   metrics: SnapshotMetricsSchema,
+  /**
+   * The dual coverage axes from `cover gaps`, or `null` when they were withheld
+   * (R9.13, R9.14).
+   *
+   * `.optional()` as well as `.nullable()`, which breaks this module's own
+   * explicit-null rule, and the exception is the same one `evidence[].packId` took:
+   * a snapshot written before the field existed is a file this build must still be
+   * able to read, and the alternative is a Ledger that fails its build on a
+   * previously valid committed file. Every snapshot `kept snapshot` writes from here
+   * on carries the key, `null` included, so the absent case is a migration path
+   * rather than a state the writer can produce.
+   */
+  coverageAxes: SnapshotCoverageAxesSchema.nullable().optional(),
   promises: z.array(SnapshotPromiseSchema),
   edges: z.array(SnapshotEdgeSchema),
   documents: z.array(SnapshotDocumentSchema),
   evidence: z.array(SnapshotEvidenceSchema),
-  runs: z.array(SnapshotRunSchema).max(MAX_SNAPSHOT_RUNS),
+  /**
+   * The terminal-event log. Capped, but the cap is checked as a cross-field rule in
+   * {@link checkRunCap} rather than declared here, because it is not a flat bound.
+   *
+   * It was `.max(MAX_SNAPSHOT_RUNS)`, and that flatly contradicted the retention rule
+   * the projection applies: every run a promise names as its verdict source is kept
+   * regardless of age, so that no verdict points at a run the file does not carry. On a
+   * repository with more cited runs than the cap, the two rules cannot both hold, and
+   * the failure was silent in the worst way. `kept snapshot` would assemble the file,
+   * fail its own schema check, decline to write, print an error diagnostic and **exit
+   * zero**, so the previously committed snapshot would stand forever and the deployed
+   * page would serve stale data with nothing red anywhere.
+   *
+   * Unreachable here at thirteen promises. Reachable on any host repository that
+   * verifies twenty-one promises across separate runs, which is the ordinary case for
+   * the portability stages 23 to 26 exist to support.
+   */
+  runs: z.array(SnapshotRunSchema),
   reviewCards: z.array(SnapshotReviewCardSchema),
   amendments: z.array(SnapshotAmendmentSchema),
   diagnostics: z.array(SnapshotDiagnosticSchema),
@@ -769,11 +911,103 @@ function checkFreshness(snapshot: LedgerSnapshotShape, ctx: RefinementContext): 
 }
 
 /**
+ * Rule 6, the Coverage_Axes are present exactly when the graph is not degraded,
+ * and both axis ratios agree on one live acceptance-criteria count (R9.13, R9.15).
+ *
+ * The first half is R9.13 made structural. `degraded` is `!enrichment.ok` and the
+ * axes come from that same provider's accepting path, so the two cannot honestly
+ * disagree: a degraded snapshot carrying axes would be publishing figures from a run
+ * whose outcome was discarded, and a clean snapshot with no axes would be withholding
+ * figures it has. Both are caught here rather than at the render, where the failure
+ * mode is a page that reads as "nothing owed".
+ *
+ * The second half is the one way a *dual*-axis ribbon can mislead while every single
+ * figure in it is right: two ratios shown side by side over different denominators
+ * are measuring different populations. `6/6` designed against `6/6` proven is one
+ * population of six live acceptance criteria; `6/6` against `6/8` would not be, and
+ * the ribbon has no way to say so. A denominator this build could not parse is not a
+ * violation, the ratio string is still carried verbatim and the provider has already
+ * said it claims no shared count.
+ */
+function checkCoverageAxes(snapshot: LedgerSnapshotShape, ctx: RefinementContext): void {
+  const axes = snapshot.coverageAxes ?? null;
+  if (snapshot.degraded && axes !== null) {
+    violation(
+      ctx,
+      ['coverageAxes'],
+      'expected null because degraded is true: R9.13 withholds the coverage axes rather ' +
+        'than rendering figures from a run whose outcome was discarded',
+    );
+    return;
+  }
+  if (axes === null) return;
+
+  const designed = axes.designCompleteness.ratio.denominator;
+  const proven = axes.proven.ratio.denominator;
+  if (designed !== null && proven !== null && designed !== proven) {
+    violation(
+      ctx,
+      ['coverageAxes', 'proven', 'ratio', 'denominator'],
+      `expected ${designed}, the live acceptance-criteria count the design-completeness ` +
+        `ratio reports, received ${proven}. Two axes over two denominators cannot be read ` +
+        `side by side (R9.15).`,
+    );
+  }
+
+  for (const [index, row] of axes.rows.entries()) {
+    const expected = row.risk === null ? null : row.risk;
+    if (expected === null && row.riskRank === 0) {
+      violation(
+        ctx,
+        ['coverageAxes', 'rows', index, 'riskRank'],
+        'a row with no risk band cannot rank first; an unrecognised risk sorts after ' +
+          'every known band rather than claiming to be the most urgent',
+      );
+    }
+  }
+}
+
+/**
+ * Rule 7: the run log is capped, and provenance raises the cap rather than breaking it.
+ *
+ * The log carries at most {@link MAX_SNAPSHOT_RUNS} entries **or as many as the promises
+ * require, whichever is larger**. A run a promise names as its verdict source has to be
+ * in the file, because a verdict whose provenance cannot be opened is not traceable and
+ * the run id is recorded for no other purpose.
+ *
+ * Stated this way round on purpose. A flat `max` and the projection's retention rule are
+ * in direct conflict once the cited count passes the cap, and of the two possible
+ * resolutions, dropping cited runs to satisfy a bound publishes a dangling reference,
+ * while carrying a longer log costs bytes. §9.1 already refuses dangling references in
+ * three other places, so bytes lose.
+ *
+ * The excess is bounded by the promise count rather than unbounded, which is what keeps
+ * this a cap at all: a file cannot grow a run log longer than the graph it explains.
+ */
+function checkRunCap(snapshot: LedgerSnapshotShape, ctx: z.RefinementCtx): void {
+  const cited = new Set(
+    snapshot.promises
+      .map((promise) => promise.verdictSource?.runId)
+      .filter((id): id is string => typeof id === 'string' && id !== ''),
+  );
+  const allowed = Math.max(MAX_SNAPSHOT_RUNS, cited.size);
+  if (snapshot.runs.length <= allowed) return;
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    path: ['runs'],
+    message:
+      `carries ${snapshot.runs.length} runs, and at most ${allowed} are allowed: the cap is ` +
+      `${MAX_SNAPSHOT_RUNS}, raised to the ${cited.size} run(s) the promises name as verdict ` +
+      `sources when that is larger. Drop the oldest run no promise cites.`,
+  });
+}
+
+/**
  * The snapshot schema, cross-field rules included.
  *
  * `superRefine` rather than `refine` because every rule reports a *path*: R8.8
  * requires the failing build to name the invalid field, and "the snapshot is
- * invalid" is not a diagnostic anybody can act on. All five rules run on every
+ * invalid" is not a diagnostic anybody can act on. All seven rules run on every
  * parse, so one call reports every disagreement rather than the first.
  */
 export const LedgerSnapshotSchema = LedgerSnapshotShape.superRefine((snapshot, ctx) => {
@@ -782,6 +1016,8 @@ export const LedgerSnapshotSchema = LedgerSnapshotShape.superRefine((snapshot, c
   checkEvidenceReferences(snapshot, ctx);
   checkEdgeEndpoints(snapshot, ctx);
   checkFreshness(snapshot, ctx);
+  checkCoverageAxes(snapshot, ctx);
+  checkRunCap(snapshot, ctx);
 });
 
 /** The CLI↔UI contract, inferred from the schema so the two cannot drift. */
@@ -801,6 +1037,10 @@ export type SnapshotDiagnostic = z.infer<typeof SnapshotDiagnosticSchema>;
 export type SnapshotMetrics = z.infer<typeof SnapshotMetricsSchema>;
 export type SnapshotFreshness = z.infer<typeof SnapshotFreshnessSchema>;
 export type SnapshotVerdictObject = z.infer<typeof SnapshotVerdictObjectSchema>;
+export type SnapshotCoverageAxes = z.infer<typeof SnapshotCoverageAxesSchema>;
+export type SnapshotCoverageRow = z.infer<typeof SnapshotCoverageRowSchema>;
+export type SnapshotCoveragePending = z.infer<typeof SnapshotCoveragePendingSchema>;
+export type SnapshotCoverageRatio = z.infer<typeof SnapshotCoverageRatioSchema>;
 
 /**
  * Non-throwing check, for a caller that wants to report rather than fail. The

@@ -24,8 +24,12 @@ import {
  * asserted as *zero* exits rather than as messages.
  */
 describe('the command table', () => {
-  it('carries the nine commands of design §13.1', () => {
+  it('carries the ten commands of design §13.1', () => {
+    // `init` joined the table with task 24.1. It is deliberately *first*: it is the
+    // only command that runs before a repository has a config, so it is the one a
+    // stranger reads first in the usage text (§21.1, R16.7).
     expect([...KEPT_COMMANDS]).toEqual([
+      'init',
       'build',
       'verify',
       'reconcile',
@@ -38,7 +42,7 @@ describe('the command table', () => {
     ]);
   });
 
-  it('recognises exactly those nine', () => {
+  it('recognises exactly those ten', () => {
     for (const command of KEPT_COMMANDS) expect(isKeptCommand(command)).toBe(true);
     expect(isKeptCommand('publish')).toBe(false);
     expect(isKeptCommand('')).toBe(false);

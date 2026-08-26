@@ -86,6 +86,7 @@ import {
   type VerdictSource,
 } from './model/promise.js';
 import type { SnapshotFreshness } from './model/snapshot.js';
+import { isCoverageAxes, type CoverageAxes } from './providers/coverage.js';
 
 // ---------------------------------------------------------------------------
 // The state file
@@ -134,6 +135,22 @@ export interface KeptState {
   readonly updatedAt: string;
   readonly freshness: StateFreshness;
   readonly graph: PromiseGraph;
+  /**
+   * The dual coverage axes the last accepted `cover gaps` run reported, or null
+   * (design §5.3.0, R9.14).
+   *
+   * Persisted rather than recomputed, because `npm run build:snapshot` is two
+   * processes: `kept build` invokes Kane and `kept snapshot` invokes none at all.
+   * The axes have to survive the gap between them for R9.14 to hold, the
+   * shareable page renders them with Kane invoked zero times, and this file is
+   * the only thing that spans it.
+   *
+   * Null is the withheld state and the only other one. There is no "stale axes"
+   * arm: a degraded build clears the field, because axes carried forward from a
+   * previous run would be figures presented as current that no current run
+   * supports (R9.13).
+   */
+  readonly coverageAxes: CoverageAxes | null;
 }
 
 /** What a caller supplies to build a state. Every field has an honest default. */
@@ -141,6 +158,7 @@ export interface KeptStateInput {
   readonly updatedAt?: string;
   readonly freshness?: StateFreshness;
   readonly graph?: PromiseGraph;
+  readonly coverageAxes?: CoverageAxes | null;
 }
 
 /**
@@ -156,6 +174,7 @@ export function createKeptState(input: KeptStateInput = {}): KeptState {
     updatedAt: input.updatedAt ?? new Date(0).toISOString(),
     freshness: input.freshness ?? EMPTY_FRESHNESS,
     graph: input.graph ?? createPromiseGraph(),
+    coverageAxes: input.coverageAxes ?? null,
   });
 }
 
@@ -234,6 +253,15 @@ export interface ProvenRunOutcome<F extends CommandFamily> extends RunOutcome<F>
  * second time here would be a second place for the Assurance exit-3 rule to be
  * got wrong. The `F` parameter threads through both arguments, so a stream
  * parsed under one family cannot be paired with another family's invocation.
+ *
+ * **The single-site part of that was a claim before it was true.** All three
+ * commands that pair an outcome built the `RunOutcome` literal inline instead of
+ * calling this, and while each of them happened to read `invocation.exitMeaning`
+ * verbatim, so no exit meaning was ever recomputed, the guarantee was a convention
+ * three files were keeping rather than a property of the code. The three call
+ * sites now route through here: `runVerify`, and both of `reconcile.ts`'s pairings.
+ * The comment was corrected by making it operative rather than by softening it,
+ * because the reasoning it gives is exactly right and cost one import to honour.
  */
 export function outcomeFromInvocation<F extends CommandFamily>(
   runId: string,
@@ -527,6 +555,10 @@ export function applyRun<F extends CommandFamily>(
     updatedAt: at,
     // All three fields, together, or none. A proven outcome always has all three.
     freshness: { terminalEventAt: at, terminalEventType, commandFamily: family },
+    // Carried, not recomputed and not cleared. `applyRun` writes verdicts from a
+    // verification run; it has no `cover gaps` payload to read and no business
+    // discarding the axes a build already accepted.
+    coverageAxes: state.coverageAxes,
     graph: createPromiseGraph({
       promises,
       edges: state.graph.edges,
@@ -587,6 +619,13 @@ export function isKeptState(value: unknown): value is KeptState {
   if (typeof updatedAt !== 'string' || Number.isNaN(Date.parse(updatedAt))) return false;
   if (!isStateFreshness(candidate['freshness'])) return false;
   if (!isPromiseGraph(candidate['graph'])) return false;
+  // Absent is accepted, because a state file written before the axes existed is a
+  // file this build must still be able to load, and the fallback for a rejected
+  // state is an *empty* state, which would silently discard every carried verdict.
+  // Present-and-unreadable is rejected: axes this build cannot read must not reach
+  // the snapshot, where the schema would fail the whole Ledger build over them.
+  const axes = candidate['coverageAxes'];
+  if (axes !== undefined && axes !== null && !isCoverageAxes(axes)) return false;
   return true;
 }
 
@@ -696,6 +735,12 @@ export function createStateStore(options: StateStoreOptions): StateStore {
         });
         return createKeptState({ updatedAt: stampIso(clock) });
       }
+      // A state file written before `coverageAxes` existed has no such key, and
+      // `undefined` is not one of the two states the field has. Normalising it to
+      // the withheld one here keeps every reader downstream from having to know
+      // that a third spelling was ever possible, and keeps `undefined` out of
+      // the canonical serialiser, which throws on it by design (§9.2).
+      if (raw.coverageAxes === undefined) return deepFreeze({ ...raw, coverageAxes: null });
       return deepFreeze(raw);
     },
     save(state: KeptState): KeptState {

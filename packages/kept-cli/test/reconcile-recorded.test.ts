@@ -10,6 +10,8 @@ import type {
   StateFileSystem,
 } from '@kept/core';
 import {
+  COVER_SINGULAR_ARGV,
+  ENRICHMENT_ARGV,
   KaneInvoker,
   STATE_FILE_RELATIVE_PATH,
   createDiagnosticSink,
@@ -24,6 +26,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../src/config.js';
+import { FIXTURE_CONFIG } from './fixture-config.js';
 import { RECONCILE_DIAGNOSTIC_CODES, runReconcile } from '../src/commands/reconcile.js';
 
 /**
@@ -232,7 +235,7 @@ async function replay(options: Replay = {}): Promise<Run> {
 
   const result = await runReconcile({
     repoRoot: REPO,
-    config: DEFAULT_CONFIG,
+    config: FIXTURE_CONFIG,
     changed: [README],
     invoker,
     fileSystem,
@@ -339,7 +342,20 @@ describe('the recorded reconcile --plan against a live resolved source (§13.2)'
     expect(run.result.rebuilt).toBe(true);
     // Three processes, in this order, and the third is the enrichment half.
     expect(run.spawns.map((argv) => argv[0])).toEqual(['context', 'maintain', 'cover']);
-    expect(run.spawns[2]).toEqual(recordedArgv('plan3-2-cover.argv.json'));
+
+    // The enrichment argv is the one the contract issues **today**, not the one this
+    // recording captured. `plan3-2-cover.argv.json` records `cover --json`, and it is
+    // left exactly as recorded, a recording is evidence of what happened, and
+    // rewriting it to match a later decision would make the whole corpus worthless.
+    // What changed is the decision: §5.3.0 moved the enrichment half to `cover gaps`
+    // because the singular form reads its depth axis out of a sealed pack and refuses
+    // on a replay pack, which is every pack this repository has. So the assertion
+    // names the current contract, and states the difference from the recording rather
+    // than hiding it.
+    expect(run.spawns[2]).toEqual([...ENRICHMENT_ARGV, '--mode', 'agent']);
+    const recordedCoverArgv = recordedArgv('plan3-2-cover.argv.json');
+    expect(recordedCoverArgv).toEqual([...COVER_SINGULAR_ARGV, '--mode', 'agent']);
+    expect(run.spawns[2]).not.toEqual(recordedCoverArgv);
   });
 });
 

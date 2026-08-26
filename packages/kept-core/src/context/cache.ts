@@ -504,9 +504,20 @@ function describe(cause: unknown): string {
 /**
  * Read the cache, or report why it is being treated as absent.
  *
- * Exported because `kept doctor` and the CLI's own diagnostics want the file
- * without triggering a refresh, and because a caller that already holds a cache
- * can hand it to {@link sourceCacheStaleness} directly.
+ * **No command calls this today.** The comment here used to say it was exported
+ * because `kept doctor` and the CLI's own diagnostics want the file without
+ * triggering a refresh, and neither of those is true: `kept doctor` reports on the
+ * `.context/` store and never reads `.kept/sources.json` at all, and the only live
+ * path into this file is {@link resolveSourceIdCached}, which finds the cache
+ * through `findCache` internally. The exported name has one live consumer, which is
+ * `context-sources-cache.test.ts` asserting the read side triggers nothing.
+ *
+ * It is kept exported rather than made private for the reason the second half of
+ * the old comment gave, which does still hold: a caller that already holds a cache
+ * can hand it to {@link sourceCacheStaleness} directly, and getting the file
+ * *without* refreshing is the only way to ask "what does the cache say" without
+ * risking a listing. A reader deciding whether to use it should know it would be
+ * the first such caller.
  */
 export function readSourcesCache(
   repoRoot: string,
