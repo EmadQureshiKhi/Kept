@@ -1,0 +1,6 @@
+
+Update available: 0.8.4 → 0.8.5 — run `npm install -g @testmuai/kane-cli@latest` to update
+
+Skill update available: 0.0.17 → 0.0.18 — run `kane-cli install skill`
+
+error: evolve needs a TTY — the blast-radius confirm is the point; headless evolution rides `kane-cli maintain reconcile`
