@@ -1,0 +1,440 @@
+==> starting the fixture application on http://localhost:3100
+==> answering after 2s
+==> kept verify --changed apps/fixture/README.md --member-debug --json
+{
+  "command": "verify",
+  "implemented": true,
+  "repoRoot": "/Users/nokitha/Desktop/KEPT",
+  "scope": "changed",
+  "argv": [
+    "testrun",
+    "run",
+    "--on-failure",
+    "continue",
+    "--bug-detection",
+    "continue"
+  ],
+  "invoked": false,
+  "runId": "kept-verify:2026-08-25T11:55:26.695Z",
+  "exitCode": null,
+  "exitMeaning": null,
+  "terminalSeen": false,
+  "preflightRejected": false,
+  "wrote": false,
+  "refusals": [],
+  "radius": {
+    "testIds": [],
+    "promiseIds": [],
+    "unmatchedPaths": [
+      "apps/fixture/README.md"
+    ],
+    "skippedNoTestId": []
+  },
+  "members": [],
+  "updatedPromiseIds": [],
+  "credits": null,
+  "evidencePackId": null,
+  "memberStreamPath": null,
+  "statePath": "/Users/nokitha/Desktop/KEPT/.kept/state.json",
+  "handoffPath": "/Users/nokitha/Desktop/KEPT/.kept/handoff.json",
+  "nextAction": {
+    "branch": null,
+    "autonomy": "none",
+    "artefact": null,
+    "instruction": "This run proved nothing that can be repaired automatically. Report the diagnostics and change nothing.",
+    "allowedPaths": [],
+    "forbiddenPaths": [
+      "tests",
+      "tests/**",
+      "README.md",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**",
+      "packages/**",
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**"
+    ],
+    "command": null
+  },
+  "snapshot": {
+    "path": "/Users/nokitha/Desktop/KEPT/apps/ledger/data/ledger.snapshot.json",
+    "written": true
+  },
+  "freshness": {
+    "terminalEventAt": "2026-08-21T16:35:22.779Z",
+    "terminalEventType": "testrun_done",
+    "commandFamily": "ExecutionTestrun"
+  },
+  "diagnostics": [
+    {
+      "code": "verify-started",
+      "severity": "info",
+      "message": "kept verify --changed: 14 promise(s) in the graph, budget 300000 ms, router 'resultCode740'",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:26.697Z"
+    },
+    {
+      "code": "ndjson-crashed-stream",
+      "severity": "warn",
+      "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.821Z"
+    },
+    {
+      "code": "plan-refreshed-without-terminal",
+      "severity": "info",
+      "message": "`testrun run --dry-run` emitted its 'testrun_plan' event and exited cleanly without a 'testrun_done' event, which is what a dry run does: it executes nothing, so there is no execution to report done. The plan is accepted.",
+      "file": ".kept/plan.json",
+      "line": null,
+      "at": "2026-08-25T11:55:28.821Z"
+    },
+    {
+      "code": "plan-refreshed",
+      "severity": "info",
+      "message": "`testrun run --dry-run` enumerated 17 member(s), 9 of them carrying a test id (captured 328875 s ago, older than the 600000 ms window).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.822Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.823Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.823Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.823Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.823Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": "docs/kane/spike/cart_subtotal_spike_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.823Z"
+    },
+    {
+      "code": "radius-path-uncovered",
+      "severity": "info",
+      "message": "no designed test covers apps/fixture/README.md",
+      "file": "apps/fixture/README.md",
+      "line": null,
+      "at": "2026-08-25T11:55:28.825Z"
+    },
+    {
+      "code": "radius-empty",
+      "severity": "info",
+      "message": "The blast radius is empty for 1 changed path(s), so no Kane process is started and every existing verdict is preserved.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.825Z"
+    },
+    {
+      "code": "snapshot-evidence-pack-absent",
+      "severity": "warn",
+      "message": "The graph references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', and no readable archive exists at /Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence. Sealed packs are gitignored and regenerated per run, so a fresh clone reaching this state is expected; nothing was curated for it and the reference will be cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.872Z"
+    },
+    {
+      "code": "snapshot-evidence-curated",
+      "severity": "info",
+      "message": "kept snapshot: curated 1 evidence pack into apps/ledger/public/evidence/ (37 artefacts, 4128905 bytes), so every artefact link is a static URL needing no Kane, no credentials and no network.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.872Z"
+    },
+    {
+      "code": "snapshot-records-projected",
+      "severity": "info",
+      "message": "kept snapshot: projected 21 terminal events from .kept/handoff/, 1 amendment from .kept/amendments/ and 9 held changes from .kept/review-cards/. All three are projections of persisted records; none is a source of truth this command invents.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.882Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_177308118beb' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 19,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_365815f2bcca' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 18,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_6ca9700b8471' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 14,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_a972e6fcb195' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 15,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 13,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Promise 'p_eb071a709ed0' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": "apps/fixture/README.md",
+      "line": 17,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '257033a3-b0e9-4640-92c8-6ba4c9b060ea' references evidence pack '257033a3-b0e9-4640-92c8-6ba4c9b060ea.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497' references evidence pack 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '58fb2dfa-94f1-4190-8922-cd8e2079bfe6' references evidence pack '58fb2dfa-94f1-4190-8922-cd8e2079bfe6.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4cc8633-43cb-4799-95b2-000093f3cffd' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'defd438c-8f4d-4768-87c8-3cff627a2443' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '1307e6b6-5008-430a-855f-913d39dc659e' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '5c2b8c30-98a3-4406-ad0f-6216dac2c5e5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '73ab6abb-4729-4b2b-ad47-53c8be339991' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '57591bff-4480-455e-9ab7-c92263ff58ac' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '0944d075-8dab-4683-a59f-96e51308697c' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f0d80fd8-3499-41ad-b1a2-3c12ad919cb1' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4726521-991e-4027-8f0c-304ff679e21a' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '15d244e5-ea15-4caa-97e2-bf021672f94c' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '108dbb62-4f20-46ec-abbd-3b8be6c6e13c' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'kept-verify:2026-08-21T03:38:59.518Z' references evidence pack 'ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-repair-evidence-unresolved",
+      "severity": "warn",
+      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence' in this snapshot, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-runs-truncated",
+      "severity": "info",
+      "message": "21 runs were offered and the committed file carries the newest 20 (design §9.1), so 1 were dropped.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.883Z"
+    },
+    {
+      "code": "snapshot-written",
+      "severity": "info",
+      "message": "kept snapshot: wrote 89412 bytes carrying 14 promises",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.898Z"
+    },
+    {
+      "code": "verify-completed",
+      "severity": "info",
+      "message": "kept verify --changed: 0 member(s) in the radius, 0 result(s) consumed, 0 verdict(s) written",
+      "file": null,
+      "line": null,
+      "at": "2026-08-25T11:55:28.898Z"
+    }
+  ]
+}
+==> kept exited 0
+==> stopping the fixture application (pid 4809)
