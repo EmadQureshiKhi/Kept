@@ -103,6 +103,29 @@
    so mono and tabular (§10.7) — the figures line up down the lane instead of drifting,
    which is the whole reason the column reads as a ranking. It is a chip rather than bare
    text so that "1" at the top of the lane is unmistakably a position and not a count. */
+/**
+ * The verdict tag's place in the head row.
+ *
+ * `.promise-node__head` is a `space-between` flex line, so the tag was already
+ * positioned and this class carried **no rule at all** until
+ * `test/class-coverage.test.ts` found it. A hook with no rule is not harmless here:
+ * a flex item shrinks by default, and the longest verdict word is `undesigned`
+ * inside a bordered badge. That is the same word, in the same situation, that had
+ * already been clipped once in the promise list, where a fixed 64px gutter could not
+ * hold it and the fix was a `minmax(6rem, max-content)` track. Stating the rule here
+ * is what keeps the graph from having to rediscover it.
+ *
+ * `flex: 0 0 auto`, the same declaration the rank chip opposite it uses: the tag is
+ * exactly as wide as its own word and neither grows into the gap nor shrinks below
+ * it. `margin-left: auto` is deliberately absent, because `space-between` on the
+ * parent already puts the gap between the two, and a second opinion about the same
+ * gap is how one of them ends up winning by accident.
+ */
+.promise-node__verdict {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .promise-node__rank {
   flex: 0 0 auto;
   box-sizing: border-box;

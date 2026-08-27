@@ -342,3 +342,228 @@
     padding: var(--s-4);
   }
 }
+
+/* ── the dual-axis ribbon, and the eight rules it was shipped without ───────── */
+
+/**
+ * The named complaint, and the cause.
+ *
+ * `CoverageRibbon.tsx` renders eight class names this stylesheet did not define:
+ * `.coverage-axes`, `.coverage-axis`, `.coverage-axis__ratio`,
+ * `.coverage-axis__detail`, and the four `.coverage-pending*` names below. So the
+ * ribbon had no layout at all. Each axis is four `<span>` elements, and a `<span>`
+ * with no rule is inline, so the figure, the label, the denominator and the
+ * explanation ran together into one unbroken line of text:
+ *
+ *     100%designed, acceptance criteria6/6acceptance criteria bound to a designed
+ *     scenario in the assurance graph100%proven, acceptance criteria6/6…
+ *
+ * The `<ul>` kept its browser default bullets and indent on top of that. The markup
+ * was correct, the figures were correct, every test asserting *what the page says*
+ * passed, and nothing asserted that the page could be read. That is the same shape as
+ * the review-card projection and the run-log cap: the parts were right and the
+ * composition was missing. So the fix below is the eight rules, and the guard is
+ * `class-coverage.test.ts`, which now refuses any class the Ledger renders and no
+ * stylesheet defines.
+ *
+ * ## The treatment is the metric rail's, not a new one
+ *
+ * These are coverage figures, which is what `--fs-metric` exists for and what the
+ * rail already uses, so an axis is laid out as the rail's tile is: the figure on its
+ * own line in mono at metric size with tabular numerals, the label under it in the
+ * shared `.label` idiom, the denominator beside the label because a ratio is the
+ * figure's evidence, and the explanation last at body tone. Reusing the vocabulary is
+ * what keeps `/coverage` from reading as a second product.
+ *
+ * No token is declared, no colour is authored, and every length is `0`, `1px` or a
+ * `--s-*` step, which is this file's own rule from its header.
+ */
+.coverage-axes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  align-items: stretch;
+  gap: var(--s-4);
+  /* Space below, because the sentence that accounts for these figures follows
+     immediately and its own `border-top` needs room to read as a separator rather
+     than as the bottom edge of the last axis. */
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/**
+ * One axis: a bordered panel, not a bare column.
+ *
+ * **The first version of this was a column with a rule on top and no side padding,
+ * and it was still hard to read.** Three figures sitting in three unbounded columns
+ * separated only by a gap gave a reader nothing to tell them where one axis ended and
+ * the next began, so a wrapped `__detail` line looked like it belonged to the
+ * neighbouring figure. A top rule marks a boundary; it does not enclose a thing.
+ *
+ * So each axis is now the same object the metric rail's tile is: a padded box on the
+ * raised surface with a full 2px ink border and the card radius. Nothing here is new
+ * vocabulary. `--ink-100`, `--text-000`, `--line`, `--r-card` and `--s-4` are exactly
+ * what `.surface-raised` and `.metric-rail__chip` already compose, which is the point:
+ * the reader has seen this shape on the landing page and does not have to learn it
+ * twice.
+ *
+ * A grid rather than a flex line, so the four parts stack in a fixed order at every
+ * width, and `align-content: start` so a short axis does not stretch its own rows to
+ * match a taller neighbour while the box still fills the track.
+ */
+.coverage-axis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--s-2);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--s-4);
+  background-color: var(--ink-100);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-card);
+}
+
+/* The figure itself. `.coverage-page__figure` already sets mono, tabular and full
+   ink for a figure inline in a sentence; an axis figure is the headline of its own
+   block, so it is promoted to metric size and given a line of its own. Scoped to
+   `.coverage-axis` so the inline treatment in the measured sentence is untouched. */
+.coverage-axis .coverage-page__figure {
+  display: block;
+  font-size: var(--fs-metric);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.04em;
+}
+
+/**
+ * The denominator, boxed as evidence.
+ *
+ * Mono and tabular because it is a figure, at label tone because it is the figure's
+ * *evidence* rather than the figure: `6/6` explains `100%` and must not compete with it.
+ *
+ * It is now enclosed the way every other identifier-shaped fragment on this page is
+ * enclosed, with the hairline border and chip radius `.coverage-pending__stage` uses,
+ * and `justify-self: start` so the box hugs `6/6` instead of stretching the full column
+ * width. Unboxed it read as a third line of running text between the label and the
+ * explanation, which is precisely the ambiguity `100%designed6/6acceptance criteria`
+ * had before any of these rules existed.
+ */
+.coverage-axis__ratio {
+  justify-self: start;
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+  white-space: nowrap;
+}
+
+/**
+ * What the figure counts, in prose.
+ *
+ * Held to a measure, because this is the line that distinguishes the rail's
+ * `provenCoverage` from the ribbon's `proven`, and a reader who does not finish it will
+ * conflate the two (R9.15).
+ *
+ * Separated from the figure block by a hairline and a full space step, so the box reads
+ * as two parts: the measurement, then what was measured. Without the rule the sentence
+ * sat directly under `6/6` at nearly the same tone and the eye ran the two together.
+ */
+.coverage-axis__detail {
+  max-width: 42ch;
+  margin-top: var(--s-1);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--hairline);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── the pending list inside one use-case row ───────────────────────────────── */
+
+/**
+ * What a use case still owes, one item per line.
+ *
+ * These were the other four undefined names, and they had the same failure: a
+ * `<ul>` of `<li>`s whose two `<span>`s ran together, so `authoring` and the reason
+ * for it read as one word. The list sits inside a `.promise-list__item`, so it takes
+ * no fill and no border of its own: it is already on a banded row inside the raised
+ * frame, and a second surface inside that would be a card in a card.
+ *
+ * The `ready_command` each item may carry is **not** styled as a control anywhere,
+ * because it is not one. It is a literal `kane-cli …` string published as text, and
+ * a button here would give a read-only page a way to spend credits (R9.11, §9).
+ */
+.coverage-pending {
+  display: grid;
+  /* A full step between items, and a rule above the list, so a use case owing three
+     things reads as three things. At `--s-1` the items packed into a block a reader
+     had to parse word by word to find the boundaries. */
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--hairline);
+  padding-left: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.coverage-pending__item {
+  display: flex;
+  flex-wrap: wrap;
+  /* Wider than the old `--s-1 --s-2`. These items carry a boxed stage, a sentence and
+     sometimes a literal shell command on one wrapping line, and at the old gap the
+     three touched. */
+  gap: var(--s-2) var(--s-3);
+  align-items: baseline;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+/* The stage or kind: an identifier, so mono and boxed the way every other identifier
+   on this page is, and it leads the line so a reader can scan the column of them. */
+.coverage-pending__stage {
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* Why it is pending, in Kane's own words. Prose, so it wraps and is measured. */
+.coverage-pending__why {
+  flex: 1 1 24ch;
+  min-width: 0;
+  max-width: 62ch;
+  color: var(--text-200);
+}
+
+/* ── narrow viewports: the axes become one column ───────────────────────────── */
+
+@media (max-width: 40rem) {
+  /* `auto-fit` already collapses the track, but the figure does not: 40px mono at
+     320px is most of the measure. It steps to the section-heading size, which is the
+     largest thing else on the page at this width. */
+  .coverage-axis .coverage-page__figure {
+    font-size: var(--fs-lg);
+  }
+
+  .coverage-axis__detail {
+    max-width: none;
+  }
+}
