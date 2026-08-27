@@ -1,0 +1,32 @@
+step: 4-2
+status: broken
+error:
+  message: AP determined agent is stuck — no viable actions remain
+page_state:
+  url: http://localhost:3100/cart
+  screenshot: steps/16-4-2/screenshot.jpg
+console_at_failure:
+  ref: logs/4-console.ndjson
+  step: 4-2
+network_at_failure:
+  ref: logs/4-network.har
+  step: 4-2
+title: Cart total does not apply 10% discount above $50
+triage:
+  status: triaged
+  by:
+    kind: agent
+    id: v16-investigation/terminal
+    at: '2026-08-21T16:36:41.878253+00:00'
+  rca:
+    root_cause: The cart’s price calculation or display is not applying the automatic
+      10% discount for orders above $50.
+    category: application_issue/ui_data_defect
+    confidence: 0.78
+  verification:
+    status: not_verified
+  severity: major
+  suggested_fix:
+    summary: Check the cart discount rule for orders over $50 and verify that both
+      the subtotal/total display and the underlying calculation update automatically
+      when the threshold is crossed.

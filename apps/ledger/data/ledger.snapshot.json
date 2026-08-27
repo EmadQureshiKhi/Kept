@@ -20,125 +20,315 @@
       "strategy": "failureYamlTriage"
     }
   ],
-  "degraded": true,
-  "degradedReasons": [
-    "assurance-status:refused"
-  ],
+  "coverageAxes": {
+    "designCompleteness": {
+      "pct": 100,
+      "ratio": {
+        "denominator": 6,
+        "numerator": 6,
+        "text": "6/6"
+      },
+      "ucsNeedingScenarios": 8,
+      "usecasesComplete": {
+        "denominator": 9,
+        "numerator": 1,
+        "text": "1/9"
+      }
+    },
+    "proven": {
+      "blocked": 0,
+      "denominatorBasis": "current_live_acs",
+      "failing": 0,
+      "latestRunExecutionId": "be3de265-0fbd-498b-ad8f-54eb3afb62d8",
+      "notRun": 0,
+      "pct": 100,
+      "ratio": {
+        "denominator": 6,
+        "numerator": 6,
+        "text": "6/6"
+      },
+      "source": "graph_execution_facts"
+    },
+    "rows": [
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-1",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-1",
+            "risk": "high",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Complete checkout with required contact details"
+      },
+      {
+        "designCompleteness": {
+          "pct": 100,
+          "status": "complete"
+        },
+        "id": "uc-2",
+        "pending": [],
+        "proven": {
+          "pct": 100,
+          "status": "proven"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Manage cart pricing and discounts"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-3",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-3",
+            "risk": "high",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Shop in a selected currency"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-6",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-6",
+            "risk": "high",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Complete checkout with required contact details"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-7",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-7",
+            "risk": "high",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Manage cart pricing and discounts"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-8",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-8",
+            "risk": "high",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "high",
+        "riskRank": 0,
+        "staleAcs": 0,
+        "title": "Shop in a selected currency"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-4",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-4",
+            "risk": "med",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "med",
+        "riskRank": 1,
+        "staleAcs": 0,
+        "title": "Browse the coffee catalog"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-5",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-5",
+            "risk": "low",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "low",
+        "riskRank": 2,
+        "staleAcs": 0,
+        "title": "Review completed orders"
+      },
+      {
+        "designCompleteness": {
+          "pct": 0,
+          "status": "undesigned"
+        },
+        "id": "uc-10",
+        "pending": [
+          {
+            "kind": "zero-scenario",
+            "readyCommand": "kane-cli design tests --use-case uc-10",
+            "risk": "low",
+            "stage": "design",
+            "tag": "create",
+            "why": "use-case has no scenarios"
+          }
+        ],
+        "proven": {
+          "pct": 0,
+          "status": "not_run"
+        },
+        "risk": "low",
+        "riskRank": 2,
+        "staleAcs": 0,
+        "title": "Review completed orders"
+      }
+    ]
+  },
+  "degraded": false,
+  "degradedReasons": [],
   "diagnostics": [
     {
-      "at": "2026-08-21T09:05:54.706Z",
-      "code": "enrichment-assurance-status",
+      "at": "2026-08-28T01:07:12.185Z",
+      "code": "enrichment-accepted",
       "file": null,
       "line": null,
-      "message": "`cover --json` finished with status 'refused', which the acceptance gate does not accept, so the graph is built from the baseline provider alone. Kane reported: error: f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence carries no coverage/usecases.yaml — the pack predates coverage or its project had no .context at seal time",
-      "severity": "warn"
+      "message": "`cover gaps --json` completed with status 'complete': design completeness 100% (6/6 acceptance criteria designed, 1/9 use cases complete), proven 100% (6/6 acceptance criteria with execution facts), 9 use-case rows published.",
+      "severity": "info"
     },
     {
-      "at": "2026-08-21T09:05:54.707Z",
-      "code": "merge-degraded",
-      "file": null,
-      "line": null,
-      "message": "The enrichment axis was discarded (assurance-status:refused), so this graph carries baseline data only: every promise, citation and designed-test binding is present and the proven figure is withheld rather than reported as zero (R2.8, R2.11).",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 19,
-      "message": "Promise 'p_177308118beb' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "message": "Run 'eeab5184-b872-4459-8ed7-d45838d6905f' references evidence pack 'eeab5184-b872-4459-8ed7-d45838d6905f.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 18,
-      "message": "Promise 'p_365815f2bcca' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "message": "Run 'd90abe55-168b-42cc-a96e-fefeda946632' references evidence pack 'd90abe55-168b-42cc-a96e-fefeda946632.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 14,
-      "message": "Promise 'p_6ca9700b8471' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "message": "Run '6816bbab-676d-4a3b-8516-52524f143b41' references evidence pack '6816bbab-676d-4a3b-8516-52524f143b41.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 15,
-      "message": "Promise 'p_a972e6fcb195' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "message": "Run '9b365184-d068-44a9-a9c4-4ab9aa48486c' references evidence pack '9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 13,
-      "message": "Promise 'p_c5468bf7ed77' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "message": "Run '257033a3-b0e9-4640-92c8-6ba4c9b060ea' references evidence pack '257033a3-b0e9-4640-92c8-6ba4c9b060ea.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.839Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
-      "file": "apps/fixture/README.md",
-      "line": 17,
-      "message": "Promise 'p_eb071a709ed0' references evidence pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
       "file": null,
       "line": null,
-      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "message": "Run 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497' references evidence pack 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
-      "file": null,
-      "line": null,
-      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
-      "file": null,
-      "line": null,
-      "message": "The 'evidence' edge p_6ca9700b8471 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
-      "file": null,
-      "line": null,
-      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
-      "file": null,
-      "line": null,
-      "message": "The 'evidence' edge p_c5468bf7ed77 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
-      "code": "snapshot-edge-unresolved",
-      "file": null,
-      "line": null,
-      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
-      "severity": "warn"
-    },
-    {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -146,7 +336,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -154,7 +344,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -162,7 +352,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -170,7 +360,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -178,7 +368,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -186,7 +376,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -194,7 +384,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -202,7 +392,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -210,7 +400,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -218,7 +408,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -226,7 +416,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -234,7 +424,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -242,7 +432,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -250,12 +440,20 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-21T09:05:54.840Z",
+      "at": "2026-08-28T01:07:23.209Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": null,
       "line": null,
       "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence' in this snapshot, so the reference was cleared rather than published as a dead link.",
       "severity": "warn"
+    },
+    {
+      "at": "2026-08-28T01:07:23.209Z",
+      "code": "snapshot-runs-truncated",
+      "file": null,
+      "line": null,
+      "message": "25 runs were offered and the committed file carries 20 (design §9.1): the newest up to 20, plus every run a promise names as its verdict source, so 5 were dropped. 1 run(s) were retained as cited provenance regardless of age, because a verdict pointing at a run this file does not carry cannot be opened.",
+      "severity": "info"
     }
   ],
   "documents": [
@@ -263,6 +461,11 @@
       "claimCount": 8,
       "file": "apps/fixture/README.md",
       "id": "d_2aafe9714a4b"
+    },
+    {
+      "claimCount": 5,
+      "file": "README.md",
+      "id": "d_b33563055168"
     }
   ],
   "edges": [
@@ -307,9 +510,39 @@
       "to": "p_eb071a709ed0"
     },
     {
+      "from": "d_b33563055168",
+      "kind": "cites",
+      "to": "p_1a74550edb2a"
+    },
+    {
+      "from": "d_b33563055168",
+      "kind": "cites",
+      "to": "p_3ef37e0912f2"
+    },
+    {
+      "from": "d_b33563055168",
+      "kind": "cites",
+      "to": "p_68cd8509429c"
+    },
+    {
+      "from": "d_b33563055168",
+      "kind": "cites",
+      "to": "p_a6ee7108e3bb"
+    },
+    {
+      "from": "d_b33563055168",
+      "kind": "cites",
+      "to": "p_f0a8a6f5ae73"
+    },
+    {
       "from": "p_177308118beb",
       "kind": "designed",
       "to": "t_913ea73727cf"
+    },
+    {
+      "from": "p_1a74550edb2a",
+      "kind": "designed",
+      "to": "t_aa3e94963ca7"
     },
     {
       "from": "p_365815f2bcca",
@@ -317,9 +550,19 @@
       "to": "t_38e883f0c185"
     },
     {
+      "from": "p_3ef37e0912f2",
+      "kind": "designed",
+      "to": "t_94c85807c188"
+    },
+    {
       "from": "p_45ccecba7aa5",
       "kind": "designed",
       "to": "t_27eaa1da5bc3"
+    },
+    {
+      "from": "p_68cd8509429c",
+      "kind": "designed",
+      "to": "t_c267737f2b25"
     },
     {
       "from": "p_6ca9700b8471",
@@ -330,6 +573,11 @@
       "from": "p_8d965c2fae07",
       "kind": "designed",
       "to": "t_d5ba34908214"
+    },
+    {
+      "from": "p_a6ee7108e3bb",
+      "kind": "designed",
+      "to": "t_c267737f2b25"
     },
     {
       "from": "p_a972e6fcb195",
@@ -347,267 +595,439 @@
       "to": "t_50f823f3d211"
     },
     {
+      "from": "p_f0a8a6f5ae73",
+      "kind": "designed",
+      "to": "t_c267737f2b25"
+    },
+    {
+      "from": "p_177308118beb",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_365815f2bcca",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_3ef37e0912f2",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
       "from": "p_45ccecba7aa5",
       "kind": "evidence",
-      "to": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence"
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_6ca9700b8471",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
     },
     {
       "from": "p_8d965c2fae07",
       "kind": "evidence",
-      "to": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence"
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_a972e6fcb195",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_c5468bf7ed77",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
+    },
+    {
+      "from": "p_eb071a709ed0",
+      "kind": "evidence",
+      "to": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence"
     }
   ],
   "evidence": [
     {
       "artifacts": [
         {
-          "bytes": 495232,
+          "bytes": 505023,
           "kind": "annotated",
           "name": "tests/cart-discount-27eaa1da/steps/8-2-3/annotated.png",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/annotated.png"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/annotated.png"
         },
         {
-          "bytes": 340,
+          "bytes": 339,
           "kind": "failure-yaml",
           "name": "failure.yaml",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/failure.yaml"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/failure.yaml"
         },
         {
-          "bytes": 975,
+          "bytes": 958,
           "kind": "failure-yaml",
-          "name": "tests/cart-discount-27eaa1da/steps/16-4-2/failure.yaml",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/16-4-2/failure.yaml"
+          "name": "tests/cart-discount-27eaa1da/steps/15-4-1/failure.yaml",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/15-4-1/failure.yaml"
         },
         {
           "bytes": 64161,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/1-0-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/1-0-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/1-0-1/screenshot.jpg"
         },
         {
-          "bytes": 160868,
+          "bytes": 162430,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/10-3-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/10-3-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/10-3-1/screenshot.jpg"
         },
         {
-          "bytes": 93777,
+          "bytes": 95453,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/11-3-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/11-3-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/11-3-2/screenshot.jpg"
         },
         {
-          "bytes": 93777,
+          "bytes": 95453,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/12-3-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/12-3-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/12-3-3/screenshot.jpg"
         },
         {
-          "bytes": 93777,
+          "bytes": 95453,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/13-3-4/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/13-3-4/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/13-3-4/screenshot.jpg"
         },
         {
-          "bytes": 93777,
+          "bytes": 95453,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/14-3-5/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/14-3-5/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/14-3-5/screenshot.jpg"
         },
         {
-          "bytes": 93777,
+          "bytes": 95453,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/15-4-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/15-4-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/15-4-1/screenshot.jpg"
         },
         {
-          "bytes": 93777,
-          "kind": "screenshot",
-          "name": "tests/cart-discount-27eaa1da/steps/16-4-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/16-4-2/screenshot.jpg"
-        },
-        {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/2-0-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/2-0-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/2-0-2/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/3-0-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/3-0-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/3-0-3/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/4-1-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/4-1-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/4-1-1/screenshot.jpg"
         },
         {
-          "bytes": 65242,
+          "bytes": 66974,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/5-1-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/5-1-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/5-1-2/screenshot.jpg"
         },
         {
-          "bytes": 65242,
+          "bytes": 66974,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/6-2-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/6-2-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/6-2-1/screenshot.jpg"
         },
         {
-          "bytes": 146541,
+          "bytes": 148491,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/7-2-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/7-2-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/7-2-2/screenshot.jpg"
         },
         {
-          "bytes": 146541,
+          "bytes": 148491,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/8-2-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/8-2-3/screenshot.jpg"
         },
         {
-          "bytes": 146653,
+          "bytes": 148369,
           "kind": "screenshot",
           "name": "tests/cart-discount-27eaa1da/steps/9-2-4/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-discount-27eaa1da/steps/9-2-4/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-discount-27eaa1da/steps/9-2-4/screenshot.jpg"
         },
         {
           "bytes": 64161,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/1-0-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/1-0-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/1-0-1/screenshot.jpg"
         },
         {
-          "bytes": 94210,
+          "bytes": 95933,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/10-3-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/10-3-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/10-3-2/screenshot.jpg"
         },
         {
-          "bytes": 94210,
+          "bytes": 95933,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/11-3-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/11-3-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/11-3-3/screenshot.jpg"
         },
         {
-          "bytes": 94210,
+          "bytes": 95933,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/12-3-4/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/12-3-4/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/12-3-4/screenshot.jpg"
         },
         {
-          "bytes": 94210,
+          "bytes": 95933,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/13-4-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/13-4-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/13-4-1/screenshot.jpg"
         },
         {
-          "bytes": 94837,
+          "bytes": 96527,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/14-4-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/14-4-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/14-4-2/screenshot.jpg"
         },
         {
-          "bytes": 94837,
+          "bytes": 96527,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/15-4-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/15-4-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/15-4-3/screenshot.jpg"
         },
         {
-          "bytes": 94837,
+          "bytes": 96527,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/16-5-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/16-5-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/16-5-1/screenshot.jpg"
         },
         {
-          "bytes": 94837,
+          "bytes": 96527,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/17-5-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/17-5-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/17-5-2/screenshot.jpg"
         },
         {
-          "bytes": 94837,
+          "bytes": 96527,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/18-5-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/18-5-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/18-5-3/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/2-0-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/2-0-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/2-0-2/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/3-0-3/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/3-0-3/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/3-0-3/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/4-0-4/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/4-0-4/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/4-0-4/screenshot.jpg"
         },
         {
-          "bytes": 119699,
+          "bytes": 121421,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/5-1-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/5-1-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/5-1-1/screenshot.jpg"
         },
         {
-          "bytes": 65242,
+          "bytes": 66974,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/6-1-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/6-1-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/6-1-2/screenshot.jpg"
         },
         {
-          "bytes": 65242,
+          "bytes": 66974,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/7-2-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/7-2-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/7-2-1/screenshot.jpg"
         },
         {
-          "bytes": 156228,
+          "bytes": 157822,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/8-2-2/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/8-2-2/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/8-2-2/screenshot.jpg"
         },
         {
-          "bytes": 170114,
+          "bytes": 171724,
           "kind": "screenshot",
           "name": "tests/cart-subtotal-d5ba3490/steps/9-3-1/screenshot.jpg",
-          "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/tests/cart-subtotal-d5ba3490/steps/9-3-1/screenshot.jpg"
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-d5ba3490/steps/9-3-1/screenshot.jpg"
+        },
+        {
+          "bytes": 64161,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/1-0-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/1-0-1/screenshot.jpg"
+        },
+        {
+          "bytes": 95933,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/10-3-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/10-3-3/screenshot.jpg"
+        },
+        {
+          "bytes": 95933,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/11-3-4/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/11-3-4/screenshot.jpg"
+        },
+        {
+          "bytes": 95933,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/12-4-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/12-4-1/screenshot.jpg"
+        },
+        {
+          "bytes": 96527,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/13-4-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/13-4-2/screenshot.jpg"
+        },
+        {
+          "bytes": 96527,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/14-4-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/14-4-3/screenshot.jpg"
+        },
+        {
+          "bytes": 96527,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/15-5-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/15-5-1/screenshot.jpg"
+        },
+        {
+          "bytes": 96527,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/16-5-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/16-5-2/screenshot.jpg"
+        },
+        {
+          "bytes": 96527,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/17-5-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/17-5-3/screenshot.jpg"
+        },
+        {
+          "bytes": 121421,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/2-0-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/2-0-2/screenshot.jpg"
+        },
+        {
+          "bytes": 121421,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/3-0-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/3-0-3/screenshot.jpg"
+        },
+        {
+          "bytes": 121421,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/4-1-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/4-1-1/screenshot.jpg"
+        },
+        {
+          "bytes": 66974,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/5-1-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/5-1-2/screenshot.jpg"
+        },
+        {
+          "bytes": 66974,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/6-2-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/6-2-1/screenshot.jpg"
+        },
+        {
+          "bytes": 157822,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/7-2-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/7-2-2/screenshot.jpg"
+        },
+        {
+          "bytes": 171724,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/8-3-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/8-3-1/screenshot.jpg"
+        },
+        {
+          "bytes": 95933,
+          "kind": "screenshot",
+          "name": "tests/cart-subtotal-spike-271d9739/steps/9-3-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/cart-subtotal-spike-271d9739/steps/9-3-2/screenshot.jpg"
+        },
+        {
+          "bytes": 30630,
+          "kind": "screenshot",
+          "name": "tests/checkout-validation-50f823f3/steps/1-0-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/checkout-validation-50f823f3/steps/1-0-1/screenshot.jpg"
+        },
+        {
+          "bytes": 117696,
+          "kind": "screenshot",
+          "name": "tests/checkout-validation-50f823f3/steps/10-3-5/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/checkout-validation-50f823f3/steps/10-3-5/screenshot.jpg"
+        },
+        {
+          "bytes": 92259,
+          "kind": "screenshot",
+          "name": "tests/checkout-validation-50f823f3/steps/2-1-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/checkout-validation-50f823f3/steps/2-1-1/screenshot.jpg"
+        },
+        {
+          "bytes": 92259,
+          "kind": "screenshot",
+          "name": "tests/checkout-validation-50f823f3/steps/3-1-2/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/checkout-validation-50f823f3/steps/3-1-2/screenshot.jpg"
+        },
+        {
+          "bytes": 97678,
+          "kind": "screenshot",
+          "name": "tests/checkout-validation-50f823f3/steps/4-1-3/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/checkout-validation-50f823f3/steps/4-1-3/screenshot.jpg"
+        },
+        {
+          "bytes": 64161,
+          "kind": "screenshot",
+          "name": "tests/home-cta-ecedc7a4/steps/1-0-1/screenshot.jpg",
+          "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/tests/home-cta-ecedc7a4/steps/1-0-1/screenshot.jpg"
         }
       ],
-      "id": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "id": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "kind": "run",
-      "packId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
-      "publicPath": "/evidence/ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence/",
+      "packId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+      "publicPath": "/evidence/ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence/",
       "sealedAt": null
     }
   ],
   "freshness": {
     "commandFamily": "ExecutionTestrun",
-    "terminalEventAt": "2026-08-21T08:44:01.085Z",
+    "terminalEventAt": "2026-08-26T06:35:04.797Z",
     "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-21T09:05:54.797Z",
+  "generatedAt": "2026-08-28T01:07:23.112Z",
   "generator": {
     "kaneCli": null,
-    "kept": "0.0.0"
+    "kept": "0.1.0"
   },
   "metrics": {
-    "designedCount": 8,
+    "designedCount": 13,
     "designedCoverage": 1,
-    "provenCount": 7,
-    "provenCoverage": null,
+    "provenCount": 8,
+    "provenCoverage": 0.6153846153846154,
     "redCount": 1,
-    "staleCount": 0,
-    "totalPromises": 8,
+    "staleCount": 4,
+    "totalPromises": 13,
     "undesignedCount": 0
   },
   "promises": [
@@ -623,7 +1043,7 @@
         "path": "tests/settings_currency_test.md",
         "testId": "T-6"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_177308118beb",
       "providers": [
         "baseline"
@@ -631,13 +1051,34 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
+    },
+    {
+      "citation": {
+        "file": "README.md",
+        "line": 68,
+        "text": "npm run demo          # Ledger on :3000, fixture on :3100"
+      },
+      "claim": "npm run demo # Ledger on :3000, fixture on :3100",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/kept_demo_boot_test.md",
+        "testId": null
+      },
+      "evidencePackId": null,
+      "id": "p_1a74550edb2a",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
     },
     {
       "citation": {
@@ -651,7 +1092,7 @@
         "path": "tests/orders_persist_test.md",
         "testId": "T-5"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_365815f2bcca",
       "providers": [
         "baseline"
@@ -659,11 +1100,39 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
+        "terminalEventType": "testrun_done"
+      }
+    },
+    {
+      "citation": {
+        "file": "README.md",
+        "line": 679,
+        "text": "| `/badge.svg` | GET only, `image/svg+xml`, proven coverage as a whole-number percentage |"
+      },
+      "claim": "| `/badge.svg` | GET only, `image/svg+xml`, proven coverage as a whole-number percentage |",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/kept_badge_endpoint_test.md",
+        "testId": null
+      },
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+      "id": "p_3ef37e0912f2",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "proven",
+      "verdictSource": {
+        "at": "2026-08-26T06:35:04.797Z",
+        "memberStatus": "passed",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
     },
@@ -674,34 +1143,55 @@
         "text": "- The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars."
       },
       "claim": "The Cart screen applies a 10 percent discount automatically when the subtotal exceeds 50 dollars.",
-      "credits": 13.50176,
+      "credits": 8.671055,
       "designedTest": {
         "path": "tests/cart_discount_test.md",
         "testId": "T-7"
       },
-      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_45ccecba7aa5",
       "providers": [
         "baseline"
       ],
       "repair": {
-        "branch": "test-drift",
+        "branch": "code-break",
         "category": "ui_data_defect",
-        "confidence": 0.79,
-        "evidenceRef": ".testmuai/evidence/f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
-        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The cart showed a subtotal of $72.00 but kept the total at $72.00 instead of automatically reducing it to $64.80.\".",
+        "confidence": 0.93,
+        "evidenceRef": ".testmuai/evidence/4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+        "rationale": "The inline verdict object reports confirmed as true: Kane confirmed a product bug, and the object outranks the numeric code (R6.4). Kane reported: \"The cart shows the full $72.00 total instead of the expected discounted $64.80 after the subtotal passes $50.\".",
         "severity": "major",
         "strategy": "resultCode740"
       },
       "verdict": "red",
       "verdictSource": {
-        "at": "2026-08-21T08:44:01.085Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "failed",
-        "reasonCode": "stuck.ap_stuck",
-        "resultCode": 330,
-        "runId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497",
+        "reasonCode": "assertion_error.confirmed_product_bug",
+        "resultCode": 740,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
+    },
+    {
+      "citation": {
+        "file": "README.md",
+        "line": 22,
+        "text": "a snapshot committed in this repository: **Kane is invoked zero times, zero credits are spent,"
+      },
+      "claim": "a snapshot committed in this repository: **Kane is invoked zero times, zero credits are spent,",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/kept_self_claims_test.md",
+        "testId": null
+      },
+      "evidencePackId": null,
+      "id": "p_68cd8509429c",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
     },
     {
       "citation": {
@@ -715,7 +1205,7 @@
         "path": "tests/shop_filter_test.md",
         "testId": "T-1"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_6ca9700b8471",
       "providers": [
         "baseline"
@@ -723,11 +1213,11 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
     },
@@ -743,7 +1233,7 @@
         "path": "tests/cart_subtotal_test.md",
         "testId": "T-3"
       },
-      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_8d965c2fae07",
       "providers": [
         "baseline"
@@ -751,13 +1241,34 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T08:44:01.085Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
         "reasonCode": "success.complete",
         "resultCode": 100,
-        "runId": "f2cac6b7-1b7b-49b8-8a0e-abb53b732497",
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
+    },
+    {
+      "citation": {
+        "file": "README.md",
+        "line": 301,
+        "text": "4. **The deployed artefact cannot spend or mutate.** No non-GET handler, no server action, no"
+      },
+      "claim": "**The deployed artefact cannot spend or mutate.** No non-GET handler, no server action, no",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/kept_self_claims_test.md",
+        "testId": null
+      },
+      "evidencePackId": null,
+      "id": "p_a6ee7108e3bb",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
     },
     {
       "citation": {
@@ -771,7 +1282,7 @@
         "path": "tests/product_currency_test.md",
         "testId": "T-8"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_a972e6fcb195",
       "providers": [
         "baseline"
@@ -779,11 +1290,11 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
     },
@@ -799,7 +1310,7 @@
         "path": "tests/home_cta_test.md",
         "testId": "T-2"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_c5468bf7ed77",
       "providers": [
         "baseline"
@@ -807,11 +1318,11 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
     },
@@ -827,7 +1338,7 @@
         "path": "tests/checkout_validation_test.md",
         "testId": "T-4"
       },
-      "evidencePackId": null,
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
       "id": "p_eb071a709ed0",
       "providers": [
         "baseline"
@@ -835,24 +1346,683 @@
       "repair": null,
       "verdict": "proven",
       "verdictSource": {
-        "at": "2026-08-21T03:52:23.744Z",
+        "at": "2026-08-26T06:35:04.797Z",
         "memberStatus": "passed",
-        "reasonCode": null,
-        "resultCode": null,
-        "runId": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
+        "reasonCode": "success.complete",
+        "resultCode": 100,
+        "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
         "terminalEventType": "testrun_done"
       }
+    },
+    {
+      "citation": {
+        "file": "README.md",
+        "line": 89,
+        "text": "No network, no credentials, no Kane. Every Kane behaviour under test is replayed from a"
+      },
+      "claim": "No network, no credentials, no Kane. Every Kane behaviour under test is replayed from a",
+      "credits": null,
+      "designedTest": {
+        "path": "tests/kept_self_claims_test.md",
+        "testId": null
+      },
+      "evidencePackId": null,
+      "id": "p_f0a8a6f5ae73",
+      "providers": [
+        "baseline"
+      ],
+      "repair": null,
+      "verdict": "stale",
+      "verdictSource": null
     }
   ],
   "reviewCards": [],
   "runs": [
+    {
+      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/kept_badge_endpoint_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+          "line": null,
+          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_demo_boot_test.md",
+          "line": null,
+          "message": "tests/kept_demo_boot_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.801Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_self_claims_test.md",
+          "line": null,
+          "message": "tests/kept_self_claims_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:38:36.400Z",
+          "code": "verify-member-unattributed",
+          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+          "line": null,
+          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:38:36.402Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 211541,
+      "endedAt": "2026-08-26T06:35:04.797Z",
+      "evidencePackId": "ev_4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/checkout_validation_test.md",
+          "status": "passed",
+          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/kept_badge_endpoint_test.md",
+          "status": "passed",
+          "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/orders_persist_test.md",
+          "status": "passed",
+          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/product_currency_test.md",
+          "status": "passed",
+          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/settings_currency_test.md",
+          "status": "passed",
+          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.93,
+        "confirmed": true,
+        "family": "application_issue",
+        "one_liner": "The cart shows the full $72.00 total instead of the expected discounted $64.80 after the subtotal passes $50.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/kept_badge_endpoint_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+          "line": null,
+          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_demo_boot_test.md",
+          "line": null,
+          "message": "tests/kept_demo_boot_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:32:42.675Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_self_claims_test.md",
+          "line": null,
+          "message": "tests/kept_self_claims_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:38:30.587Z",
+          "code": "verify-member-unattributed",
+          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+          "line": null,
+          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 347852,
+      "endedAt": "2026-08-26T06:32:42.671Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "eeab5184-b872-4459-8ed7-d45838d6905f",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/checkout_validation_test.md",
+          "status": "passed",
+          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/kept_badge_endpoint_test.md",
+          "status": "failed",
+          "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/orders_persist_test.md",
+          "status": "passed",
+          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/product_currency_test.md",
+          "status": "passed",
+          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/settings_currency_test.md",
+          "status": "passed",
+          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/kept_badge_endpoint_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-26T06:31:27.373Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+          "line": null,
+          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+          "line": null,
+          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_demo_boot_test.md",
+          "line": null,
+          "message": "tests/kept_demo_boot_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:31:27.374Z",
+          "code": "verify-suite-member-unidentified",
+          "file": "tests/kept_self_claims_test.md",
+          "line": null,
+          "message": "tests/kept_self_claims_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-26T06:35:04.573Z",
+          "code": "verify-member-unattributed",
+          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+          "line": null,
+          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 217143,
+      "endedAt": "2026-08-26T06:31:27.076Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "d90abe55-168b-42cc-a96e-fefeda946632",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/checkout_validation_test.md",
+          "status": "passed",
+          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/kept_badge_endpoint_test.md",
+          "status": "passed",
+          "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/orders_persist_test.md",
+          "status": "passed",
+          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/product_currency_test.md",
+          "status": "passed",
+          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/settings_currency_test.md",
+          "status": "passed",
+          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "state_transition_bug",
+        "confidence": 0.92,
+        "confirmed": false,
+        "family": "automation_bug",
+        "one_liner": "The run got stuck before it reached a cart state where the discounted total could be checked.",
+        "severity": "minor"
+      }
+    },
+    {
+      "command": "testrun run tests/home_cta_test.md tests/shop_filter_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-25T11:56:08.616Z",
+          "code": "radius-member-no-test-id",
+          "file": "tests/shop_filter_persist_test.md",
+          "line": null,
+          "message": "tests/shop_filter_persist_test.md is in the testrun plan with no test_id, so it is excluded from the blast radius: an identifier is only ever taken from the plan, never guessed from a path or a filename.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 34364,
+      "endedAt": "2026-08-25T11:56:08.608Z",
+      "evidencePackId": null,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "family": "ExecutionTestrun",
+      "id": "6816bbab-676d-4a3b-8516-52524f143b41",
+      "members": [
+        {
+          "path": "tests/home_cta_test.md",
+          "status": "passed",
+          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+          "verdict": "proven"
+        },
+        {
+          "path": "tests/shop_filter_test.md",
+          "status": "passed",
+          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "passed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "maintain reconcile --from apps/fixture/README.md --source-id readme --plan --mode agent",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": null,
+      "endedAt": "2026-08-25T11:14:57.242Z",
+      "evidencePackId": null,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "family": "Assurance",
+      "id": "kept-reconcile:2026-08-25T11:14:57.242Z#0",
+      "members": [],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "complete",
+      "terminalEventType": "done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "maintain reconcile --from apps/fixture/README.md --source-id readme --plan --mode agent",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": null,
+      "endedAt": "2026-08-25T11:14:42.164Z",
+      "evidencePackId": null,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "family": "Assurance",
+      "id": "kept-reconcile:2026-08-25T11:14:42.164Z#0",
+      "members": [],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "complete",
+      "terminalEventType": "done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "maintain reconcile --from apps/fixture/README.md --source-id readme --plan --mode agent",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": null,
+      "endedAt": "2026-08-25T11:13:42.988Z",
+      "evidencePackId": null,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "family": "Assurance",
+      "id": "kept-reconcile:2026-08-25T11:13:42.988Z#0",
+      "members": [],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "complete",
+      "terminalEventType": "done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "maintain reconcile --from apps/fixture/README.md --source-id readme --plan --mode agent",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": null,
+      "endedAt": "2026-08-25T11:10:44.902Z",
+      "evidencePackId": null,
+      "exitCode": 0,
+      "exitMeaning": "success",
+      "family": "Assurance",
+      "id": "kept-reconcile:2026-08-25T11:10:44.902Z#0",
+      "members": [],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "complete",
+      "terminalEventType": "done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [],
+      "durationMs": 98345,
+      "endedAt": "2026-08-21T16:35:22.779Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "9b365184-d068-44a9-a9c4-4ab9aa48486c",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "passed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "proven"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": {
+        "category": "ui_data_defect",
+        "confidence": 0.78,
+        "confirmed": false,
+        "family": "application_issue",
+        "one_liner": "On the cart page, the total remains the same as the $72.00 subtotal instead of dropping to $64.80 once the order is over $50.",
+        "severity": "major"
+      }
+    },
+    {
+      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
+      "credits": null,
+      "diagnostics": [
+        {
+          "at": "2026-08-21T16:03:06.859Z",
+          "code": "ndjson-crashed-stream",
+          "file": null,
+          "line": null,
+          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+          "severity": "warn"
+        },
+        {
+          "at": "2026-08-21T16:04:53.445Z",
+          "code": "handoff-code-break-unproven",
+          "file": "apps/fixture/README.md",
+          "line": 20,
+          "message": "promise p_45ccecba7aa5 routed 'code-break' and KEPT has never proven it — its verdict before this run was 'red', not 'proven'. There is no observed earlier state to restore, so an automatic patch would implement the claim rather than repair a regression, and no path is authorised for it — though another promise in this radius was proven, so the run does carry a write fence.",
+          "severity": "warn"
+        }
+      ],
+      "durationMs": 106547,
+      "endedAt": "2026-08-21T16:03:06.570Z",
+      "evidencePackId": null,
+      "exitCode": 1,
+      "exitMeaning": "failure",
+      "family": "ExecutionTestrun",
+      "id": "257033a3-b0e9-4640-92c8-6ba4c9b060ea",
+      "members": [
+        {
+          "path": "tests/cart_discount_test.md",
+          "status": "failed",
+          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+          "verdict": "red"
+        },
+        {
+          "path": "tests/cart_subtotal_test.md",
+          "status": "failed",
+          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+          "verdict": "red"
+        }
+      ],
+      "reasonCode": null,
+      "resultCode": null,
+      "startedAt": null,
+      "status": "failed",
+      "terminalEventType": "testrun_done",
+      "terminalSeen": true,
+      "verdictObject": null
+    },
     {
       "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue --bug-detection continue",
       "credits": null,
       "diagnostics": [],
       "durationMs": 105014,
       "endedAt": "2026-08-21T08:44:01.085Z",
-      "evidencePackId": "ev_f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence",
+      "evidencePackId": null,
       "exitCode": 1,
       "exitMeaning": "failure",
       "family": "ExecutionTestrun",
@@ -1311,432 +2481,6 @@
       "resultCode": null,
       "startedAt": null,
       "status": "failed",
-      "terminalEventType": "testrun_done",
-      "terminalSeen": true,
-      "verdictObject": null
-    },
-    {
-      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
-      "credits": null,
-      "diagnostics": [
-        {
-          "at": "2026-08-21T05:24:58.435Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:24:58.435Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        }
-      ],
-      "durationMs": 92628,
-      "endedAt": "2026-08-21T05:23:25.797Z",
-      "evidencePackId": null,
-      "exitCode": 1,
-      "exitMeaning": "failure",
-      "family": "ExecutionTestrun",
-      "id": "f4726521-991e-4027-8f0c-304ff679e21a",
-      "members": [
-        {
-          "path": "tests/cart_discount_test.md",
-          "status": "failed",
-          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
-          "verdict": "red"
-        },
-        {
-          "path": "tests/cart_subtotal_test.md",
-          "status": "failed",
-          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
-          "verdict": "red"
-        }
-      ],
-      "reasonCode": null,
-      "resultCode": null,
-      "startedAt": null,
-      "status": "failed",
-      "terminalEventType": "testrun_done",
-      "terminalSeen": true,
-      "verdictObject": null
-    },
-    {
-      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
-      "credits": null,
-      "diagnostics": [
-        {
-          "at": "2026-08-21T05:18:52.382Z",
-          "code": "ndjson-crashed-stream",
-          "file": null,
-          "line": null,
-          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:20:08.218Z",
-          "code": "member-debug-unpaired",
-          "file": null,
-          "line": null,
-          "message": "The captured '[member]' terminals could not be tied to the suite's members: 10 member terminal(s) were captured for 2 member event(s). No classification signal was attributed, so every failing member is routed from the triage note instead — a signal on the wrong member would authorise the wrong repair.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:20:08.219Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:20:08.219Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        }
-      ],
-      "durationMs": 75827,
-      "endedAt": "2026-08-21T05:18:51.649Z",
-      "evidencePackId": null,
-      "exitCode": 1,
-      "exitMeaning": "failure",
-      "family": "ExecutionTestrun",
-      "id": "dbef2b96-eee0-4ae0-9c1b-6519acbd13f8",
-      "members": [
-        {
-          "path": "tests/cart_discount_test.md",
-          "status": "failed",
-          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
-          "verdict": "red"
-        },
-        {
-          "path": "tests/cart_subtotal_test.md",
-          "status": "failed",
-          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
-          "verdict": "red"
-        }
-      ],
-      "reasonCode": null,
-      "resultCode": null,
-      "startedAt": null,
-      "status": "failed",
-      "terminalEventType": "testrun_done",
-      "terminalSeen": true,
-      "verdictObject": null
-    },
-    {
-      "command": "testrun run tests/cart_discount_test.md tests/cart_subtotal_test.md --on-failure continue",
-      "credits": null,
-      "diagnostics": [
-        {
-          "at": "2026-08-21T05:08:31.045Z",
-          "code": "ndjson-crashed-stream",
-          "file": null,
-          "line": null,
-          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:09:53.454Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T05:09:53.455Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        }
-      ],
-      "durationMs": 82404,
-      "endedAt": "2026-08-21T05:08:30.732Z",
-      "evidencePackId": null,
-      "exitCode": 1,
-      "exitMeaning": "failure",
-      "family": "ExecutionTestrun",
-      "id": "15d244e5-ea15-4caa-97e2-bf021672f94c",
-      "members": [
-        {
-          "path": "tests/cart_discount_test.md",
-          "status": "failed",
-          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
-          "verdict": "red"
-        },
-        {
-          "path": "tests/cart_subtotal_test.md",
-          "status": "failed",
-          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
-          "verdict": "red"
-        }
-      ],
-      "reasonCode": null,
-      "resultCode": null,
-      "startedAt": null,
-      "status": "failed",
-      "terminalEventType": "testrun_done",
-      "terminalSeen": true,
-      "verdictObject": null
-    },
-    {
-      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue",
-      "credits": null,
-      "diagnostics": [
-        {
-          "at": "2026-08-21T03:52:24.102Z",
-          "code": "ndjson-crashed-stream",
-          "file": null,
-          "line": null,
-          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:52:24.103Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:52:24.103Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:52:24.103Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
-          "line": null,
-          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:52:24.103Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:56:03.081Z",
-          "code": "verify-member-unattributed",
-          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
-          "line": null,
-          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:56:03.081Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        }
-      ],
-      "durationMs": null,
-      "endedAt": "2026-08-21T03:52:23.744Z",
-      "evidencePackId": null,
-      "exitCode": 1,
-      "exitMeaning": "failure",
-      "family": "ExecutionTestrun",
-      "id": "108dbb62-4f20-46ec-abbd-3b8be6c6e13c",
-      "members": [
-        {
-          "path": "tests/cart_discount_test.md",
-          "status": "failed",
-          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
-          "verdict": "red"
-        },
-        {
-          "path": "tests/cart_subtotal_test.md",
-          "status": "passed",
-          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/checkout_validation_test.md",
-          "status": "passed",
-          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/home_cta_test.md",
-          "status": "passed",
-          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/orders_persist_test.md",
-          "status": "passed",
-          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/product_currency_test.md",
-          "status": "passed",
-          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/settings_currency_test.md",
-          "status": "passed",
-          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/shop_filter_test.md",
-          "status": "passed",
-          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
-          "verdict": "proven"
-        }
-      ],
-      "reasonCode": null,
-      "resultCode": null,
-      "startedAt": null,
-      "status": null,
-      "terminalEventType": "testrun_done",
-      "terminalSeen": true,
-      "verdictObject": null
-    },
-    {
-      "command": "testrun run docs/kane/spike/cart_subtotal_spike_test.md tests/cart_discount_test.md tests/cart_subtotal_test.md tests/checkout_validation_test.md tests/home_cta_test.md tests/orders_persist_test.md tests/product_currency_test.md tests/settings_currency_test.md tests/shop_filter_test.md --on-failure continue",
-      "credits": null,
-      "diagnostics": [
-        {
-          "at": "2026-08-21T03:39:00.320Z",
-          "code": "ndjson-crashed-stream",
-          "file": null,
-          "line": null,
-          "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:39:00.323Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:39:00.323Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:39:00.323Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
-          "line": null,
-          "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:39:00.323Z",
-          "code": "verify-suite-member-unidentified",
-          "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
-          "line": null,
-          "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:42:34.472Z",
-          "code": "verify-member-unattributed",
-          "file": "docs/kane/spike/cart_subtotal_spike_test.md",
-          "line": null,
-          "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
-          "severity": "warn"
-        },
-        {
-          "at": "2026-08-21T03:42:34.473Z",
-          "code": "failure-yaml-absent",
-          "file": null,
-          "line": null,
-          "message": "No failure.yaml path or content was supplied, so no triage note can be read. No path is guessed.",
-          "severity": "warn"
-        }
-      ],
-      "durationMs": null,
-      "endedAt": "2026-08-21T03:38:59.518Z",
-      "evidencePackId": null,
-      "exitCode": 1,
-      "exitMeaning": "failure",
-      "family": "ExecutionTestrun",
-      "id": "kept-verify:2026-08-21T03:38:59.518Z",
-      "members": [
-        {
-          "path": "tests/cart_discount_test.md",
-          "status": "failed",
-          "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
-          "verdict": "red"
-        },
-        {
-          "path": "tests/cart_subtotal_test.md",
-          "status": "passed",
-          "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/checkout_validation_test.md",
-          "status": "passed",
-          "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/home_cta_test.md",
-          "status": "passed",
-          "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/orders_persist_test.md",
-          "status": "passed",
-          "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/product_currency_test.md",
-          "status": "passed",
-          "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/settings_currency_test.md",
-          "status": "passed",
-          "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
-          "verdict": "proven"
-        },
-        {
-          "path": "tests/shop_filter_test.md",
-          "status": "passed",
-          "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
-          "verdict": "proven"
-        }
-      ],
-      "reasonCode": null,
-      "resultCode": null,
-      "startedAt": null,
-      "status": null,
       "terminalEventType": "testrun_done",
       "terminalSeen": true,
       "verdictObject": null

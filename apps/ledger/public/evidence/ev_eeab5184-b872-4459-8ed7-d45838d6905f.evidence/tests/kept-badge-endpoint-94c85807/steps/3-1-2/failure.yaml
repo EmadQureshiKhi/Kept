@@ -1,0 +1,36 @@
+step: 1-2
+status: broken
+error:
+  message: "replay_dispatch_error: TargetClosedError: screenshot: Target page, context\
+    \ or browser has been closed\nCall log:\n  - taking page screenshot\n"
+  type: replay_failure
+page_state:
+  url: http://localhost:3100/checkout
+locator_context:
+  replay_reason: "replay_dispatch_error: TargetClosedError: screenshot: Target page,\
+    \ context or browser has been closed\nCall log:\n  - taking page screenshot\n"
+console_at_failure:
+  ref: logs/1-console.ndjson
+  step: 1-2
+network_at_failure:
+  ref: logs/1-network.har
+  step: 1-2
+title: Replay screenshot fails after page closes
+triage:
+  status: triaged
+  by:
+    kind: agent
+    id: v16-investigation/replay
+    at: '2026-08-26T06:36:56.702846+00:00'
+  rca:
+    root_cause: The page went away before the replay finished capturing its screenshot,
+      so the failure came from the test environment rather than from the badge content.
+    category: environment_issue/platform_failure
+    confidence: 0.93
+  verification:
+    status: not_verified
+  severity: minor
+  suggested_fix:
+    summary: Rerun the replay and check why the browser/page is being closed before
+      screenshot capture. Stabilize teardown timing so the proof screenshot happens
+      while the page is still open.

@@ -1,0 +1,5 @@
+tools/with-apps.sh: line 114: 80867 Killed: 9               ( cd "${REPO_ROOT}/${directory}" && exec node "${NEXT_BIN}" dev -p "${port}" ) < /dev/null > "${LOG_DIR}/${label}-server.log" 2>&1
+tools/with-apps.sh: line 114: 80871 Killed: 9     ==> exited 0
+d "${REPO_ROOT}/${directory}" && exec node "${NEXT_BIN}" dev -p "${port}" ) < /dev/null > "${LOG_DIR}/${label}-server.log" 2>&1
+==> node bin/kept verify --all --member-debug --json
+==> exited 0

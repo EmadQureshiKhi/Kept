@@ -1,0 +1,1328 @@
+{
+  "command": "verify",
+  "implemented": true,
+  "repoRoot": "/Users/nokitha/Desktop/KEPT",
+  "scope": "all",
+  "argv": [
+    "testrun",
+    "run",
+    "docs/kane/spike/cart_subtotal_spike_test.md",
+    "tests/cart_discount_test.md",
+    "tests/cart_subtotal_test.md",
+    "tests/checkout_validation_test.md",
+    "tests/home_cta_test.md",
+    "tests/kept_badge_endpoint_test.md",
+    "tests/orders_persist_test.md",
+    "tests/product_currency_test.md",
+    "tests/settings_currency_test.md",
+    "tests/shop_filter_test.md",
+    "--on-failure",
+    "continue",
+    "--bug-detection",
+    "continue"
+  ],
+  "invoked": true,
+  "runId": "eeab5184-b872-4459-8ed7-d45838d6905f",
+  "exitCode": 1,
+  "exitMeaning": "failure",
+  "terminalSeen": true,
+  "preflightRejected": false,
+  "wrote": true,
+  "refusals": [],
+  "radius": {
+    "testIds": [
+      "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+      "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "58f4980c-0110-4f7e-b84a-ed89a963a9c6",
+      "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "70e7202d-3dfd-4056-9d11-15705096ad5c",
+      "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+      "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+      "e342c321-5b49-4525-a14e-c227ff5b52ed",
+      "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c"
+    ],
+    "promiseIds": [
+      "p_177308118beb",
+      "p_365815f2bcca",
+      "p_3ef37e0912f2",
+      "p_45ccecba7aa5",
+      "p_6ca9700b8471",
+      "p_8d965c2fae07",
+      "p_a972e6fcb195",
+      "p_c5468bf7ed77",
+      "p_eb071a709ed0"
+    ],
+    "unmatchedPaths": [],
+    "skippedNoTestId": [
+      ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "tests/kept_demo_boot_test.md",
+      "tests/kept_self_claims_test.md"
+    ]
+  },
+  "members": [
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "58f4980c-0110-4f7e-b84a-ed89a963a9c6",
+      "path": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "promiseIds": [],
+      "repair": null
+    },
+    {
+      "status": "failed",
+      "known": true,
+      "verdict": "red",
+      "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "path": "tests/cart_discount_test.md",
+      "promiseIds": [
+        "p_45ccecba7aa5"
+      ],
+      "repair": {
+        "branch": "docs-lie",
+        "strategy": "failureYamlTriage",
+        "severity": null,
+        "category": null,
+        "confidence": null,
+        "evidenceRef": ".testmuai/evidence/eeab5184-b872-4459-8ed7-d45838d6905f.evidence",
+        "rationale": "failure.yaml carried none of the accepted triage fields, so it names no product-fault and no test-mechanics signal."
+      }
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "path": "tests/cart_subtotal_test.md",
+      "promiseIds": [
+        "p_8d965c2fae07"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+      "path": "tests/checkout_validation_test.md",
+      "promiseIds": [
+        "p_eb071a709ed0"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "path": "tests/home_cta_test.md",
+      "promiseIds": [
+        "p_c5468bf7ed77"
+      ],
+      "repair": null
+    },
+    {
+      "status": "failed",
+      "known": true,
+      "verdict": "red",
+      "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+      "path": "tests/kept_badge_endpoint_test.md",
+      "promiseIds": [
+        "p_3ef37e0912f2"
+      ],
+      "repair": {
+        "branch": "docs-lie",
+        "strategy": "failureYamlTriage",
+        "severity": "minor",
+        "category": "environment_issue/platform_failure",
+        "confidence": 0.93,
+        "evidenceRef": ".testmuai/evidence/eeab5184-b872-4459-8ed7-d45838d6905f.evidence",
+        "rationale": "failure.yaml triage.rca.category is \"environment_issue/platform_failure\", which matches no product-fault and no test-mechanics signal."
+      }
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+      "path": "tests/orders_persist_test.md",
+      "promiseIds": [
+        "p_365815f2bcca"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+      "path": "tests/product_currency_test.md",
+      "promiseIds": [
+        "p_a972e6fcb195"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+      "path": "tests/settings_currency_test.md",
+      "promiseIds": [
+        "p_177308118beb"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+      "path": "tests/shop_filter_test.md",
+      "promiseIds": [
+        "p_6ca9700b8471"
+      ],
+      "repair": null
+    }
+  ],
+  "updatedPromiseIds": [
+    "p_177308118beb",
+    "p_365815f2bcca",
+    "p_3ef37e0912f2",
+    "p_45ccecba7aa5",
+    "p_6ca9700b8471",
+    "p_8d965c2fae07",
+    "p_a972e6fcb195",
+    "p_c5468bf7ed77",
+    "p_eb071a709ed0"
+  ],
+  "credits": null,
+  "evidencePackId": "eeab5184-b872-4459-8ed7-d45838d6905f.evidence",
+  "memberStreamPath": "/Users/nokitha/Desktop/KEPT/.kept/diagnostics/eeab5184-b872-4459-8ed7-d45838d6905f.member.ndjson",
+  "statePath": "/Users/nokitha/Desktop/KEPT/.kept/state.json",
+  "handoffPath": "/Users/nokitha/Desktop/KEPT/.kept/handoff.json",
+  "nextAction": {
+    "branch": "docs-lie",
+    "autonomy": "propose",
+    "artefact": "amendment",
+    "instruction": "The documentation claims something the product never did. Run the amend command and stop: the replacement text is proposed as a rendered diff and is never written until a human accepts it. Never edit documentation directly.",
+    "allowedPaths": [],
+    "forbiddenPaths": [
+      "tests",
+      "tests/**",
+      "README.md",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**",
+      "packages/**",
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**"
+    ],
+    "command": "node bin/kept amend propose --run eeab5184-b872-4459-8ed7-d45838d6905f"
+  },
+  "snapshot": {
+    "path": "/Users/nokitha/Desktop/KEPT/apps/ledger/data/ledger.snapshot.json",
+    "written": true
+  },
+  "freshness": {
+    "terminalEventAt": "2026-08-26T06:32:42.671Z",
+    "terminalEventType": "testrun_done",
+    "commandFamily": "ExecutionTestrun"
+  },
+  "diagnostics": [
+    {
+      "code": "verify-started",
+      "severity": "info",
+      "message": "kept verify --all: 13 promise(s) in the graph, budget 300000 ms, router 'resultCode740'",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:32:42.673Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": "tests/kept_demo_boot_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": "tests/kept_demo_boot_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": "tests/kept_self_claims_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": "tests/kept_self_claims_test.md",
+      "line": null,
+      "at": "2026-08-26T06:32:42.675Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.529Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'1307e6b6-5008-430a-855f-913d39dc659e 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/1307e6b6-5008-430a-855f-913d39dc659e 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.529Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.529Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.530Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.530Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.530Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.530Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.530Z"
+    },
+    {
+      "code": "sealed-triage-read",
+      "severity": "info",
+      "message": "Read 2 triage note(s) from sealed pack eeab5184-b872-4459-8ed7-d45838d6905f.evidence, each tied to a member by the test id the pack's own result.yaml declares — never by matching a directory name to a document title. testrun_member_end carries no result code, no reason code and no verdict object, so this note is the stable classification signal (R6.4, R6.7).",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/eeab5184-b872-4459-8ed7-d45838d6905f.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.583Z"
+    },
+    {
+      "code": "verify-member-stream-captured",
+      "severity": "info",
+      "message": "827 '[member]' event(s) were captured into .kept/diagnostics/eeab5184-b872-4459-8ed7-d45838d6905f.member.ndjson (R4.12). This is where the classification signal lives: testrun_member_end carries no result code, no reason code and no verdict object.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.585Z"
+    },
+    {
+      "code": "member-debug-captured",
+      "severity": "info",
+      "message": "Captured 10 member segment(s) from the '[member]' stream (827 line(s), 42 step group(s)), 2 failing, 0 carrying an inline verdict object. testrun_member_end carries no result code, no reason code and no verdict object, so this is the only place the primary classification signal exists (R4.12, R6.4).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.587Z"
+    },
+    {
+      "code": "verify-member-unattributed",
+      "severity": "warn",
+      "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+      "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "line": null,
+      "at": "2026-08-26T06:38:30.587Z"
+    },
+    {
+      "code": "member-status",
+      "severity": "info",
+      "message": "testrun_member_end reported status \"failed\" for 4be09740-bce4-483f-ad83-9e6cc24bd421 (tests/cart_discount_test.md), mapped to verdict red. Recorded verbatim so a failed member stays distinguishable from an asserted failure.",
+      "file": "tests/cart_discount_test.md",
+      "line": null,
+      "at": "2026-08-26T06:38:30.587Z"
+    },
+    {
+      "code": "failure-yaml-no-signal",
+      "severity": "info",
+      "message": "failure.yaml carried none of the accepted triage fields (triage.rca.category, triage.category, category, classification, reason).",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/eeab5184-b872-4459-8ed7-d45838d6905f.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:30.588Z"
+    },
+    {
+      "code": "member-status",
+      "severity": "info",
+      "message": "testrun_member_end reported status \"failed\" for 3a9bc583-ee27-46d1-b15c-540f5c8cf470 (tests/kept_badge_endpoint_test.md), mapped to verdict red. Recorded verbatim so a failed member stays distinguishable from an asserted failure.",
+      "file": "tests/kept_badge_endpoint_test.md",
+      "line": null,
+      "at": "2026-08-26T06:38:30.588Z"
+    },
+    {
+      "code": "snapshot-evidence-pack-oversize",
+      "severity": "warn",
+      "message": "Evidence pack 'eeab5184-b872-4459-8ed7-d45838d6905f.evidence' curated 60 artefacts to the 6291456-byte ceiling and left 69 out, so the committed repository stays clonable. The pack still exists in full where Kane sealed it.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.658Z"
+    },
+    {
+      "code": "snapshot-evidence-curated",
+      "severity": "info",
+      "message": "kept snapshot: curated 1 evidence pack into apps/ledger/public/evidence/ (60 artefacts, 6284957 bytes), so every artefact link is a static URL needing no Kane, no credentials and no network.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.658Z"
+    },
+    {
+      "code": "snapshot-records-projected",
+      "severity": "info",
+      "message": "kept snapshot: projected 24 terminal events from .kept/handoff/, 1 amendment from .kept/amendments/ and 0 held changes from .kept/review-cards/. All three are projections of persisted records; none is a source of truth this command invents.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.665Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_45ccecba7aa5 → 9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence names 'ev_9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_6ca9700b8471 → 6816bbab-676d-4a3b-8516-52524f143b41.evidence names 'ev_6816bbab-676d-4a3b-8516-52524f143b41.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_8d965c2fae07 → 9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence names 'ev_9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_c5468bf7ed77 → 6816bbab-676d-4a3b-8516-52524f143b41.evidence names 'ev_6816bbab-676d-4a3b-8516-52524f143b41.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'd90abe55-168b-42cc-a96e-fefeda946632' references evidence pack 'd90abe55-168b-42cc-a96e-fefeda946632.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '6816bbab-676d-4a3b-8516-52524f143b41' references evidence pack '6816bbab-676d-4a3b-8516-52524f143b41.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '9b365184-d068-44a9-a9c4-4ab9aa48486c' references evidence pack '9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '257033a3-b0e9-4640-92c8-6ba4c9b060ea' references evidence pack '257033a3-b0e9-4640-92c8-6ba4c9b060ea.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497' references evidence pack 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '58fb2dfa-94f1-4190-8922-cd8e2079bfe6' references evidence pack '58fb2dfa-94f1-4190-8922-cd8e2079bfe6.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4cc8633-43cb-4799-95b2-000093f3cffd' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'defd438c-8f4d-4768-87c8-3cff627a2443' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '1307e6b6-5008-430a-855f-913d39dc659e' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '5c2b8c30-98a3-4406-ad0f-6216dac2c5e5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '73ab6abb-4729-4b2b-ad47-53c8be339991' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '57591bff-4480-455e-9ab7-c92263ff58ac' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '0944d075-8dab-4683-a59f-96e51308697c' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f0d80fd8-3499-41ad-b1a2-3c12ad919cb1' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4726521-991e-4027-8f0c-304ff679e21a' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '15d244e5-ea15-4caa-97e2-bf021672f94c' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '108dbb62-4f20-46ec-abbd-3b8be6c6e13c' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'kept-verify:2026-08-21T03:38:59.518Z' references evidence pack 'ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:30.666Z"
+    },
+    {
+      "code": "snapshot-repair-evidence-unresolved",
+      "severity": "warn",
+      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence' in this snapshot, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38{
+  "command": "verify",
+  "implemented": true,
+  "repoRoot": "/Users/nokitha/Desktop/KEPT",
+  "scope": "all",
+  "argv": [
+    "testrun",
+    "run",
+    "docs/kane/spike/cart_subtotal_spike_test.md",
+    "tests/cart_discount_test.md",
+    "tests/cart_subtotal_test.md",
+    "tests/checkout_validation_test.md",
+    "tests/home_cta_test.md",
+    "tests/kept_badge_endpoint_test.md",
+    "tests/orders_persist_test.md",
+    "tests/product_currency_test.md",
+    "tests/settings_currency_test.md",
+    "tests/shop_filter_test.md",
+    "--on-failure",
+    "continue",
+    "--bug-detection",
+    "continue"
+  ],
+  "invoked": true,
+  "runId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31",
+  "exitCode": 1,
+  "exitMeaning": "failure",
+  "terminalSeen": true,
+  "preflightRejected": false,
+  "wrote": true,
+  "refusals": [],
+  "radius": {
+    "testIds": [
+      "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+      "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "58f4980c-0110-4f7e-b84a-ed89a963a9c6",
+      "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "70e7202d-3dfd-4056-9d11-15705096ad5c",
+      "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+      "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+      "e342c321-5b49-4525-a14e-c227ff5b52ed",
+      "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c"
+    ],
+    "promiseIds": [
+      "p_177308118beb",
+      "p_365815f2bcca",
+      "p_3ef37e0912f2",
+      "p_45ccecba7aa5",
+      "p_6ca9700b8471",
+      "p_8d965c2fae07",
+      "p_a972e6fcb195",
+      "p_c5468bf7ed77",
+      "p_eb071a709ed0"
+    ],
+    "unmatchedPaths": [],
+    "skippedNoTestId": [
+      ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "tests/kept_demo_boot_test.md",
+      "tests/kept_self_claims_test.md"
+    ]
+  },
+  "members": [
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "58f4980c-0110-4f7e-b84a-ed89a963a9c6",
+      "path": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "promiseIds": [],
+      "repair": null
+    },
+    {
+      "status": "failed",
+      "known": true,
+      "verdict": "red",
+      "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421",
+      "path": "tests/cart_discount_test.md",
+      "promiseIds": [
+        "p_45ccecba7aa5"
+      ],
+      "repair": {
+        "branch": "code-break",
+        "strategy": "resultCode740",
+        "severity": "major",
+        "category": "ui_data_defect",
+        "confidence": 0.93,
+        "evidenceRef": ".testmuai/evidence/4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+        "rationale": "The inline verdict object reports confirmed as true: Kane confirmed a product bug, and the object outranks the numeric code (R6.4). Kane reported: \"The cart shows the full $72.00 total instead of the expected discounted $64.80 after the subtotal passes $50.\"."
+      }
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441",
+      "path": "tests/cart_subtotal_test.md",
+      "promiseIds": [
+        "p_8d965c2fae07"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed",
+      "path": "tests/checkout_validation_test.md",
+      "promiseIds": [
+        "p_eb071a709ed0"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "path": "tests/home_cta_test.md",
+      "promiseIds": [
+        "p_c5468bf7ed77"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470",
+      "path": "tests/kept_badge_endpoint_test.md",
+      "promiseIds": [
+        "p_3ef37e0912f2"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb",
+      "path": "tests/orders_persist_test.md",
+      "promiseIds": [
+        "p_365815f2bcca"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0",
+      "path": "tests/product_currency_test.md",
+      "promiseIds": [
+        "p_a972e6fcb195"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c",
+      "path": "tests/settings_currency_test.md",
+      "promiseIds": [
+        "p_177308118beb"
+      ],
+      "repair": null
+    },
+    {
+      "status": "passed",
+      "known": true,
+      "verdict": "proven",
+      "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+      "path": "tests/shop_filter_test.md",
+      "promiseIds": [
+        "p_6ca9700b8471"
+      ],
+      "repair": null
+    }
+  ],
+  "updatedPromiseIds": [
+    "p_177308118beb",
+    "p_365815f2bcca",
+    "p_3ef37e0912f2",
+    "p_45ccecba7aa5",
+    "p_6ca9700b8471",
+    "p_8d965c2fae07",
+    "p_a972e6fcb195",
+    "p_c5468bf7ed77",
+    "p_eb071a709ed0"
+  ],
+  "credits": null,
+  "evidencePackId": "4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+  "memberStreamPath": "/Users/nokitha/Desktop/KEPT/.kept/diagnostics/4af9b061-d3cb-448d-9671-7cd2fd54cf31.member.ndjson",
+  "statePath": "/Users/nokitha/Desktop/KEPT/.kept/state.json",
+  "handoffPath": "/Users/nokitha/Desktop/KEPT/.kept/handoff.json",
+  "nextAction": {
+    "branch": "code-break",
+    "autonomy": "hold",
+    "artefact": null,
+    "instruction": "Kane reports a product fault, but KEPT has never proven this promise: no run has ever observed the cited behaviour working, so there is no earlier state to restore and an automatic patch would be implementing the claim rather than repairing a regression. Report the diagnostics and change nothing. Automatic repair resumes for this promise once a verification has proven it once.",
+    "allowedPaths": [],
+    "forbiddenPaths": [
+      "tests",
+      "tests/**",
+      "README.md",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**",
+      "packages/**",
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**"
+    ],
+    "command": null
+  },
+  "snapshot": {
+    "path": "/Users/nokitha/Desktop/KEPT/apps/ledger/data/ledger.snapshot.json",
+    "written": true
+  },
+  "freshness": {
+    "terminalEventAt": "2026-08-26T06:35:04.797Z",
+    "terminalEventType": "testrun_done",
+    "commandFamily": "ExecutionTestrun"
+  },
+  "diagnostics": [
+    {
+      "code": "verify-started",
+      "severity": "info",
+      "message": "kept verify --all: 13 promise(s) in the graph, budget 300000 ms, router 'resultCode740'",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:35:04.799Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": "tests/kept_demo_boot_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": "tests/kept_demo_boot_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "verify-suite-member-unidentified",
+      "severity": "warn",
+      "message": "tests/kept_self_claims_test.md is in the testrun plan with no test_id, which means Kane holds no recording for it, so replaying it would author it live and spend credits. It is excluded from the whole-suite replay and no verdict of its own moves.",
+      "file": "tests/kept_self_claims_test.md",
+      "line": null,
+      "at": "2026-08-26T06:35:04.801Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'1307e6b6-5008-430a-855f-913d39dc659e 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/1307e6b6-5008-430a-855f-913d39dc659e 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.345Z"
+    },
+    {
+      "code": "sealed-triage-read",
+      "severity": "info",
+      "message": "Read 1 triage note(s) from sealed pack 4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence, each tied to a member by the test id the pack's own result.yaml declares — never by matching a directory name to a document title. testrun_member_end carries no result code, no reason code and no verdict object, so this note is the stable classification signal (R6.4, R6.7).",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence",
+      "line": null,
+      "at": "2026-08-26T06:38:36.397Z"
+    },
+    {
+      "code": "verify-member-stream-captured",
+      "severity": "info",
+      "message": "823 '[member]' event(s) were captured into .kept/diagnostics/4af9b061-d3cb-448d-9671-7cd2fd54cf31.member.ndjson (R4.12). This is where the classification signal lives: testrun_member_end carries no result code, no reason code and no verdict object.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.398Z"
+    },
+    {
+      "code": "member-debug-captured",
+      "severity": "info",
+      "message": "Captured 10 member segment(s) from the '[member]' stream (823 line(s), 42 step group(s)), 1 failing, 1 carrying an inline verdict object. testrun_member_end carries no result code, no reason code and no verdict object, so this is the only place the primary classification signal exists (R4.12, R6.4).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.400Z"
+    },
+    {
+      "code": "verify-member-unattributed",
+      "severity": "warn",
+      "message": "testrun_member_end reported \"passed\" for 58f4980c-0110-4f7e-b84a-ed89a963a9c6, which no promise in the graph is designed by, so the result was recorded and no verdict moved",
+      "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "line": null,
+      "at": "2026-08-26T06:38:36.400Z"
+    },
+    {
+      "code": "member-status",
+      "severity": "info",
+      "message": "testrun_member_end reported status \"failed\" for 4be09740-bce4-483f-ad83-9e6cc24bd421 (tests/cart_discount_test.md), mapped to verdict red. Recorded verbatim so a failed member stays distinguishable from an asserted failure.",
+      "file": "tests/cart_discount_test.md",
+      "line": null,
+      "at": "2026-08-26T06:38:36.400Z"
+    },
+    {
+      "code": "snapshot-evidence-pack-oversize",
+      "severity": "warn",
+      "message": "Evidence pack '4af9b061-d3cb-448d-9671-7cd2fd54cf31.evidence' curated 59 artefacts to the 6291456-byte ceiling and left 70 out, so the committed repository stays clonable. The pack still exists in full where Kane sealed it.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.466Z"
+    },
+    {
+      "code": "snapshot-evidence-curated",
+      "severity": "info",
+      "message": "kept snapshot: curated 1 evidence pack into apps/ledger/public/evidence/ (59 artefacts, 6286412 bytes), so every artefact link is a static URL needing no Kane, no credentials and no network.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.466Z"
+    },
+    {
+      "code": "snapshot-records-projected",
+      "severity": "info",
+      "message": "kept snapshot: projected 25 terminal events from .kept/handoff/, 1 amendment from .kept/amendments/ and 0 held changes from .kept/review-cards/. All three are projections of persisted records; none is a source of truth this command invents.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.469Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_177308118beb → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_365815f2bcca → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_45ccecba7aa5 → 9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence names 'ev_9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_6ca9700b8471 → 6816bbab-676d-4a3b-8516-52524f143b41.evidence names 'ev_6816bbab-676d-4a3b-8516-52524f143b41.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_8d965c2fae07 → 9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence names 'ev_9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_a972e6fcb195 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_c5468bf7ed77 → 6816bbab-676d-4a3b-8516-52524f143b41.evidence names 'ev_6816bbab-676d-4a3b-8516-52524f143b41.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-edge-unresolved",
+      "severity": "warn",
+      "message": "The 'evidence' edge p_eb071a709ed0 → a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence names 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence', which this snapshot declares no node for, so the edge was dropped rather than published as an edge to nothing.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'eeab5184-b872-4459-8ed7-d45838d6905f' references evidence pack 'eeab5184-b872-4459-8ed7-d45838d6905f.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'd90abe55-168b-42cc-a96e-fefeda946632' references evidence pack 'd90abe55-168b-42cc-a96e-fefeda946632.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '6816bbab-676d-4a3b-8516-52524f143b41' references evidence pack '6816bbab-676d-4a3b-8516-52524f143b41.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '9b365184-d068-44a9-a9c4-4ab9aa48486c' references evidence pack '9b365184-d068-44a9-a9c4-4ab9aa48486c.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '257033a3-b0e9-4640-92c8-6ba4c9b060ea' references evidence pack '257033a3-b0e9-4640-92c8-6ba4c9b060ea.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497' references evidence pack 'f2cac6b7-1b7b-49b8-8a0e-abb53b732497.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '58fb2dfa-94f1-4190-8922-cd8e2079bfe6' references evidence pack '58fb2dfa-94f1-4190-8922-cd8e2079bfe6.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4cc8633-43cb-4799-95b2-000093f3cffd' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'defd438c-8f4d-4768-87c8-3cff627a2443' references evidence pack '1307e6b6-5008-430a-855f-913d39dc659e 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '1307e6b6-5008-430a-855f-913d39dc659e' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '5c2b8c30-98a3-4406-ad0f-6216dac2c5e5' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '73ab6abb-4729-4b2b-ad47-53c8be339991' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '57591bff-4480-455e-9ab7-c92263ff58ac' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '0944d075-8dab-4683-a59f-96e51308697c' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f0d80fd8-3499-41ad-b1a2-3c12ad919cb1' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'f4726521-991e-4027-8f0c-304ff679e21a' references evidence pack 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '15d244e5-ea15-4caa-97e2-bf021672f94c' references evidence pack '108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run '108dbb62-4f20-46ec-abbd-3b8be6c6e13c' references evidence pack 'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-evidence-unresolved",
+      "severity": "warn",
+      "message": "Run 'kept-verify:2026-08-21T03:38:59.518Z' references evidence pack 'ed791716-ed4a-456e-ae7a-46d1e05a70d3.evidence', which is not committed under apps/ledger/public/evidence/, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-repair-evidence-unresolved",
+      "severity": "warn",
+      "message": "Amendment 'am_57fdcb99' references '.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence', which resolves to pack 'ev_a1039478-409c-4213-a5e8-fcf8480a56f8-2.evidence' in this snapshot, so the reference was cleared rather than published as a dead link.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-runs-truncated",
+      "severity": "info",
+      "message": "25 runs were offered and the committed file carries 20 (design §9.1): the newest up to 20, plus every run a promise names as its verdict source, so 5 were dropped. 1 run(s) were retained as cited provenance regardless of age, because a verdict pointing at a run this file does not carry cannot be opened.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.471Z"
+    },
+    {
+      "code": "snapshot-written",
+      "severity": "info",
+      "message": "kept snapshot: wrote 98809 bytes carrying 13 promises",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.482Z"
+    },
+    {
+      "code": "verify-completed",
+      "severity": "info",
+      "message": "kept verify --all: 10 member(s) in the radius, 10 result(s) consumed, 9 verdict(s) written",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T06:38:36.482Z"
+    }
+  ]
+}

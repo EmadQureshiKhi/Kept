@@ -1,0 +1,31 @@
+step: 4-1
+status: failed
+error:
+  message: AP determined agent is stuck — no viable actions remain
+page_state:
+  url: http://localhost:3100/cart
+  screenshot: steps/15-4-1/screenshot.jpg
+console_at_failure:
+  ref: logs/4-console.ndjson
+  step: 4-1
+network_at_failure:
+  ref: logs/4-network.har
+  step: 4-1
+title: Cart total does not apply 10% discount above $50 subtotal
+triage:
+  status: triaged
+  by:
+    kind: agent
+    id: v16-investigation/terminal
+    at: '2026-08-26T06:36:19.959783+00:00'
+  rca:
+    root_cause: The cart is not reducing the total when the subtotal is over 50 dollars,
+      so it displays the wrong amount to the user.
+    category: application_issue/ui_data_defect
+    confidence: 0.93
+  verification:
+    status: not_verified
+  severity: major
+  suggested_fix:
+    summary: Check the cart’s discount rule and total calculation for orders above
+      $50, and verify the discounted total updates automatically on the cart page.
