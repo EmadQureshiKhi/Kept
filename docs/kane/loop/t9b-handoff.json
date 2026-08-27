@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "runId": "be3de265-0fbd-498b-ad8f-54eb3afb62d8",
+  "writtenAt": "2026-08-26T07:39:58.353Z",
+  "trigger": {
+    "hook": null,
+    "event": null,
+    "paths": [
+      "apps/fixture/app/shop/page.tsx"
+    ]
+  },
+  "command": {
+    "family": "ExecutionTestrun",
+    "argv": [
+      "testrun",
+      "run",
+      "tests/home_cta_test.md",
+      "tests/shop_filter_persist_test.md",
+      "tests/shop_filter_test.md",
+      "--on-failure",
+      "continue",
+      "--bug-detection",
+      "continue"
+    ],
+    "ndjsonEnabledBy": "piped-stdout",
+    "invoked": true
+  },
+  "outcome": {
+    "terminalSeen": true,
+    "terminalEventType": "testrun_done",
+    "exitCode": 1,
+    "exitMeaning": "failure",
+    "timedOut": false,
+    "resumable": false,
+    "verdictsPermitted": true,
+    "status": "failed",
+    "resultCode": null,
+    "reasonCode": null,
+    "credits": null,
+    "durationMs": 98473
+  },
+  "blastRadius": {
+    "testIds": [
+      "1080f892-b002-43f4-b123-16dc4ea3837b",
+      "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c"
+    ],
+    "promiseIds": [
+      "p_6ca9700b8471",
+      "p_77fa3fec8d54",
+      "p_c5468bf7ed77"
+    ],
+    "unmatchedPaths": [],
+    "skippedNoTestId": []
+  },
+  "results": [
+    {
+      "promiseId": "p_c5468bf7ed77",
+      "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599",
+      "designedTest": "tests/home_cta_test.md",
+      "memberStatus": "passed",
+      "verdict": "proven",
+      "previousVerdict": "proven",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 13,
+        "text": "- The Home screen links to the Shop screen from its primary call to action."
+      },
+      "repair": null,
+      "verdictObject": null,
+      "evidenceDir": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence",
+      "evidencePackId": "be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence",
+      "artifacts": {
+        "annotated": null,
+        "failureYaml": null,
+        "screenshots": [],
+        "other": []
+      }
+    },
+    {
+      "promiseId": "p_77fa3fec8d54",
+      "testId": "1080f892-b002-43f4-b123-16dc4ea3837b",
+      "designedTest": "tests/shop_filter_persist_test.md",
+      "memberStatus": "failed",
+      "verdict": "red",
+      "previousVerdict": "stale",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 21,
+        "text": "- The Shop screen keeps the selected roast filter after a full page reload."
+      },
+      "repair": {
+        "branch": "test-drift",
+        "strategy": "resultCode740",
+        "severity": "minor",
+        "category": "state_transition_bug",
+        "confidence": 0.87,
+        "evidenceRef": ".testmuai/evidence/be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence",
+        "rationale": "The inline verdict object reports confirmed as false: Kane investigated and did not confirm a product bug, so the failure is the test's own. The object outranks the numeric code (R6.4). Kane reported: \"The test expected the page to still be filtered to Dark roast, but it was on the default All roasts view and the run got stuck there.\"."
+      },
+      "verdictObject": {
+        "confirmed": false,
+        "family": "automation_bug",
+        "category": "state_transition_bug",
+        "severity": "minor",
+        "one_liner": "The test expected the page to still be filtered to Dark roast, but it was on the default All roasts view and the run got stuck there.",
+        "confidence": 0.87
+      },
+      "evidenceDir": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence",
+      "evidencePackId": "be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence",
+      "artifacts": {
+        "annotated": null,
+        "failureYaml": null,
+        "screenshots": [],
+        "other": []
+      }
+    },
+    {
+      "promiseId": "p_6ca9700b8471",
+      "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c",
+      "designedTest": "tests/shop_filter_test.md",
+      "memberStatus": "passed",
+      "verdict": "proven",
+      "previousVerdict": "proven",
+      "citation": {
+        "file": "apps/fixture/README.md",
+        "line": 14,
+        "text": "- The Shop screen lists exactly six coffees and filters them by roast level without a page reload."
+      },
+      "repair": null,
+      "verdictObject": null,
+      "evidenceDir": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence",
+      "evidencePackId": "be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence",
+      "artifacts": {
+        "annotated": null,
+        "failureYaml": null,
+        "screenshots": [],
+        "other": []
+      }
+    }
+  ],
+  "nextAction": {
+    "branch": "test-drift",
+    "autonomy": "hold",
+    "artefact": "review-card",
+    "instruction": "The test mechanics drifted, not the product. Run the evolve command and stop: the proposed change is held as a review card for a human. Write no file yourself.",
+    "allowedPaths": [],
+    "forbiddenPaths": [
+      "tests",
+      "tests/**",
+      "README.md",
+      "apps/fixture/README.md",
+      "apps/fixture/docs/**",
+      "packages/**",
+      "apps/fixture/app/**",
+      "apps/fixture/components/**",
+      "apps/fixture/lib/**"
+    ],
+    "command": "node bin/kept evolve tests/shop_filter_persist_test.md"
+  },
+  "diagnostics": [
+    {
+      "code": "verify-started",
+      "severity": "info",
+      "message": "kept verify --changed: 14 promise(s) in the graph, budget 300000 ms, router 'resultCode740'",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T07:39:58.355Z"
+    },
+    {
+      "code": "ndjson-crashed-stream",
+      "severity": "warn",
+      "message": "ExecutionTestrun stream ended without its terminal testrun_done event: outcome unknown, neither a pass nor a failure",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T07:39:59.083Z"
+    },
+    {
+      "code": "plan-refreshed-without-terminal",
+      "severity": "info",
+      "message": "`testrun run --dry-run` emitted its 'testrun_plan' event and exited cleanly without a 'testrun_done' event, which is what a dry run does: it executes nothing, so there is no execution to report done. The plan is accepted.",
+      "file": ".kept/plan.json",
+      "line": null,
+      "at": "2026-08-26T07:39:59.083Z"
+    },
+    {
+      "code": "plan-refreshed",
+      "severity": "info",
+      "message": "`testrun run --dry-run` enumerated 17 member(s), 11 of them carrying a test id (.kept/plan.json is absent).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T07:39:59.084Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T07:39:59.085Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T07:39:59.085Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "line": null,
+      "at": "2026-08-26T07:39:59.085Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "line": null,
+      "at": "2026-08-26T07:39:59.085Z"
+    },
+    {
+      "code": "radius-covers-absent",
+      "severity": "info",
+      "message": "docs/kane/spike/cart_subtotal_spike_test.md declares no `covers:` globs, so no source edit selects it: it runs only under `kept verify --all`.",
+      "file": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "line": null,
+      "at": "2026-08-26T07:39:59.085Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/108dbb62-4f20-46ec-abbd-3b8be6c6e13c 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.562Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'1307e6b6-5008-430a-855f-913d39dc659e 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/1307e6b6-5008-430a-855f-913d39dc659e 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/3465b0ea-ea22-4a0e-b4d4-51e3d89fc3b3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'4af9b061-d3cb-448d-9671-7cd2fd54cf31 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/4af9b061-d3cb-448d-9671-7cd2fd54cf31 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/58fb2dfa-94f1-4190-8922-cd8e2079bfe6 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/a1039478-409c-4213-a5e8-fcf8480a56f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/dbef2b96-eee0-4ae0-9c1b-6519acbd13f8 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/ed791716-ed4a-456e-ae7a-46d1e05a70d3 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'eeab5184-b872-4459-8ed7-d45838d6905f 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/eeab5184-b872-4459-8ed7-d45838d6905f 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "evidence-pack-conflict-copy",
+      "severity": "info",
+      "message": "'f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence' in /Users/nokitha/Desktop/KEPT/.testmuai/evidence is a filesystem sync conflict copy, not a pack Kane sealed — iCloud Drive resolves a write collision by keeping both sides and appending an ordinal. It sorts newest because the sync wrote it last, so selecting it would attribute this run's evidence to an id no archive is named after. It is ignored and the pack it shadows is resolved under its real name.",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/f2cac6b7-1b7b-49b8-8a0e-abb53b732497 2.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.563Z"
+    },
+    {
+      "code": "sealed-triage-read",
+      "severity": "info",
+      "message": "Read 1 triage note(s) from sealed pack be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence, each tied to a member by the test id the pack's own result.yaml declares — never by matching a directory name to a document title. testrun_member_end carries no result code, no reason code and no verdict object, so this note is the stable classification signal (R6.4, R6.7).",
+      "file": "/Users/nokitha/Desktop/KEPT/.testmuai/evidence/be3de265-0fbd-498b-ad8f-54eb3afb62d8.evidence",
+      "line": null,
+      "at": "2026-08-26T07:41:37.589Z"
+    },
+    {
+      "code": "verify-member-stream-captured",
+      "severity": "info",
+      "message": "203 '[member]' event(s) were captured into .kept/diagnostics/be3de265-0fbd-498b-ad8f-54eb3afb62d8.member.ndjson (R4.12). This is where the classification signal lives: testrun_member_end carries no result code, no reason code and no verdict object.",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T07:41:37.590Z"
+    },
+    {
+      "code": "member-debug-captured",
+      "severity": "info",
+      "message": "Captured 3 member segment(s) from the '[member]' stream (203 line(s), 11 step group(s)), 1 failing, 1 carrying an inline verdict object. testrun_member_end carries no result code, no reason code and no verdict object, so this is the only place the primary classification signal exists (R4.12, R6.4).",
+      "file": null,
+      "line": null,
+      "at": "2026-08-26T07:41:37.591Z"
+    },
+    {
+      "code": "member-status",
+      "severity": "info",
+      "message": "testrun_member_end reported status \"failed\" for 1080f892-b002-43f4-b123-16dc4ea3837b (tests/shop_filter_persist_test.md), mapped to verdict red. Recorded verbatim so a failed member stays distinguishable from an asserted failure.",
+      "file": "tests/shop_filter_persist_test.md",
+      "line": null,
+      "at": "2026-08-26T07:41:37.592Z"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-08-26T07:39:58.356Z",
+  "valid": true,
+  "members": [
+    {
+      "path": ".testmuai/tests/apply-discount-when-a-quantity-increase-pushes-the-cart_test.md",
+      "testId": null
+    },
+    {
+      "path": ".testmuai/tests/keep-the-discount-off-when-a-quantity-change-sets-the-cart_test.md",
+      "testId": null
+    },
+    {
+      "path": ".testmuai/tests/recalculate-the-subtotal-correctly-after-a-below-threshold_test.md",
+      "testId": null
+    },
+    {
+      "path": ".testmuai/tests/remove-discount-when-a-quantity-decrease-brings-the-cart_test.md",
+      "testId": null
+    },
+    {
+      "path": "docs/kane/spike/cart_subtotal_spike_test.md",
+      "testId": "58f4980c-0110-4f7e-b84a-ed89a963a9c6"
+    },
+    {
+      "path": "tests/cart_discount_test.md",
+      "testId": "4be09740-bce4-483f-ad83-9e6cc24bd421"
+    },
+    {
+      "path": "tests/cart_subtotal_test.md",
+      "testId": "1c4fff07-a0da-495b-8471-26d45b4a1441"
+    },
+    {
+      "path": "tests/checkout_validation_test.md",
+      "testId": "e342c321-5b49-4525-a14e-c227ff5b52ed"
+    },
+    {
+      "path": "tests/home_cta_test.md",
+      "testId": "6badb68a-68e8-42cd-b3eb-8ca64143a599"
+    },
+    {
+      "path": "tests/kept_badge_endpoint_test.md",
+      "testId": "3a9bc583-ee27-46d1-b15c-540f5c8cf470"
+    },
+    {
+      "path": "tests/kept_demo_boot_test.md",
+      "testId": null
+    },
+    {
+      "path": "tests/kept_self_claims_test.md",
+      "testId": null
+    },
+    {
+      "path": "tests/orders_persist_test.md",
+      "testId": "e05ff76f-8fb7-40a2-aa95-36e4fc33c2bb"
+    },
+    {
+      "path": "tests/product_currency_test.md",
+      "testId": "9337ea4e-6534-424b-9aba-80b3ff5018d0"
+    },
+    {
+      "path": "tests/settings_currency_test.md",
+      "testId": "70e7202d-3dfd-4056-9d11-15705096ad5c"
+    },
+    {
+      "path": "tests/shop_filter_persist_test.md",
+      "testId": "1080f892-b002-43f4-b123-16dc4ea3837b"
+    },
+    {
+      "path": "tests/shop_filter_test.md",
+      "testId": "ea184bd9-1e5d-42c6-8fdc-fc9fcd27343c"
+    }
+  ]
+}
