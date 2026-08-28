@@ -90,7 +90,7 @@ const packageDir = (dir: PackageDir): string => resolve(REPO_ROOT, 'packages', d
 const CLI_ENTRY = resolve(packageDir('kept-cli'), 'dist/index.js');
 
 /** The version task 25.1 set on both manifests and on `KEPT_VERSION`. */
-const EXPECTED_VERSION = '0.1.0';
+const EXPECTED_VERSION = '0.1.1';
 
 /** Kane's binary name, duplicated rather than imported. See the sibling file. */
 const KANE_BINARY_NAME = 'kane-cli';
@@ -629,7 +629,7 @@ describe('Feature: kept, Property 35: The packed tarball is installable and self
       readFileSync(resolve(packageDir('kept-cli'), 'package.json'), { encoding: 'utf8' }),
     ) as { readonly bin?: Readonly<Record<string, string>> };
     const target = manifest.bin?.kept;
-    expect(target, 'kept-cli must declare a `kept` bin.').toBeTypeOf('string');
+    expect(target, '@corgod/kept-cli must declare a `kept` bin.').toBeTypeOf('string');
     expect(
       entriesOf('kept-cli'),
       `The kept bin target ${target ?? ''} is not in the archive, so an install links a missing file.`,
@@ -650,7 +650,7 @@ describe('Feature: kept, Property 35: The packed tarball is installable and self
     for (const protocol of ['workspace:', 'file:', 'link:', 'portal:', '*', '0.0.0']) {
       expect(
         range === protocol || range.startsWith(protocol),
-        `kept-cli's kept-core range '${range}' uses '${protocol}', which resolves inside this ` +
+        `@corgod/kept-cli's kept-core range '${range}' uses '${protocol}', which resolves inside this ` +
           `workspace and nowhere else (R17.3).`,
       ).toBe(false);
     }

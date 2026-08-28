@@ -47,7 +47,7 @@
  * repository sitting in a package a stranger installs. They arrive now as
  * {@link FenceSurfaces}, resolved by the CLI from `.kept/config.json` and already
  * past the intersection guard of §20.3. The dependency direction forces it as much
- * as the design does: `kept-cli` depends on `kept-core`, so core cannot read the
+ * as the design does: `@corgod/kept-cli` depends on `kept-core`, so core cannot read the
  * config and must be handed what it may not invent.
  *
  * On `test-drift` and `docs-lie` the fence is empty on the allowed side, because
@@ -146,7 +146,7 @@ export const HANDOFF_DIAGNOSTIC_CODE_VALUES: readonly string[] = Object.freeze(
  * installs as a dependency, which made the fence table a lie the moment the engine
  * ran anywhere else. They are now parameters, for a reason the dependency graph
  * decides rather than taste: `handoff.ts` lives in `kept-core` and the config
- * loader lives in `kept-cli`, so core *cannot* read the config. Values it must not
+ * loader lives in `@corgod/kept-cli`, so core *cannot* read the config. Values it must not
  * invent have to arrive as arguments.
  *
  * `allow` is `fences['code-break'].allow` as the loader resolved it — already past

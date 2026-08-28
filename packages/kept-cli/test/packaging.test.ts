@@ -187,7 +187,7 @@ describe('the manifests can publish (R17.1, R17.7)', () => {
   it('declares the same version on both packages', () => {
     expect(
       CLI.version,
-      `kept-cli is ${CLI.version} while kept-core is ${CORE.version}. Bump both together, ` +
+      `@corgod/kept-cli is ${CLI.version} while kept-core is ${CORE.version}. Bump both together, ` +
         `or an install resolves a core the CLI was never built against (R17.7).`,
     ).toBe(CORE.version);
     expect(CORE.version).not.toBe('0.0.0');
@@ -218,13 +218,13 @@ describe("the CLI's core dependency resolves from the registry (R17.3)", () => {
   const range = CLI.dependencies?.['kept-core'];
 
   it('is declared at all', () => {
-    expect(range, 'kept-cli must depend on kept-core.').toBeTypeOf('string');
+    expect(range, '@corgod/kept-cli must depend on kept-core.').toBeTypeOf('string');
   });
 
   it('is not the bare literal 0.0.0, which resolves only through the workspace symlink', () => {
     expect(
       range,
-      `kept-cli depends on kept-core@0.0.0. That resolves in this workspace and nowhere else: ` +
+      `@corgod/kept-cli depends on kept-core@0.0.0. That resolves in this workspace and nowhere else: ` +
         `from the registry an installer receives a CLI whose core import fails (R17.3).`,
     ).not.toBe('0.0.0');
   });
@@ -235,20 +235,20 @@ describe("the CLI's core dependency resolves from the registry (R17.3)", () => {
     for (const protocol of ['workspace:', 'file:', 'link:', 'portal:', '*']) {
       expect(
         range?.startsWith(protocol),
-        `kept-cli's kept-core range '${range ?? ''}' uses '${protocol}', which does not ` +
+        `@corgod/kept-cli's kept-core range '${range ?? ''}' uses '${protocol}', which does not ` +
           `resolve from the public registry.`,
       ).toBe(false);
     }
     const parsed = /^(\^|~|>=)?(\d+)\.(\d+)\.(\d+)$/.exec(range ?? '');
     expect(
       parsed,
-      `kept-cli's kept-core range '${range ?? ''}' is not a plain semver range. Expected ` +
+      `@corgod/kept-cli's kept-core range '${range ?? ''}' is not a plain semver range. Expected ` +
         `something like '^${CORE.version}'.`,
     ).not.toBeNull();
     const floor = (parsed ?? [])[0]?.replace(/^[\^~>=]+/, '');
     expect(
       floor,
-      `kept-cli's kept-core range '${range ?? ''}' has floor '${floor ?? ''}', which is not ` +
+      `@corgod/kept-cli's kept-core range '${range ?? ''}' has floor '${floor ?? ''}', which is not ` +
         `the ${CORE.version} this tree builds. The range must admit the core being published.`,
     ).toBe(CORE.version);
   });

@@ -39,7 +39,7 @@ import {
  * how the comparison gets copied into code. Here prose is *legitimate*, and
  * common: `model/promise.ts` declares `RepairStrategy` as the union of the two
  * strategy names, `kane/failureYaml.ts` explains in prose why `failureYamlTriage`
- * can ship regardless of the spike, `kept-cli/src/config.ts` carries both names
+ * can ship regardless of the spike, `@corgod/kept-cli/src/config.ts` carries both names
  * as string literals in `VERDICT_ROUTER_NAMES`, and this package's barrel
  * documents the fence by naming what it fences. All four predate the routers, and
  * a scan that matched the *name* rather than the *import* would fail on every one

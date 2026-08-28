@@ -25,4 +25,4 @@
  * this CLI and the two converged. The constant is gone rather than left pointing at
  * a version nothing carries.
  */
-export const KEPT_VERSION = '0.1.0';
+export const KEPT_VERSION = '0.1.1';

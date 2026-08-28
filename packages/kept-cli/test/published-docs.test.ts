@@ -36,7 +36,7 @@
  *      specific test files and to pack specific workspaces. A renamed test file turns
  *      that into a command that fails with `No test files found`, which reads like the
  *      repository is broken rather than the document being stale.
- *   3. **An ordering that matters.** Core is published before CLI, because `kept-cli`
+ *   3. **An ordering that matters.** Core is published before CLI, because `@corgod/kept-cli`
  *      depends on `kept-core` by a registry range. Reversed, there is a window in
  *      which anybody installing the CLI cannot resolve its dependency. That is a fact
  *      about the world, not a preference about prose.
@@ -96,7 +96,7 @@ const PUBLISH = read(PUBLISH_DOC);
 
 describe('each published package documents itself for an installer (R17.11)', () => {
   it('scans both packages, so this suite cannot pass by finding neither', () => {
-    expect(PACKAGES.map((entry) => entry.manifest.name)).toEqual(['kept-core', 'kept-cli']);
+    expect(PACKAGES.map((entry) => entry.manifest.name)).toEqual(['kept-core', '@corgod/kept-cli']);
     for (const entry of PACKAGES) expect(entry.readme.length).toBeGreaterThan(400);
   });
 
@@ -174,13 +174,13 @@ describe('the publish procedure is walkable as written (R17.12, §22.4)', () => 
   });
 
   it('states the dependency range the CLI manifest actually declares', () => {
-    const cli = PACKAGES.find((entry) => entry.manifest.name === 'kept-cli');
+    const cli = PACKAGES.find((entry) => entry.manifest.name === '@corgod/kept-cli');
     const core = PACKAGES.find((entry) => entry.manifest.name === 'kept-core');
     const range = cli?.manifest.dependencies?.['kept-core'] ?? '';
-    expect(range, 'kept-cli does not depend on kept-core at all').not.toBe('');
+    expect(range, '@corgod/kept-cli does not depend on kept-core at all').not.toBe('');
     expect(
       PUBLISH,
-      `${PUBLISH_DOC} does not state the range ${range} that kept-cli declares on kept-core`,
+      `${PUBLISH_DOC} does not state the range ${range} that @corgod/kept-cli declares on kept-core`,
     ).toContain(`\`${range}\``);
     // The floor has to admit the core version being published, or step 6 publishes a CLI
     // whose dependency resolves to something older than the core it was built against.
@@ -189,12 +189,12 @@ describe('the publish procedure is walkable as written (R17.12, §22.4)', () => 
 
   it('publishes core before cli, because the dependency has to resolve', () => {
     const core = PUBLISH.indexOf('npm publish --workspace kept-core');
-    const cli = PUBLISH.indexOf('npm publish --workspace kept-cli');
+    const cli = PUBLISH.indexOf('npm publish --workspace @corgod/kept-cli');
     expect(core, `${PUBLISH_DOC} gives no publish command for kept-core`).toBeGreaterThan(-1);
-    expect(cli, `${PUBLISH_DOC} gives no publish command for kept-cli`).toBeGreaterThan(-1);
+    expect(cli, `${PUBLISH_DOC} gives no publish command for @corgod/kept-cli`).toBeGreaterThan(-1);
     expect(
       core,
-      `${PUBLISH_DOC} publishes kept-cli before kept-core, which leaves a window in which ` +
+      `${PUBLISH_DOC} publishes @corgod/kept-cli before kept-core, which leaves a window in which ` +
         `anybody installing the CLI cannot resolve its dependency`,
     ).toBeLessThan(cli);
   });
@@ -224,7 +224,7 @@ describe('the publish procedure is walkable as written (R17.12, §22.4)', () => 
     // failure that turns a global install into `Permission denied`, and it is the one
     // failure no other suite in this repository would see, because every other suite
     // imports the module instead of running the file.
-    const cli = PACKAGES.find((entry) => entry.manifest.name === 'kept-cli');
+    const cli = PACKAGES.find((entry) => entry.manifest.name === '@corgod/kept-cli');
     expect(cli?.manifest.version).toBeDefined();
     expect(PUBLISH).toContain('#!/usr/bin/env node');
     expect(PUBLISH).toMatch(/Permission denied/);

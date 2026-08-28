@@ -71,7 +71,7 @@ import { filterChangedDocs } from '../src/commands/reconcile.js';
  *
  * Every segment this repository actually uses, read off its own committed
  * configuration and its own tree: `apps`, `fixture`, `ledger`, `tests`, `packages`,
- * `kept-core`, `kept-cli`. The one exception is {@link PACKAGE_ROOT_GLOB}, which §20.1
+ * `kept-core`, `@corgod/kept-cli`. The one exception is {@link PACKAGE_ROOT_GLOB}, which §20.1
  * puts in the derived forbidden set of every branch on purpose and is a fact about the
  * engine rather than about this repository. It is excluded by name and nowhere else, so
  * the exclusion cannot quietly grow.
@@ -91,7 +91,7 @@ const THIS_REPOSITORY_SEGMENTS: readonly string[] = Object.freeze([
   'tests',
   'packages',
   'kept-core',
-  'kept-cli',
+  '@corgod/kept-cli',
 ]);
 
 /** A directory name that is not one of this repository's, and needs no normalising. */

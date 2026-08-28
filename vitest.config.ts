@@ -6,7 +6,7 @@ import { defineConfig } from 'vitest/config';
  *
  * Projects:
  *   kept-core — node environment, parser/model/provider/verdict units and properties
- *   kept-cli  — node environment, argv assertions and command wiring
+ *   @corgod/kept-cli  — node environment, argv assertions and command wiring
  *   ledger    — jsdom environment, React component and reduced-motion parity tests
  *   fixture   — node environment, Kepler Coffee's cart/currency/storage arithmetic
  *
@@ -63,7 +63,7 @@ export default defineConfig({
       },
       {
         test: {
-          name: 'kept-cli',
+          name: '@corgod/kept-cli',
           environment: 'node',
           include: ['packages/kept-cli/test/**/*.test.ts'],
         },

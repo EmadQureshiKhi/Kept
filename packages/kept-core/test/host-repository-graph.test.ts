@@ -424,7 +424,7 @@ describe('the engine builds a graph in a repository that shares no path with thi
       //
       // Composed the way the CLI composes it: the branch's allow set from the config,
       // and the derived forbidden set. Spelled out here rather than importing
-      // `handoffFenceSurfaces` because that helper lives in `kept-cli` and this suite
+      // `handoffFenceSurfaces` because that helper lives in `@corgod/kept-cli` and this suite
       // is in `kept-core` — the dependency runs one way, which is the whole reason the
       // fence globs are parameters in the first place.
       const surfaces = {

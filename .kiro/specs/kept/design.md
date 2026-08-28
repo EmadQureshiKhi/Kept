@@ -104,7 +104,7 @@ Real paths, as they will exist. Each module below owns exactly one of the interf
 KEPT/
 ├── package.json                       # workspaces root; scripts: demo, loop, build:snapshot, test
 ├── tsconfig.base.json
-├── vitest.config.ts                   # single root config, projects: kept-core, kept-cli
+├── vitest.config.ts                   # single root config, projects: kept-core, @corgod/kept-cli
 ├── .gitignore                         # excludes .context/ ; force-adds evidence + output-*
 ├── .kiro/
 │   ├── hooks/
@@ -159,7 +159,7 @@ KEPT/
 │   │       │   └── lineEdit.ts         # replaceLine() surgical writer
 │   │       ├── handoff/handoff.ts      # HandoffFile type + writeHandoff()
 │   │       └── state.ts               # StateStore: load/save .kept/state.json, StateWrite guard
-│   ├── kept-cli/
+│   ├── @corgod/kept-cli/
 │   │   ├── package.json               # bin: { "kept": "dist/index.js" }
 │   │   └── src/
 │   │       ├── index.ts               # arg parse (hand-rolled, no commander)
@@ -2565,7 +2565,7 @@ Two constraints that are easy to get wrong. **At most one Kane spawn** (R18.2): 
 
 ```
 kept-core   private: true   version 0.0.0
-kept-cli    private: true   version 0.0.0   dependencies: { "kept-core": "0.0.0" }
+@corgod/kept-cli    private: true   version 0.0.0   dependencies: { "kept-core": "0.0.0" }
 ```
 
 Three separate blockers. `private: true` refuses to publish at all. Version `0.0.0` is not a version anyone can depend on. And `"kept-core": "0.0.0"` resolves today only because npm workspaces symlinks it: from the registry, `0.0.0` either does not exist or is a different package, so an installer receives a CLI whose core import fails at require time.
@@ -2590,7 +2590,7 @@ The only honest test of "it works when installed" is an installation. The test:
 
 Step 5's last clause is what catches a hoisted dependency that the workspace happened to provide. Placing the install directory outside the workspace root is what makes the check meaningful; inside it, Node's resolution walks up and finds everything, and the test passes while the published package is broken.
 
-This is R17 restating the project's own thesis against itself. "A published `kept-cli` and `kept-core` are coming soon" is a claim, and a claim with no test behind it is the defect this repository exists to detect.
+This is R17 restating the project's own thesis against itself. "A published `@corgod/kept-cli` and `kept-core` are coming soon" is a claim, and a claim with no test behind it is the defect this repository exists to detect.
 
 ### 22.4 The recorded publish procedure (R17.12)
 

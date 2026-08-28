@@ -91,7 +91,7 @@ const DOCS_PATTERNS = hookPatterns('kept-docs-reconcile');
  * `subject.source` and `subject.docs` from the committed `.kept/config.json`.
  *
  * Read as raw JSON rather than through `loadConfig`, deliberately: this suite lives
- * in `kept-core` and the loader lives in `kept-cli`, so importing it would invert the
+ * in `kept-core` and the loader lives in `@corgod/kept-cli`, so importing it would invert the
  * dependency the whole of §20 exists to respect. What matters here is the *bytes on
  * disk* the CLI will read, and a missing or empty list is a failure rather than a
  * default — a defaulted `subject.docs` of `['README.md']` would make every clause

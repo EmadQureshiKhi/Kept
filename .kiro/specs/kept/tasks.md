@@ -22,7 +22,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
 - [x] 1. Repository skeleton and toolchain
   - [x] 1.1 Create the npm workspaces root and test toolchain
     - Root `package.json` with workspaces `apps/*`, `packages/*` and scripts `demo`, `loop`, `build:snapshot`, `test` (`vitest --run`), `check` (`node scripts/check-readonly.mjs && tsc -b && vitest --run`)
-    - `tsconfig.base.json` (strict), single root `vitest.config.ts` with projects `kept-core` and `kept-cli` plus a jsdom project for `apps/ledger`
+    - `tsconfig.base.json` (strict), single root `vitest.config.ts` with projects `kept-core` and `@corgod/kept-cli` plus a jsdom project for `apps/ledger`
     - Install only the nine runtime packages of design §2.2 with `animejs` written as the exact literal `"4.5.0"`; dev deps `typescript`, `vitest`, `fast-check`, `@testing-library/react`, `jsdom`, `@types/*`
     - Commit: "chore: npm workspaces root, strict tsconfig, vitest root config"
     - _Requirements: 12.3, 13.1_
@@ -31,7 +31,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - `packages/kept-core` and `packages/kept-cli` (`bin: { "kept": "dist/index.js" }`); `bin/kept` shebang launcher
     - `.kept/config.json` with `verdictRouter`, `memberDebug`, `timeouts.hookMs` 300000, `timeouts.enrichmentMs` 60000
     - `.gitignore`: exclude `.context/` and `.kept/`, force-add `output-*/` and the curated evidence paths
-    - Commit: "chore: kept-core and kept-cli packages, bin/kept, .kept config"
+    - Commit: "chore: kept-core and @corgod/kept-cli packages, bin/kept, .kept config"
     - _Requirements: 6.10, 13.6, 13.7_
 
   - [x] 1.3 Implement `diagnostics.ts`
@@ -951,7 +951,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
 
 - [ ] 25. Distribution — the packages install and run outside this workspace (§22)
   - [x] 25.1 Correct both manifests
-    - Remove `private: true` from both; set both versions to `0.1.0`; rewrite `kept-cli`'s dependency on `kept-core` from the literal `0.0.0` to `^0.1.0`, which resolves from the registry rather than only through the workspace symlink
+    - Remove `private: true` from both; set both versions to `0.1.0`; rewrite `@corgod/kept-cli`'s dependency on `kept-core` from the literal `0.0.0` to `^0.1.0`, which resolves from the registry rather than only through the workspace symlink
     - Add `repository`, `description`, `keywords`, `engines.node` at the repository's stated floor, and the repository's stated license to both
     - Add `prepublishOnly` running `tsc -b` to both, so a stale `dist` cannot publish
     - Add the test asserting the two versions are equal, because a CLI at `0.1.1` depending on `^0.1.0` while the repository builds them together is a drift nobody notices until an install resolves the older core
@@ -988,7 +988,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
   - [ ] 25.6 Publish — **the last task in this stage, and deliberately manual**
     - Run the whole gate first: `npm run check`, then 25.2 and 25.3 green, then publish core, then cli
     - Do not automate this. A publish is irreversible per version, and the one thing worse than an unpublished package is a published broken one
-    - Commit: "chore(release): kept-core and kept-cli 0.1.0"
+    - Commit: "chore(release): kept-core and @corgod/kept-cli 0.1.0"
     - _Requirements: 17.1, 17.12_
 
 - [x] 26. Self-verification — KEPT's own README as a promise source (§23)
@@ -1053,7 +1053,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
 
 ## Notes
 
-- **Stages 23 through 27 are the extension, and none of it is polish.** 23 makes the engine usable outside this repository, 24 is the surface a stranger meets, 25 is the claim "a published `kept-cli` and `kept-core` are coming soon" turned into something with a test behind it, 26 replaces a withdrawn target with a stronger and cheaper one, and 27 is the bookkeeping that keeps every stated figure true. Seven new correctness properties (30 through 36) carry the load, and the two that matter most are **31**, which keeps a user-editable fence from authorising the one repair this project must never perform, and **35**, which is the only honest test of "it works when installed".
+- **Stages 23 through 27 are the extension, and none of it is polish.** 23 makes the engine usable outside this repository, 24 is the surface a stranger meets, 25 is the claim "a published `@corgod/kept-cli` and `kept-core` are coming soon" turned into something with a test behind it, 26 replaces a withdrawn target with a stronger and cheaper one, and 27 is the bookkeeping that keeps every stated figure true. Seven new correctness properties (30 through 36) carry the load, and the two that matter most are **31**, which keeps a user-editable fence from authorising the one repair this project must never perform, and **35**, which is the only honest test of "it works when installed".
 - **Two items were dropped by decision rather than deferred**, and both are recorded in A17, in §18's table and at their task: **21.7 Shiki** (a tenth dependency against a budget a test asserts, to highlight one line of English prose) and **21.10 Conduit** (a backend, a database and a second corpus, to prove what stage 26 proves with a config entry and a tag).
 - **Optional marking, and why nothing carries it any more.** A `*` meant *this may be cut if the timebox bites*. It was never a statement about whether the work happened, and leaving it on completed items made finished work read as unfinished — so it was stripped from all 34 of those. **There are now zero starred tasks**: everything in 21 was promoted to required by decision, and 22 was never optional. The notation is kept documented here because history contains it.
   - **The properties were the bulk of that.** All 29 correctness properties were planned as cuttable and all 29 were built and are green — 33 `*.prop.test.ts` files, 243 assertions. Property 9 splits into 3.17 for the state-guard clause and 11.12 for the out-of-radius byte-identity clause; Property 22 splits into 9.5 for presentation/contrast and 17.3 for the reduced-motion clause, and 17.3 was never cuttable.

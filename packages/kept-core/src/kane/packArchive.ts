@@ -11,7 +11,7 @@
  * need: `kane/packTriage.ts` reads the **triage note** out of the archive, and
  * that note decides the repair branch. Two callers, one of them core routing
  * logic, so the reader belongs beside the evidence resolver rather than inside a
- * CLI command; `kept-cli`'s command imports it from here rather than keeping a
+ * CLI command; `@corgod/kept-cli`'s command imports it from here rather than keeping a
  * second copy, because two zip readers is how one of them quietly stops matching
  * the format.
  *

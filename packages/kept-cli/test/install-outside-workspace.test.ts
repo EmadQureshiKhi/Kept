@@ -86,11 +86,17 @@ const BUILD_COMMAND = 'npx tsc -b';
 const CLI_ENTRY = resolve(packageDir('kept-cli'), 'dist/index.js');
 
 /**
- * The version task 25.1 set on both manifests and on `KEPT_VERSION`. Written as a
- * literal as well as read from the manifest, because R17.10 is a claim about what
- * an installer sees and `0.1.0` is the number this stage publishes.
+ * The version both manifests and `KEPT_VERSION` carry. Written as a literal as well
+ * as read from the manifest, because R17.10 is a claim about what an installer sees,
+ * and two authorities that must agree cannot both drift unnoticed.
+ *
+ * `0.1.1` rather than `0.1.0`: the first release went out with `kept-core`'s README
+ * telling installers to `npm install kept-cli` and run `npx kept init`, neither of
+ * which resolves, because the CLI published as `@corgod/kept-cli`. npm serves the
+ * newest version's README on the package page, so a patch release is what corrects
+ * what a visitor actually reads.
  */
-const EXPECTED_VERSION = '0.1.0';
+const EXPECTED_VERSION = '0.1.1';
 
 /**
  * Kane's binary name and the environment override that outranks `PATH`, both
@@ -590,7 +596,7 @@ const BARE_BUILTINS = new Set(builtinModules);
 describe('the installed archives declare everything they import (R17.9)', () => {
   it.each(PACKAGES)('packages/%s declares every package it imports', (dir) => {
     const { installDir } = fixture();
-    const manifestName = dir === 'kept-core' ? 'kept-core' : 'kept-cli';
+    const manifestName = dir === 'kept-core' ? 'kept-core' : '@corgod/kept-cli';
     const packageRoot = join(installDir, 'node_modules', ...manifestName.split('/'));
     expect(
       existsSync(packageRoot),
@@ -868,7 +874,7 @@ describe('no module resolves from this workspace (R17.9)', () => {
         `unmeasured. ${describeOutcome(tracedDoctorRun)}`,
     ).toBeGreaterThan(0);
     expect(
-      resolvedUrls.some((url) => url.includes('/node_modules/kept-cli/dist/')),
+      resolvedUrls.some((url) => url.includes('/node_modules/@corgod/kept-cli/dist/')),
       'The trace must include the installed CLI, or it traced something other than the run.',
     ).toBe(true);
   });
@@ -920,7 +926,7 @@ describe('no module resolves from this workspace (R17.9)', () => {
     const { coreResolveRun, installDir } = fixture();
     expect(
       coreResolveRun.status,
-      `Node could not resolve kept-core from the installation, so \`^0.1.0\` did not produce a ` +
+      `Node could not resolve kept-core from the installation, so \`^0.1.1\` did not produce a ` +
         `usable core. ${describeOutcome(coreResolveRun)}`,
     ).toBe(0);
     const resolvedUrl = coreResolveRun.stdout.trim();

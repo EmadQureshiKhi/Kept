@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `kept-cli` entry point. `bin/kept` at the repository root resolves to the
+ * `@corgod/kept-cli` entry point. `bin/kept` at the repository root resolves to the
  * compiled form of this file (design §13.1).
  *
  * Deliberately thin. Everything the CLI does lives in {@link main}, which takes

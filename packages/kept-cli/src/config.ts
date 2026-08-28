@@ -481,7 +481,7 @@ export function derivedForbidden(
  * (design §20.1, §8.1, R15.7).
  *
  * One function, called once per command, because `handoff.ts` lives in `kept-core`
- * and this loader lives in `kept-cli`: the dependency runs cli to core, so core
+ * and this loader lives in `@corgod/kept-cli`: the dependency runs cli to core, so core
  * cannot read the config and every fence glob has to arrive as an argument. This is
  * the only place that composition is written.
  *

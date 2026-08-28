@@ -712,7 +712,7 @@ describe('the listener lives in the CLI, and no app can reach it', () => {
       const source = readFileSync(resolve(REPO_ROOT, path), 'utf8');
       return (
         /(?:from|import|require)\s*\(?\s*['"][^'"]*commands\/watch[^'"]*['"]/.test(source) ||
-        /(?:from|import|require)\s*\(?\s*['"]kept-cli(?:\/[^'"]*)?['"]/.test(source)
+        /(?:from|import|require)\s*\(?\s*['"]@corgod\/kept-cli(?:\/[^'"]*)?['"]/.test(source)
       );
     });
     expect(

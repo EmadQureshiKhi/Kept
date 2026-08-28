@@ -131,7 +131,7 @@ const BOTH: readonly HookFile[] = [CODE_HOOK, DOCS_HOOK];
  * `.kept/config.json` as committed, read as bytes (design §20.1).
  *
  * Read raw rather than through `loadConfig`, for two reasons. The loader lives in
- * `kept-cli` and this suite is in `kept-core`, so importing it would invert the
+ * `@corgod/kept-cli` and this suite is in `kept-core`, so importing it would invert the
  * dependency direction the whole of §20 turns on. And the loader *fails closed*: an
  * absent `subject.docs` resolves to `['README.md']` with a diagnostic, which would make
  * the mirroring assertion below pass while describing a repository this is not. What

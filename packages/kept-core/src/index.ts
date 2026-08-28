@@ -1,6 +1,6 @@
 /**
  * Public surface of `kept-core` (design §2.1). This barrel is the only import
- * path consumers use — `kept-cli`, `apps/ledger` and the tests all read from
+ * path consumers use — `@corgod/kept-cli`, `apps/ledger` and the tests all read from
  * here, never from a deep `dist/**` path.
  *
  * Modules are re-exported as their tasks land: the Kane three-contract layer
@@ -1100,7 +1100,7 @@ export {
 // the assertion instead of the bug), and the engine's own package roots, because
 // KEPT's code is never the repair target. Which paths those are is **not decided
 // here**: §20.1 moved them into `Kept_Config` and they arrive as `FenceSurfaces`,
-// required on `fenceFor`, `fenceForResults` and `buildHandoff`, because `kept-cli`
+// required on `fenceFor`, `fenceForResults` and `buildHandoff`, because `@corgod/kept-cli`
 // depends on `kept-core` and so core cannot read the config it must not invent
 // values for. `test-drift`
 // and `docs-lie` fence with an **empty** allowed set, since §8.1 holds the one as
@@ -1395,7 +1395,7 @@ export {
 // with no verdict, because carrying the old verdict across would assert that Kane
 // proved a sentence it never saw. `AcceptResult.successorPromiseId` names it, and
 // `rebuildRequired` is the obligation `kept amend accept` discharges by calling
-// `runBuild` and `runSnapshot` — those live in `kept-cli`, so core reports the
+// `runBuild` and `runSnapshot` — those live in `@corgod/kept-cli`, so core reports the
 // obligation rather than reaching for a dependency it must not have.
 export type {
   AcceptAmendmentRequest,

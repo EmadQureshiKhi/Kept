@@ -14,7 +14,7 @@
  * Kane already holds. `maintain reconcile --plan` previews: the head move lands
  * and everything else is **staged** into Kane's own plan, which is exactly the
  * "hold every change, apply none automatically" semantic R5.7 asks for
- * (`kept-cli/src/commands/reconcile.ts` says the same thing from the other side).
+ * (`@corgod/kept-cli/src/commands/reconcile.ts` says the same thing from the other side).
  * So this module's whole job is projection: each `review_card` event the stream
  * carried becomes one card under `.kept/`, verbatim where Kane gave text and
  * with a documented fallback where it did not. There is no apply path here — not

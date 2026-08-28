@@ -50,7 +50,7 @@
  *      Kane without one of these — not from a Next server component, not from a
  *      route handler, not from anywhere. Ban them and the credit bill is zero
  *      whatever words appear in the copy.
- *   2. The invoker arriving as a dependency: any import of `kept-cli`, any
+ *   2. The invoker arriving as a dependency: any import of `@corgod/kept-cli`, any
  *      module specifier containing `kane` (`kane-cli`, or a deep path into
  *      `kept-core`'s `kane/` directory), or any of `kept-core`'s invoker
  *      exports named in an import list or in code — `KaneInvoker`,
@@ -229,9 +229,9 @@ export const RULES = [
   linePatternRule(
     'cli-package-import',
     'imports the KEPT CLI',
-    'R8.6 — `kept-cli` is where every write and every Kane invocation lives ' +
+    'R8.6 — `@corgod/kept-cli` is where every write and every Kane invocation lives ' +
       '(design §8.5). The Ledger consumes the snapshot, not the CLI.',
-    [moduleSpecifier('kept-cli(?:/[^\'"]*)?')],
+    [moduleSpecifier('@corgod/kept-cli(?:/[^\'"]*)?')],
   ),
   linePatternRule(
     'kane-module-import',

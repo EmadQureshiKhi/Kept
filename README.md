@@ -874,7 +874,7 @@ walkers that resolve evidence packs locally are absent from the build rather tha
 it. Verified by the build going from four `Dynamic filesystem access` warnings and a 52.6 MB trace
 to zero warnings and 41.9 MB.
 
-Both packages are publishable as well: `kept-core` and `kept-cli` at `0.1.0`, off `private`, each
+Both packages are publishable as well: `kept-core` and `@corgod/kept-cli` at `0.1.1`, off `private`, each
 with its own README, and the published file list asserted against a real `npm pack` rather than
 against the manifest that describes it. You bring your own Kane: KEPT never bundles, installs or
 vendors `kane-cli`, it spawns whatever is on `PATH`, and a missing binary is a supported state that

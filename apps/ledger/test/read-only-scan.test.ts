@@ -149,7 +149,7 @@ describe('the scan catches a planted violation', () => {
     },
     {
       what: 'an import of the CLI package',
-      file: fixture('apps/ledger/lib/danger.ts', "import { amend } from 'kept-cli';"),
+      file: fixture('apps/ledger/lib/danger.ts', "import { amend } from '@corgod/kept-cli';"),
       rule: 'cli-package-import',
     },
     {

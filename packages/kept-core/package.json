@@ -1,6 +1,6 @@
 {
   "name": "kept-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "KEPT core — promise model, Kane NDJSON parser, verdict router, snapshot contract.",
   "keywords": [
     "kept",

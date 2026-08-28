@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
  *
  * ## Why a literal is the one defect a unit test cannot see
  *
- * `kept-core` and `kept-cli` are packages a stranger installs. Every path this
+ * `kept-core` and `@corgod/kept-cli` are packages a stranger installs. Every path this
  * repository uses resolves here whether or not it was read from configuration, so a
  * hard-coded `apps/fixture/lib/**` inside the fence table passes every test, renders a
  * correct ledger, and closes the loop — right up until someone runs `kept verify` in a
@@ -482,7 +482,7 @@ describe('source scan 7 of 7 — no repository-specific literal in the shipped e
         : `Repository-specific values belong in .kept/config.json, not in the engine ` +
           `(design §20.1, §20.2, R15.2, R15.3). corpus.root, subject.source, ` +
           `subject.docs and subject.baseUrl are the four keys; the fence surfaces reach ` +
-          `kept-core as parameters because kept-cli depends on kept-core and not the ` +
+          `kept-core as parameters because @corgod/kept-cli depends on kept-core and not the ` +
           `other way round. A literal here is invisible until someone runs kept in a ` +
           `repository that does not have it, and then the tool reports success on a ` +
           `tree it never looked at. Offending lines:\n` +
