@@ -1,4 +1,13 @@
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -263,15 +272,39 @@ describe('the engine builds a graph in a repository that shares no path with thi
     // can be confused with a write the run performed.
     const before = workspaceFingerprint();
     expect(before.size).toBeGreaterThan(0);
-    // The containment clause is only as good as what the fingerprint covers, so the
-    // three files a mis-rooted write would actually clobber are named. `.kept/state.json`
-    // is the single-writer verdict store; `.kept/handoff.json` is the loop's contract;
-    // `.kept/config.json` is the one committed file under `.kept/`. If a future change
-    // moved them, this assertion fails rather than the guard quietly going blind.
-    for (const path of ['.kept/state.json', '.kept/handoff.json', '.kept/config.json']) {
+    /* The containment clause is only as good as what the fingerprint covers, so the
+       surface a mis-rooted write would land on is named rather than assumed.
+
+       `.kept/config.json` is the one **committed** file under `.kept/`, so it is present
+       in every checkout. Requiring it is what proves `.kept/` is walked at all: if this
+       fails, the fingerprint is empty of the directory this product writes into and the
+       guard below is blind. */
+    expect(
+      before.has('.kept/config.json'),
+      '.kept/ is not in the fingerprint at all, so no write landing there would be noticed',
+    ).toBe(true);
+
+    /* **`state.json` and `handoff.json` are asserted only when they exist, and that is a
+       correction rather than a loosening.**
+
+       This used to demand all three unconditionally. Those two are gitignored regenerable
+       state, so a bare checkout has neither, and requiring them made this suite depend on
+       a repository that had already been run: a fresh clone of this project failed here.
+       That contradicted the claim at `README.md:89`, which is itself a promise in the
+       graph, that the suite passes with no network, no credentials and no Kane.
+
+       Nothing is lost by the change, because the detector does not need a file to exist in
+       order to catch a write to it: `diffStamps` reports `was created` for any path present
+       in `after` and absent from `before`. So a mis-rooted write that *creates*
+       `.kept/state.json` is caught on a bare checkout exactly as it is caught here. What
+       the conditional preserves is the original intent, that a future change moving these
+       paths out from under the fingerprint fails loudly instead of going unnoticed. */
+    for (const path of ['.kept/state.json', '.kept/handoff.json']) {
+      if (!existsSync(resolve(WORKSPACE, path))) continue;
       expect(
         before.has(path),
-        `${path} is not in the fingerprint, so a write that landed on it would go unnoticed`,
+        `${path} exists but is not in the fingerprint, so a write that landed on it would ` +
+          `go unnoticed`,
       ).toBe(true);
     }
 

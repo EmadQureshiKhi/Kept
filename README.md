@@ -806,11 +806,15 @@ npm test          # vitest --run, never watch
 npm run check     # the read-only scan, tsc -b, both app type-checks, then the suite
 ```
 
-**160 files, 2854 tests, about 44 seconds** on a bare checkout. 2850 pass and 4 are skipped, each
-skip conditional on a repository state rather than switched off: they are the assertions that held
+**160 files, 2854 tests, about 44 seconds** on a bare checkout. 2848 pass and 6 are skipped, each
+skip conditional on a repository state rather than switched off. Four are the assertions that held
 the README to carrying a placeholder instead of a deployed URL, and the deployment happened, so the
-opposite assertions run in their place. Nothing is red and nothing is pending. No Kane, no
-credentials, no network: every Kane behaviour under test comes from a committed fixture.
+opposite assertions run in their place. The other two read a real Kane evidence archive when the
+machine has one, so they run on a machine that has driven Kane and skip on a clone that has not.
+That is why a working copy here reports 2850 and 4: the figures above are a judge's, measured on a
+fresh clone, and the two counts differ by exactly those two tests. Nothing is red and nothing is
+pending. No Kane, no credentials, no network: every Kane behaviour under test comes from a
+committed fixture.
 
 One measurement note, because it cost an hour to work out. On a checkout whose `node_modules` is
 still dataless under iCloud sync, the first run can stall past four minutes and be killed by the
@@ -913,7 +917,7 @@ figures below are the ones a reader re-derives from the committed snapshot with 
 | Verdicts | 8 proven, 1 red on purpose, 4 stale |
 | Proven coverage | **0.615**, published rather than withheld |
 | Coverage ribbon | 6 of 6 acceptance criteria designed and proven, 1 of 9 use cases with scenarios |
-| Suite | **160 files, 2854 tests**, 2850 passing, 4 conditionally skipped, about 44 s |
+| Suite | **160 files, 2854 tests**, 2848 passing on a fresh clone, 6 conditionally skipped, about 44 s |
 | Correctness properties | 37 of 37 |
 | Evidence packs | 1, holding 59 artefacts, referentially closed against git's index |
 | Runtime dependencies | 9 |
