@@ -44,7 +44,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
-import { KNOWN_EVENT_TYPES } from '@kept/core';
+import { KNOWN_EVENT_TYPES } from 'kept-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {

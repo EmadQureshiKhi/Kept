@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { CREDITS_FIELDS, RESULT_CODE_FIELD, credits, resultCode } from '@kept/core';
+import { CREDITS_FIELDS, RESULT_CODE_FIELD, credits, resultCode } from 'kept-core';
 
 /**
  * Unit coverage for the single coercion site (design §4.4, R3.10, R3.11, R3.13,

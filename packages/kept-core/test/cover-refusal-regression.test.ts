@@ -11,7 +11,7 @@ import {
   parseStream,
   type AssuranceDoneEvent,
   type AssuranceStatus,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The `cover` refusal regression (task 2.16, R2.7, R2.8, R3.22, design §5.3.1).
@@ -47,7 +47,7 @@ import {
  * Design §5.3 maps this observation to `degradedReason: 'assurance-status:refused'`
  * and §5.3.1 restates it. That mapping is owned by the **EnrichmentProvider**
  * (`src/providers/enrichment.ts`, task 3.7), which does not exist yet — nothing
- * in `@kept/core` today produces a `degradedReason` at all. Asserting the string
+ * in `kept-core` today produces a `degradedReason` at all. Asserting the string
  * here would put the mapping in a test file and hand task 3.7 a second source of
  * truth to disagree with, so this file stops one step short: it pins every
  * **input** that mapping consumes (a `complete` stream, `status === 'refused'`,

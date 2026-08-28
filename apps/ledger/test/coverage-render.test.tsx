@@ -24,8 +24,8 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { SnapshotPromise } from '@kept/core';
-import { SnapshotPromiseSchema } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
+import { SnapshotPromiseSchema } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { NO_DESIGNED_TEST, PromiseRow } from '../app/coverage/PromiseRow.js';

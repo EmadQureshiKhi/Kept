@@ -6,7 +6,7 @@ import type {
   RoutedRepair,
   RunOutcome,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   AMENDMENTS_DIRECTORY_RELATIVE_PATH,
   contractFor,
@@ -17,7 +17,7 @@ import {
   parseStream,
   promiseId,
   writeHandoff,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

@@ -31,7 +31,7 @@ import {
   type ParsedStream,
   type PromiseRecord,
   type RunOutcome,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for `state.ts` — the single verdict write guard (design §4.8,

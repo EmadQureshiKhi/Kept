@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { isLedgerSnapshot, parseSnapshot, serialiseSnapshot } from '@kept/core';
+import { isLedgerSnapshot, parseSnapshot, serialiseSnapshot } from 'kept-core';
 
 import {
   CURATED_EVIDENCE_DIR,

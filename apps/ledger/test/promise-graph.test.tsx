@@ -26,7 +26,7 @@
  */
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import type { LedgerSnapshot } from '@kept/core';
+import type { LedgerSnapshot } from 'kept-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import LedgerPage from '../app/page.js';

@@ -27,10 +27,10 @@
 
 import { resolve } from 'node:path';
 
-import type { CollectingDiagnosticSink, Diagnostic } from '@kept/core';
-import { KaneInvoker, createDiagnosticSink } from '@kept/core';
-import { handoffPaths, parseHandoff, serialiseHandoff } from '@kept/core';
-import { nodeStateFileSystem, type StateFileSystem } from '@kept/core';
+import type { CollectingDiagnosticSink, Diagnostic } from 'kept-core';
+import { KaneInvoker, createDiagnosticSink } from 'kept-core';
+import { handoffPaths, parseHandoff, serialiseHandoff } from 'kept-core';
+import { nodeStateFileSystem, type StateFileSystem } from 'kept-core';
 
 import type { ParsedArgv } from './args.js';
 import { EXIT_OK, EXIT_USAGE, parseArgv, readList, readString } from './args.js';

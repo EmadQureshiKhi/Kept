@@ -24,8 +24,8 @@
  * filesystem and should not acquire one.
  */
 
-import type { GraphEdge, PromiseRecord, SnapshotDocument } from '@kept/core';
-import { designedTestId, documentId, toPosix } from '@kept/core';
+import type { GraphEdge, PromiseRecord, SnapshotDocument } from 'kept-core';
+import { designedTestId, documentId, toPosix } from 'kept-core';
 
 /**
  * The lane-0 document nodes, one per cited file, sorted by id.

@@ -205,7 +205,7 @@ describe('source scan 1 of 6 — no raw result_code comparison outside coerce.ts
       offences,
       offences.length === 0
         ? ''
-        : `result_code must only be compared through resultCode() from @kept/core ` +
+        : `result_code must only be compared through resultCode() from kept-core ` +
           `(design §4.4, R3.12). Kane types the field inconsistently within one ` +
           `event, so a raw comparison silently never fires on one of the two ` +
           `typings. Offending lines:\n${offences.join('\n')}`,

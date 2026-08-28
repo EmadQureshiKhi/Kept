@@ -26,7 +26,7 @@ import {
   type SourceListing,
   type SourceResolution,
   type StoreSource,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbStoreSourceListing } from './arbitraries.js';
 

@@ -43,7 +43,7 @@
  */
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import type { LedgerSnapshot, SnapshotDiagnostic, SnapshotEvidence } from '@kept/core';
+import type { LedgerSnapshot, SnapshotDiagnostic, SnapshotEvidence } from 'kept-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { LANE_WORDS } from '../components/LaneNode.js';

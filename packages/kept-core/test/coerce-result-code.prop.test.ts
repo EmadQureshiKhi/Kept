@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { RESULT_CODE_FIELD, resultCode } from '@kept/core';
+import { RESULT_CODE_FIELD, resultCode } from 'kept-core';
 
 /**
  * Feature: kept, Property 10: `result_code` coercion makes string and number

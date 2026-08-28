@@ -23,7 +23,7 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { Verdict } from '@kept/core';
+import type { Verdict } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

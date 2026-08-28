@@ -1,5 +1,5 @@
 {
-  "name": "@kept/cli",
+  "name": "kept-cli",
   "version": "0.1.0",
   "description": "KEPT CLI — build, verify, reconcile, evolve, amend, snapshot, handoff, doctor.",
   "keywords": [
@@ -34,6 +34,6 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@kept/core": "^0.1.0"
+    "kept-core": "^0.1.0"
   }
 }

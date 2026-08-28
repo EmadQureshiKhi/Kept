@@ -15,7 +15,7 @@ import {
   promiseId,
   splitLines,
   type PromiseRecord,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbWhitespaceNoise } from './arbitraries.js';
 

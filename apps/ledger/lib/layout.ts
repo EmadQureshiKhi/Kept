@@ -54,7 +54,7 @@ import type {
   SnapshotEvidence,
   SnapshotPromise,
   Verdict,
-} from '@kept/core';
+} from 'kept-core';
 
 /** Widest node in the graph — the promise node. Every lane pitch is measured from it. */
 export const NODE_W = 320;

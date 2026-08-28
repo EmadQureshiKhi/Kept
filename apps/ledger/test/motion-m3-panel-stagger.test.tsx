@@ -31,7 +31,7 @@
  * because the ledger project shares one jsdom across its suites (`isolate: false`).
  */
 
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 import { cleanup, render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

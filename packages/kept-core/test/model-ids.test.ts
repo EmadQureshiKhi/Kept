@@ -15,7 +15,7 @@ import {
   promiseId,
   sha256Hex,
   toPosix,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for identifier derivation (design §3.2, R1.2).

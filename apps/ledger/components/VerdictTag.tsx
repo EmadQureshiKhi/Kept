@@ -33,7 +33,7 @@
  */
 
 import clsx from 'clsx';
-import type { Verdict } from '@kept/core';
+import type { Verdict } from 'kept-core';
 
 import type { TokenName } from '../lib/tokens.js';
 
@@ -43,7 +43,7 @@ import '../styles/verdict-tag.css';
  * The verdict → hue mapping of design §10.4.1, as the one place it is written.
  *
  * Typed `Record<Verdict, TokenName>` so the four keys are checked against
- * `@kept/core`'s vocabulary and the four values against the declared palette: a
+ * `kept-core`'s vocabulary and the four values against the declared palette: a
  * fifth verdict fails to compile here rather than rendering an unstyled tag, and a
  * renamed token fails here rather than resolving to nothing in the browser.
  */

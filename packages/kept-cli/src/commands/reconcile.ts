@@ -145,7 +145,7 @@ import type {
   StateFileSystem,
   StoreSource,
   WriteHandoffResult,
-} from '@kept/core';
+} from 'kept-core';
 import {
   ACCEPTED_ASSURANCE_STATUS,
   FORK_GUARD_DIAGNOSTIC_CODE,
@@ -164,7 +164,7 @@ import {
   resolveSourceIdCached,
   writeHandoff,
   writeReviewCard,
-} from '@kept/core';
+} from 'kept-core';
 
 import type { ParsedArgv } from '../args.js';
 import { MUTUALLY_EXCLUSIVE_FLAGS } from '../args.js';

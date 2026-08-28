@@ -12,7 +12,7 @@ import type {
   PromiseRecord,
   StateFileSystem,
   TestDocumentSource,
-} from '@kept/core';
+} from 'kept-core';
 import {
   HANDOFF_FILE_RELATIVE_PATH,
   KaneInvoker,
@@ -27,7 +27,7 @@ import {
   inMemoryPlanFileSystem,
   inMemoryStateFileSystem,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

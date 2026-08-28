@@ -11,7 +11,7 @@ import {
   isMemberStatus,
   memberStatusToVerdict,
   reportMemberStatus,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Member status → verdict (task 11.1, design §6.5, R3.20, R4.8, R4.9).

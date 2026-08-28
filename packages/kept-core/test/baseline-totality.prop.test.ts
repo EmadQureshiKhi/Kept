@@ -10,7 +10,7 @@ import {
   inMemoryCitationSource,
   type BaselineDirEntry,
   type BaselineFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 5: The baseline provider is total

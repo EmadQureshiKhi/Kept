@@ -78,7 +78,7 @@ export function serviceUrl(service) {
 }
 
 /**
- * Names of a Kane binary, in the spellings `@kept/core`'s invoker resolves.
+ * Names of a Kane binary, in the spellings `kept-core`'s invoker resolves.
  *
  * Matched against whole argv elements rather than as a substring, so a path that
  * merely contains the letters — a directory called `kane-evidence`, say — is not

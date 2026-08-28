@@ -80,7 +80,7 @@ import type {
   VerdictWrite,
   WriteHandoffResult,
   WriteRefusalReason,
-} from '@kept/core';
+} from 'kept-core';
 import {
   computeBlastRadius,
   collectTestCoverage,
@@ -109,7 +109,7 @@ import {
   toPosix,
   toRepoRelative,
   writeHandoff,
-} from '@kept/core';
+} from 'kept-core';
 
 import type { KeptConfig } from '../config.js';
 import { handoffFenceSurfaces, memberDebugEnv } from '../config.js';

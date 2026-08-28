@@ -1,5 +1,5 @@
 /**
- * Shared fast-check generators for the `@kept/core` property suite
+ * Shared fast-check generators for the `kept-core` property suite
  * (design §Testing Strategy; R3.1, R3.10, R3.13).
  *
  * This file is **not** a test suite. It does not match the runner's
@@ -118,7 +118,7 @@ import {
   type Verdict,
   type VerdictObject,
   type WireEnum,
-} from '@kept/core';
+} from 'kept-core';
 
 // ---------------------------------------------------------------------------
 // 1. Families, exit codes, paths

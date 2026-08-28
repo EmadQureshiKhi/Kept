@@ -59,7 +59,7 @@
 'use client';
 
 import clsx from 'clsx';
-import type { SnapshotEvidence, SnapshotPromise } from '@kept/core';
+import type { SnapshotEvidence, SnapshotPromise } from 'kept-core';
 import { useRef } from 'react';
 
 import { citationLabel, designedTestLabel } from '../lib/citation.js';

@@ -9,7 +9,7 @@ import {
   parseStream,
   type CommandFamily,
   type KaneEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   arbFamily,

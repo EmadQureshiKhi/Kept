@@ -94,7 +94,7 @@ const EXPECTED_VERSION = '0.1.0';
 
 /**
  * Kane's binary name and the environment override that outranks `PATH`, both
- * duplicated here rather than imported from `@kept/core`.
+ * duplicated here rather than imported from `kept-core`.
  *
  * Deliberate. This file asserts what an *installed* package does, so importing the
  * workspace copy of the constant it is testing against would let a rename make the
@@ -461,7 +461,7 @@ beforeAll(() => {
   // install directory rather than read out of the trace.
   const coreResolveRun = run(
     sandboxNode,
-    ['--input-type=module', '-e', "console.log(import.meta.resolve('@kept/core'))"],
+    ['--input-type=module', '-e', "console.log(import.meta.resolve('kept-core'))"],
     { cwd: installDir, env: childEnv, timeoutMs: 60_000 },
   );
 
@@ -590,7 +590,7 @@ const BARE_BUILTINS = new Set(builtinModules);
 describe('the installed archives declare everything they import (R17.9)', () => {
   it.each(PACKAGES)('packages/%s declares every package it imports', (dir) => {
     const { installDir } = fixture();
-    const manifestName = dir === 'kept-core' ? '@kept/core' : '@kept/cli';
+    const manifestName = dir === 'kept-core' ? 'kept-core' : 'kept-cli';
     const packageRoot = join(installDir, 'node_modules', ...manifestName.split('/'));
     expect(
       existsSync(packageRoot),
@@ -868,7 +868,7 @@ describe('no module resolves from this workspace (R17.9)', () => {
         `unmeasured. ${describeOutcome(tracedDoctorRun)}`,
     ).toBeGreaterThan(0);
     expect(
-      resolvedUrls.some((url) => url.includes('/node_modules/@kept/cli/dist/')),
+      resolvedUrls.some((url) => url.includes('/node_modules/kept-cli/dist/')),
       'The trace must include the installed CLI, or it traced something other than the run.',
     ).toBe(true);
   });
@@ -916,25 +916,31 @@ describe('no module resolves from this workspace (R17.9)', () => {
     ).toEqual([]);
   });
 
-  it("resolves `@kept/core` under the installation, not from this workspace (R17.3)", () => {
+  it("resolves `kept-core` under the installation, not from this workspace (R17.3)", () => {
     const { coreResolveRun, installDir } = fixture();
     expect(
       coreResolveRun.status,
-      `Node could not resolve @kept/core from the installation, so \`^0.1.0\` did not produce a ` +
+      `Node could not resolve kept-core from the installation, so \`^0.1.0\` did not produce a ` +
         `usable core. ${describeOutcome(coreResolveRun)}`,
     ).toBe(0);
     const resolvedUrl = coreResolveRun.stdout.trim();
     const resolvedPath = resolvedUrl.startsWith('file:') ? fileURLToPath(resolvedUrl) : resolvedUrl;
     expect(
       isUnder(resolvedPath, installDir),
-      `@kept/core resolved to ${resolvedPath}, which is not under ${installDir}. The CLI is ` +
+      `kept-core resolved to ${resolvedPath}, which is not under ${installDir}. The CLI is ` +
         `reading a core the installation did not install.`,
     ).toBe(true);
     expect(
       isUnder(resolvedPath, REPO_ROOT),
-      `@kept/core resolved to ${resolvedPath}, inside this workspace. That is the workspace ` +
+      `kept-core resolved to ${resolvedPath}, inside this workspace. That is the workspace ` +
         `symlink standing in for a registry dependency (R17.3).`,
     ).toBe(false);
-    expect(resolvedPath).toContain(join('node_modules', '@kept', 'core'));
+    /* Two segments, not three. This read `join('node_modules', '@kept', 'core')` while the
+       packages were scoped, and the segments being separate arguments is why a text rename
+       could not see it: the string `@kept/core` never appears in this file. The package is
+       `kept-core` now, unscoped, because the name `kept` is already taken on the registry
+       and npm refuses an organisation colliding with an existing package, so the `@kept`
+       scope was never obtainable. */
+    expect(resolvedPath).toContain(join('node_modules', 'kept-core'));
   });
 });

@@ -6,7 +6,7 @@
  * snapshot is degraded, and none of them is ever computed here.
  *
  * **The rail does no arithmetic.** Every figure it renders is a field of
- * `snapshot.metrics`, computed once in `@kept/core` and re-checked on parse by the
+ * `snapshot.metrics`, computed once in `kept-core` and re-checked on parse by the
  * schema's cross-field rules — counts agree with the promise list, and each coverage
  * value is null exactly when no division was performed (Property 21, R9.3). A rail
  * that divided anything would be a second authority on the one number this product
@@ -37,7 +37,7 @@
  */
 
 import clsx from 'clsx';
-import type { SnapshotMetrics } from '@kept/core';
+import type { SnapshotMetrics } from 'kept-core';
 
 import { METRIC_RAIL_CLASSES } from '../lib/metricRail.js';
 

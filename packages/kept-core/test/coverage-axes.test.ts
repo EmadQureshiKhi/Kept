@@ -18,7 +18,7 @@ import {
   readCoverageRatio,
   readPercent,
   type CoverageAxes,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 22.1, the coverage-against-acceptance-criteria axis, asserted offline

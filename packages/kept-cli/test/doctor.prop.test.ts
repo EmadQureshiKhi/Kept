@@ -3,13 +3,13 @@ import type {
   PlainInvocationResult,
   PlainInvocationSpec,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   createKeptState,
   createPromiseGraph,
   inMemoryBaselineFileSystem,
   inMemoryStateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 

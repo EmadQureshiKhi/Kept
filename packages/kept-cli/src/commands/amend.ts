@@ -37,7 +37,7 @@
  * | `reject` | one field of the record |
  *
  * The write discipline itself is not implemented here. `proposeAmendment` and
- * `acceptAmendment` in `@kept/core` own it — the `.kept/` fence, the sha256
+ * `acceptAmendment` in `kept-core` own it — the `.kept/` fence, the sha256
  * interlock, the single mutated array element, the atomic rename — and Property 19
  * asserts it against a write-recording filesystem. This file is the command
  * surface: it resolves what to propose, and it discharges the one obligation core
@@ -58,7 +58,7 @@ import type {
   ProposeResult,
   RejectResult,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   acceptAmendment,
   createDiagnosticSink,
@@ -70,7 +70,7 @@ import {
   readAmendment,
   readNewestHandoff,
   rejectAmendment,
-} from '@kept/core';
+} from 'kept-core';
 
 import type { KeptConfig } from '../config.js';
 import { runBuild } from './build.js';

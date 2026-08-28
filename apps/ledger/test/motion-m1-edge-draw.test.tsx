@@ -29,7 +29,7 @@
  * `svg.createDrawable`, the timeline, the tokens — is the shipped code.
  */
 
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 

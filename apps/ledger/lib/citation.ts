@@ -13,7 +13,7 @@
  * straight into whichever they are already in.
  */
 
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 
 /** `apps/fixture/README.md:19` — the identifier §10.7 sets in mono. */
 export function citationLabel(citation: SnapshotPromise['citation']): string {

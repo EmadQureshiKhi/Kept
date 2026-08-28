@@ -15,7 +15,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { PackFormatError, readPackEntries } from '@kept/core';
+import { PackFormatError, readPackEntries } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { PACK_SLUG, bytesOf, concat, realisticPack, zipOf } from './pack-archive.js';

@@ -8,7 +8,7 @@ import {
   type CommandFamily,
   type FamilyContract,
   type TerminalType,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The four family-dependent facts, restated here independently of the source so

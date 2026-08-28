@@ -42,7 +42,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { HANDOFF_HOOKS } from '@kept/core';
+import { HANDOFF_HOOKS } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url));

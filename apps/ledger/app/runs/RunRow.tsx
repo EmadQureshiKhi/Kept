@@ -53,7 +53,7 @@
  * without comparing fifteen timestamps.
  */
 
-import type { SnapshotRun, SnapshotRunMember } from '@kept/core';
+import type { SnapshotRun, SnapshotRunMember } from 'kept-core';
 
 import {
   coercedResultCode,

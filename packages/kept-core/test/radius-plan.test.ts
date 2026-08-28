@@ -36,7 +36,7 @@ import {
   type PlanFileSystem,
   type TestrunPlan,
   type TestrunPlanEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 11.8 — the testrun plan cache (design §7.2, R4.4).

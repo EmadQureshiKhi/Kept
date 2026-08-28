@@ -141,7 +141,7 @@ import type {
   ReviewCard,
   StateFileSystem,
   WriteHandoffResult,
-} from '@kept/core';
+} from 'kept-core';
 import {
   ACCEPTED_ASSURANCE_STATUS,
   KANE_BINARY_NAME,
@@ -155,7 +155,7 @@ import {
   testDriftReviewCard,
   writeHandoff,
   writeReviewCard,
-} from '@kept/core';
+} from 'kept-core';
 
 import { handoffFenceSurfaces, type KeptConfig } from '../config.js';
 

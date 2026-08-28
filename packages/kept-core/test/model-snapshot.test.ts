@@ -15,7 +15,7 @@ import {
   isLedgerSnapshot,
   promiseId,
   type LedgerSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The ledger snapshot schema — the CLI↔UI seam (design §9.1, R8.8).

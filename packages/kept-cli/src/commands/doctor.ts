@@ -78,7 +78,7 @@ import type {
   KaneInvoker,
   StateFileSystem,
   WriteHandoffResult,
-} from '@kept/core';
+} from 'kept-core';
 import {
   KANE_BINARY_NAME,
   createDiagnosticSink,
@@ -89,7 +89,7 @@ import {
   nodeStateFileSystem,
   parseSnapshot,
   writeHandoff,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   CONFIG_FILE_RELATIVE_PATH,

@@ -7,7 +7,7 @@ import type {
   PromiseRecord,
   StateFileSystem,
   TestDocumentSource,
-} from '@kept/core';
+} from 'kept-core';
 import {
   KaneInvoker,
   PLAN_FILE_RELATIVE_PATH,
@@ -21,7 +21,7 @@ import {
   inMemoryPlanFileSystem,
   inMemorySourceCacheFileSystem,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

@@ -22,7 +22,7 @@
  * be the Ledger's guess, and a guess is exactly what a reviewer cannot act on.
  */
 
-import type { SnapshotDiagnostic } from '@kept/core';
+import type { SnapshotDiagnostic } from 'kept-core';
 
 import { EMPHASIS_HEADINGS, diagnosticPresentation } from '../../lib/runVocabulary.js';
 

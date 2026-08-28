@@ -28,7 +28,7 @@ import {
   type Verdict,
   type VerdictSource,
   type VerdictWrite,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 9 (state clause): Verdicts and freshness move only on

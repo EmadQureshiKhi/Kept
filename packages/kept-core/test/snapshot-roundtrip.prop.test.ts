@@ -21,7 +21,7 @@ import {
   promiseId,
   serialiseSnapshot,
   type LedgerSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 3: Snapshot serialisation round-trips and is canonical

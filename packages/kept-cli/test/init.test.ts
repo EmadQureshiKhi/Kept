@@ -1,4 +1,4 @@
-import type { BaselineDirEntry, BaselineFileSystem, StateFileSystem } from '@kept/core';
+import type { BaselineDirEntry, BaselineFileSystem, StateFileSystem } from 'kept-core';
 import {
   createDiagnosticSink,
   extractVerifiesTags,
@@ -6,7 +6,7 @@ import {
   inMemoryStateFileSystem,
   readDocumentCovers,
   readFrontmatter,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

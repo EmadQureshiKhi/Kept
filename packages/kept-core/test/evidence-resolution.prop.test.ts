@@ -10,7 +10,7 @@ import {
   resolveEvidenceDir,
   type CommandFamily,
   type EvidenceFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 14: Evidence-pack locations are resolved from the

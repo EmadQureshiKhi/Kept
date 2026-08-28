@@ -37,7 +37,7 @@
  * generated tree and the integrity suite supply git's own index.
  */
 
-import { evidenceId, type LedgerSnapshot } from '@kept/core';
+import { evidenceId, type LedgerSnapshot } from 'kept-core';
 
 /** Where curated packs are committed, relative to the repository root. */
 export const CURATED_EVIDENCE_DIR = 'apps/ledger/public/evidence';

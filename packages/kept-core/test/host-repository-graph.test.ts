@@ -22,7 +22,7 @@ import {
   createDiagnosticSink,
   fenceFor,
   writeHandoff,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 /**

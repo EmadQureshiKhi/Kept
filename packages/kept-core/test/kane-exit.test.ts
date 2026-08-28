@@ -15,7 +15,7 @@ import {
   permitsVerdictWrite,
   type CommandFamily,
   type ExitMeaning,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Design §4.5's table, restated independently of the source so that changing

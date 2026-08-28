@@ -46,8 +46,8 @@
  * withheld rather than reported as zero.
  */
 
-import type { LedgerSnapshot } from '@kept/core';
-import { parseSnapshot } from '@kept/core';
+import type { LedgerSnapshot } from 'kept-core';
+import { parseSnapshot } from 'kept-core';
 
 import raw from '../data/ledger.snapshot.json' with { type: 'json' };
 

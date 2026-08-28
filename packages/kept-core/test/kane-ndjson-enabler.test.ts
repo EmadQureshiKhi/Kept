@@ -11,7 +11,7 @@ import {
   type ChildProcessLike,
   type CommandFamily,
   type SpawnOptionsLike,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 2.21 — the per-family NDJSON enabler and the family/argv assertions, at

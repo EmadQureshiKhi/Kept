@@ -29,8 +29,8 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { SnapshotPromise, Verdict } from '@kept/core';
-import { SnapshotPromiseSchema } from '@kept/core';
+import type { SnapshotPromise, Verdict } from 'kept-core';
+import { SnapshotPromiseSchema } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { LANE_WORDS, LaneHeader, LaneNode } from '../components/LaneNode.js';

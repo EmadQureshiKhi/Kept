@@ -21,7 +21,7 @@ import {
   selectRouter,
   testIdFromResultManifest,
   type SealedPackFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { bytesOf, zipOf } from './pack-archive.js';

@@ -41,7 +41,7 @@ import {
   type SourceResolution,
   type SourcesCache,
   type StoreSource,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 12.5 — the structural test for the docs branch that was previously dead

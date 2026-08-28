@@ -13,7 +13,7 @@ import {
   type ChildProcessLike,
   type CollectingDiagnosticSink,
   type SpawnOptionsLike,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 2.20 — `KaneInvoker` behaviour (design §4.7, R2.12, R11.8).

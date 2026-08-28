@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { matchesAnyGlob, matchesGlob } from '@kept/core';
+import { matchesAnyGlob, matchesGlob } from 'kept-core';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 

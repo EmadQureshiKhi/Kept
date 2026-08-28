@@ -9,7 +9,7 @@ import {
   promiseId,
   serialiseSnapshot,
   type LedgerSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Canonical snapshot serialisation (design §9.2, R1.8, R8.8).

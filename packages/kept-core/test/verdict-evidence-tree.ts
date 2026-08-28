@@ -23,7 +23,7 @@ import {
   type EvidenceListing,
   type EvidenceStat,
   type FailureYamlFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 
 /** The repository root every path in a built tree sits under. Absolute, POSIX. */
 export const REPO_ROOT = '/repo';

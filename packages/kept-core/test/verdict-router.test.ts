@@ -11,7 +11,7 @@ import {
   normaliseVerdictObject,
   resolveEvidenceRef,
   selectRouter,
-} from '@kept/core';
+} from 'kept-core';
 
 import { REPO_ROOT, buildEvidenceTree, testrunListing } from './verdict-evidence-tree.js';
 

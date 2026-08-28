@@ -690,7 +690,7 @@ export interface AcceptResult {
   /**
    * Whether the caller must rebuild the graph and rewrite the snapshot (§8.4
    * step 7, R7.6). True exactly when a document was written. `runBuild` and
-   * `runSnapshot` live in `@kept/cli`, so core reports the obligation rather than
+   * `runSnapshot` live in `kept-cli`, so core reports the obligation rather than
    * discharging it: `kept amend accept` is the one place that can honour it.
    */
   readonly rebuildRequired: boolean;

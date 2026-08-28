@@ -48,7 +48,7 @@ import type {
   SnapshotReviewCard,
   SnapshotRun,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   MAX_SNAPSHOT_RUNS,
   SNAPSHOT_SCHEMA_VERSION,
@@ -61,7 +61,7 @@ import {
   isNodeId,
   parseSnapshot,
   serialiseSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 
 import { joinPath } from './config.js';
 import { deriveDocuments } from './graph.js';

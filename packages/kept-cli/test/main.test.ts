@@ -1,5 +1,5 @@
-import type { StateFileSystem } from '@kept/core';
-import { STATE_FILE_RELATIVE_PATH, inMemoryStateFileSystem, parseSnapshot } from '@kept/core';
+import type { StateFileSystem } from 'kept-core';
+import { STATE_FILE_RELATIVE_PATH, inMemoryStateFileSystem, parseSnapshot } from 'kept-core';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

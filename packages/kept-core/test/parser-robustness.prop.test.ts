@@ -12,7 +12,7 @@ import {
   type CommandFamily,
   type Diagnostic,
   type KaneEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   arbFamily,

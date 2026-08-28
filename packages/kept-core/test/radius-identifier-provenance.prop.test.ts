@@ -19,7 +19,7 @@ import {
   type PromiseRecord,
   type TestrunPlan,
   KaneInvoker,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 16: Blast-radius identifiers come only from the plan

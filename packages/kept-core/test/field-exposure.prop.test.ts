@@ -18,7 +18,7 @@ import {
   type RunEndEvent,
   type TestrunDoneEvent,
   type TestrunPlanEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   arbFamily,

@@ -2,8 +2,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { AtomicRenamer, StateFileSystem } from '@kept/core';
-import { createDiagnosticSink, promiseId, proposeAmendment } from '@kept/core';
+import type { AtomicRenamer, StateFileSystem } from 'kept-core';
+import { createDiagnosticSink, promiseId, proposeAmendment } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';
@@ -712,7 +712,7 @@ describe('the listener lives in the CLI, and no app can reach it', () => {
       const source = readFileSync(resolve(REPO_ROOT, path), 'utf8');
       return (
         /(?:from|import|require)\s*\(?\s*['"][^'"]*commands\/watch[^'"]*['"]/.test(source) ||
-        /(?:from|import|require)\s*\(?\s*['"]@kept\/cli(?:\/[^'"]*)?['"]/.test(source)
+        /(?:from|import|require)\s*\(?\s*['"]kept-cli(?:\/[^'"]*)?['"]/.test(source)
       );
     });
     expect(

@@ -6,7 +6,7 @@ import {
   isDiagnostic,
   type Diagnostic,
   type DiagnosticSeverity,
-} from '@kept/core';
+} from 'kept-core';
 
 /** A clock frozen at a readable instant, so `at` is assertable. */
 const FROZEN = '2025-08-20T08:30:00.000Z';

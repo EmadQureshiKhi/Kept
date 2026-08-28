@@ -76,7 +76,7 @@
 
 import { cleanup, render } from '@testing-library/react';
 import fc from 'fast-check';
-import type { Verdict } from '@kept/core';
+import type { Verdict } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { FreshnessChip } from '../components/FreshnessChip.js';

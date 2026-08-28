@@ -20,7 +20,7 @@ import {
   type PromiseGraph,
   type TestCoverage,
   type TestrunPlan,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 11.9 — the blast radius (design §7.1, §7.3, R4.2, R4.3, R4.5).

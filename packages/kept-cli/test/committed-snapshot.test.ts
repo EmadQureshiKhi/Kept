@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { LedgerSnapshot } from '@kept/core';
+import type { LedgerSnapshot } from 'kept-core';
 import {
   SNAPSHOT_SCHEMA_VERSION,
   matchesAnyGlob,
@@ -10,7 +10,7 @@ import {
   normaliseClaim,
   parseSnapshot,
   splitLines,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { derivedForbidden, fenceFindings, handoffFenceSurfaces, loadConfig } from '../src/config.js';

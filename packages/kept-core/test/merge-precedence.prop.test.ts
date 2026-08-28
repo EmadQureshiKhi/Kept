@@ -15,7 +15,7 @@ import {
   type ProviderAxisOverlay,
   type ProviderResult,
   type Verdict,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 4: Provider merge prefers enrichment on the assurance

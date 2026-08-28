@@ -1,5 +1,5 @@
 {
-  "name": "@kept/core",
+  "name": "kept-core",
   "version": "0.1.0",
   "description": "KEPT core — promise model, Kane NDJSON parser, verdict router, snapshot contract.",
   "keywords": [

@@ -29,7 +29,7 @@
  */
 
 import clsx from 'clsx';
-import type { SnapshotReviewCard } from '@kept/core';
+import type { SnapshotReviewCard } from 'kept-core';
 
 import { parseUnifiedDiff } from '../lib/diff.js';
 import { SELECTION_PARAM } from '../lib/graphNav.js';

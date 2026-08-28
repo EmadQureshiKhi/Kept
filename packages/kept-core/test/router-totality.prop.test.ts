@@ -15,7 +15,7 @@ import {
   type CommandFamily,
   type FailureContext,
   type RepairStrategy,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbUnrecognisableVerdictObject, arbVerdictObject } from './arbitraries.js';
 import {

@@ -1,4 +1,4 @@
-import type { PromiseRecord, Verdict } from '@kept/core';
+import type { PromiseRecord, Verdict } from 'kept-core';
 import {
   createKeptState,
   createPromiseGraph,
@@ -7,7 +7,7 @@ import {
   isLedgerSnapshot,
   parseSnapshot,
   serialiseSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 

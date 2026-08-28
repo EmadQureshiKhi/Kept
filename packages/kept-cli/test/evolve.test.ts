@@ -32,7 +32,7 @@
  * rather than over a temporary directory nobody inspects.
  */
 
-import type { ChildProcessLike, KeptState, PromiseRecord } from '@kept/core';
+import type { ChildProcessLike, KeptState, PromiseRecord } from 'kept-core';
 import {
   KaneInvoker,
   REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
@@ -44,7 +44,7 @@ import {
   inMemoryRepairFileSystem,
   listReviewCards,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

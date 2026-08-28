@@ -27,7 +27,7 @@ import {
   type TestrunPlanEvent,
   type VerdictObject,
   type WireEnum,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The Kane event surface, checked against the only two streams we have actually

@@ -50,7 +50,7 @@ import {
   resultCode,
   selectRouter,
   type SealedTriageNote,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 const TESTRUN = contractFor('ExecutionTestrun');

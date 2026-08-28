@@ -4,7 +4,7 @@ import type {
   ReviewCard,
   SnapshotEvidence,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
   REVIEW_CARD_DIAGNOSTIC_CODES,
@@ -22,7 +22,7 @@ import {
   serialiseReviewCard,
   serialiseSnapshot,
   toSnapshotReviewCard,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { deriveDocuments, deriveEdges } from '../src/graph.js';

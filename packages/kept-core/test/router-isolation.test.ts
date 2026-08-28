@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import * as barrel from '@kept/core';
+import * as barrel from 'kept-core';
 import {
   REPAIR_BRANCHES,
   VERDICT_ROUTER_NAMES,
   createFailureContext,
   isRepairAnnotation,
   selectRouter,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Source scan 3 of 6 — no concrete verdict router outside `src/verdict/`
@@ -257,7 +257,7 @@ function withoutExtension(segment: string): string {
  *
  * Matched on path segments rather than on a whole-string suffix, so
  * `./resultCode740.js`, `../verdict/resultCode740.js`,
- * `@kept/core/dist/verdict/failureYamlTriage.js` and a hypothetical
+ * `kept-core/dist/verdict/failureYamlTriage.js` and a hypothetical
  * `verdict/resultCode740/index.js` all land the same way.
  */
 export function namesConcreteModule(specifier: string): boolean {
@@ -386,12 +386,12 @@ describe('source scan 3 of 6 — the scan itself is not a no-op', () => {
   it('trips on each banned import form when handed one', () => {
     const evasions = [
       "import { resultCode740Router } from '../verdict/resultCode740.js';",
-      "import { failureYamlTriageRouter } from '@kept/core';",
+      "import { failureYamlTriageRouter } from 'kept-core';",
       "import type { VerdictRouter } from '../verdict/failureYamlTriage.js';",
       "export { resultCode740Router } from './verdict/resultCode740.js';",
-      "import '@kept/core/dist/verdict/failureYamlTriage.js';",
+      "import 'kept-core/dist/verdict/failureYamlTriage.js';",
       "const mod = await import('./verdict/resultCode740.js');",
-      "const mod = require('@kept/core/dist/verdict/resultCode740.js');",
+      "const mod = require('kept-core/dist/verdict/resultCode740.js');",
       "import * as strategy from '../../packages/kept-core/src/verdict/failureYamlTriage.js';",
     ];
     for (const line of evasions) {
@@ -404,7 +404,7 @@ describe('source scan 3 of 6 — the scan itself is not a no-op', () => {
 
   it('does not trip on a mention, a config literal, or the legal door', () => {
     const allowed = [
-      `import { ${DOOR} } from '@kept/core';`,
+      `import { ${DOOR} } from 'kept-core';`,
       "import { selectRouter, type VerdictRouter } from '../verdict/router.js';",
       "export type RepairStrategy = 'resultCode740' | 'failureYamlTriage';",
       "export const VERDICT_ROUTER_NAMES = ['resultCode740', 'failureYamlTriage'] as const;",
@@ -466,7 +466,7 @@ describe('source scan 3 of 6 — selectRouter is the only door, and it works', (
     for (const symbol of CONCRETE_SYMBOLS) {
       expect(
         exported,
-        `@kept/core exports ${symbol}. The barrel is the widest door in the repository: ` +
+        `kept-core exports ${symbol}. The barrel is the widest door in the repository: ` +
           `exporting a concrete strategy makes every consumer able to depend on one, which is ` +
           `exactly what R6.10 forbids.`,
       ).not.toContain(symbol);

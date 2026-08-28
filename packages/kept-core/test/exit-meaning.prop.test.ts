@@ -13,7 +13,7 @@ import {
   resultCode,
   type CommandFamily,
   type ExitMeaning,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 12: Exit-code interpretation is total and

@@ -37,7 +37,7 @@
 
 import clsx from 'clsx';
 import { useState } from 'react';
-import type { SnapshotAmendment } from '@kept/core';
+import type { SnapshotAmendment } from 'kept-core';
 
 import '../styles/amendments.css';
 

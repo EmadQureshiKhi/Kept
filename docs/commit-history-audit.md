@@ -93,7 +93,7 @@ Defects found *during* a task were corrected inside that task's own commit, so w
   and one under `core`: overlapping graph lanes, an unbounded detail panel, and `node:fs`
   reaching the browser bundle twice by two different routes.
 - **Two are the Vercel deploy**, the config block Next 16 no longer accepts and the build
-  order `@kept/core` needs.
+  order `kept-core` needs.
 - **One makes the reconcile fork guard hermetic.**
 
 Each is described in [`docs/kane/`](kane/) beside the stream that revealed it.

@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { CREDITS_FIELDS, credits } from '@kept/core';
+import { CREDITS_FIELDS, credits } from 'kept-core';
 
 /**
  * Feature: kept, Property 11: The credits accessor prefers `credits_consumed`

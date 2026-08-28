@@ -58,8 +58,8 @@ import type {
   Diagnostic,
   DiagnosticSink,
   FenceSurfaces,
-} from '@kept/core';
-import { createDiagnosticSink, matchesGlob, type StateFileSystem } from '@kept/core';
+} from 'kept-core';
+import { createDiagnosticSink, matchesGlob, type StateFileSystem } from 'kept-core';
 
 /** Where the config lives, relative to the repository root. */
 export const CONFIG_FILE_RELATIVE_PATH = '.kept/config.json';

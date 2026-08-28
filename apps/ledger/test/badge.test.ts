@@ -41,7 +41,7 @@
  * edges.
  */
 
-import { SnapshotMetricsSchema } from '@kept/core';
+import { SnapshotMetricsSchema } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import * as badgeRoute from '../app/badge.svg/route.js';

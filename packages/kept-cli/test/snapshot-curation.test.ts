@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { PromiseRecord } from '@kept/core';
+import type { PromiseRecord } from 'kept-core';
 import {
   createDiagnosticSink,
   createKeptState,
@@ -9,7 +9,7 @@ import {
   createPromiseRecord,
   inMemoryStateFileSystem,
   parseSnapshot,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { PACK_SLUG, bytesOf, realisticPack, zipOf } from '../../kept-core/test/pack-archive.js';

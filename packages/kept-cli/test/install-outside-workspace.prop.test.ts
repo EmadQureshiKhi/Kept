@@ -629,7 +629,7 @@ describe('Feature: kept, Property 35: The packed tarball is installable and self
       readFileSync(resolve(packageDir('kept-cli'), 'package.json'), { encoding: 'utf8' }),
     ) as { readonly bin?: Readonly<Record<string, string>> };
     const target = manifest.bin?.kept;
-    expect(target, '@kept/cli must declare a `kept` bin.').toBeTypeOf('string');
+    expect(target, 'kept-cli must declare a `kept` bin.').toBeTypeOf('string');
     expect(
       entriesOf('kept-cli'),
       `The kept bin target ${target ?? ''} is not in the archive, so an install links a missing file.`,
@@ -646,11 +646,11 @@ describe('Feature: kept, Property 35: The packed tarball is installable and self
     const cli = JSON.parse(
       readFileSync(resolve(packageDir('kept-cli'), 'package.json'), { encoding: 'utf8' }),
     ) as { readonly dependencies?: Readonly<Record<string, string>> };
-    const range = cli.dependencies?.['@kept/core'] ?? '';
+    const range = cli.dependencies?.['kept-core'] ?? '';
     for (const protocol of ['workspace:', 'file:', 'link:', 'portal:', '*', '0.0.0']) {
       expect(
         range === protocol || range.startsWith(protocol),
-        `@kept/cli's @kept/core range '${range}' uses '${protocol}', which resolves inside this ` +
+        `kept-cli's kept-core range '${range}' uses '${protocol}', which resolves inside this ` +
           `workspace and nowhere else (R17.3).`,
       ).toBe(false);
     }

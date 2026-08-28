@@ -23,8 +23,8 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { SnapshotReviewCard } from '@kept/core';
-import { SnapshotReviewCardSchema } from '@kept/core';
+import type { SnapshotReviewCard } from 'kept-core';
+import { SnapshotReviewCardSchema } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import ReviewsPage, { REVIEWS_EMPTY, reviewOrder } from '../app/reviews/page.js';

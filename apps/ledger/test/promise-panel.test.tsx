@@ -29,8 +29,8 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { SnapshotEvidence, SnapshotPromise } from '@kept/core';
-import { SnapshotEvidenceSchema, SnapshotPromiseSchema } from '@kept/core';
+import type { SnapshotEvidence, SnapshotPromise } from 'kept-core';
+import { SnapshotEvidenceSchema, SnapshotPromiseSchema } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { PANEL_WORDS, PromisePanel } from '../components/PromisePanel.js';

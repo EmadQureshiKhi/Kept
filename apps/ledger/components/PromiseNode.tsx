@@ -49,7 +49,7 @@
 'use client';
 
 import clsx from 'clsx';
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 import { useRef } from 'react';
 
 import { citationLabel } from '../lib/citation.js';

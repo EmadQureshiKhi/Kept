@@ -13,7 +13,7 @@ import {
   type MemberEndStatus,
   type RunEndEvent,
   type TestrunDoneEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The family-gated NDJSON parser, checked against every recorded and authored

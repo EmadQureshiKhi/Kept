@@ -34,7 +34,7 @@
  * a reader knows why the button did nothing.
  *
  * **An amendment id, and nothing that could name a path.** The id arrives as one
- * URL segment and is checked against `@kept/core`'s own {@link isAmendmentId}, the
+ * URL segment and is checked against `kept-core`'s own {@link isAmendmentId}, the
  * same grammar that mints it, so this file cannot drift into accepting a spelling
  * core would refuse. Before that, the segment is scanned for path separators, glob
  * metacharacters, `..`, percent escapes and null bytes, so a request that names a
@@ -74,8 +74,8 @@ import type {
   Diagnostic,
   KaneInvoker,
   StateFileSystem,
-} from '@kept/core';
-import { createDiagnosticSink, isAmendmentId } from '@kept/core';
+} from 'kept-core';
+import { createDiagnosticSink, isAmendmentId } from 'kept-core';
 
 import type { KeptConfig } from '../config.js';
 import { runAmend } from './amend.js';

@@ -1,4 +1,4 @@
-# @kept/core
+# kept-core
 
 The library half of [KEPT](https://github.com/EmadQureshiKhi/Kept): every promise your product
 makes about itself, and continuous proof it is still kept.
@@ -8,11 +8,11 @@ NDJSON parser and its three completion contracts, the verdict router, the blast 
 repair surfaces, the single write guard, and the snapshot schema the read-only Ledger reads. It
 spawns nothing on its own and writes nothing on its own.
 
-Most people want [`@kept/cli`](https://www.npmjs.com/package/@kept/cli) instead. Install this one
+Most people want [`kept-cli`](https://www.npmjs.com/package/kept-cli) instead. Install this one
 directly only if you are building your own tooling on the same model.
 
 ```bash
-npm install @kept/core
+npm install kept-core
 ```
 
 ## Prerequisites

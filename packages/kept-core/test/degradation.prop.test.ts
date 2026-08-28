@@ -24,7 +24,7 @@ import {
   type RunOutcome,
   type StateFreshness,
   type Verdict,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 6: Degradation preserves state and never fails the build

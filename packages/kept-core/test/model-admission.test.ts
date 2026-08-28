@@ -19,7 +19,7 @@ import {
   splitLines,
   type Admission,
   type PromiseCandidate,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The citation admission gate (design §3.3, R1.3, R1.4, R1.5).

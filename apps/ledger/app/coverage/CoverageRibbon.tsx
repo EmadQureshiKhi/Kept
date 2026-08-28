@@ -2,7 +2,7 @@
  * The dual-axis coverage ribbon, design §5.3.0, §10.1, R9.10 through R9.15.
  *
  * Two axes over one population, and a row per use case underneath them. The axes
- * come from `kane-cli cover gaps`, are projected in `@kept/core` and are recorded in
+ * come from `kane-cli cover gaps`, are projected in `kept-core` and are recorded in
  * the committed snapshot, so this component renders them with Kane invoked zero
  * times (R9.14). It computes nothing: every percentage, every `n/m` ratio and every
  * word of status is a field of `snapshot.coverageAxes`, read verbatim.
@@ -70,7 +70,7 @@
  * authors no colour, no depth and no stylesheet of its own.
  */
 
-import type { SnapshotCoverageAxes, SnapshotCoverageRatio, SnapshotCoverageRow } from '@kept/core';
+import type { SnapshotCoverageAxes, SnapshotCoverageRatio, SnapshotCoverageRow } from 'kept-core';
 
 import '../../styles/coverage.css';
 

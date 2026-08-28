@@ -1,4 +1,4 @@
-import { inMemoryBaselineFileSystem, inMemoryStateFileSystem } from '@kept/core';
+import { inMemoryBaselineFileSystem, inMemoryStateFileSystem } from 'kept-core';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 

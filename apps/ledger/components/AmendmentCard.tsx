@@ -42,8 +42,8 @@
  */
 
 import clsx from 'clsx';
-import type { SnapshotAmendment } from '@kept/core';
-import { amendedPromiseId } from '@kept/core';
+import type { SnapshotAmendment } from 'kept-core';
+import { amendedPromiseId } from 'kept-core';
 
 import { diffLines } from '../lib/diff.js';
 import { SELECTION_PARAM } from '../lib/graphNav.js';

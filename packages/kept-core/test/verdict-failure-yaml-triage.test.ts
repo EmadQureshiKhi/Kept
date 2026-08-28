@@ -10,7 +10,7 @@ import {
   selectRouter,
   type FailureContext,
   type RepairBranch,
-} from '@kept/core';
+} from 'kept-core';
 
 import { REPO_ROOT, buildEvidenceTree, testrunListing } from './verdict-evidence-tree.js';
 

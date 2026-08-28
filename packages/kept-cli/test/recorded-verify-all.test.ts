@@ -7,7 +7,7 @@ import type {
   PromiseRecord,
   SealedPackFileSystem,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   KaneInvoker,
   PLAN_FILE_RELATIVE_PATH,
@@ -19,7 +19,7 @@ import {
   inMemoryPlanFileSystem,
   inMemoryStateFileSystem,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../src/config.js';

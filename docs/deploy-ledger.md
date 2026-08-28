@@ -55,19 +55,19 @@ rather than correctness.
 
 ## Why the build command starts with `tsc -b packages/kept-core`
 
-**Because `@kept/core` is a workspace package that ships compiled output, and the compiled
+**Because `kept-core` is a workspace package that ships compiled output, and the compiled
 output is not in the repository.**
 
-The Ledger imports `@kept/core` in three places — `lib/snapshot.ts` for `parseSnapshot`,
+The Ledger imports `kept-core` in three places — `lib/snapshot.ts` for `parseSnapshot`,
 `lib/runVocabulary.ts` for the exit meanings and the verdict contract, and
 `components/AmendmentCard.tsx` for `amendedPromiseId`. `packages/kept-core/package.json`
 resolves that specifier through `main` and `exports`, and both point at `./dist/index.js`.
 `.gitignore` line 5 excludes `dist/`, so a fresh clone has none: `git ls-files
 packages/kept-core/dist` returns nothing.
 
-`npm ci` does create the symlink — `node_modules/@kept/core` → `packages/kept-core` — which
+`npm ci` does create the symlink — `node_modules/kept-core` → `packages/kept-core` — which
 is why the failure is confusing. The package is *found*. Its entry point is what is
-missing. Turbopack reports that as three `Module not found: Can't resolve '@kept/core'`
+missing. Turbopack reports that as three `Module not found: Can't resolve 'kept-core'`
 errors and the build exits 1.
 
 Locally the specifier resolves only because `npm run check` runs `tsc -b` before anything
@@ -137,7 +137,7 @@ they were, what they cost, and the two changes that removed them.
 
 Deleting `dist/` and re-running is also the check that the first line of the build command
 is load-bearing: without it, the same command fails with three
-`Module not found: Can't resolve '@kept/core'` errors.
+`Module not found: Can't resolve 'kept-core'` errors.
 
 ## The four tracing warnings, and what fixing them took
 
@@ -163,7 +163,7 @@ argument is that structural claims should be mechanical rather than trusted.
 
 ### Two edges, two different fixes, both required
 
-There were two ways the filesystem half of `@kept/core` reached the Ledger, and they are
+There were two ways the filesystem half of `kept-core` reached the Ledger, and they are
 different in kind, which is why neither fix alone was enough.
 
 **The incidental edge: the barrel.** `index.ts` re-exports `listArtifacts`,

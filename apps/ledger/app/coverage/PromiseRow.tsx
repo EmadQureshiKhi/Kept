@@ -18,7 +18,7 @@
  * eight the committed snapshot happens to hold.
  */
 
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 
 import { VerdictTag } from '../../components/VerdictTag.js';
 

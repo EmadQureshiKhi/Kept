@@ -50,16 +50,16 @@
  *      Kane without one of these — not from a Next server component, not from a
  *      route handler, not from anywhere. Ban them and the credit bill is zero
  *      whatever words appear in the copy.
- *   2. The invoker arriving as a dependency: any import of `@kept/cli`, any
+ *   2. The invoker arriving as a dependency: any import of `kept-cli`, any
  *      module specifier containing `kane` (`kane-cli`, or a deep path into
- *      `@kept/core`'s `kane/` directory), or any of `@kept/core`'s invoker
+ *      `kept-core`'s `kane/` directory), or any of `kept-core`'s invoker
  *      exports named in an import list or in code — `KaneInvoker`,
  *      `findKaneBinary`, `resolvedKaneBinary` and the rest.
  *   3. `kane` in a genuine code position: a constructor whose name contains it,
  *      an identifier ending `Invoker`, a `KANE_*` environment variable, or an
  *      argv array whose first element is the binary — `['kane-cli', …]`.
  *
- * `@kept/core` itself is deliberately **not** banned. It is the CLI↔UI contract
+ * `kept-core` itself is deliberately **not** banned. It is the CLI↔UI contract
  * of design §9: sixteen shipped Ledger files import `parseSnapshot`, `resultCode`
  * and the snapshot types from it, and the Ledger is *required* to read its data
  * that way. What is banned is its Kane process boundary, by name, which is the
@@ -135,7 +135,7 @@ const MIDDLEWARE_FILE = /^middleware\.(?:[mc]?[jt]s|[jt]sx)$/;
 const MUTATING_METHODS = 'POST|PUT|PATCH|DELETE|HEAD|OPTIONS';
 
 /**
- * `@kept/core`'s Kane process boundary, export by export (§2.20).
+ * `kept-core`'s Kane process boundary, export by export (§2.20).
  *
  * The types are listed beside the values. A type cannot start a process, but
  * nothing in a read-only projection has any use for the shape of a spawn
@@ -165,8 +165,19 @@ export const INVOKER_EXPORTS = [
 
 const INVOKER_IDENTIFIER = new RegExp(`\\b(?:${INVOKER_EXPORTS.join('|')})\\b`);
 
-/** A `{ … }` import list taken from `@kept/core`'s barrel, across lines. */
-const CORE_IMPORT_LIST = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]@kept\/core['"]/g;
+/** A `{ … }` import list taken from `kept-core`'s barrel, across lines. */
+/**
+ * The core import list, as a pattern.
+ *
+ * The specifier is spelled without a slash now, and that is worth a note because the
+ * previous spelling hid from a rename. It read `@kept\/core`, with the slash escaped for
+ * the regex, so a text substitution looking for `@kept/core` did not match it: the
+ * packages were renamed, every real import moved, and this rule went on searching for a
+ * specifier that no longer existed. It matched nothing and reported nothing, which is the
+ * worst way for a guard to fail. `read-only-scan.test.ts` plants a violation and requires
+ * this rule to fire on it, and that is what caught it.
+ */
+const CORE_IMPORT_LIST = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]kept-core['"]/g;
 
 /**
  * Every spelling of "this module comes from here": `from '…'`,
@@ -218,23 +229,23 @@ export const RULES = [
   linePatternRule(
     'cli-package-import',
     'imports the KEPT CLI',
-    'R8.6 — `@kept/cli` is where every write and every Kane invocation lives ' +
+    'R8.6 — `kept-cli` is where every write and every Kane invocation lives ' +
       '(design §8.5). The Ledger consumes the snapshot, not the CLI.',
-    [moduleSpecifier('@kept/cli(?:/[^\'"]*)?')],
+    [moduleSpecifier('kept-cli(?:/[^\'"]*)?')],
   ),
   linePatternRule(
     'kane-module-import',
     'imports a module whose specifier names Kane',
-    'R8.6 — `kane-cli`, or a deep path into `@kept/core`\'s `kane/` directory, ' +
-      'is how the process boundary arrives. `@kept/core`\'s barrel is not ' +
+    'R8.6 — `kane-cli`, or a deep path into `kept-core`\'s `kane/` directory, ' +
+      'is how the process boundary arrives. `kept-core`\'s barrel is not ' +
       'banned: it is the CLI↔UI contract of design §9.',
     [moduleSpecifier('[^\'"]*kane[^\'"]*')],
   ),
   {
     id: 'invoker-export',
-    title: 'imports a Kane invoker export from @kept/core',
+    title: 'imports a Kane invoker export from kept-core',
     why:
-      'R8.6 — `@kept/core` is permitted because the Ledger must read its data ' +
+      'R8.6 — `kept-core` is permitted because the Ledger must read its data ' +
       'through `parseSnapshot`, but its Kane process boundary is not. The import ' +
       'list is read across lines, so a wrapped one is not a way round this.',
     find(file) {
@@ -249,7 +260,7 @@ export const RULES = [
             ?.trim();
           if (name !== undefined && name !== '' && banned.has(name)) {
             const line = file.text.slice(0, match.index ?? 0).split('\n').length;
-            found.push({ line, excerpt: `imports ${name} from @kept/core`, rule: 'invoker-export' });
+            found.push({ line, excerpt: `imports ${name} from kept-core`, rule: 'invoker-export' });
           }
         }
       }

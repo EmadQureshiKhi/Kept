@@ -9,7 +9,7 @@ import {
   createPromiseRecord,
   type PromiseRecord,
   type Verdict,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for `model/metrics.ts` (design §9.1, R5.8, R9.1, R9.2, R9.3, R2.11).

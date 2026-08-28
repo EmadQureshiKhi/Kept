@@ -9,7 +9,7 @@ import {
   selectRouter,
   type FailureContext,
   type VerdictObject,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbTerminalEvent, arbUnrecognisableVerdictObject, arbVerdictObject } from './arbitraries.js';
 import { REPO_ROOT, buildEvidenceTree, testrunListing } from './verdict-evidence-tree.js';

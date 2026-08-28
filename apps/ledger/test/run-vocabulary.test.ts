@@ -22,14 +22,14 @@
  * product, so it is checked over the whole cross product rather than sampled.
  */
 
-import type { AssuranceStatus, CommandFamily, ExitMeaning, SnapshotRun } from '@kept/core';
+import type { AssuranceStatus, CommandFamily, ExitMeaning, SnapshotRun } from 'kept-core';
 import {
   ASSURANCE_STATUSES,
   EXIT_MEANINGS,
   SnapshotRunSchema,
   contractFor,
   permitsVerdictWrite,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import {

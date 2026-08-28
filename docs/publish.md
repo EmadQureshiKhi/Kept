@@ -1,10 +1,10 @@
-# Publishing `@kept/core` and `@kept/cli`
+# Publishing `kept-core` and `kept-cli`
 
 Written down because it is performed rarely and from memory (design §22.4, R17.12). A publish is
 irreversible per version, and the one thing worse than an unpublished package is a published broken
 one. Do not automate it.
 
-Both packages are `0.1.0`. `@kept/cli` depends on `@kept/core` at `^0.1.0`, which resolves from the
+Both packages are `0.1.0`. `kept-cli` depends on `kept-core` at `^0.1.0`, which resolves from the
 public registry rather than only through the workspace symlink.
 
 ## The procedure, in order
@@ -12,7 +12,7 @@ public registry rather than only through the workspace symlink.
 ### 1. Bump both versions together
 
 `packages/kept-core/package.json` and `packages/kept-cli/package.json` carry the same `version`, and
-`@kept/cli`'s `dependencies["@kept/core"]` range must admit it. A CLI at `0.1.1` depending on
+`kept-cli`'s `dependencies["kept-core"]` range must admit it. A CLI at `0.1.1` depending on
 `^0.1.0` is a drift nobody notices until an install resolves the older core, so
 `packages/kept-cli/test/packaging.test.ts` asserts the equality (R17.7) and asserts the range floor
 matches the core version.
@@ -42,15 +42,15 @@ npm run check
 ### 3. Pack both, and inspect both file lists
 
 ```bash
-npm pack --dry-run --json --workspace @kept/core
-npm pack --dry-run --json --workspace @kept/cli
+npm pack --dry-run --json --workspace kept-core
+npm pack --dry-run --json --workspace kept-cli
 ```
 
 `--dry-run` reports the file list without writing a tarball. What must be true (R17.4, R17.5):
 
 - compiled output and `.d.ts` declarations present under `dist/`
 - no `*.test.*`, no `test/fixtures/**`, no `*.evidence/**`, no `output-*/**`
-- `dist/index.js` present in `@kept/cli`, and its first line is `#!/usr/bin/env node`
+- `dist/index.js` present in `kept-cli`, and its first line is `#!/usr/bin/env node`
 
 That last one is the failure that turns a global install into `Permission denied` on a machine that
 is not the author's, and no other test in this repository would catch it: every other suite imports
@@ -107,7 +107,7 @@ across eight categories of artefact that must never be packed and checks them ag
 lists; its exhaustive half asserts the archives, the manifests, the shebang and the one installation.
 
 **Green, and it was red once, for a reason worth keeping in this document.** On its first real run
-the install found a defect nothing else could see: `@kept/core` imported `yaml`
+the install found a defect nothing else could see: `kept-core` imported `yaml`
 (`dist/kane/failureYaml.js`) and `zod` (`dist/model/snapshot.js`) and declared neither in its
 `dependencies`. Inside this workspace both resolve from the root `node_modules`, so every other
 suite, the packaging test and `npm run check` were all green while an installer, having nothing above
@@ -124,12 +124,12 @@ Do not publish until these tests are green.
 
 ### 6. Publish core, then cli
 
-Order matters. `@kept/cli` depends on `@kept/core@^0.1.0`, so if the CLI is published first, there is
+Order matters. `kept-cli` depends on `kept-core@^0.1.0`, so if the CLI is published first, there is
 a window in which the dependency does not resolve for anyone who installs it.
 
 ```bash
-npm publish --workspace @kept/core --access public
-npm publish --workspace @kept/cli  --access public
+npm publish --workspace kept-core --access public
+npm publish --workspace kept-cli  --access public
 ```
 
 `--access public` because both are scoped packages and scoped packages default to restricted.
@@ -137,15 +137,15 @@ npm publish --workspace @kept/cli  --access public
 Then confirm the registry agrees:
 
 ```bash
-npm view @kept/core version
-npm view @kept/cli version
-npm view @kept/cli dependencies
+npm view kept-core version
+npm view kept-cli version
+npm view kept-cli dependencies
 ```
 
 ### 7. Commit
 
 ```
-chore(release): @kept/core and @kept/cli 0.1.0
+chore(release): kept-core and kept-cli 0.1.0
 ```
 
 ## If something is wrong after publishing

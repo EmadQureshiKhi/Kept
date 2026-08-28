@@ -4,7 +4,7 @@ import type {
   PlainInvocationResult,
   PlainInvocationSpec,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   KANE_BINARY_NAME,
   createDiagnosticSink,
@@ -12,7 +12,7 @@ import {
   createPromiseGraph,
   inMemoryBaselineFileSystem,
   inMemoryStateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import {

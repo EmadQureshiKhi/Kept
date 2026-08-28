@@ -32,7 +32,7 @@ import {
   type RepairAnnotation,
   type Verdict,
   type VerdictSource,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for the promise model (design §3.1, R1.1, R1.6).

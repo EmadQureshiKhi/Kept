@@ -2,7 +2,7 @@ import type {
   ChildProcessLike,
   CollectingDiagnosticSink,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   KaneInvoker,
   STATE_FILE_RELATIVE_PATH,
@@ -15,7 +15,7 @@ import {
   inMemoryStateFileSystem,
   isKeptState,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { BUILD_DIAGNOSTIC_CODES, runBuild } from '../src/commands/build.js';

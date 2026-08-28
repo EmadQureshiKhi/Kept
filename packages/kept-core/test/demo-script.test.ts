@@ -25,7 +25,7 @@
  * This suite lives in `packages/kept-core/test/` rather than beside the script
  * because it needs a Node environment and a home inside `tsc -b`'s include list,
  * and this is the workspace's node-environment suite. Nothing here touches
- * `@kept/core` itself; the location is about the runner, not the subject.
+ * `kept-core` itself; the location is about the runner, not the subject.
  */
 
 import { readFileSync, readdirSync } from 'node:fs';

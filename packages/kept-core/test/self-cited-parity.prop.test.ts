@@ -17,7 +17,7 @@ import {
   type PromiseCandidate,
   type PromiseRecord,
   type ProviderResult,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 36: Self-cited promises are the same kind as fixture

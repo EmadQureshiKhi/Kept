@@ -55,7 +55,7 @@ import {
   selectRouter,
   VERDICT_ROUTER_NAMES,
   type RepairStrategy,
-} from '@kept/core';
+} from 'kept-core';
 
 const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const SPIKE_DIR = 'docs/kane/spike';

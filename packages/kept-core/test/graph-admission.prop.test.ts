@@ -11,7 +11,7 @@ import {
   toPosix,
   type AdmissionRejectionReason,
   type PromiseCandidate,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 2: Graph admission requires a resolvable citation

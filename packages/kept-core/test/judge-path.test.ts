@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseSnapshot } from '@kept/core';
+import { parseSnapshot } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { SERVICES, assertNoKaneInvocation, nextArgv } from '../../../scripts/demo.mjs';

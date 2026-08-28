@@ -50,7 +50,7 @@
 
 'use client';
 
-import type { SnapshotPromise, Verdict } from '@kept/core';
+import type { SnapshotPromise, Verdict } from 'kept-core';
 import { useEffect, useRef, type RefObject } from 'react';
 
 import {

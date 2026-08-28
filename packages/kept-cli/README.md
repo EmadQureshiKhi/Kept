@@ -1,11 +1,11 @@
-# @kept/cli
+# kept-cli
 
 The `kept` command. [KEPT](https://github.com/EmadQureshiKhi/Kept) graphs every claim your product
 makes about itself, cites each one to the file and line that states it, binds each to a Kane CLI
 test, and publishes the verdicts. You cannot break what was never proven to work.
 
 ```bash
-npm install -g @kept/cli
+npm install -g kept-cli
 ```
 
 Commands: `init`, `build`, `verify`, `reconcile`, `evolve`, `amend`, `snapshot`, `handoff`,

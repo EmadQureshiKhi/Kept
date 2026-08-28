@@ -50,7 +50,7 @@
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import fc from 'fast-check';
-import type { LedgerSnapshot, SnapshotPromise } from '@kept/core';
+import type { LedgerSnapshot, SnapshotPromise } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { arbSnapshot } from '../../../packages/kept-core/test/arbitraries.js';

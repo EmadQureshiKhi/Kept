@@ -28,7 +28,7 @@
  * `<cwd>/.testmuai/evidence/<execution_id>.evidence`. `kane/evidence.ts` lists a
  * pack *directory* and therefore resolves nothing here, so the curation below
  * reads the archive itself — through `readPackEntries`, which now lives in
- * `@kept/core` beside the evidence resolver because the triage rung reads the same
+ * `kept-core` beside the evidence resolver because the triage rung reads the same
  * archives to find the note that decides a repair branch.
  *
  * `.testmuai/evidence/` is gitignored because the packs are one to three
@@ -67,7 +67,7 @@ import type {
   SnapshotRun,
   SnapshotRunMember,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   HANDOFF_DIRECTORY_RELATIVE_PATH,
   SEALED_PACK_SUFFIX,
@@ -85,7 +85,7 @@ import {
   toSnapshotAmendment,
   toSnapshotReviewCard,
   REVIEW_CARDS_DIRECTORY_RELATIVE_PATH,
-} from '@kept/core';
+} from 'kept-core';
 
 import { joinPath } from '../config.js';
 import {
@@ -128,7 +128,7 @@ export const SEALED_EVIDENCE_RELATIVE_DIR = '.testmuai/evidence';
  * reader: the triage rung reads the same archives this command curates, and one
  * spelling of the suffix is what keeps the two agreeing about what a pack is.
  */
-export { SEALED_PACK_SUFFIX } from '@kept/core';
+export { SEALED_PACK_SUFFIX } from 'kept-core';
 
 /**
  * The archive file names a snapshot pack id could name, in preference order.
@@ -192,7 +192,7 @@ export const MAX_CURATED_PACK_BYTES = 6 * 1024 * 1024;
  * One file recovered from a sealed pack.
  *
  * An alias for the core package's `PackEntry`, not a lookalike: the zip reader
- * moved to `@kept/core` when the triage rung became its second caller, and two
+ * moved to `kept-core` when the triage rung became its second caller, and two
  * spellings of one shape is how a curation step and a router quietly stop agreeing
  * about what came out of an archive.
  */
@@ -640,7 +640,7 @@ export function collectAmendments(request: {
  * the reconcile output reported nine, and the snapshot it wrote in the same second
  * carried none. Every unit test passed, because each half was correct on its own and
  * no test asserted the composition. That is the same shape as the undeclared `yaml`
- * and `zod` dependencies of `@kept/core`, and it is the third time in this repository
+ * and `zod` dependencies of `kept-core`, and it is the third time in this repository
  * that the defect has been in the wiring rather than in a part.
  *
  * Symmetric with {@link collectAmendments} deliberately: omit the field and the store

@@ -69,7 +69,7 @@
  * `kane/evidence.ts` and `kane/packTriage.ts` now import these three names from here,
  * so there is still exactly one declaration of each and the two cannot disagree about
  * what a pack is called. The public surface is unchanged: the barrel exports all three
- * under the same names, so no consumer — `@kept/cli`, `apps/ledger`, or any test —
+ * under the same names, so no consumer — `kept-cli`, `apps/ledger`, or any test —
  * changes a line.
  */
 

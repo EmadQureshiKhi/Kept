@@ -281,7 +281,7 @@ that first gave it something to find.
 
 Stages 23 to 26 asked one question in four parts. Can the engine be pointed at a repository
 that is not this one (23), does a stranger's first two commands behave (24), does the sentence
-"a published `@kept/cli` and `@kept/core` are coming soon" survive being tested (25), and does
+"a published `kept-cli` and `kept-core` are coming soon" survive being tested (25), and does
 the tool graph the promises its own README makes (26). The stage 21 tail landed alongside:
 task 21.3 gave the badge its visual polish, tasks 21.5 and 22.1 built the `cover gaps`
 dual-axis ribbon the entry above describes, task 21.8 put the `kept watch` accept path on a
@@ -327,7 +327,7 @@ snapshot now records the one a stranger could.
 
 ### The defect clearing it turned up
 
-**`@kept/core` imported `yaml` and `zod` without declaring either of them.** Three modules
+**`kept-core` imported `yaml` and `zod` without declaring either of them.** Three modules
 reach for them, `model/snapshot.ts` for `zod` and `kane/failureYaml.ts` and `kane/packTriage.ts`
 for `yaml`, and the manifest listed no runtime dependencies at all. Inside this workspace that
 is invisible: npm hoists both packages to the root `node_modules` for the Ledger's own use, so
@@ -339,7 +339,7 @@ because the thing that hides the fault is the workspace the suite runs in.
 It was found by the only test that could find it: the one that packs both tarballs, installs
 them into a directory outside the workspace root with no `node_modules` above it, and runs the
 binary from there. Both manifests now declare `yaml` at `^2.9.0` and `zod` at `^4.4.3`, both
-packages are off `private` at `0.1.0`, and `@kept/cli` depends on `@kept/core` by `^0.1.0`
+packages are off `private` at `0.1.0`, and `kept-cli` depends on `kept-core` by `^0.1.0`
 rather than by the literal `0.0.0` that only ever resolved through a symlink.
 
 This is the same shape as the defects recorded above, and it is the reason this file is worth
@@ -502,7 +502,7 @@ guarded by `packages/kept-cli/test/published-docs.test.ts`.
 
 **Every unit passed. The composition was wrong.** That is the same shape as the evidence
 chain in the entry above, as the handoff resurrecting a stale repair annotation, and as
-`@kept/core` importing `yaml` and `zod` without declaring them. Four entries, four defects
+`kept-core` importing `yaml` and `zod` without declaring them. Four entries, four defects
 that lived in the wiring between parts that were each correct alone, and none of them
 findable by a component suite. Recording that they share a shape is the point of this file.
 

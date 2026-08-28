@@ -17,7 +17,7 @@ import {
   type ProviderAxes,
   type ProviderAxisOverlay,
   type ProviderResult,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 3.8 — the canonical provider merge (design §5.4, R1.7, R2.1, R5.5).

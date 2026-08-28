@@ -53,7 +53,7 @@
 'use client';
 
 import clsx from 'clsx';
-import type { SnapshotPromise } from '@kept/core';
+import type { SnapshotPromise } from 'kept-core';
 
 import { VerdictTag } from './VerdictTag.js';
 

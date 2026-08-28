@@ -31,7 +31,7 @@
  * than `94 days ago` is a mouthful.
  */
 
-import type { SnapshotFreshness } from '@kept/core';
+import type { SnapshotFreshness } from 'kept-core';
 
 import type { TokenName } from './tokens.js';
 

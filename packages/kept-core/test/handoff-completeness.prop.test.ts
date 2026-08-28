@@ -35,7 +35,7 @@ import {
   type RoutedRepair,
   type RunOutcome,
   type WriteHandoffRequest,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   arbExitCode,

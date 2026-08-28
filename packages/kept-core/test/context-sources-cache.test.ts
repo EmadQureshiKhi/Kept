@@ -28,7 +28,7 @@ import {
   type SourceCacheEntry,
   type SourcesCache,
   type StoreSource,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 12.3 — the `.kept/sources.json` read-through cache (design §13.2.2, R5.2).

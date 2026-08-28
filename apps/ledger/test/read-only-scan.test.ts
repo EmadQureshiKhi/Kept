@@ -14,7 +14,7 @@
  *   1. **Both directions, per rule.** A scan is only as good as its precision.
  *      Every rule is fired at a planted violation *and* at the legitimate
  *      content it must stay quiet about — the verbatim Kane refusal message,
- *      prose naming Kane, `snapshot.generator.kaneCli`, the `@kept/core` imports
+ *      prose naming Kane, `snapshot.generator.kaneCli`, the `kept-core` imports
  *      sixteen shipped files depend on, and `pattern.exec(line)`.
  *   2. **The walks agree.** The shared walk in `_scan.ts` and the script's own
  *      hand-rolled walk are asserted to see the same files, so the standalone
@@ -149,27 +149,27 @@ describe('the scan catches a planted violation', () => {
     },
     {
       what: 'an import of the CLI package',
-      file: fixture('apps/ledger/lib/danger.ts', "import { amend } from '@kept/cli';"),
+      file: fixture('apps/ledger/lib/danger.ts', "import { amend } from 'kept-cli';"),
       rule: 'cli-package-import',
     },
     {
       what: 'a deep import of the Kane process boundary',
       file: fixture(
         'apps/ledger/lib/danger.ts',
-        "import { KaneInvoker } from '@kept/core/dist/kane/invoker.js';",
+        "import { KaneInvoker } from 'kept-core/dist/kane/invoker.js';",
       ),
       rule: 'kane-module-import',
     },
     {
       what: 'the invoker taken from the barrel',
-      file: fixture('apps/ledger/lib/danger.ts', "import { KaneInvoker } from '@kept/core';"),
+      file: fixture('apps/ledger/lib/danger.ts', "import { KaneInvoker } from 'kept-core';"),
       rule: 'invoker-export',
     },
     {
       what: 'the invoker taken from the barrel across several lines',
       file: fixture(
         'apps/ledger/lib/danger.ts',
-        "import {\n  parseSnapshot,\n  findKaneBinary,\n} from '@kept/core';",
+        "import {\n  parseSnapshot,\n  findKaneBinary,\n} from 'kept-core';",
       ),
       rule: 'invoker-export',
     },
@@ -328,17 +328,17 @@ describe('the scan does not fire on Kane as content', () => {
       ),
     },
     {
-      what: 'the @kept/core imports sixteen shipped files depend on',
+      what: 'the kept-core imports sixteen shipped files depend on',
       file: fixture(
         'apps/ledger/lib/snapshot.ts',
-        "import type { LedgerSnapshot } from '@kept/core';\nimport { parseSnapshot, resultCode } from '@kept/core';",
+        "import type { LedgerSnapshot } from 'kept-core';\nimport { parseSnapshot, resultCode } from 'kept-core';",
       ),
     },
     {
-      what: 'a multi-line @kept/core type import',
+      what: 'a multi-line kept-core type import',
       file: fixture(
         'apps/ledger/lib/layout.ts',
-        "import type {\n  LedgerSnapshot,\n  SnapshotPromise,\n  Verdict,\n} from '@kept/core';",
+        "import type {\n  LedgerSnapshot,\n  SnapshotPromise,\n  Verdict,\n} from 'kept-core';",
       ),
     },
     {

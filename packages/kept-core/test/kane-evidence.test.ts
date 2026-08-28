@@ -13,7 +13,7 @@ import {
   resolveEvidenceDir,
   type ArtifactKind,
   type CollectingDiagnosticSink,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for `kane/evidence.ts` (design §4.6, R3.19, R4.13, R6.11).

@@ -9,7 +9,7 @@ import {
   entersVerdictRouter,
   memberStatusToVerdict,
   reportMemberStatus,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbMemberStatus } from './arbitraries.js';
 

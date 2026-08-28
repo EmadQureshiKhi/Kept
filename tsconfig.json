@@ -22,7 +22,7 @@
    * and still means a plain `tsc -b` — and therefore `npm run check` — fails on
    * a type error in a test.
    *
-   * Tests import `@kept/core`, never `packages/kept-core/src/**` — the barrel
+   * Tests import `kept-core`, never `packages/kept-core/src/**` — the barrel
    * is the only consumer entry point (design §2.1). The compiler tolerates a
    * deep import here because a project reference redirects it to the built
    * declaration, so that rule is upheld by review and, later, by the

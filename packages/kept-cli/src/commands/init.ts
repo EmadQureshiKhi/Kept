@@ -53,7 +53,7 @@ import type {
   Diagnostic,
   DiagnosticSink,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   MAX_SCAN_DEPTH,
   createDiagnosticSink,
@@ -61,7 +61,7 @@ import {
   isTestDocumentName,
   nodeBaselineFileSystem,
   nodeStateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 
 import { EXIT_OK } from '../args.js';
 import {

@@ -142,7 +142,7 @@ reconciles what the suite owes.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Cannot find module '@kept/core'` | `packages/*/dist` is not in git | `npx tsc -b` |
+| `Cannot find module 'kept-core'` | `packages/*/dist` is not in git | `npx tsc -b` |
 | A port is busy | something else holds 3000 or 3100 | free the port; the tests navigate to these exact numbers |
 | `npm run loop` exits 0 but nothing moved | Kane was never reachable | read `.kept/handoff.json` — the exit code is never the signal |
 | An ingest looks like it did nothing | `context ingest` lands only | run `context extract` after it, see [the bootstrap](#bootstrapping-the-kane-context-store-headless) |
@@ -863,18 +863,18 @@ Two things about the shape look wrong and are load-bearing, both explained in
 - **`apps/ledger` has no `package.json`**, so the project root is the monorepo root and the app is
   named as an argument to the build command instead of by the root setting. Pointing Vercel at
   `apps/ledger` reports "No Next.js version detected" and no other setting rescues it.
-- **The build command builds `@kept/core` first.** `packages/*/dist` is gitignored, so a fresh clone
-  resolves `@kept/core` to a package whose entry point does not exist. `npm ci` still creates the
+- **The build command builds `kept-core` first.** `packages/*/dist` is gitignored, so a fresh clone
+  resolves `kept-core` to a package whose entry point does not exist. `npm ci` still creates the
   symlink, which is what makes the failure read as a broken import rather than a missing artefact.
   `tsc -b packages/kept-core && next build apps/ledger` is the whole fix.
 
-The deployed bundle carries no filesystem code either. `@kept/core` declares `"sideEffects": false`
+The deployed bundle carries no filesystem code either. `kept-core` declares `"sideEffects": false`
 and the snapshot schema reads its vocabulary from a module that imports nothing, so the directory
 walkers that resolve evidence packs locally are absent from the build rather than merely unused in
 it. Verified by the build going from four `Dynamic filesystem access` warnings and a 52.6 MB trace
 to zero warnings and 41.9 MB.
 
-Both packages are publishable as well: `@kept/core` and `@kept/cli` at `0.1.0`, off `private`, each
+Both packages are publishable as well: `kept-core` and `kept-cli` at `0.1.0`, off `private`, each
 with its own README, and the published file list asserted against a real `npm pack` rather than
 against the manifest that describes it. You bring your own Kane: KEPT never bundles, installs or
 vendors `kane-cli`, it spawns whatever is on `PATH`, and a missing binary is a supported state that
@@ -980,7 +980,7 @@ routed to `docs-lie` while Kane's note read `application_issue/ui_data_defect` a
 every documentation save resolved to `listing-unreadable`. A dry run was required to carry a
 terminal event it structurally cannot have, so the plan cache was never written and every radius was
 empty. And the packaging suite, on its first real run outside this workspace, found that
-`@kept/core` imported `yaml` and `zod` while declaring neither: inside the workspace both resolve
+`kept-core` imported `yaml` and `zod` while declaring neither: inside the workspace both resolve
 from the root `node_modules`, so every other suite was green while the published package would have
 died on its first import. Each is fixed, each has a test that fails on its recurrence, and each is
 written up with the stream that revealed it.

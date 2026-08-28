@@ -25,7 +25,7 @@ import {
   type BaselineContext,
   type BaselineDirEntry,
   type BaselineFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 // Imported from the module rather than the barrel: the two readers below landed with
 // the Kane-format reconciliation (15.2), and this file has to compile at that commit
 // whether or not the barrel has caught up with them yet.

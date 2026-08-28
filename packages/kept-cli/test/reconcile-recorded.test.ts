@@ -8,7 +8,7 @@ import type {
   KeptState,
   PromiseRecord,
   StateFileSystem,
-} from '@kept/core';
+} from 'kept-core';
 import {
   COVER_SINGULAR_ARGV,
   ENRICHMENT_ARGV,
@@ -22,7 +22,7 @@ import {
   inMemoryCitationSource,
   inMemorySourceCacheFileSystem,
   serialiseState,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../src/config.js';

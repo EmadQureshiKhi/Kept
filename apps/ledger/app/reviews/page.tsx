@@ -27,7 +27,7 @@
  */
 
 import type { Metadata } from 'next';
-import type { SnapshotReviewCard } from '@kept/core';
+import type { SnapshotReviewCard } from 'kept-core';
 
 import { ReviewCardView } from '../../components/ReviewCardView.js';
 import { snapshot } from '../../lib/snapshot.js';

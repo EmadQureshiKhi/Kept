@@ -36,7 +36,7 @@
  * every other file.
  */
 
-import type { Verdict } from '@kept/core';
+import type { Verdict } from 'kept-core';
 import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 

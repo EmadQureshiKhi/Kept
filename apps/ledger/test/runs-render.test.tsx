@@ -33,8 +33,8 @@
  */
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import type { CommandFamily, ExitMeaning, SnapshotDiagnostic, SnapshotRun } from '@kept/core';
-import { SnapshotRunSchema, contractFor } from '@kept/core';
+import type { CommandFamily, ExitMeaning, SnapshotDiagnostic, SnapshotRun } from 'kept-core';
+import { SnapshotRunSchema, contractFor } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DiagnosticBlock } from '../app/runs/DiagnosticBlock.js';

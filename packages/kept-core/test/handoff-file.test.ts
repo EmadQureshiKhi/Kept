@@ -38,7 +38,7 @@ import {
   type RunOutcome,
   type Verdict,
   type WriteHandoffRequest,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The handoff file — the closed-loop contract (design §11.2, §11.3, §8.1, §14.1,

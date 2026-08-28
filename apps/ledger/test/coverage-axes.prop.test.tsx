@@ -51,7 +51,7 @@ import {
   projectGaps,
   type CoverageAxes,
   type SnapshotCoverageAxes,
-} from '@kept/core';
+} from 'kept-core';
 import fc from 'fast-check';
 import { afterEach, describe, expect, it } from 'vitest';
 

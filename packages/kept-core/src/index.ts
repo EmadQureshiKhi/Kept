@@ -1,6 +1,6 @@
 /**
- * Public surface of `@kept/core` (design §2.1). This barrel is the only import
- * path consumers use — `@kept/cli`, `apps/ledger` and the tests all read from
+ * Public surface of `kept-core` (design §2.1). This barrel is the only import
+ * path consumers use — `kept-cli`, `apps/ledger` and the tests all read from
  * here, never from a deep `dist/**` path.
  *
  * Modules are re-exported as their tasks land: the Kane three-contract layer
@@ -9,7 +9,7 @@
  */
 
 /** Package identity, used by `kept doctor` and by the launcher's build check. */
-export const KEPT_CORE_PACKAGE = '@kept/core';
+export const KEPT_CORE_PACKAGE = 'kept-core';
 
 // Diagnostics (1.3) — the reporting channel every later module uses instead of
 // throwing.
@@ -1395,7 +1395,7 @@ export {
 // with no verdict, because carrying the old verdict across would assert that Kane
 // proved a sentence it never saw. `AcceptResult.successorPromiseId` names it, and
 // `rebuildRequired` is the obligation `kept amend accept` discharges by calling
-// `runBuild` and `runSnapshot` — those live in `@kept/cli`, so core reports the
+// `runBuild` and `runSnapshot` — those live in `kept-cli`, so core reports the
 // obligation rather than reaching for a dependency it must not have.
 export type {
   AcceptAmendmentRequest,

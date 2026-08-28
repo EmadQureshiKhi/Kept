@@ -48,7 +48,7 @@
 
 'use client';
 
-import type { Verdict } from '@kept/core';
+import type { Verdict } from 'kept-core';
 import { useEffect, useRef, type RefObject } from 'react';
 
 import {

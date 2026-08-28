@@ -32,7 +32,7 @@ import {
   type EnrichmentContext,
   type EnrichmentTarget,
   type PromiseCandidate,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 3.7 — the enrichment provider and the tolerant coverage projection

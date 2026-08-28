@@ -26,7 +26,7 @@ import {
   type TestrunPlan,
   type Verdict,
   type VerdictWrite,
-} from '@kept/core';
+} from 'kept-core';
 
 import { arbInstant, arbMemberStatus, arbStream, arbTruncatedStream, arbVerdict } from './arbitraries.js';
 

@@ -15,7 +15,7 @@ import {
   nodeFailureYamlFileSystem,
   type CollectingDiagnosticSink,
   type FailureYaml,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Unit tests for `kane/failureYaml.ts` (design §6.3, R6.7).

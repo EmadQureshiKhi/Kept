@@ -30,8 +30,8 @@
  */
 
 import { cleanup, render } from '@testing-library/react';
-import type { SnapshotAmendment } from '@kept/core';
-import { SnapshotAmendmentSchema, amendedPromiseId } from '@kept/core';
+import type { SnapshotAmendment } from 'kept-core';
+import { SnapshotAmendmentSchema, amendedPromiseId } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import AmendmentsPage, { AMENDMENTS_EMPTY, amendmentOrder } from '../app/amendments/page.js';

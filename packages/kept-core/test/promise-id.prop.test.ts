@@ -9,7 +9,7 @@ import {
   promiseId,
   toPosix,
   type PromiseRecord,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 1: Promise identifiers are stable across rebuilds

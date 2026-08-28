@@ -14,7 +14,7 @@
  * Four rules hold it together:
  *
  * 1. **A label may claim an outcome only where a verdict could have been
- *    written.** `permitsVerdictWrite` is imported from `@kept/core`, so the two
+ *    written.** `permitsVerdictWrite` is imported from `kept-core`, so the two
  *    halves of the write guard (design §4.8) and the words on this page are the
  *    same predicate. Any run that did not reach its family's terminal event and
  *    whose exit meaning would otherwise have said `completed` or `failed` reads
@@ -41,8 +41,8 @@
  * test, a server component and a source scan all read the same functions.
  */
 
-import type { AssuranceStatus, ExitMeaning, SnapshotDiagnostic, SnapshotRun } from '@kept/core';
-import { EXIT_MEANINGS, contractFor, permitsVerdictWrite, resultCode } from '@kept/core';
+import type { AssuranceStatus, ExitMeaning, SnapshotDiagnostic, SnapshotRun } from 'kept-core';
+import { EXIT_MEANINGS, contractFor, permitsVerdictWrite, resultCode } from 'kept-core';
 
 /**
  * The tone a run's outcome carries, and the only six.

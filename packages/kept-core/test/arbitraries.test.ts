@@ -17,7 +17,7 @@ import {
   parseStream,
   resultCode,
   type CommandFamily,
-} from '@kept/core';
+} from 'kept-core';
 
 import {
   arbCitation,

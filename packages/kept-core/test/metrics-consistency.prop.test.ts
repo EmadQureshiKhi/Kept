@@ -11,7 +11,7 @@ import {
   type PromiseGraph,
   type PromiseRecord,
   type Verdict,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Feature: kept, Property 21: Metrics are arithmetically consistent and never

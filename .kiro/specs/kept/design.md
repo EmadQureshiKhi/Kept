@@ -1284,7 +1284,7 @@ Snapshot loading:
 ```ts
 // apps/ledger/lib/snapshot.ts
 import raw from '../data/ledger.snapshot.json';
-import { parseSnapshot } from '@kept/core';
+import { parseSnapshot } from 'kept-core';
 export const snapshot = parseSnapshot(JSON.stringify(raw));   // throws at build → build fails (R8.8)
 ```
 
@@ -2564,11 +2564,11 @@ Two constraints that are easy to get wrong. **At most one Kane spawn** (R18.2): 
 ### 22.1 What the manifests say now, and why none of it publishes
 
 ```
-@kept/core   private: true   version 0.0.0
-@kept/cli    private: true   version 0.0.0   dependencies: { "@kept/core": "0.0.0" }
+kept-core   private: true   version 0.0.0
+kept-cli    private: true   version 0.0.0   dependencies: { "kept-core": "0.0.0" }
 ```
 
-Three separate blockers. `private: true` refuses to publish at all. Version `0.0.0` is not a version anyone can depend on. And `"@kept/core": "0.0.0"` resolves today only because npm workspaces symlinks it: from the registry, `0.0.0` either does not exist or is a different package, so an installer receives a CLI whose core import fails at require time.
+Three separate blockers. `private: true` refuses to publish at all. Version `0.0.0` is not a version anyone can depend on. And `"kept-core": "0.0.0"` resolves today only because npm workspaces symlinks it: from the registry, `0.0.0` either does not exist or is a different package, so an installer receives a CLI whose core import fails at require time.
 
 The target state is `0.1.0` on both, `private` removed, and the dependency written as `^0.1.0` (R17.2, R17.3). Both packages carry the same version and a test asserts the equality (R17.7), because a CLI at `0.1.1` depending on `^0.1.0` while the repository builds them together is a drift nobody notices until an install resolves the older core.
 
@@ -2590,7 +2590,7 @@ The only honest test of "it works when installed" is an installation. The test:
 
 Step 5's last clause is what catches a hoisted dependency that the workspace happened to provide. Placing the install directory outside the workspace root is what makes the check meaningful; inside it, Node's resolution walks up and finds everything, and the test passes while the published package is broken.
 
-This is R17 restating the project's own thesis against itself. "A published `@kept/cli` and `@kept/core` are coming soon" is a claim, and a claim with no test behind it is the defect this repository exists to detect.
+This is R17 restating the project's own thesis against itself. "A published `kept-cli` and `kept-core` are coming soon" is a claim, and a claim with no test behind it is the defect this repository exists to detect.
 
 ### 22.4 The recorded publish procedure (R17.12)
 

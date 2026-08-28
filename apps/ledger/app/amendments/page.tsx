@@ -30,7 +30,7 @@
  */
 
 import type { Metadata } from 'next';
-import type { SnapshotAmendment } from '@kept/core';
+import type { SnapshotAmendment } from 'kept-core';
 
 import { AmendmentCard, PENDING_STATUS } from '../../components/AmendmentCard.js';
 import { snapshot } from '../../lib/snapshot.js';

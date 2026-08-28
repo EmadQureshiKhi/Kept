@@ -132,7 +132,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react';
 import clsx from 'clsx';
-import type { LedgerSnapshot, SnapshotEvidence, SnapshotPromise, Verdict } from '@kept/core';
+import type { LedgerSnapshot, SnapshotEvidence, SnapshotPromise, Verdict } from 'kept-core';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { TOKENS } from '../lib/tokens.js';

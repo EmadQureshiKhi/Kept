@@ -12,7 +12,7 @@ import {
   parseStream,
   resultCode,
   type RunEndEvent,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * The pinned smoke-run regression (task 2.15, R3.25).

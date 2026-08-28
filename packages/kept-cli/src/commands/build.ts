@@ -58,7 +58,7 @@ import type {
   ProviderResult,
   StateFileSystem,
   WriteRefusalReason,
-} from '@kept/core';
+} from 'kept-core';
 import {
   collectBaseline,
   createDiagnosticSink,
@@ -68,7 +68,7 @@ import {
   createStateStore,
   mergeGraph,
   readCoverageAxes,
-} from '@kept/core';
+} from 'kept-core';
 
 import type { KeptConfig } from '../config.js';
 import { deriveEdges } from '../graph.js';

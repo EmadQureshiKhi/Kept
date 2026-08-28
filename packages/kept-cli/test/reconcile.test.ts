@@ -13,7 +13,7 @@ import type {
   SourceResolutionReason,
   StateFileSystem,
   StoreSource,
-} from '@kept/core';
+} from 'kept-core';
 import {
   FORK_GUARD_DIAGNOSTIC_CODE,
   HANDOFF_DIAGNOSTIC_CODES,
@@ -38,7 +38,7 @@ import {
   serialiseSourcesCache,
   serialiseState,
   sourcesListingSignature,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK } from '../src/args.js';

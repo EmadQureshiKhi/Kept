@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { ChildProcessLike, ReviewCard, StateFileSystem } from '@kept/core';
+import type { ChildProcessLike, ReviewCard, StateFileSystem } from 'kept-core';
 import {
   HANDOFF_DIRECTORY_RELATIVE_PATH,
   HANDOFF_FILE_RELATIVE_PATH,
@@ -13,7 +13,7 @@ import {
   inMemorySourceCacheFileSystem,
   reviewCardPath,
   serialiseReviewCard,
-} from '@kept/core';
+} from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import { EXIT_OK, EXIT_USAGE, parseArgv } from '../src/args.js';

@@ -1,4 +1,4 @@
-import { createDiagnosticSink, inMemoryStateFileSystem, matchesGlob } from '@kept/core';
+import { createDiagnosticSink, inMemoryStateFileSystem, matchesGlob } from 'kept-core';
 import { describe, expect, it } from 'vitest';
 
 import {

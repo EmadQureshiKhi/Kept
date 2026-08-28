@@ -21,7 +21,7 @@ import {
   type CollectingDiagnosticSink,
   type SourceResolution,
   type StoreSource,
-} from '@kept/core';
+} from 'kept-core';
 
 /**
  * Task 12.1 — the match ladder (design §13.2.2, R5.1, R5.2), five rungs since 15.4.
