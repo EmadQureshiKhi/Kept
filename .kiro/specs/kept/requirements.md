@@ -23,7 +23,13 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 - **A13 Reference authority ranking**: `kane-cli install skill` (skill v0.0.17) ships `references/*.md` that are more detailed and more current than the published website docs. Authority ranks observed runtime behaviour above the skill references, and the skill references above the website docs. The skill installs for Claude Code, Codex CLI, and Gemini CLI only — it does **not** install for Kiro, which uses `powers/`, so installing it changed no CLI behaviour and its sole value is the reference documentation.
 - **A14 Exit-code interpretation is per command family**: for the assurance family (`context`, `design`, `maintain`, `cover`), exit `3` means *paused and resumable* and `130` means force-interrupted. For the execution family (`run`, `testmd`, `testrun`, `generate`), exit `3` still means timeout or cancelled. Misreading a resumable pause as a failure would corrupt ledger state, so exit-code handling is always resolved against the invoked command's family.
 - **A11 Credit economics**: authoring a Kane test consumes credits (measured ~10.35 for a three-step run); cached replay is free. Per-save verification is therefore economically viable and is built on replay.
-- **A12 Deadline**: submissions lock 21 Aug 2026 11:59 PM IST. Scope decisions favour a complete, verifiable narrow slice over breadth.
+- **A12 Deadline**: submissions lock 21 Aug 2026 11:59 PM IST, extended to 30 Aug 2026 11:59 PM IST. Scope decisions favour a complete, verifiable narrow slice over breadth. The extension is spent on depth in the delivered slice and on portability, not on a second application.
+- **A15 Portability is a property of the engine, not a new product**: `packages/kept-core` and `packages/kept-cli` already read a path and a line and never parse a document as prose, so nothing in the promise model is specific to this repository. What *is* specific is a set of literals: the fixture's globs, port 3100, the corpus at `tests/`, and the repair fences naming `apps/fixture/**`. Portability is therefore the work of moving those literals into Kept_Config and adding a guard that keeps them there. The Fixture_App becomes one configured subject rather than the subject.
+- **A16 Distribution**: `@kept/core` and `@kept/cli` are published to the public npm registry so the engine runs against a repository that is not this one. Both manifests are `private: true` at version `0.0.0` today, and `@kept/cli` depends on `@kept/core` by the literal `0.0.0`, which resolves only inside this workspace. Publishing is therefore a manifest and packaging task, gated on a test that installs the packed tarball outside the workspace and runs the binary from there. A published package that only works in its own monorepo is the same class of defect this project exists to detect.
+- **A17 Scope corrections taken after the first submission**: two items in §18's droppable table are withdrawn rather than deferred. **Shiki syntax highlighting is dropped**: it makes a tenth runtime dependency against a nine-package budget asserted by a test, and the artefact it would highlight is a single line of English prose. **The Conduit/RealWorld second target is withdrawn** and replaced by KEPT verifying its own root README. Both prove the engine is not fixture-specific; only one needs a backend, a database, a second application to keep running and a second corpus authored with live credits. Self-verification is also the stronger claim, because the repository that makes the claims is the repository that checks them.
+- **A18 The published surface is the onboarding surface**: for a stranger, `kept doctor` and `kept init` are the first two commands they run and the only documentation they are guaranteed to read. Both are therefore held to the same totality discipline as the Baseline_Provider: they succeed on every repository state, they name the remedy for every failed check, and neither spends a credit.
+- **A19 A promise with no designed test is unreachable in this repository**: a promise enters the Promise_Graph only through a `@verifies` tag, and that same tag binds the document carrying it as the claim's designed test, so `packages/kept-core/src/providers/baseline.ts` sets `designedTest` on every candidate it emits and never omits it. `designedCoverage` therefore reads `1` here and `undesignedCount` reads `0`, whatever is admitted. R19.4's `undesigned` arm is specified, built and exercised over generated providers by Property 36, and a Host_Repository whose provider supplies an unbound claim gets exactly that behaviour; it is unreachable in this repository by construction rather than by omission. Minting promises from untagged documentation lines would be a second admission grammar used by nothing but this repository's own claims, which is the special case Property 36 exists to forbid, so it is not built. The debt the root README brought in is carried as `staleCount` and paid for in `provenCoverage`, which fell from `0.875` to 7 of 13. Recorded in §23.2 and in `docs/self-verification.md`.
+- **A20 A designed test with no recording is unreachable through the replay path**: A19 records that every promise admitted here *has* a designed test; this is the other half of the same story, and it says that having one is not the same as being able to run one. KEPT takes a `test_id` only from `Testrun_Plan_Event.members[]`, never from a path or a filename (§7.1, R4.3, Property 16), and Kane's plan reports the value it wrote into the recording it keeps beside the document at `tests/output-<slug>/.internal/meta.json`. Measured over all seventeen members of the plan captured at task 22.2, the two agree exactly: every identifier in the plan is the recording's, and it is `null` for precisely the eight members that have no recording. So a promise whose designed test has never been through an authoring run cannot enter a Blast_Radius at all: `computeBlastRadius` excludes it with a `warn` diagnostic `radius-member-no-test-id`, and `testrun run` cannot replay it. **Neither rule is relaxed**: deriving an identifier from a filename when the plan has none would make every later re-verification a guess, which is what §7.1 exists to forbid, so the exclusion stays and stays diagnosed by name. This completes A19's account of the debt: the five self-cited promises are `stale` because none of their three designed tests has ever been authored, so no recording exists for the plan to read, not merely because nobody has run them lately. **What this assumption does not say** is that a *failed* authoring run leaves a document unreachable. A failed run still writes a recording and still mints an identifier: task 22.2's own failed run wrote `test_id: a2bda3fb-07fd-4c0f-a9e7-85e66e878625` into `tests/output-shop_filter_persist/.internal/meta.json`, and T-7, whose authoring run reported `commit: {committed: false, reason: run_failed}`, carries an identifier in the same plan. Task 22.2's new member stayed out of the radius because both verifications ran against a plan cached before its recording existed and none was run afterwards (§7.2's ten-minute window). **That question is now closed and the answer is yes.** A second cycle re-added the same claim, re-authored the same document for 36.8983 credits, deleted `.kept/plan.json` so the plan would be recaptured, and ran `kept verify --changed apps/fixture/app/shop/page.tsx`: the refreshed plan carried `test_id: 1080f892-b002-43f4-b123-16dc4ea3837b`, the member entered the radius, it failed, and the promise reached **`red`** with a real verdict source at `resultCode 330`, `reasonCode stuck.ap_stuck`. So the exclusion this assumption describes is a property of *when the plan was taken*, never a property of the claim, and the ordering it implies (author, refresh the plan, then verify) is demonstrated rather than inferred. Measured live against Kane_CLI 0.8.4, captures under `docs/kane/loop/t9-*` and `docs/kane/loop/t9b-*`, recorded in §7.2.1, §11.4, `docs/kane/loop/README.md` and `docs/checkpoints.md`.
 
 ## Glossary
 
@@ -67,6 +73,18 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 - **Demo_Command**: The `npm run demo` script that starts Fixture_App and Ledger from committed data.
 - **Live_Loop_Command**: The documented command that runs the Kane_CLI verification loop against Fixture_App.
 - **Verdict_Spike**: The time-boxed empirical confirmation that `result_code` `740` and the Verdict_Object are emitted on cached replay, given the documented evidence that post-failure investigation runs automatically on replay failures.
+- **Kept_Config**: The configuration file at `.kept/config.json` that declares every repository-specific value the KEPT_CLI reads: the Corpus_Root, the Subject_Globs, the Repair_Fences, the Subject_Base_URL, the selected Verdict_Router, and the invocation budgets.
+- **Corpus_Root**: The repository-relative directory the Baseline_Provider scans for `*_test.md` files. `tests/` in this repository, and any directory in another.
+- **Subject_Globs**: The Kept_Config glob sets naming the subject's source files and its documentation files. The Code_Hook and Docs_Hook patterns and the Blast_Radius `covers` matching all resolve against these rather than against literals.
+- **Subject_Base_URL**: The origin the designed tests navigate to, `http://localhost:3100` in this repository.
+- **Repair_Fences**: The per-Repair_Branch allowed and forbidden path glob sets, declared in Kept_Config and resolved by the Handoff_File writer. The `code-break` allowed set may never intersect the documentation globs or the Corpus_Root.
+- **Host_Repository**: Any repository the published KEPT_CLI is run against, including one containing no Kept_Config, no Corpus_Root and no Kane_CLI.
+- **Published_Package**: One of the two npm packages `@kept/core` and `@kept/cli` as installed from the public registry rather than resolved from the workspace.
+- **Packed_Tarball**: The archive `npm pack` produces for a Published_Package, which is what an installer actually receives and therefore the only honest subject of a packaging test.
+- **Init_Command**: The `kept init` command that writes a Kept_Config into a Host_Repository, scaffolds one example designed test, and invokes Kane_CLI zero times.
+- **Doctor_Command**: The `kept doctor` command that reports what a Host_Repository has and what it is missing, on a bounded budget, exiting 0 in every case.
+- **Self_Promise_Source**: The repository's own root `README.md`, admitted as a Promise source so that KEPT's stated claims are cited and verified by KEPT.
+- **Handoff_File**: The machine-readable file at `.kept/handoff.json` that carries the Verdict, the Repair_Branch, the Repair_Fences resolved for that branch, and the run diagnostics, and which the triggered agent action reads instead of the process exit code.
 
 ## Requirements
 
@@ -341,3 +359,93 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 6. THE Ledger SHALL be reachable at a public HTTPS URL served by the deployment target.
 7. THE repository SHALL record the measured consumed credits of at least one authored Kane_CLI run, read from `credits_consumed` or from `credits`, as evidence of real Kane_CLI execution.
 8. WHERE all submission deliverables in this requirement are complete and passing, THE project MAY add the Conduit or RealWorld demonstration as an additional target.
+### Requirement 15: Repository portability
+
+**User Story:** As a developer with my own repository, I want to run KEPT against my code and my documentation without editing its source, so that the engine is usable outside the repository it was built in.
+
+#### Acceptance Criteria
+
+1. THE KEPT_CLI SHALL read the Corpus_Root, the Subject_Globs, the Repair_Fences, the Subject_Base_URL and every invocation budget from Kept_Config.
+2. THE packages `kept-core` and `kept-cli` SHALL contain, in their executable source, no literal path naming the Fixture_App, no literal port number of the Fixture_App, and no literal Corpus_Root.
+3. THE repository SHALL contain a source scan that fails when a literal Fixture_App path, a literal Fixture_App port, or a literal Corpus_Root appears in `packages/kept-core/src` or `packages/kept-cli/src`, and that permits such literals in test files, fixtures and documentation.
+4. WHERE Kept_Config omits an optional key, THE KEPT_CLI SHALL apply a documented default, SHALL record a diagnostic naming the key and the applied default, and SHALL proceed.
+5. IF Kept_Config is absent from a Host_Repository, THEN THE KEPT_CLI SHALL record a diagnostic naming the Init_Command as the remedy, SHALL invoke Kane_CLI zero times, and SHALL write no file other than the Handoff_File.
+6. IF Kept_Config fails schema validation, THEN THE KEPT_CLI SHALL record a diagnostic naming the offending field path and the expected type, SHALL invoke Kane_CLI zero times, and SHALL leave every existing Verdict unchanged.
+7. THE KEPT_CLI SHALL resolve the Repair_Fences for each Repair_Branch from Kept_Config rather than from literals.
+8. THE Repair_Fences SHALL be rejected at load time WHEN the `code-break` allowed set intersects the documentation globs or the Corpus_Root, and the rejection SHALL name the intersecting glob.
+9. THE Baseline_Provider SHALL scan the Corpus_Root declared in Kept_Config and SHALL admit a Promise cited to any file extension.
+10. THE Promise identifier SHALL be derived from the repository-relative Citation path and the normalised claim text, so that the same claim in the same relative location yields the same identifier in any Host_Repository.
+11. WHEN the KEPT_CLI runs in a Host_Repository containing zero `*_test.md` files, no Kept_Config, no Ledger_Snapshot and no Kane_CLI, THE KEPT_CLI SHALL exit with process exit code 0 and SHALL record one diagnostic per missing prerequisite.
+12. THE repository SHALL contain an integration test that builds a Promise_Graph against a generated temporary repository outside the workspace, using a Kept_Config that names none of this repository's paths, and asserts the admitted Promises against that repository's own files.
+
+*Why 15 exists. The engine is already repository-agnostic in its model: a Citation is a path and a line, `promiseId` is keyed on the relative path and the normalised claim, and nothing in the graph parses a document as prose. What is not agnostic is a set of literals, and a literal is invisible until someone runs the tool somewhere else. AC 3 and AC 12 are the two that make portability a checked property rather than an aspiration: one forbids the literals returning, the other proves the engine works where none of this repository's paths exist. AC 8 is the safety-critical one. The fence forbidding a `code-break` repair from editing the document that states the claim is the single most important invariant in the project, and moving the fences into configuration is exactly the change that could let a user disable it by accident.*
+
+### Requirement 16: Host repository initialisation
+
+**User Story:** As a developer adopting KEPT, I want one command that sets my repository up without spending anything, so that I can see the shape of the tool before committing to it.
+
+#### Acceptance Criteria
+
+1. WHEN the Init_Command is issued in a Host_Repository with no Kept_Config, THE Init_Command SHALL write a Kept_Config populated with the detected Corpus_Root and Subject_Globs.
+2. IF a Kept_Config already exists, THEN THE Init_Command SHALL write no file, SHALL record a diagnostic naming the existing file, and SHALL exit with process exit code 0.
+3. WHERE the Init_Command is issued with an explicit overwrite flag, THE Init_Command SHALL replace the existing Kept_Config and SHALL record which file it replaced.
+4. THE Init_Command SHALL report every documentation file it detected as a candidate Promise source and SHALL write no Citation for any of them.
+5. THE Init_Command SHALL scaffold exactly one example `*_test.md` in the Corpus_Root carrying one `@verifies` tag, a `covers` list, and a comment stating that the tag must be repointed before the file is useful.
+6. THE Init_Command SHALL invoke Kane_CLI zero times and SHALL consume zero credits.
+7. WHEN the Init_Command completes, THE Init_Command SHALL name the Doctor_Command as the next command to run.
+8. THE Init_Command SHALL be idempotent in its effect on a repository that already carries a Kept_Config, writing no file and changing no byte on a second invocation.
+
+### Requirement 17: Distribution as published packages
+
+**User Story:** As a developer who wants to use KEPT, I want to install it from npm and run it, so that adopting it does not require cloning the repository it was developed in.
+
+#### Acceptance Criteria
+
+1. THE packages `@kept/core` and `@kept/cli` SHALL be publishable to the public npm registry, and neither published manifest SHALL carry `private` set to true.
+2. THE `@kept/cli` manifest SHALL depend on `@kept/core` by a semantic-version range that resolves from the public registry.
+3. THE `@kept/cli` manifest SHALL NOT carry a dependency version that resolves only within this workspace.
+4. THE Packed_Tarball of each package SHALL contain the compiled output and its type declarations, and SHALL contain no test file, no test fixture, no Evidence_Pack, and no recording directory.
+5. THE `@kept/cli` Packed_Tarball SHALL expose the `kept` binary, and that binary SHALL carry an interpreter directive on its first line.
+6. THE two manifests SHALL declare `engines.node` at the floor the repository states, and SHALL declare the same license the repository states.
+7. THE two manifests SHALL declare the same version as each other, and the repository SHALL contain a test asserting that equality.
+8. THE publish path SHALL be blocked WHEN a fresh compile of either package fails.
+9. THE repository SHALL contain a test that packs both packages, installs the Packed_Tarballs into a temporary directory outside the workspace, and runs the `kept` binary from that installation.
+10. THE test in AC 9 SHALL assert that the installed binary reports its version and completes the Doctor_Command with process exit code 0 in a directory containing no Kept_Config and no Kane_CLI.
+11. THE two packages SHALL each carry a README stating the Kane_CLI prerequisite, the local Chrome prerequisite, and the Init_Command as the first step.
+12. THE repository SHALL record the exact publish procedure, including the version bump, the compile gate and the tarball inspection, so the publish is reproducible rather than remembered.
+
+*Why 9 and 10 exist. `files: ["dist"]` means the tarball contents are decided by a build step that runs before packing, so a stale `dist` publishes silently and an installer receives code that was never compiled from the committed source. Reading the manifest cannot detect that; only packing the archive and running the binary from outside the workspace can. This is the same argument as the rest of the project: the claim "it works when installed" is a promise, and a promise with no test behind it is exactly the defect KEPT exists to find.*
+
+### Requirement 18: Environment diagnosis
+
+**User Story:** As a developer running KEPT for the first time in my own repository, I want one command that tells me what is missing and how to fix it, so that a failure is legible before I have spent anything.
+
+#### Acceptance Criteria
+
+1. WHEN the Doctor_Command is issued, THE Doctor_Command SHALL report whether the Kane_CLI binary is present, its resolved path, and its reported version.
+2. THE Doctor_Command SHALL invoke Kane_CLI at most once, SHALL bound that invocation to 10 seconds, and SHALL consume zero credits.
+3. THE Doctor_Command SHALL report whether Kept_Config parses, and which Verdict_Router it selects.
+4. THE Doctor_Command SHALL report whether the Ledger_Snapshot is present and whether it satisfies its schema.
+5. THE Doctor_Command SHALL report whether the Subject_Base_URL is reachable.
+6. THE Doctor_Command SHALL report whether a Kane_CLI context store is present.
+7. THE Doctor_Command SHALL report the Corpus_Root, the count of `*_test.md` files found in it, and the count of `@verifies` tags those files carry.
+8. THE Doctor_Command SHALL exit with process exit code 0 for every repository state, including one in which Kane_CLI is absent.
+9. WHERE a reported check does not pass, THE Doctor_Command SHALL name the command or the file edit that remedies it.
+10. THE Doctor_Command SHALL write no file other than the Handoff_File.
+
+### Requirement 19: Self-verification and the withdrawn second target
+
+**User Story:** As a reviewer assessing whether this generalises, I want KEPT to verify the claims in its own README, so that the proof it is not fixture-specific is in the repository rather than in an argument.
+
+#### Acceptance Criteria
+
+1. THE repository SHALL admit its own root `README.md` as a Self_Promise_Source, with each admitted claim carrying a Citation that resolves to the verbatim line stating it.
+2. THE Promise_Graph SHALL carry the Fixture_App claims and the Self_Promise_Source claims as Promises of the same kind, distinguished only by their Citation paths.
+3. THE Self_Promise_Source Promises SHALL be produced by the same commands a Host_Repository would run, with no code path reachable only for this repository.
+4. WHERE a Self_Promise_Source claim has no designed test, THE Promise_Graph SHALL carry it with Verdict `undesigned` and THE Ledger SHALL report it as outstanding suite debt rather than omitting it.
+5. THE repository SHALL NOT reduce the count of admitted Self_Promise_Source claims in order to raise a coverage figure.
+6. THE Conduit or RealWorld second target of Requirement 14 AC 8 SHALL be withdrawn, and the Self_Promise_Source SHALL stand as the evidence that the engine is not specific to the Fixture_App.
+7. THE repository SHALL record the withdrawal of the second target together with the reason, so the decision is auditable rather than an omission.
+
+*Why 5 exists. The Self_Promise_Source will produce claims this repository cannot currently prove, and the honest graph is one that shows them as debt. The temptation is to admit only the claims that already pass, which would make the coverage figure look better and would make the ledger a lie of exactly the kind this project was built to catch. AC 5 forbids it in the same words §22.1 uses about the coverage ribbon.*
+

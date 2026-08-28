@@ -277,10 +277,12 @@ Four things, in the order they can go wrong.
    node -e 'const s=require("./apps/ledger/data/ledger.snapshot.json"); console.log(s.metrics);'
    ```
 
-   At the commit this was written against: **8 promises, 7 proven, 1 red, 0 stale, designed
-   coverage 1, proven coverage withheld as `null`**. Re-read the file rather than trusting
-   those figures — the check is that the page and the file agree. A page showing eight
-   `stale` promises is serving a build from before the recorded replay landed.
+   The committed file now reads: **13 promises, 8 proven, 1 red, 4 stale, designed
+   coverage 1, proven coverage 0.615**. Re-read the file rather than trusting those
+   figures; the check is that the page and the file agree. Eight promises rather than
+   thirteen is a build from before this repository's own README entered the graph,
+   thirteen `stale` promises is a build from before the recorded replay landed, and
+   7 proven with 5 stale is a build from before `README.md:679` was verified.
 3. **Kane was invoked zero times.** Search the build log for `kane`. Expected: nothing,
    beyond the string appearing inside a refusal message the Ledger renders verbatim. Two
    suites already hold the source side of this — `judge-path.test.ts` scans the whole spawn
@@ -320,13 +322,21 @@ redirect — so there is no Deployment Protection interstitial and no session to
 prerender header is the one that matters for Requirement 8.4: it is the host stating the
 page was built ahead of the request, not rendered for it.
 
-**The page agrees with the committed file.** Rendered text off the live landing view:
-8 promises with the red one first, `p_45ccecba7aa5` at `apps/fixture/README.md:20` — the
-10-percent-discount claim that was never true — then seven proven. The rail reads
-`baseline data only` where proven coverage would go and `100 %` for designed coverage,
-which is `provenCoverage: null` and `designedCoverage: 1` in
+**The page agreed with the committed file.** Rendered text off the live landing view at
+that deploy: 8 promises with the red one first, `p_45ccecba7aa5` at
+`apps/fixture/README.md:20`, the 10-percent-discount claim that was never true, then seven
+proven. The rail read `baseline data only` where proven coverage would go and `100 %` for
+designed coverage, which was `provenCoverage: null` and `designedCoverage: 1` in
 `apps/ledger/data/ledger.snapshot.json` rendered honestly: the withheld figure is a phrase
 rather than a zero.
+
+That withholding path is still the behaviour on a degraded graph, and it is no longer what
+a reader sees. The committed snapshot now carries thirteen promises and a real
+`provenCoverage` of `0.615`, so the rail publishes 62 % where it used to publish the chip.
+It published 54 % between the root README entering the graph and `README.md:679` being
+verified. Re-measuring the live page is a matter of repeating the two commands above; the
+figures in this section are the record of the first deploy, not a description of the
+current one.
 
 One thing that looks like a bug and is not: the freshness chip reads a fixed relative age
 rather than counting up as the page ages. `app/page.tsx` passes `snapshot.generatedAt` as

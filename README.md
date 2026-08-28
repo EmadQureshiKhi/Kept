@@ -1,7 +1,7 @@
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture></p>
 <p align="center"><strong>Every promise your product makes, and continuous proof it's still kept.</strong></p>
-<p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-29%20verified-111111" alt="29 correctness properties"> <img src="https://img.shields.io/badge/tests-2406-111111" alt="2406 tests"></p>
-<p align="center"><a href="#start-here">Start here</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a> · <a href="#roadmap">Roadmap</a></p>
+<p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-37%20verified-111111" alt="37 correctness properties"> <img src="https://img.shields.io/badge/tests-2854-111111" alt="2854 tests"></p>
+<p align="center"><a href="#start-here">Start here</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a></p>
 
 ---
 
@@ -39,9 +39,9 @@ Every claim a product makes about itself is an untested promise. KEPT builds a g
 claims, cites each one to the file and line that states it, binds each to a Kane CLI test, and
 publishes the result in a read-only ledger.
 
-Kepler Coffee, the fixture application in this repository, makes eight claims about itself. All
-eight are cited to `apps/fixture/README.md` lines 13 through 20. Eight carry a designed test,
-seven are proven, and one is red. That last one was never true.
+The graph holds **thirteen promises**: eight from Kepler Coffee, the coffee shop in this
+repository that is the application under verification, and five claims this README makes about
+KEPT, cited to its own lines. Eight are proven, four are stale, and one is red: it was never true.
 
 What Kane CLI does here: it designs the browser flows, drives real Chrome, and returns the
 verdict. Every test identifier comes from Kane's own test plan, coverage comes from Kane's
@@ -51,8 +51,8 @@ Three different completion contracts are handled separately, because reading a p
 failed one would corrupt the ledger. Authoring a test measured about 10.35 credits; every
 re-verification after that is a cached replay and costs nothing.
 
-When Kane cannot be reached, the ledger withholds the proven number and names the reason rather
-than showing a stale one. A ledger that shows what it owes is the product.
+Proven coverage reads **0.615**, eight of thirteen, and the ledger publishes it. A ledger that
+shows what it owes is the product; when Kane cannot be reached it withholds the figure instead.
 
 ---
 
@@ -76,13 +76,13 @@ asks for nothing. Every figure on the page can be checked against the file it ca
 node -e 'console.log(require("./apps/ledger/data/ledger.snapshot.json").metrics)'
 ```
 
-Eight promises, seven proven, one red. The red one is a claim that was never true, and it is
-supposed to be red — that is the demonstration, not a bug.
+Thirteen promises, eight proven, one red, four stale. The red one is a claim that was never
+true, and it is supposed to be red: that is the demonstration, not a bug.
 
 ### Level 2 — check our claims, still no account (about 36 seconds)
 
 ```bash
-npm test              # 136 files, 2406 tests, about 36 s
+npm test              # 160 files, 2854 tests, about 44 s
 npm run check         # the same suite, plus the read-only scan and three type-check passes
 ```
 
@@ -198,7 +198,7 @@ deliberate: it means whichever file the claim is written in.
 | **Problem** | A product's stated promises and its behaviour drift apart with nothing watching the gap |
 | **Hard part** | Telling the three causes of a red promise apart — and specifically, telling "the product regressed" from "the claim was a lie", which the test runner structurally cannot know |
 | **Answer** | A cited promise graph, a family-gated parser over Kane's real event streams, and a three-way router whose autonomy is fenced per branch |
-| **Proof** | 29 correctness properties, a recorded closed loop in both directions, and a committed snapshot a reviewer re-derives every figure from with no credentials |
+| **Proof** | 37 correctness properties, a recorded closed loop in both directions, and a committed snapshot a reviewer re-derives every figure from with no credentials |
 
 ---
 
@@ -222,7 +222,7 @@ deliberate: it means whichever file the claim is written in.
 - [Deployment](#deployment)
 - [Documentation](#documentation)
 - [Status](#status)
-- [Roadmap](#roadmap)
+- [What is not here, and why](#what-is-not-here-and-why)
 
 ---
 
@@ -511,13 +511,13 @@ inheriting proof it never earned.
 Two figures on the metric rail count different things over different denominators, and the page
 labels each so neither borrows the other's word:
 
-- **Proven coverage** counts *promises this repository verified* — eight claims, seven proven.
-  It is `null` when the total is zero and `null` when the graph is degraded, because degraded
-  means the enrichment axis was discarded and a number would claim knowledge KEPT does not
-  have. The Ledger then replaces the tile with a `baseline data only` chip rather than showing a
-  zero. The honest failure mode is "we are not claiming proof right now", never "proof is 0%".
-- **The proven axis** counts *acceptance criteria Kane's graph holds execution facts for* — six
-  of six — read verbatim from `cover gaps`, whose own configuration names its source as
+- **Proven coverage** counts *promises this repository verified*: eight of thirteen, published as
+  **0.615**. It is `null` when the total is zero and `null` when the graph is degraded, because
+  degraded means the enrichment axis was discarded and a number would claim knowledge KEPT does
+  not have. The Ledger then shows a `baseline data only` chip rather than a zero, because the
+  honest failure mode is "we are not claiming proof right now", never "proof is 0%".
+- **The proven axis** counts *acceptance criteria Kane's graph holds execution facts for*, six of
+  six, read verbatim from `cover gaps`, whose own configuration names its source as
   `graph_execution_facts` and its denominator as `current_live_acs`.
 
 ---
@@ -630,21 +630,24 @@ quietly leave a ninth claim behind.
 
 ## Command surface
 
-`bin/kept` → `packages/kept-cli`. Hand-rolled argv parsing, no parser dependency. Every command
-exits **0** unless the CLI itself is broken or was given mutually exclusive flags — Kane's
-outcomes are data, not exit codes.
+`bin/kept` → `packages/kept-cli`. Hand-rolled argv parsing, no parser dependency. Ten commands,
+all of them implemented, every one exiting **0** except on mutually exclusive flags.
 
 | Command | Kane invocation | Family | Budget | Writes |
 |---|---|---|---|---|
+| `kept init [--force]` | none | n/a | n/a | `.kept/config.json`, one designed test |
+| `kept doctor` | `--version`, one probe | family-less | 10 s | nothing |
 | `kept build` | `cover gaps --json --mode agent` | Assurance | 60 s | state, snapshot |
 | `kept verify --changed <p…>` | `testrun run --dry-run` if the plan is stale, then `testrun run <paths> --on-failure continue --bug-detection continue` | ExecutionTestrun | 300 s | state, handoff, snapshot |
 | `kept verify --all` | the same, over every plan member carrying an identifier | ExecutionTestrun | 900 s | state, handoff, snapshot |
 | `kept reconcile --changed <p…>` | `maintain reconcile --from <doc> --source-id <resolved> --plan --mode agent` | Assurance | 300 s | state, source cache, review cards, handoff, snapshot |
 | `kept reconcile apply [plan]` | `maintain reconcile --apply [plan] --mode agent` | Assurance | 300 s | state, review cards, handoff, snapshot |
 | `kept evolve <ref>` | `maintain evolve <ref>` | Assurance | 300 s | review cards, handoff |
-| `kept amend propose --run <id> --text '<sentence>'` | none | — | — | amendments, snapshot |
-| `kept amend list \| show \| accept \| reject` | none — `accept` triggers a rebuild | — | — | the cited document on accept, amendments, snapshot |
-| `kept snapshot` | none | — | — | snapshot only |
+| `kept amend propose --run <id> --text '<sentence>'` | none | n/a | n/a | amendments, snapshot |
+| `kept amend list \| show \| accept \| reject` | none; `accept` triggers a rebuild | n/a | n/a | the cited document on accept, amendments, snapshot |
+| `kept handoff [--run <id>]` | none | n/a | n/a | nothing: it reads out the last handoff |
+| `kept watch` | none | n/a | n/a | whatever `kept amend accept` writes |
+| `kept snapshot` | none | n/a | n/a | snapshot only |
 
 Common flags: `--repo <root>`, `--json`, `--router <name>`, `--member-debug`.
 
@@ -652,15 +655,12 @@ Three refusals are worth stating, because a plausible-looking invocation is reje
 
 - **`kept reconcile` never invents a source id.** `maintain reconcile` requires both `--from` and
   `--source-id`, and the id is resolved at run time against the live store through a five-rung
-  match ladder. `--source-id` can only be constructed from the success arm of that resolution, so
-  an unresolved source is a **structural** no-op: no spawn, no credits, no review card, no verdict
-  movement, `degraded` still false, exit 0. Two live candidates tying at one rung is `ambiguous`,
-  never a coin flip.
-- **`kept reconcile apply` is human-only** and absent from both hook prompts. Walking a stored
-  plan mutates the suite, and that is not a decision a save hook may take.
+  ladder. An unresolved source is a **structural** no-op: no spawn, no credits, no review card, no
+  verdict movement, `degraded` still false, exit 0. Two candidates tying at one rung is `ambiguous`.
+- **`kept reconcile apply` is human-only** and absent from both hooks: it walks a stored plan and
+  mutates the suite, which is not a decision a save hook may take.
 - **`--plan` with `--apply` is the one non-zero exit in the product.** One stages and the other
-  walks what was staged, so no invocation can mean both. It is rejected by the argument parser
-  before anything spawns.
+  walks what was staged, so the parser rejects the pair before anything spawns.
 
 ---
 
@@ -672,7 +672,7 @@ every one statically rendered:
 | Route | Contents |
 |---|---|
 | `/` | The promise graph, the metric rail, the freshness chip, and a promise panel |
-| `/coverage` | The shareable public page: both coverage figures, freshness, every promise with its verdict |
+| `/coverage` | The shareable public page: the dual-axis ribbon, freshness, every promise with its verdict |
 | `/amendments` | Pending `docs-lie` diffs with an accept control |
 | `/reviews` | Held review cards, each with its promise id, branch and evidence reference |
 | `/runs` | The terminal-event log: family, command, status, result code, credits, exit meaning |
@@ -680,28 +680,44 @@ every one statically rendered:
 
 The build reports nine, because Next's own 404 and the two icon routes prerender alongside them.
 All nine are marked static in the build output and on the live deployment, where `/` answers with
-`x-nextjs-prerender: 1` — the host stating the page was built before the request rather than for
-it.
+`x-nextjs-prerender: 1`: the host stating the page was built before the request rather than for it.
 
 There is no `POST`, `PUT`, `PATCH` or `DELETE` handler, no server action, no `middleware.ts`, no
-`child_process` import and no authentication. `scripts/check-readonly.mjs` asserts all of that
-by scanning the app, and it runs in the test suite as well as in the build script.
+`child_process` import and no authentication. `scripts/check-readonly.mjs` asserts all of that by
+scanning the app, and it runs in the test suite as well as in the build script.
 
-The accept control is where two requirements meet: one wants an accept control in the Ledger,
-the other forbids any route that mutates persisted data. Both hold because the write stays in
-the CLI — the control is a real, keyboard-focusable button that copies `kept amend accept <id>`
-to the clipboard and reveals the command inline. The Ledger writes nothing.
+**`/coverage` carries a dual-axis ribbon,** because the two axes count different objects and will
+legitimately disagree. Design reads **6 of 6** acceptance criteria designed and **1 of 9** use
+cases carrying scenarios. Proof reads **6 of 6** acceptance criteria Kane holds execution facts
+for. Nine per-use-case rows sit underneath, each with its risk, its stale count and its pending
+work, and each pending row names a `kane-cli` command as **text only**: a control there would hand
+the read-only Ledger a way to spend credits. `1 of 9` is debt the graph genuinely owes and it is
+published as debt, because authoring eight use cases to make the figure look better is precisely
+the dishonesty this product exists to prevent.
 
-**Craft is scored, so it is specified rather than improvised.** A warm desaturated ink palette
-with saturated colour reserved entirely for verdict communication; one implied light source
-driving a three-class elevation system; monospace as texture for identifiers and citations
-rather than as a default; and five motion orchestrations behind a single gate. Under
-`prefers-reduced-motion: reduce` every orchestration resolves to its end state synchronously on
-first paint, and a test renders the page under both media states and compares the computed style
-of every animated property. Three further tests hold the palette itself: measured contrast over
-the whole ink ramp, parity between the CSS custom properties and their typed mirror, and a scan
-that fails on `backdrop-filter`, on any hex above 70% saturation, on a shadow whose colour is not
-a token, and on an emoji.
+The accept control is where two requirements meet: one wants an accept control in the Ledger, the
+other forbids any route that mutates persisted data. Both hold because the write stays in the CLI.
+The control is a real, keyboard-focusable button that copies `kept amend accept <id>` to the
+clipboard and reveals the command inline. For a one-click accept in local development, `kept watch`
+listens on `127.0.0.1:3199` from **inside the CLI, outside the Next app**: loopback only, one
+amendment id and nothing that could name a path, every other method refused. The read-only scan
+over `apps/ledger/**` therefore passes unchanged, and the production bundle names no such port.
+
+`LiveNdjsonPane` renders Kane's own stream as it arrives during local development, showing an event
+it does not recognise rather than dropping it, and bounding a two-hundred-line member capture
+rather than hanging on it. It is absent from the production build at its cause: no page, layout,
+route or sibling component names it, and a test asserts that instead of trusting a flag.
+
+**Craft is scored, so it is specified rather than improvised.** A warm desaturated ink palette with
+saturated colour reserved entirely for verdict communication; one implied light source driving a
+three-class elevation system; monospace as texture for identifiers and citations rather than as a
+default; and five motion orchestrations behind a single gate. Under `prefers-reduced-motion:
+reduce` every orchestration resolves to its end state synchronously on first paint, and a test
+renders the page under both media states and compares the computed style of every animated
+property. Three further tests hold the palette itself: measured contrast over the whole ink ramp,
+parity between the CSS custom properties and their typed mirror, and a scan that fails on
+`backdrop-filter`, on any hex above 70% saturation, on a shadow whose colour is not a token, and on
+an emoji.
 
 ---
 
@@ -723,17 +739,17 @@ packages/kept-core/         40 modules, no process of its own
   handoff/                  the closed-loop contract
   context/                  the source-id ladder, the listing, its cache, the fork guard
   state.ts                  the single write guard
-packages/kept-cli/          the command surface, config resolution, six commands
+packages/kept-cli/          the command surface, config resolution, ten commands
 apps/fixture/               Kepler Coffee: seven screens, eight claims, port 3100
-  test/                     unit and property tests over the cart, catalog and currency
 apps/ledger/                the read-only projection: six visitable routes, port 3000
-tests/                      the designed corpus — eight *_test.md files
+tests/                      eleven *_test.md documents: the eight designed corpus, plus
+                            three that cite this README
 tests/output-*/             committed Kane recordings, so replay authors nothing
 docs/kane/                  every measured Kane fact, with the stream behind it
 .kiro/hooks/                the two hooks
 .kiro/specs/kept/           requirements, design, tasks
 Assets/                     the two logo plates, the mark, and five SVG diagrams
-tools/logo/                 build_logo.sh — the light and dark plates, in ImageMagick
+tools/logo/                 build_logo.sh: the light and dark plates, in ImageMagick
 tools/diagrams/             the SVG emitter, one generator per diagram, and the verifier
 scripts/                    the demo launcher and the read-only checker
 ```
@@ -744,76 +760,76 @@ scripts/                    the demo launcher and the read-only checker
 npm run diagrams     # bash tools/build-diagrams.sh
 ```
 
-No Mermaid, no Graphviz, no dagre, no elkjs, and no image model. `tools/diagrams/svglib.py`
-is a small SVG emitter and there is one generator per diagram, with layout as explicit
-hand-chosen coordinates.
+No Mermaid, no Graphviz, no dagre, no elkjs, and no image model. `tools/diagrams/svglib.py` is a
+small SVG emitter with one generator per diagram, and the layout is explicit hand-chosen
+coordinates.
 
-That is a deliberate inversion. Auto-layout engines optimise for edge crossings, which is not
-the requirement here: **every label must sit inside its own box or on its own edge, no label
-may cross a line, and every arrow must run through space holding nothing else.** None of those
-is a term in a layout engine's objective function, so it will happily overflow a box or drop a
-label across a line to reduce a crossing.
+That is a deliberate inversion. Auto-layout engines optimise for edge crossings, which is not the
+requirement here: **every label must sit inside its own box or on its own edge, no label may cross
+a line, and every arrow must run through space holding nothing else.** None of those is a term in a
+layout engine's objective function, so it will happily overflow a box or drop a label across a line
+to reduce a crossing.
 
-Two mechanisms keep the build honest, because a diagram with an overflowing label renders
-perfectly well and is simply wrong:
+Two mechanisms keep the build honest, because a diagram with an overflowing label renders perfectly
+well and is simply wrong. Every text helper takes the space it was written for and reports a finding
+when the string will not fit, estimating width as `len × size × 0.53`; the first pass at the
+architecture diagram produced 23 findings. And a collision verifier parses the finished SVG back out
+and reports overlapping boxes, label plates covering borders, text outside the canvas, and text
+sitting on a line. `selftest.py` plants one of each fault and asserts all four are caught, because
+this verifier twice passed a set vacuously through a regex that parsed less than it appeared to, and
+neither time was visible from the output.
 
-- **Width checking at draw time.** Every text helper takes the space it was written for and
-  reports a finding when the string will not fit, estimating width as `len × size × 0.53`. The
-  first pass at the architecture diagram produced 23 findings.
-- **A collision verifier** that parses the finished SVG back out and reports overlapping boxes,
-  label plates covering borders, text outside the canvas, and text sitting on a line. It runs
-  before any raster export, and `selftest.py` plants one of each fault and asserts all four are
-  caught — because this verifier twice passed a set vacuously through a regex that parsed less
-  than it appeared to, and neither time was visible from the output.
+Three further rules, each with a reason that is not tidiness:
 
-Findings accumulate and the build keeps going, so one pass surfaces everything rather than one
-fault per run. The style is black on white throughout: weight, dashing and fill tone carry
-every distinction colour would, so the diagrams survive being printed, projected, or read by
-someone who does not separate hues — and a test asserts no diagram carries a chromatic fill.
+- **Black on white throughout.** Weight, dashing and fill tone carry every distinction colour would,
+  so the diagrams survive being printed, projected, or read by someone who does not separate hues. A
+  test asserts no diagram carries a chromatic fill.
+- **Each file fetches nothing at render**, with the header mark embedded as a base64 data URI. An
+  SVG rendered through an `<img>` tag, which is what a Markdown image is, loads no external
+  subresource, so a *referenced* mark renders in a local preview and leaves a hole on the published
+  page.
+- **Each `<desc>` is the source of the README's alt text for that diagram**, copied out by
+  `sync_readme_alt.py`, with a test asserting the two still agree. A diagram is never the only
+  representation of what it shows.
 
-Each diagram is one self-contained file that fetches nothing at render, with the header mark
-embedded as a base64 data URI. That is not tidiness: an SVG rendered through an `<img>` tag,
-which is what a Markdown image is, loads no external subresource at all, so a *referenced* mark
-renders in a local preview and leaves a hole on the published page.
-
-Each diagram's `<desc>` is the source of the README's alt text for it, copied out by
-`sync_readme_alt.py`, and a test asserts the two still agree. A diagram is never the only
-representation of what it shows.
-
-Every diagram links to its own file, because a 1740px canvas is downscaled about 2× in
-GitHub's content column and the detail is otherwise unreachable. Opening the file renders the
-SVG standalone, where browser zoom is lossless at any depth. That is the ceiling for a README:
-GitHub strips script and inline handlers from rendered Markdown, so in-page zoom controls and
-drag-to-pan are not available at any price — and an SVG loaded through an `<img>` never runs
-script regardless of what the host allows.
+Every diagram links to its own file, because a 1740px canvas is downscaled about 2x in GitHub's
+content column and the detail is otherwise unreachable. That is the ceiling for a README: GitHub
+strips script and inline handlers from rendered Markdown, so in-page zoom and drag-to-pan are not
+available at any price.
 
 ---
 
 ## Verification
 
 ```text
-npm test          # vitest --run — never watch
+npm test          # vitest --run, never watch
 npm run check     # the read-only scan, tsc -b, both app type-checks, then the suite
 ```
 
-**136 files, 2406 tests, about 36 seconds** on a bare checkout. 2401 pass and 5 are skipped, each
-skip conditional on a repository state rather than switched off: they are the assertions that hold
-the README to carrying a placeholder instead of a deployed URL, and the deployment has happened,
-so the opposite assertions run in their place. No Kane, no credentials, no network — every Kane
-behaviour under test comes from a committed fixture.
+**160 files, 2854 tests, about 44 seconds** on a bare checkout. 2850 pass and 4 are skipped, each
+skip conditional on a repository state rather than switched off: they are the assertions that held
+the README to carrying a placeholder instead of a deployed URL, and the deployment happened, so the
+opposite assertions run in their place. Nothing is red and nothing is pending. No Kane, no
+credentials, no network: every Kane behaviour under test comes from a committed fixture.
 
-**All 29 correctness properties** from the design are implemented, each as a `fast-check`
-property with a minimum of 100 generated cases and its design property named in the test title.
-They assert the things a demonstration cannot show: that a promise identifier survives its claim
-moving to a different line, that no promise enters the graph without a resolvable citation, that
-a snapshot round-trips to byte-identical output, that both routers agree for a `result_code` of
-`"740"` and `740`, that exit-code interpretation is total and family-correct, that verdicts and
-freshness move only on a proven outcome, that every promise outside the blast radius is
-byte-identical afterwards, and that the reduced-motion render and the post-animation render are
-the same DOM.
+One measurement note, because it cost an hour to work out. On a checkout whose `node_modules` is
+still dataless under iCloud sync, the first run can stall past four minutes and be killed by the
+pool's worker timeout, which looks exactly like a hang. `node -e "import('jsdom')"` warms the cache
+and the suite then runs in the time above. The `vitest.config.ts` comment records it.
 
-Six of the tests are source scans rather than behaviour tests, because the thing being protected
-is a structural property no example could pin:
+**All 37 of the design's correctness properties** are implemented, each as a `fast-check` property
+with a minimum of 100 generated cases and its design property named in the test title. They assert
+the things a demonstration cannot show: that a promise identifier survives its claim moving to a
+different line, that no promise enters the graph without a resolvable citation, that a snapshot
+round-trips to byte-identical output, that both routers agree for a `result_code` of `"740"` and
+`740`, that exit-code interpretation is total and family-correct, that verdicts and freshness move
+only on a proven outcome, that every promise outside the blast radius is byte-identical afterwards,
+that a `code-break` fence can never reach the document stating the claim, that the engine builds a
+graph in any host repository, that a packed tarball is installable on its own, and that the
+reduced-motion render and the post-animation render are the same DOM.
+
+Six of the tests are source scans rather than behaviour tests, because the thing being protected is
+a structural property no example could pin:
 
 | Scan | Fails on |
 |---|---|
@@ -824,35 +840,41 @@ is a structural property no example could pin:
 | `typography-discipline` | monospace on a run of prose rather than on an identifier |
 | `forbidden-palette` | `backdrop-filter`, over-saturated hex, an untokenised shadow, an emoji |
 
-Beside them sit the regressions that pin real recorded bytes: the twelve-line smoke run parsed
-with zero diagnostics, the two-line `cover` refusal envelope, the per-command argv contract, the
+Beside them sit the regressions that pin real recorded bytes: the twelve-line smoke run parsed with
+zero diagnostics, the two-line `cover` refusal envelope, the per-command argv contract, the
 source-resolution ladder with zero spawns on every failure rung, and the committed evidence's
-referential integrity.
+referential integrity, stated against git's own index rather than against the filesystem.
 
 ---
 
 ## Deployment
 
-Live at **<https://withkept.vercel.app>**, on Vercel, with **zero environment variables** —
-because the build reads a committed file. There is no API to key, no database to address and no
-Kane to authenticate.
+Live at **<https://withkept.vercel.app>**, on Vercel, with **zero environment variables**, because
+the build reads a committed file. There is no API to key, no database to address and no Kane to
+authenticate.
 
 Two things about the shape look wrong and are load-bearing, both explained in
 [docs/deploy-ledger.md](docs/deploy-ledger.md):
 
-- **`apps/ledger` has no `package.json`**, so the project root is the monorepo root and the app
-  is named as an argument to the build command instead of by the root setting. Pointing Vercel at
+- **`apps/ledger` has no `package.json`**, so the project root is the monorepo root and the app is
+  named as an argument to the build command instead of by the root setting. Pointing Vercel at
   `apps/ledger` reports "No Next.js version detected" and no other setting rescues it.
-- **The build command builds `@kept/core` first.** `packages/*/dist` is gitignored, so a fresh
-  clone resolves `@kept/core` to a package whose entry point does not exist. `npm ci` still
-  creates the symlink, which is what makes the failure read as a broken import rather than a
-  missing artefact. `tsc -b packages/kept-core && next build apps/ledger` is the whole fix.
+- **The build command builds `@kept/core` first.** `packages/*/dist` is gitignored, so a fresh clone
+  resolves `@kept/core` to a package whose entry point does not exist. `npm ci` still creates the
+  symlink, which is what makes the failure read as a broken import rather than a missing artefact.
+  `tsc -b packages/kept-core && next build apps/ledger` is the whole fix.
 
-The deployed bundle carries no filesystem code either. `@kept/core` declares
-`"sideEffects": false` and the snapshot schema reads its vocabulary from a module that imports
-nothing, so the directory walkers that resolve evidence packs locally are absent from the build
-rather than merely unused in it. Verified by the build going from four
-`Dynamic filesystem access` warnings and a 52.6 MB trace to zero warnings and 41.9 MB.
+The deployed bundle carries no filesystem code either. `@kept/core` declares `"sideEffects": false`
+and the snapshot schema reads its vocabulary from a module that imports nothing, so the directory
+walkers that resolve evidence packs locally are absent from the build rather than merely unused in
+it. Verified by the build going from four `Dynamic filesystem access` warnings and a 52.6 MB trace
+to zero warnings and 41.9 MB.
+
+Both packages are publishable as well: `@kept/core` and `@kept/cli` at `0.1.0`, off `private`, each
+with its own README, and the published file list asserted against a real `npm pack` rather than
+against the manifest that describes it. You bring your own Kane: KEPT never bundles, installs or
+vendors `kane-cli`, it spawns whatever is on `PATH`, and a missing binary is a supported state that
+exits zero. The procedure is [docs/publish.md](docs/publish.md).
 
 Public source: <https://github.com/EmadQureshiKhi/Kept>
 
@@ -864,7 +886,9 @@ Public source: <https://github.com/EmadQureshiKhi/Kept>
 |---|---|
 | [docs/submission-summary.md](docs/submission-summary.md) | The project in 120 words or fewer, which is the count the suite holds it to |
 | [docs/judge-path.md](docs/judge-path.md) | The measured time from `npm run demo` to the rendered landing view, and what it does not spend |
+| [docs/self-verification.md](docs/self-verification.md) | The five claims this README makes that are in the graph, and what admitting them cost the coverage figure |
 | [docs/deploy-ledger.md](docs/deploy-ledger.md) | Deploying with zero environment variables, and why the Vercel root is the monorepo root |
+| [docs/publish.md](docs/publish.md) | Publishing both packages, and what the packed tarball is asserted to contain |
 | [docs/kane/command-surface.md](docs/kane/command-surface.md) | Every measured Kane fact, and what each one corrected |
 | [docs/kane/replay/README.md](docs/kane/replay/README.md) | The recorded full-suite replay: nine members, the deliberate failure, what it cost |
 | [docs/kane/credits.md](docs/kane/credits.md) | Measured credit consumption, and the three field names Kane spells it with |
@@ -879,279 +903,102 @@ Public source: <https://github.com/EmadQureshiKhi/Kept>
 
 ## Status
 
-Honest accounting, because the interesting claims here are verification claims and an overstated
-one is worse than a missing one.
+**Finished.** Every command the help text advertises works, every correctness property in the
+design is implemented, the suite is green with nothing pending, and the Ledger is deployed. The
+figures below are the ones a reader re-derives from the committed snapshot with no credentials.
 
-**Built and green.** The three-contract Kane layer — contracts, the family-gated parser,
-coercion, per-family exit interpretation, evidence resolution, the zip reader for sealed packs,
-triage attribution by identifier, the `[member]` stream reader, and the invoker. The promise
-model, the citation admission gate, metrics with their zero guard, the zod snapshot schema with
-its cross-field refinements, and canonical serialisation. Both providers and the merge. Both
-verdict routers behind one interface. The plan cache and the blast radius. Review cards, docs
-amendments with their interlock, and the surgical line writer. The handoff with its fence table.
-The single write guard. Six CLI commands. The seven-screen fixture with its eight claims and the
-eight-document designed corpus. The Ledger's six visitable routes, its visual system, its five motion
-orchestrations and its reduced-motion equivalence. All 29 correctness properties.
+| | |
+|---|---|
+| Promises in the graph | **13**: eight of the fixture, five of this README |
+| Verdicts | 8 proven, 1 red on purpose, 4 stale |
+| Proven coverage | **0.615**, published rather than withheld |
+| Coverage ribbon | 6 of 6 acceptance criteria designed and proven, 1 of 9 use cases with scenarios |
+| Suite | **160 files, 2854 tests**, 2850 passing, 4 conditionally skipped, about 44 s |
+| Correctness properties | 37 of 37 |
+| Evidence packs | 1, holding 59 artefacts, referentially closed against git's index |
+| Runtime dependencies | 9 |
+| Commands | 10, all implemented |
+| Deployment | nine static routes, zero environment variables |
 
-**Verified against a live Kane.** The verdict spike, recorded and committed, which chose the
-default router. The authored corpus and its recordings, so replay is free. The full-suite replay:
-nine members, eight passing from cache at 0.0000, one deliberate failure at 9.85. The closed
-code-break loop, with both terminal events and the intervening patch committed. A live
+**Built and green.** The three-contract Kane layer: contracts, the family-gated parser, coercion,
+per-family exit interpretation, evidence resolution, the zip reader for sealed packs, triage
+attribution by identifier, the `[member]` stream reader, and the invoker. The promise model, the
+citation admission gate, metrics with their zero guard, the zod snapshot schema with its
+cross-field refinements, and canonical serialisation. Both providers and the merge. Both verdict
+routers behind one interface. The plan cache and the blast radius. Review cards, docs amendments
+with their interlock, and the surgical line writer. The handoff with its fence table. The single
+write guard. The seven-screen fixture with its eight claims, and eleven designed test documents.
+The Ledger's six visitable routes, its dual-axis ribbon, its evidence lane, its five motion
+orchestrations and its reduced-motion equivalence.
+
+**Two commands are what a stranger meets first.** `kept init` scaffolds a config and one designed
+test in a repository that has never seen KEPT, invoking Kane zero times. `kept doctor` answers seven
+checks about a machine it knows nothing about, each with its own remedy, on one bounded probe,
+spending nothing and exiting 0 whether or not Kane is installed at all. The repair fences moved into
+configuration alongside them, so a `code-break` allow set that could reach the document stating the
+claim is refused when the config loads rather than filtered when it is used.
+
+**Verified against a live Kane.** The verdict spike, recorded and committed, which chose the default
+router. The authored corpus and its recordings, so replay is free. The full-suite replay: nine
+members, eight passing from cache at 0.0000, one deliberate failure at 9.85. The closed code-break
+loop, with both terminal events and the intervening patch committed. A live
 `maintain reconcile --plan` with a genuinely resolved source id. The headless bootstrap, both
 commands, with the two refusals a headless caller meets recorded verbatim.
 
-**What finding those things cost is worth stating**, because component coverage could not have
+**Deployed.** [withkept.vercel.app](https://withkept.vercel.app), zero environment variables. All
+nine routes answer, every one marked static, and `/` returns `x-nextjs-prerender: 1` with no session
+cookie and no protection interstitial, so a reader reaches every figure with no account.
+
+**This README is itself under verification, and it cost the headline figure.** Five of its lines are
+promises in the graph, cited to lines 22, 68, 89, 301 and 679 and read off disk verbatim by the same
+admission gate that reads the fixture's. Nothing in a promise record distinguishes them from the
+fixture's eight except the citation path. All five entered with nothing proving them yet, so proven
+coverage fell from 88 percent to 54 percent, and the Ledger published the lower number with all five
+rendered as `stale` beside their citations. Admitting only the claims that already pass would have
+held the figure at 88, which is the failure mode of an untested README reproduced inside the tool
+built to detect it, so a test pins the five lines and refuses a build that admits fewer.
+
+**One of those five has since been paid off, which is the only way the figure is allowed to rise.**
+Line 679 says `/badge.svg` answers a GET with SVG carrying a whole-number percentage. A test
+document for it was authored against the running Ledger by a live Kane, at 14.60 credits, and it
+passed on the first run. Replaying the whole recorded suite then moved that promise from `stale` to
+`proven`, and coverage rose from 54 percent to 62 percent. The four remaining stale rows are still
+on the page, still owed, and the badge the claim describes now renders a percentage the claim itself
+helped earn. The full accounting is in
+[docs/self-verification.md](docs/self-verification.md).
+
+**What finding the hard faults cost is worth stating**, because component coverage could not have
 found them. The sealed triage note was inside a zip nothing opened, so every failure reported the
-note absent and answered `docs-lie` — a three-way branch that was a one-way branch and looked
-alive. `application_issue` was missing from the product-fault list, so a deliberately broken
-subtotal routed to `docs-lie` while Kane's note read `application_issue/ui_data_defect` at 0.96.
+note absent and answered `docs-lie`: a three-way branch that was a one-way branch and looked alive.
+`application_issue` was missing from the product-fault list, so a deliberately broken subtotal
+routed to `docs-lie` while Kane's note read `application_issue/ui_data_defect` at 0.96.
 `context list` was declared an Assurance command, so the invoker appended a flag Kane rejects and
 every documentation save resolved to `listing-unreadable`. A dry run was required to carry a
-terminal event it structurally cannot have, so the plan cache was never written and every radius
-was empty. `--from-context` cannot address this corpus at all. Each is fixed, each has a test
-that fails on its recurrence, and each is written up with the stream that revealed it.
-
-**Deployed.** [withkept.vercel.app](https://withkept.vercel.app), on Vercel, zero environment
-variables. All nine routes answer, every one marked static, and `/` returns
-`x-nextjs-prerender: 1` with no session cookie and no protection interstitial — so a reader
-reaches every figure with no account. The front matter carries the URL and the suite asserts it:
-the block that held the placeholder to being obviously a placeholder has gone quiet and the block
-asserting a real public HTTPS URL runs in its place, which is the crossover it was written for.
-
-**136 files, 2406 tests, all green.** 2401 pass and 5 are skipped, every skip conditional on the
-deployment state described above rather than switched off. Nothing is red and nothing is pending:
-the one `todo` that used to print the outstanding deploy edit in every run's summary is
-discharged, which is why the total moved down by one rather than up.
-
-**What is next** is not a list of regrets. Eleven items are specified, scoped and ordered in
-[.kiro/specs/kept/tasks.md](.kiro/specs/kept/tasks.md), and the [Roadmap](#roadmap) below says
-what each one does, how it works, and what it is blocked on.
+terminal event it structurally cannot have, so the plan cache was never written and every radius was
+empty. And the packaging suite, on its first real run outside this workspace, found that
+`@kept/core` imported `yaml` and `zod` while declaring neither: inside the workspace both resolve
+from the root `node_modules`, so every other suite was green while the published package would have
+died on its first import. Each is fixed, each has a test that fails on its recurrence, and each is
+written up with the stream that revealed it.
 
 ---
 
-## Roadmap
+## What is not here, and why
 
-Everything here is **specified before it is built** — each item exists in
-[`.kiro/specs/kept/tasks.md`](.kiro/specs/kept/tasks.md) with its requirement ids, its argv, its
-acceptance criteria and, where the CLI surprised us, the measurement that corrected the plan. None
-of it is a sketch, and two items are corrections to the plan rather than additions to it. Item 10 is
-the one most people will care about: **a published `@kept/cli` and `@kept/core` are coming**, so
-this runs against your repository rather than only against this one.
+Two things the plan named were deliberately not built, and both decisions cost something worth
+recording. Everything else it named is built and described above.
 
-Build order is deliberate and is the reverse of the drop order: the two items that close gaps
-against the original design come first, then the ones that need live Kane credits, then the local
-developer surfaces, then packaging and polish.
+**Syntax highlighting for amendment diffs was dropped to hold the dependency budget at nine.**
+Shiki would have made ten runtime packages, and a test asserts the budget. A `docs-lie` diff is one
+line of English prose, where highlighting adds nothing a reader notices, so `lib/diff.ts` stays the
+only renderer. Moving the budget to ten and updating the asserting test in the same commit was the
+alternative; a line of prose was not worth it.
 
-### 1. The dual-axis coverage ribbon
-
-**What it is.** A second coverage figure on `/coverage`, counting *acceptance criteria Kane holds
-execution facts for* rather than *promises this repository verified*.
-
-**How it works.** `EnrichmentProvider` switches to `cover gaps --json`, Assurance family, the
-invoker appending `--mode agent`, on a 60-second budget. That invocation is already measured
-working: exit 0, `done.status: complete`, and a payload carrying
-`design_completeness {pct 100, acs_designed "6/6", usecases_complete "1/9"}` alongside
-`proven {pct 100, acs_proven "6/6", failing 0, blocked 0, not_run 0}`, with its own configuration
-naming the source as `graph_execution_facts` and the denominator as `current_live_acs`. The
-projection is tolerant the way the existing coverage payload is — percentages and `n/m` ratio
-strings kept verbatim, one row per use-case carrying `{id, title, risk, design_completeness,
-proven, stale_acs, pending[]}` — and the axes are recorded into the snapshot so the shareable page
-renders them with Kane invoked zero times.
-
-**The correction behind it.** This was originally marked droppable because "`cover --json`
-already supplies both axes". That is false on this repository: `cover` reads its depth axis out of
-a sealed pack and refuses at exit 2 with `carries no coverage/usecases.yaml`, because every pack
-here is a **replay** pack and only authoring mints a coverage document. `cover gaps` answers both
-axes from the live graph instead, and is the only working path to the number.
-
-**Two constraints that are not negotiable.** `pending[].ready_command` is a literal `kane-cli …`
-string and is published as **text only** — rendering it as a control would hand the read-only
-Ledger a way to spend credits. And the two proven figures get different labels, because they count
-different objects over different denominators and will legitimately disagree; a page that lets that
-read as a bug is worse than a page with one figure.
-
-**What makes it done rather than drawn.** The `gaps` stream is committed as a parser fixture so
-the ribbon renders in CI with no Kane and no store, and the degradation paths are asserted with
-the same weight as the success path: a stream that refuses, one that pauses at exit 3, one
-truncated before `done`, and one whose payload projects zero rows must each leave the graph
-degraded with a named reason and the ribbon **withheld** — never a zero, never an empty ribbon
-that reads as "nothing owed". A property test holds that for *any* payload both percentages are
-either withheld or in range with a denominator matching the live acceptance-criteria count.
-
-**And it will publish a number that looks bad.** `usecases_complete` reads `1/9` today: the graph
-genuinely owes eight use-case designs. The ribbon shows that as debt. Authoring eight use-cases to
-make the figure look better is precisely the dishonesty this product exists to prevent.
-
-### 2. The docs-triggered loop, recorded as one continuous cycle
-
-**What it is.** One capture running from "the documentation now claims something untrue" through
-to "an amendment is proposed and nothing was written". The machinery is built and a live
-`maintain reconcile --plan` with a genuinely resolved source id is recorded, but as separate
-fragments — which makes the more novel of the two triggers read as the thinner one.
-
-**How it works.** Add a ninth claim to the fixture describing behaviour it does not implement. The
-docs hook fires, `kept reconcile --changed` reports outstanding suite debt and the promise enters
-as `undesigned`. Bind a designed test to it — the safe path is a hand-written `*_test.md` with an
-`@verifies` tag and a `<!-- @covers -->` marker, authored like the other eight, one replay and no
-assurance chain. `kept verify --changed` then fails that member, the router answers `docs-lie`,
-the fence withholds any write path because the promise was never proven, `kept amend propose`
-produces the amendment, and `/amendments` renders it.
-
-**The step that matters most is the last one.** The ninth claim is **reverted**, so the fixture
-returns to its committed content and its pinned sha256 still holds. The amendment survives as the
-record; the lie does not survive in the tree. Committed alongside: the reconciliation stream, the
-verification stream, both handoffs, the amendment JSON, the snapshot that renders it, and an
-integration test asserting against those bytes that the branch was `docs-lie`, that
-`allowedPaths` was empty, and that no file outside `.kept/` was written.
-
-**Cost.** Live Kane, a local Chrome, and credits on the one failing member.
-
-### 3. `maintain evolve` on the argv 0.8.4 actually accepts
-
-**The specified argv cannot work**, and this is a measurement rather than a bug report.
-`maintain evolve --help` lists exactly two options, `--from-stale` and `--because`. `--mode agent`
-is rejected with `unknown option '--mode'` — while `maintain reconcile --help`, from the same
-command group, does list `--mode`. So the `test-drift` branch has never once reached Kane: it
-takes its documented degradation path on every invocation and stages a failure-context card.
-
-**How it gets fixed.** Correct the argv to `maintain evolve <ref>` with no ask-policy flag. Then
-establish the NDJSON enabler with **one** probe before spending anything, because this command is
-absent from the family contract table — piped stdout may be the enabler the way it is for
-`testrun run`, or the command may emit nothing machine-readable at all. On success the Review_Card
-is built from the **pair diff** the invocation reports, with the existing failure-context card
-kept as the fallback for a stream that never reaches `done`.
-
-**The care this one needs.** The invocation **mutates the assurance graph** — it supersedes a
-use-case's scenario and test pairs. So it is rehearsed against a fresh target with
-`--because <reason>` first, with the graph state recorded either side, before it is ever pointed at
-a stale one.
-
-### 4. `kept doctor`
-
-**What it is.** The command a judge runs when something looks wrong. Today `node bin/kept doctor`
-prints that it is specified and unwired, and `main.ts`'s switch carries only `amend`, `build`,
-`evolve`, `reconcile`, `snapshot` and `verify`.
-
-**How it works.** A `kane-cli --version` probe on a 10-second budget through
-`KaneInvoker.invokePlain` — family-less, no enabler, the same door `context list` uses — reporting
-binary presence, resolved path and version. Then everything else a clone needs that KEPT can check
-without spending: whether `.kept/config.json` parses and which router it selects, whether the
-committed snapshot exists and validates against its schema, whether the fixture answers on 3100,
-and whether `.context/` is present.
-
-**The one rule.** It exits zero in every case, including a missing binary. Kane's absence is a
-supported state, and `doctor` of all commands must not be the one that treats it as fatal.
-
-### 5. A dev-only live NDJSON pane
-
-**What it is.** `LiveNdjsonPane` renders Kane's own stream as it arrives, fed by the invoker's line
-callback, so a developer watching a run sees the events rather than the summary.
-
-**How it works, and what it must prove.** Dev-only and **genuinely absent from the production
-build** — not hidden by CSS, not gated at runtime, not in the bundle. Its absence is asserted
-against the built output rather than trusted to a flag. Because it renders Kane's own stream it has
-to display an event it does not recognise instead of dropping it, and it must not be the thing that
-makes a dev page hang on a two-hundred-line-per-member `[member]` capture.
-
-### 6. `kept watch` — a loopback accept path that adds no route
-
-**What it is.** Accepting an amendment from the local Ledger UI without giving the Ledger a way to
-write anything.
-
-**How it works.** A `127.0.0.1:3199` listener living **in the CLI, outside the Next app**,
-dev-gated behind `NEXT_PUBLIC_KEPT_LOCAL=1`, performing the same `kept amend accept` path the CLI
-already does. That placement is the whole architectural point: the read-only scan over
-`apps/ledger/**` still passes unchanged because no route was added to the Ledger's tree.
-
-**Fences.** Loopback only, never `0.0.0.0`. It accepts an amendment id and nothing that could name
-a path. Every method but the one it needs is refused. And the deployed Ledger stays byte-identical
-with and without the feature — asserted by checking the production build contains no reference to
-port 3199.
-
-### 7. Proving the evidence lane renders
-
-**Already built, never verified end to end.** The graph's fourth lane has existed since the layout
-was written — `LANES` carries `evidence`, `LANE_X` has four entries, `layoutSnapshot` emits a node
-per pack, and `PromiseGraph.tsx` renders `case 'evidence'`. It was invisible only because
-`snapshot.evidence` was empty until curation was fixed. The committed snapshot now declares a pack
-with 37 artefacts and two resolving edges.
-
-**What gets added.** The render assertion that was impossible before: one lane-3 node per declared
-pack, an `evidence` edge reaching it from each promise that names it, the node keyboard-reachable
-with an accessible name, and — the case that matters — a snapshot declaring no pack painting no
-lane-3 node and no empty lane. Plus confirmation that the six edges the snapshot still drops stay
-dropped and diagnosed: they name a stale conflict-copy id from an older run, and an edge to
-nothing is worse than an absent edge.
-
-### 8. A badge worth putting in a README
-
-34 lines today, flat two-tone. Shields-style treatment keeping three contracts intact: the value
-stays a whole-number percentage, the response stays `image/svg+xml`, and the route stays GET-only.
-
-**The palette scan is the constraint that bites** — no gradient, no colour outside the token set,
-and the read-only scan still has to pass over the route — so the work is geometry, weight and
-spacing rather than new colour. And because `provenCoverage` is `null` on the committed snapshot,
-the `n/a` state is the one a judge sees first and has to look deliberate rather than broken.
-
-### 9. Optional Shiki for diffs
-
-**This one has a conflict to resolve before any code.** The runtime dependency budget is **nine**
-packages and a test asserts it. Shiki makes ten. So the decision gets recorded first: either the
-budget moves to ten with the design section and the asserting test updated in the same commit and
-a stated reason, or Shiki loads as an optional peer that `lib/diff.ts` falls back from when it is
-absent. The second keeps the budget honest and is the stated intent.
-
-**The payoff is small and saying so is the point.** A `docs-lie` diff is a single line of English
-prose, where highlighting adds nothing a reader notices. `lib/diff.ts` stays the default renderer
-either way.
-
-### 10. Shipping it: `@kept/cli` and `@kept/core` on npm
-
-**Coming soon — a published CLI and library, so KEPT runs against your repository rather
-than only against this one.**
-
-The plumbing is already in place. `packages/kept-cli/package.json` declares its binary
-(`"bin": { "kept": "dist/index.js" }`) and its published surface (`"files": ["dist"]`), and
-`@kept/core` exports one barrel that is the only consumer entry point. What stands between
-that and an install is deliberate rather than difficult: both packages are `private: true`
-at version `0.0.0`, the `@kept` scope is unclaimed, `@kept/cli` depends on `@kept/core` by
-exact version through the workspace rather than by a semver range, and `dist/` is gitignored
-so publishing needs a `prepublishOnly` build step. The `bin/kept` launcher at the repository
-root is a development convenience that reports honestly when `dist/` is absent; a published
-install puts `kept` on `PATH` and does not use it.
-
-The intended shape:
-
-```bash
-npm i -D @kept/cli
-npx kept build          # scan @verifies tags, admit citations, build the graph
-npx kept verify --all   # replay through Kane, route every failure
-npx kept snapshot       # write the JSON a Ledger renders
-```
-
-**You bring your own Kane.** KEPT never bundles, installs or vendors `kane-cli` — it spawns
-whatever is on `PATH` and parses the NDJSON, and a missing binary is a supported state that
-exits zero. So an adopter needs Kane installed, a local Chrome, and their own credentials.
-
-**What honestly is not ready, and saying so is the point.** Publishing the CLI is the easy
-half. Three things have to land before someone can point this at their own repository on a
-Tuesday afternoon: a `kept init` that scaffolds the `*_test.md` corpus and
-`.kept/config.json` instead of expecting them to exist, the Ledger shipped as something
-installable rather than a directory in this repository, and the second target below — which
-is what would prove none of this is fixture-specific. Until those exist the accurate claim
-is "the engine works and the packaging does not", which is the claim this section makes.
-
-### 11. A second target, to prove none of this is fixture-specific
-
-Point `kept build` at [RealWorld/Conduit](https://github.com/gothinkster/realworld)'s README,
-produce a promise graph and a coverage figure, and stop.
-
-**Scoped as read-only proof, and last for a reason.** It needs a backend and a database, which is
-exactly the scope the fixture decision cut on purpose. Its value is proving KEPT is not
-fixture-specific; its cost is a second application to keep running, a second document to keep
-honest, and a second corpus to author with live credits. The closed loop is explicitly not
-attempted against it, and the standing instruction is to abandon it rather than regress anything
-that already works.
+**A second target application was withdrawn, and this repository's own README took its place.** The
+plan reserved a second application to show the engine is not specific to the fixture. It needed a
+backend, a database, a second process to keep running and a second corpus authored with live
+credits. What replaced it needed one entry in `subject.docs` and one `@verifies` tag, and it makes
+the stronger point: the document making the claims is the document being checked.
 
 ---
 

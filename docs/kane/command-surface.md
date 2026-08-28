@@ -357,9 +357,16 @@ error: <execution_id> carries no coverage/usecases.yaml — the pack predates co
 ```
 
 A pack sealed by a *replay* carries no `coverage/usecases.yaml`, so the enrichment axis
-is discarded and `kept build` reports `coverage-payload-unreadable`. `provenCoverage`
-stays `null` as a result: verdicts are what KEPT observed, coverage is what Kane's graph
+is discarded and `kept build` reports `coverage-payload-unreadable`, which leaves
+`provenCoverage` at `null`: verdicts are what KEPT observed, coverage is what Kane's graph
 says they cover, and withholding the second is honest rather than reporting zero.
+
+**This is why `cover` is not the command the enrichment provider invokes.** It reads its
+depth axis out of a sealed pack, and every pack in this repository is a replay pack.
+`cover gaps` answers both axes from the live graph instead, so the committed snapshot is
+not degraded and it publishes a real `provenCoverage` of `0.615`. The withholding above is
+still exactly what happens when a payload cannot be read; it is no longer the state a
+reader of the Ledger sees.
 
 ## The open question — answered, and the answer is "not on a cached replay"
 

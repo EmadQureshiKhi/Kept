@@ -978,6 +978,22 @@ export async function readPlan(opts: { invoker; cwd; maxAgeMs: number }): Promis
 
 Refresh invocation: `kane-cli testrun run --dry-run` (family `ExecutionTestrun`, stdout piped, no `--agent`, 60 s). Only `testrun_plan` is consumed; the stream still must reach `testrun_done` to be trusted, and a `--dry-run` stream that crashes leaves the previous cache in place. `maxAgeMs` default 10 minutes; `kept verify` refreshes when any `*_test.md` mtime is newer than `plan.json`.
 
+### 7.2.1 Where the identifier comes from, and what has no identifier at all (A20)
+
+§7.1 says the id is Kane's and is never guessed. This subsection says where Kane keeps it and what follows for a document Kane has no record of, because driving §11.4 live at task 22.2 turned that into the whole outcome of the run.
+
+**Kane writes the id into the recording it keeps beside the document**, at `tests/output-<slug>/.internal/meta.json`, and `testrun_plan` reports that value. Measured over all seventeen members of `docs/kane/loop/t9-testrun-plan-test-ids.json`, the plan's id equals the recording's id wherever a recording exists, and is `null` for exactly the eight members that have none: the four `.testmuai/tests/*` documents, the three self-cited `kept_*` documents, and the newly written one. So the plan is not an oracle with its own opinion; it is a projection of what has been recorded locally.
+
+Consequently **a designed test that has never been authored cannot enter a blast radius**, whatever changes: `computeBlastRadius` excludes it, `radius-member-no-test-id` reports it at severity `warn` naming the path, and `testrun run` cannot replay it. That is correct and is not worked around. Deriving an id from a filename when the plan has none would make every later re-verification a guess, which is what §7.1 exists to forbid, and `packages/kept-cli/test/docs-trigger-loop.test.ts` asserts the exclusion, the diagnostic and its wording as *correct* behaviour.
+
+Two consequences, and one thing this does **not** license:
+
+1. **This is the fuller reason `staleCount` reads 5.** §23.2 and A19 describe the five self-cited promises as designed and not yet proven, which is true and incomplete. Their three designed tests have never been authored, so no recording exists, so no id exists, so `verify --changed` cannot select them however the radius is computed. They are waiting on the authoring run that would mint the id, not on somebody remembering to run them.
+2. **A test authored after the last plan refresh is invisible until the plan is refreshed.** That is §7.2's cache with its ten-minute window, and it is what actually happened at task 22.2: the plan was cached at `11:55:28Z`, both verifications ran within the next ninety seconds, and the authoring run finished at `12:01`. The new member was excluded because the plan predated its recording.
+3. **It does not follow that a failed authoring run leaves a document unreachable.** A failed run still writes a recording and still mints an id. Task 22.2's own failed run wrote `test_id: a2bda3fb-07fd-4c0f-a9e7-85e66e878625` with `run_kind: author` and `status: broken`, and T-7's authoring run reported `commit: {committed: false, reason: run_failed}` while `tests/cart_discount_test.md` carries an id in this same plan. Whether a claim admitted today can be driven to `red` was left **open** by that cycle, and a second cycle settled it: with the plan refreshed after the authoring run, the member entered the radius on `test_id: 1080f892-b002-43f4-b123-16dc4ea3837b`, failed, and the promise reached **`red`** at `resultCode 330`, `reasonCode stuck.ap_stuck`. The router then answered `test-drift` rather than `docs-lie`, because Kane reported `confirmed: false` and R6.4 makes the inline verdict object outrank the numeric code, so `kept amend propose` correctly staged nothing. A20 records the closed form; captures are under `docs/kane/loop/t9b-*`.
+
+A documentation edit is a separate matter and is answered separately: the radius is computed from changed **source** against each test's `covers:` fence, so `verify --changed apps/fixture/README.md` selects zero members, starts no Kane process and writes no verdict, which is why §13.2 exists as its own command rather than as a mode of `verify`.
+
 ### 7.3 Radius computation
 
 ```ts
@@ -1721,6 +1737,10 @@ Committed as `.kept/handoff/<runId>.json` × 2 plus the patch diff, and reflecte
 8. the ninth claim is reverted; the amendment records what was proposed
 ```
 
+**Steps 5 to 7 did not run when this was driven live at task 22.2, and the reason is a sequencing constraint this section does not state.** §7.1 takes a `test_id` only from the plan, and the plan reports only what a local recording holds (§7.2.1), so **step 4 must complete and the plan must then be refreshed before step 5 can select the new member at all.** At task 22.2 the plan was cached before the designed test had any recording, both verifications ran against that cache, the authoring run finished afterwards, and no verification was run after it: the member was excluded with `radius-member-no-test-id`, never failed, never routed, and left nothing for `kept amend propose` to act on. Steps 1 to 4 and step 8 ran as written and are committed. Nothing here is withdrawn and no step is wrong; what is added is the ordering, which the run makes explicit: **author, refresh the plan, then verify.**
+
+**A second cycle then ran steps 5 to 7 in that order, and two of the three came out as written.** The claim and its designed test were restored, the document re-authored live for 36.8983 credits, `.kept/plan.json` deleted so the plan would be recaptured, and `kept verify --changed apps/fixture/app/shop/page.tsx` run against it. Step 5 held: the member entered the radius on the recording identifier the failed authoring run had minted, ran, and failed, and the promise reached **`red`** with a real verdict source at `resultCode 330`, `reasonCode stuck.ap_stuck`, for 10.80946 credits. Step 6 did **not**: the router answered **`test-drift`**, because Kane's `test_md_bug_verdict` came back `confirmed: false` and R6.4 makes the inline object outrank the numeric code. Step 7 then behaved exactly as §8.1.1 requires and staged nothing, because an amendment is only ever proposed for the branch the router settled. So the sequencing constraint is confirmed, the `docs-lie` prediction is measured wrong on a second independent claim rather than assumed wrong, and the branch remains demonstrated on T-7. A20 and §7.2.1 record the closed form, and `docs/kane/loop/README.md` is the measured write-up.
+
 Four things about step 4, because it is the only step with a choice in it.
 
 **The safe path is a hand-written test**, exactly as the plan's own mitigation intends: a `*_test.md` with an `@verifies` tag and a `<!-- @covers -->` marker, authored the way the other eight were. It costs one replay, needs no assurance chain, and the cycle it produces is fully honest — the claim is real, the failure is real, the branch is real.
@@ -1802,8 +1822,9 @@ The landing screen renders well inside 30 s of `npm run demo` — it is a static
 | `kept amend list \| show <id> \| accept <id> \| reject <id>` | none (`accept` triggers a rebuild → `kept build`) | — | — | cited doc file (accept only), amendments, snapshot |
 | `kept snapshot` | none | — | — | snapshot only |
 | `kept handoff [--run <id>]` | none | — | — | stdout only |
-| `kept doctor` | `kane-cli --version` | — | 10 s | stdout only |
-| `kept watch` *(nice-to-have)* | none | — | — | loopback accept listener + NDJSON tail |
+| `kept init [--force]` | none | — | — | Kept_Config, one scaffolded `*_test.md` — **see §21.1** |
+| `kept doctor` | `kane-cli --version` | — | 10 s | stdout, handoff — **see §21.2** |
+| `kept watch` | none | — | — | loopback accept listener + NDJSON tail |
 
 Flags common to all: `--repo <root>` (default cwd), `--json` (machine-readable stdout), `--router <name>` (overrides config for one invocation), `--member-debug` (sets `KANE_TESTRUN_MEMBER_DEBUG=1` and captures `[member]` stderr lines — R4.12).
 
@@ -2274,6 +2295,56 @@ Every property test names its design property in the test title: `Feature: kept,
 
 **Validates: Requirements 12.4, 12.5**
 
+### Property 30: Configuration is the only source of repository-specific values
+
+*For any* generated configuration naming a corpus root, subject globs, a base URL and fence sets that share no path segment with this repository, the built graph reads every one of those values from the configuration and none from a default that names this repository; and *for any* executable source file under `packages/kept-core/src` or `packages/kept-cli/src`, that file contains no fixture path literal, no fixture port literal and no corpus root literal.
+
+**Validates: Requirements 15.1, 15.2, 15.3, 15.9**
+
+### Property 31: Repair fences never permit editing the claim's own source
+
+*For any* configuration and *for any* run that routes at least one promise to `code-break`, the handoff's allowed set intersects neither the configured documentation globs nor the configured corpus root, every glob the granted row would have allowed appears in the forbidden set when autonomy is withheld, and a configuration whose `code-break` allowed set does intersect either one is rejected at load time with a diagnostic naming the intersecting glob and no run is performed.
+
+**Validates: Requirements 15.7, 15.8, 7.7, 7.8**
+
+### Property 32: The engine builds a graph in any host repository
+
+*For any* generated repository containing an arbitrary mixture of documentation files, corpus files and neither, building the graph terminates with process exit code 0, admits exactly those promises whose citations resolve to a real line of a real file in *that* repository, records one diagnostic per missing prerequisite, and writes no file outside that repository's own working-state directory.
+
+**Validates: Requirements 15.4, 15.5, 15.6, 15.11, 15.12**
+
+### Property 33: Initialisation is idempotent and spends nothing
+
+*For any* repository state, the first initialisation either writes a configuration and one scaffolded corpus file or writes nothing and names the existing configuration; a second initialisation with no overwrite flag changes no byte of any file; and no initialisation spawns Kane or reports non-zero consumed credits.
+
+**Validates: Requirements 16.1, 16.2, 16.6, 16.8**
+
+### Property 34: Diagnosis is total, bounded and exits zero
+
+*For any* repository state, including one with no configuration, no snapshot, no corpus and no Kane binary on the path, diagnosis reports a determinate result for every check, names a remedy for each check that did not pass, spawns Kane at most once, and exits with process exit code 0.
+
+**Validates: Requirements 18.1, 18.2, 18.8, 18.9, 18.10**
+
+### Property 35: The packed tarball is installable and self-sufficient
+
+*For any* packed tarball of either package, the archive contains the compiled output and its declarations and contains no test file, no fixture, no evidence pack and no recording directory; and installing both tarballs into a directory outside the workspace yields a `kept` binary that reports its version and completes diagnosis with exit code 0 without resolving a single module from this workspace.
+
+**Validates: Requirements 17.3, 17.4, 17.5, 17.9, 17.10**
+
+### Property 36: Self-cited promises are the same kind as fixture promises
+
+*For any* snapshot carrying promises cited to both the fixture documentation and the repository's own root README, no promise record field distinguishes the two other than the citation path, every self-cited promise without a designed test carries verdict `undesigned` and is counted in the outstanding debt, and no code path consulted while admitting them tests for either path.
+
+**Validates: Requirements 19.1, 19.2, 19.3, 19.4**
+
+### Property 37: The coverage axes are withheld or in range, and neither proven figure borrows the other's label
+
+*For any* `cover gaps` payload, both axis percentages are either withheld entirely or in range with a ratio whose denominator matches the live acceptance-criteria count; every published use-case row carries both axes; no `ready_command` reaches the DOM as anything but text; and the rail's `provenCoverage` and the ribbon's `proven` are never rendered under the same label.
+
+**Validates: Requirements 9.9, 9.10, 9.11, 9.12, 9.13, 9.14, 9.15**
+
+**Why it is numbered here rather than beside §5.3.0.** This is the property task 22.1 asked for, and it was implemented before it was written down, which is the wrong order and is recorded rather than tidied. It sits last because the ordinals in this list are the order the properties were authored in, not the order the sections that motivate them appear in: Property 35 and Property 36 belong to stages 25 and 26 for the same reason. The suite that holds it is `apps/ledger/test/coverage-axes.prop.test.tsx`.
+
 ---
 
 ## 18. Droppable scope, in priority order
@@ -2282,15 +2353,15 @@ Everything below is a *nice-to-have*. Tasks must be ordered so these are the las
 
 | # | Item | Why it is safe to drop | What replaces it |
 |---|---|---|---|
-| 1 | **Conduit / RealWorld second target** (A8, R14.8) | Explicitly optional, gated on every other deliverable passing | Nothing; do not start it |
+| 1 | ~~**Conduit / RealWorld second target**~~ (A8, R14.8) — **WITHDRAWN, replaced rather than deferred** | It needs a backend, a database, a second application to keep running and a second corpus authored with live credits, which is the exact scope the fixture decision cut. Its only value was proving the engine is not fixture-specific | **§23: the repository's own root README as a promise source (R19)**, which proves the same thing, needs no second application, and is the stronger claim because the repository making the claims is the one checking them |
 | 2 | **`@xterm/xterm` live NDJSON pane** (R8.7) | Dev-only surface, invisible to judges on the deployed build; the score comes from `/runs` | `/runs` page rendered from `snapshot.runs[]`, plus raw terminal output during the video |
 | 3 | **`kept watch` loopback accept listener** (§8.5) | Acceptance already works via CLI; the deployed control is the copy-command button either way | `AcceptControl` copies `kept amend accept <id>` |
-| 4 | **Shiki syntax highlighting for diffs** | Heavy install against a 7 GB disk; docs-lie diffs are single-line prose where highlighting adds nothing | `lib/diff.ts` unified diff with verdict colours |
+| 4 | ~~**Shiki syntax highlighting for diffs**~~ — **DROPPED, decided rather than deferred** | It makes a **tenth** runtime dependency against the nine-package budget of §2.2, which a test asserts, and the artefact it would highlight is one line of English prose. The trade was never close: a budget with an exception in it is not a budget | `lib/diff.ts` unified diff with verdict colours, which is already the default renderer |
 | 5 | ~~**`KANE_TESTRUN_MEMBER_DEBUG` stderr capture**~~ (R4.12) — **SHIPPED, and it was never droppable** | Assumed conditional. It is where the *only* classification signal lives: `testrun_member_end` carries no `result_code`, no `reason_code` and no verdict object, so without this capture every failure routes to the `docs-lie` residue and the three-way branch is a one-way branch that looks alive | Nothing — dropping it removes two of the three repair branches | statuses are already in `testrun_member_end` |
 | 6 | **`cover gaps` dual-axis ribbon** — *reclassified: no longer droppable, and no longer optional* | The stated reason was wrong. `cover --json` does **not** supply both axes here: it reads depth from a sealed pack and refuses on a replay pack, which is every pack this repository has (§5.3.0). `cover gaps` is the only working path to the axis, so dropping it drops the Promise-Ledger half's headline metric entirely | Nothing honest — the rail can only withhold the figure |
 | 7 | ~~**Evidence lane in the graph**~~ (evidence nodes + edges) — **already built** | `LANES` has carried `evidence` since §10.3 landed, `layoutSnapshot` emits a node per `snapshot.evidence` entry and `PromiseGraph` renders the `evidence` case. It looked droppable only because `snapshot.evidence` was empty until curation was fixed | Nothing to replace; the work left is proving it renders |
 | 8 | **Badge visual polish** (shields-style gradients, logo) | R9.4/R9.5 only require valid SVG with a whole-number percentage | Flat two-tone 110×20 SVG |
-| 9 | **`kept doctor`** | Convenience only | README prerequisites section |
+| 9 | **`kept doctor`** — *reclassified: no longer droppable* | "Convenience only" was true while this repository was the only repository. Once the packages are published (R17) it is the first command a stranger runs and the only diagnosis they get before spending anything, so it becomes the onboarding surface rather than a nicety (A18, R18) | Nothing; a README prerequisites section cannot inspect the machine it is read on |
 | 10 | **`maintain evolve` automation for `test-drift`** (R7.2, corrected by R7.10/R7.11) | Only fires if the spike lands on a drift verdict; the branch is still demonstrated by the review card | Review card built from the failure context with a diagnostic |
 
 ### 18.1 Motion flourishes — droppable **individually**, in this order
@@ -2339,3 +2410,227 @@ Sequenced so that the highest-scoring, least-reversible things exist first and e
 12. **Only if everything above is green** — items from §18, top-down. Never anything from §18.2.
 
 Stages 1–3 are the ones that cannot be rushed. Stage 5 is where the Craft dimension is won or lost, and it is deliberately sequenced *before* the loop work so that the palette and light model exist while there is still energy to get them right; stage 10 layers motion onto a page that is already correct and already accessible. Stage 9 is what makes the Verified dimension real rather than claimed, and its first two commands are the ones that were previously implicit.
+---
+
+## 20. Portability: the configuration boundary (R15)
+
+Nothing in the promise model is specific to this repository. A `Citation` is a path and a line, `promiseId` is keyed on the repository-relative path plus the normalised claim text, the admission gate reads a line off disk verbatim, and no code path parses a document as prose. The engine is already general.
+
+What is *not* general is a set of literals scattered across four surfaces, and a literal is invisible until someone runs the tool somewhere else. §20.1 names them, §20.2 is the scan that keeps them from coming back, and §20.3 is the one place where getting this wrong is dangerous rather than merely inconvenient.
+
+### 20.1 The four literal surfaces, and where each one goes
+
+| Literal, today | Where it lives now | Where it goes | Config key |
+|---|---|---|---|
+| `tests/` as the corpus directory | `providers/baseline.ts` scan root | Kept_Config | `corpus.root` |
+| `apps/fixture/{app,components,lib}/**` | the `code-break` allowed set in the fence table | Kept_Config | `subject.source` |
+| `apps/fixture/README.md`, `apps/fixture/docs/**/*.md` | the docs fence and the Docs_Hook patterns | Kept_Config | `subject.docs` |
+| `http://localhost:3100` | the reachability probe and the corpus preamble | Kept_Config | `subject.baseUrl` |
+
+The extended schema, as a zod shape beside the existing `verdictRouter`, `memberDebug` and `timeouts` keys:
+
+```jsonc
+{
+  "verdictRouter": "resultCode740",
+  "memberDebug": true,
+  "timeouts": { "hookMs": 300000, "enrichmentMs": 60000, "doctorMs": 10000 },
+
+  "corpus":  { "root": "tests" },
+  "subject": {
+    "source":  ["apps/fixture/app/**/*.{ts,tsx}", "apps/fixture/components/**/*.tsx", "apps/fixture/lib/**/*.ts"],
+    "docs":    ["apps/fixture/README.md", "apps/fixture/docs/**/*.md"],
+    "baseUrl": "http://localhost:3100"
+  },
+  "fences": {
+    "code-break": { "allow": ["apps/fixture/app/**", "apps/fixture/components/**", "apps/fixture/lib/**"] },
+    "test-drift": { "allow": [] },
+    "docs-lie":   { "allow": [] }
+  }
+}
+```
+
+Three shape decisions, each for a stated reason:
+
+**`fences` declares only `allow`.** The forbidden set is *derived*: it is the corpus root, every documentation glob, and the two package roots, unioned with every glob the branch does not allow. Letting a user write `forbid` by hand invites a fence with a hole in it, and a hole in this fence is the one failure mode that would make the project worthless (§7.1).
+
+**`test-drift` and `docs-lie` declare an empty allow set as data rather than by omission.** An absent key and an empty array must not be distinguishable here, because "I forgot to configure this branch" and "this branch may write nothing" have opposite meanings and identical spellings. An empty array is the explicit form and a missing key resolves to it, but the loader records which of the two it saw (R15.4).
+
+**No key names the Ledger.** The Ledger is this repository's projection surface and a Host_Repository does not get one. `kept snapshot` writes to a path derived from `--repo`, and the Ledger's committed data path stays a fact about *this* repository, declared in the root `package.json` script rather than in the engine.
+
+### 20.2 The scan that keeps the literals out (R15.3)
+
+A seventh source scan, beside the six of §16. It reads every `.ts` under `packages/kept-core/src` and `packages/kept-cli/src` and fails on:
+
+- any string containing `apps/fixture`,
+- the literal `3100` appearing as a port,
+- any string equal to or beginning `tests/` used as a directory,
+- `localhost:` followed by a digit.
+
+It permits all four inside `packages/*/test/**`, inside `test/fixtures/**`, and inside comments, because a comment recording *why* a value used to be a literal is documentation and a fixture naming a path is a fixture. The scan is the mechanism that turns R15.2 from a claim about the code today into a property of the code tomorrow, and it belongs to the same family as the `result_code` scan (§2.3): an architectural guard, not coverage.
+
+**This scan will fail on first run, and that is its point.** The literals exist. The task that adds the scan is the task that moves them, in one commit, so the guard and the compliance land together.
+
+### 20.3 Fences as configuration, and the intersection guard (R15.8)
+
+Moving the fences into a file the user controls is the single riskiest change in this whole extension, and it deserves to be stated plainly rather than buried in a schema.
+
+The invariant §7.1 protects is that a `code-break` repair may never edit the document that states the claim, and may never edit the test that checks it. Turn one green by weakening either and the promise is not kept, it is redefined. Today that invariant is safe because the fence table is source code. Once it is configuration, a user can write:
+
+```jsonc
+"fences": { "code-break": { "allow": ["**"] } }
+```
+
+and the agent is authorised to rewrite the claim it just failed.
+
+So the loader rejects it. `loadConfig` computes, for every branch, whether the allow set can match any path under the corpus root or any documentation glob, and refuses the whole configuration when `code-break` can. The refusal names the intersecting glob, reports `config-fence-intersects-claims`, performs no run and moves no verdict (R15.6, R15.8). Glob intersection is decided by the hand-rolled matcher of §3.18 rather than by a new dependency, evaluated as "does there exist a path this allow glob matches that a docs glob also matches" over the union of the two pattern sets plus a generated adversarial set: `**`, `**/*`, `../` escapes, and an allow glob that reaches the corpus root through a parent traversal.
+
+This is Property 31, and it is the highest-value new property in the extension. It is also why R15.8 is a load-time rejection rather than a run-time filter: a fence that is checked when it is used has already been trusted once.
+
+### 20.4 Defaults, and why every applied default is recorded (R15.4)
+
+Every optional key resolves to a documented default, and every application of a default emits an `info` diagnostic naming the key and the value. That is deliberately noisy. A tool that silently invents a corpus root is a tool that scans the wrong directory and reports zero promises, and "zero promises" is indistinguishable from "your repository makes no claims" unless the diagnostic says which directory it looked in.
+
+| Key | Default | Rationale |
+|---|---|---|
+| `corpus.root` | `tests` | the conventional location, and what `kept init` scaffolds into |
+| `subject.source` | `[]` | an empty source set means an empty blast radius, which is honest; guessing `src/**` would silently fence a repair into a directory that may not exist |
+| `subject.docs` | `["README.md"]` | the one documentation file essentially every repository has |
+| `subject.baseUrl` | `null` | no guess is safe; a null base URL makes the reachability check report "not configured" rather than probe port 3000 on a stranger's machine |
+| `fences.*.allow` | `[]` | the safe direction: no autonomy until it is granted explicitly |
+| `timeouts.doctorMs` | `10000` | R18.2 |
+
+Note the direction of every default: they fail *closed*. An unconfigured KEPT reports what it cannot do rather than guessing and acting.
+
+### 20.5 The host-repository integration test (R15.12, Property 32)
+
+The portability claim cannot be tested from inside this repository, because every path this repository uses resolves whether or not it was read from configuration. So the test generates a repository in a temporary directory outside the workspace:
+
+```
+<tmp>/
+  docs/product.md          three claims, one per line
+  suite/checkout_test.md   one @verifies docs/product.md:2, covers src/**
+  src/checkout.ts
+  .kept/config.json        corpus.root "suite", subject.docs ["docs/**/*.md"],
+                           subject.source ["src/**/*.ts"], baseUrl null
+```
+
+Nothing in that tree shares a path segment with this repository. The test runs the same `buildGraph` the CLI runs, and asserts: one admitted promise with a citation reading `docs/product.md:2` and the verbatim text of that line; two unadmitted claims reported as candidates rather than as promises; the blast radius for `src/checkout.ts` naming the one member; the `code-break` allow set resolving to `src/**` and the forbidden set containing `suite` and `docs/**/*.md`; and zero files written outside `<tmp>`.
+
+The last assertion is the one that catches the real bug. A path resolved against `process.cwd()` instead of against `--repo` writes into the *developer's* repository while the test passes, and a test that only checks its own outputs never notices.
+
+---
+
+## 21. The onboarding surface: `kept init` and `kept doctor` (R16, R18)
+
+For a stranger, these two commands are the product's first impression and the only documentation they are guaranteed to read. Both are held to the totality discipline of the Baseline_Provider (§5.2): they succeed on every repository state, and neither spends a credit.
+
+### 21.1 `kept init` (R16)
+
+```
+kept init [--force] [--repo <root>]
+```
+
+Four steps, in order, and it stops at the first that cannot proceed:
+
+1. **Refuse if configured.** If `.kept/config.json` exists and `--force` is absent, write nothing, report the existing path, exit 0 (R16.2). Not an error: running `init` twice is a reasonable thing to do and the second run's job is to say so.
+2. **Detect.** Walk the repository for documentation candidates (`*.md`, `*.mdx` outside `node_modules`, `.git`, `dist`, `.next`) and for an existing corpus (`**/*_test.md`). Report every candidate with its path and line count. **Write no citation for any of them** (R16.4) — deciding which sentences are promises is the user's judgement, and a tool that guesses produces a graph full of claims nobody meant to make.
+3. **Write the configuration**, with `corpus.root` set to the detected corpus directory or `tests`, `subject.docs` set to the detected documentation globs, and `subject.source` and every fence left empty. Fail-closed, per §20.4.
+4. **Scaffold one example.** `<corpus.root>/example_test.md`, carrying one `@verifies` tag pointing at line 1 of the first detected document, a `covers` list, and a comment saying in as many words that the tag must be repointed before the file means anything.
+
+Then it prints the next command, which is `kept doctor` (R16.7).
+
+`--force` replaces the configuration and reports which file it replaced (R16.3). It does not replace the scaffolded example, because overwriting a test the user has since edited is a different and worse operation than overwriting a config the tool wrote.
+
+### 21.2 `kept doctor` (R18)
+
+Seven checks, each reporting `pass`, `fail` or `not-configured`, each carrying a remedy string when it does not pass, and the whole command exiting 0 in every case (R18.8). Kane's absence is a supported state (R2.12), and `doctor` of all commands must not be the one that treats it as fatal.
+
+| # | Check | How | Remedy when it fails |
+|---|---|---|---|
+| 1 | Kane binary | `kane-cli --version` through `invokePlain`, family-less, 10 s budget, the same door `context list` uses | install Kane CLI, naming the version this repository is verified against |
+| 2 | Configuration | `loadConfig` and report the selected `verdictRouter` | `kept init`, or the offending field path from the zod error |
+| 3 | Corpus | count `*_test.md` under `corpus.root` and count their `@verifies` tags | `kept init` scaffolds one, and the tag grammar |
+| 4 | Snapshot | present, and `parseSnapshot` accepts it | `kept build && kept snapshot` |
+| 5 | Subject reachable | a single GET against `subject.baseUrl`, 2 s, or `not-configured` when null | start the application, naming the configured URL |
+| 6 | Context store | `.context/` present | the `context ingest` command, verbatim |
+| 7 | Fences | the §20.3 intersection check, reported even when it passes | the intersecting glob |
+
+Two constraints that are easy to get wrong. **At most one Kane spawn** (R18.2): check 1 is the only one that spawns, and check 6 reads the filesystem rather than asking Kane. And `doctor` writes only the handoff (R18.10), so a hook or an agent can read the diagnosis the same way it reads every other outcome, rather than parsing stdout.
+
+---
+
+## 22. Distribution (R17)
+
+### 22.1 What the manifests say now, and why none of it publishes
+
+```
+@kept/core   private: true   version 0.0.0
+@kept/cli    private: true   version 0.0.0   dependencies: { "@kept/core": "0.0.0" }
+```
+
+Three separate blockers. `private: true` refuses to publish at all. Version `0.0.0` is not a version anyone can depend on. And `"@kept/core": "0.0.0"` resolves today only because npm workspaces symlinks it: from the registry, `0.0.0` either does not exist or is a different package, so an installer receives a CLI whose core import fails at require time.
+
+The target state is `0.1.0` on both, `private` removed, and the dependency written as `^0.1.0` (R17.2, R17.3). Both packages carry the same version and a test asserts the equality (R17.7), because a CLI at `0.1.1` depending on `^0.1.0` while the repository builds them together is a drift nobody notices until an install resolves the older core.
+
+### 22.2 The tarball is the deliverable, not the manifest
+
+Both manifests declare `files: ["dist"]`, which means the archive's contents are decided by a build step that runs before packing. A stale `dist` therefore publishes silently, and the published code was never compiled from the committed source. No amount of manifest inspection detects this.
+
+So `prepublishOnly` runs `tsc -b` (R17.8), and the packaging test packs the real archive and reads its file list (R17.4): compiled output and declarations present; no `*.test.ts`, no `test/fixtures/**`, no `*.evidence/**`, no `output-*/**`. The `kept` binary is checked for its interpreter directive on line one (R17.5), which is the failure that turns a global install into `Permission denied` on a machine that is not the author's.
+
+### 22.3 Installing outside the workspace (R17.9, R17.10, Property 35)
+
+The only honest test of "it works when installed" is an installation. The test:
+
+1. packs both packages to a temporary directory,
+2. `npm install`s the two tarballs into a second temporary directory that is **not** under the workspace root and has no `node_modules` above it,
+3. runs the installed binary's version command,
+4. runs `kept doctor` there, in a directory with no configuration, no snapshot, no corpus and no Kane on the path,
+5. asserts exit code 0, a `not-configured` result for every check, `kept init` named as the remedy, and no module resolved from this workspace.
+
+Step 5's last clause is what catches a hoisted dependency that the workspace happened to provide. Placing the install directory outside the workspace root is what makes the check meaningful; inside it, Node's resolution walks up and finds everything, and the test passes while the published package is broken.
+
+This is R17 restating the project's own thesis against itself. "A published `@kept/cli` and `@kept/core` are coming soon" is a claim, and a claim with no test behind it is the defect this repository exists to detect.
+
+### 22.4 The recorded publish procedure (R17.12)
+
+Written down because it is performed rarely and from memory: bump both versions together, `tsc -b`, `npm pack` both, inspect both file lists, run the outside-the-workspace install test, then publish core before cli so the dependency resolves at the moment cli is published. Recorded in `docs/publish.md` with the measured tarball sizes, so a future publish that suddenly ships four megabytes is visible.
+
+---
+
+## 23. Self-verification, and the withdrawn second target (R19)
+
+### 23.1 The root README as a promise source
+
+The Conduit target existed to prove the engine is not fixture-specific. The repository's own root README proves the same thing at a fraction of the cost, and proves something stronger besides: the document making the claims is the document being checked.
+
+Mechanically this is not a new capability. It is one more entry in `subject.docs` and one or more `*_test.md` files whose `@verifies` tags cite `README.md`. Every mechanism already handles it: the admission gate reads a line off disk, `promiseId` keys on path plus claim, the fence derivation treats `README.md` as a documentation glob and therefore forbids `code-break` from touching it. Property 36 is what pins that: **no promise record field distinguishes a self-cited promise from a fixture-cited one except the citation path, and no code path consulted while admitting them tests for either path.** If a special case appears, the property fails, and the special case is exactly how "portable" quietly stops being true.
+
+Which claims. The README's own statements about observable behaviour, not its prose. Candidates that are already checkable, each cited to the line stating it:
+
+- the demo command starts both applications and renders the Ledger landing view,
+- the demo command invokes Kane zero times,
+- the suite passes with no network and no credentials,
+- the badge endpoint returns SVG,
+- the deployed Ledger has no mutating handler.
+
+Several of these already have tests, so binding them is a matter of adding a `@verifies` tag to a document that exists rather than authoring a Kane run. That keeps the credit cost at zero for the majority of the new promises.
+
+### 23.2 It will lower the coverage figure first, and that is correct (R19.5)
+
+Admitting the root README adds promises with nothing proving them yet, and the published coverage figure falls. That fall is the deliverable.
+
+The temptation is to admit only the claims that already pass. R19.5 forbids it, in the same words §22.1 uses about the coverage ribbon: **a ledger that shows what it owes is the product; one tuned to look complete is the thing this product exists to prevent.** A coverage figure of `1.0` that was achieved by not admitting the inconvenient claims is precisely the failure mode of an untested README, reproduced one layer up, inside the tool built to detect it.
+
+**Which figure falls, corrected against the delivered graph.** This section originally predicted that `designedCoverage` would fall, from `1.0` on eight of eight to something like `10/13`, on the assumption that some admitted claims would arrive with no designed test. That prediction was wrong, and it was wrong for a structural reason worth stating rather than patching. What actually fell is `provenCoverage`, from `0.875` to 7 of 13; `designedCoverage` still reads `1` and `undesignedCount` still reads `0`.
+
+**The grammar is why.** A promise enters this graph only through a `@verifies` tag, and the tag that admits a claim is the same annotation that binds the document carrying it as that claim's designed test (§5.2). `packages/kept-core/src/providers/baseline.ts` sets `designedTest` to the tagging document's own path and frontmatter id for every candidate it emits, with no branch that omits it, so **a promise with no designed test is unreachable by construction on this path**. Merge rule 4 never fires and `designedCoverage` cannot read anything but `1` here. The `undesigned` arm is still real, still specified by R19.4 and still exercised over generated providers by Property 36, so a Host_Repository whose provider supplies an unbound claim gets exactly the behaviour R19.4 describes. It is unreachable in *this* repository, not absent from the design.
+
+**The assumed docs-side scanner is withdrawn.** Reaching `undesigned` from the root README would need something that mints promises from untagged README lines, and no such scanner exists in this system. Building one so that a metric could move would add a second admission grammar used by nothing but this repository's own claims, which is exactly the special case Property 36 forbids: nothing may distinguish a self-cited promise from a fixture-cited one except the citation path. A metric is not worth a special case, least of all in the tool built to detect special cases.
+
+**What the graph reports instead is truer.** The five root-README claims are carried as `stale`: designed, not yet proven, counted in `staleCount`, and rendered on the page beside the lower percentage they caused. `stale` is the accurate word for their state, where `undesigned` would not have been, since each is bound to a corpus document that cites it. Nothing is omitted, which is what R19.4 is actually about. The line-by-line accounting is in `docs/self-verification.md`, and A19 records the constraint alongside the other assumptions.
+
+### 23.3 The withdrawal, recorded (R19.6, R19.7)
+
+R14.8's `MAY` is not exercised. The reason is in A17 and in §18's table, and it is recorded rather than left as an omission so that a reviewer reading the plan finds a decision instead of a gap. Cost was the deciding factor, not capability: a backend, a database, a second application to keep running, a second README to keep honest, and a second corpus authored with live credits, against a self-citation that needs one config entry and a `@verifies` tag.
+
