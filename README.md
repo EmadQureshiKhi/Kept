@@ -81,7 +81,7 @@ kane-cli login             # your account, your credits
 kept doctor                # check 1 names the resolved binary and its version
 ```
 
-**Most of the product works without Kane at all**, which is deliberate:
+**Kane is what earns a verdict, and nothing else here can.** So the split is deliberate:
 
 | Command | Without Kane authenticated |
 |---|---|
@@ -830,49 +830,6 @@ tools/diagrams/             the SVG emitter, one generator per diagram, and the 
 scripts/                    the demo launcher and the read-only checker
 ```
 
-### The diagrams are generated, not drawn
-
-```bash
-npm run diagrams     # bash tools/build-diagrams.sh
-```
-
-No Mermaid, no Graphviz, no dagre, no elkjs, and no image model. `tools/diagrams/svglib.py` is a
-small SVG emitter with one generator per diagram, and the layout is explicit hand-chosen
-coordinates.
-
-That is a deliberate inversion. Auto-layout engines optimise for edge crossings, which is not the
-requirement here: **every label must sit inside its own box or on its own edge, no label may cross
-a line, and every arrow must run through space holding nothing else.** None of those is a term in a
-layout engine's objective function, so it will happily overflow a box or drop a label across a line
-to reduce a crossing.
-
-Two mechanisms keep the build honest, because a diagram with an overflowing label renders perfectly
-well and is simply wrong. Every text helper takes the space it was written for and reports a finding
-when the string will not fit, estimating width as `len × size × 0.53`; the first pass at the
-architecture diagram produced 23 findings. And a collision verifier parses the finished SVG back out
-and reports overlapping boxes, label plates covering borders, text outside the canvas, and text
-sitting on a line. `selftest.py` plants one of each fault and asserts all four are caught, because
-this verifier twice passed a set vacuously through a regex that parsed less than it appeared to, and
-neither time was visible from the output.
-
-Three further rules, each with a reason that is not tidiness:
-
-- **Black on white throughout.** Weight, dashing and fill tone carry every distinction colour would,
-  so the diagrams survive being printed, projected, or read by someone who does not separate hues. A
-  test asserts no diagram carries a chromatic fill.
-- **Each file fetches nothing at render**, with the header mark embedded as a base64 data URI. An
-  SVG rendered through an `<img>` tag, which is what a Markdown image is, loads no external
-  subresource, so a *referenced* mark renders in a local preview and leaves a hole on the published
-  page.
-- **Each `<desc>` is the source of the README's alt text for that diagram**, copied out by
-  `sync_readme_alt.py`, with a test asserting the two still agree. A diagram is never the only
-  representation of what it shows.
-
-Every diagram links to its own file, because a 1740px canvas is downscaled about 2x in GitHub's
-content column and the detail is otherwise unreachable. That is the ceiling for a README: GitHub
-strips script and inline handlers from rendered Markdown, so in-page zoom and drag-to-pan are not
-available at any price.
-
 ---
 
 ## Verification
@@ -949,8 +906,8 @@ and has nothing to leak. It reads markdown over HTTP inside a 25 second budget w
 and every promise it returns is `undesigned`, because no run produced a verdict and inventing one is
 the overstatement this project exists to refuse.
 
-The Ledger is live with zero environment variables because the build reads a committed file. There
-is no API to key, no database to address and no Kane to authenticate.
+There is no API to key, no database to address and no Kane to authenticate: the Ledger's build reads
+a committed file.
 
 Two things about the shape look wrong and are load-bearing, both explained in
 [docs/deploy-ledger.md](docs/deploy-ledger.md):
@@ -973,10 +930,8 @@ to zero warnings and 41.9 MB.
 [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli) at `0.1.1`, each with its own
 README, and the published file list asserted against a real `npm pack` rather than against the
 manifest that describes it. Verified by installing both from the registry into a project outside
-this workspace and driving them there. You bring your own Kane: KEPT never bundles, installs or
-vendors `kane-cli`, it spawns whatever is on `PATH`, and a missing binary is a supported state that
-exits zero. The procedure, and why the CLI is scoped while the library is not, are in
-[docs/publish.md](docs/publish.md).
+this workspace and driving them there. The procedure, and why the CLI is scoped while the library is
+not, are in [docs/publish.md](docs/publish.md).
 
 Public source: <https://github.com/EmadQureshiKhi/Kept>
 
@@ -1023,24 +978,6 @@ figures below are the ones a reader re-derives from the committed snapshot with 
 | Deployment | two projects: the Ledger's nine static routes, and the try page's one route plus one handler. Zero environment variables on both |
 | Published | [`kept-core`](https://www.npmjs.com/package/kept-core) and [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli), both `0.1.1` |
 
-**Built and green.** The three-contract Kane layer: contracts, the family-gated parser, coercion,
-per-family exit interpretation, evidence resolution, the zip reader for sealed packs, triage
-attribution by identifier, the `[member]` stream reader, and the invoker. The promise model, the
-citation admission gate, metrics with their zero guard, the zod snapshot schema with its
-cross-field refinements, and canonical serialisation. Both providers and the merge. Both verdict
-routers behind one interface. The plan cache and the blast radius. Review cards, docs amendments
-with their interlock, and the surgical line writer. The handoff with its fence table. The single
-write guard. The seven-screen fixture with its eight claims, and eleven designed test documents.
-The Ledger's six visitable routes, its dual-axis ribbon, its evidence lane, its five motion
-orchestrations and its reduced-motion equivalence.
-
-**Two commands are what a stranger meets first.** `kept init` scaffolds a config and one designed
-test in a repository that has never seen KEPT, invoking Kane zero times. `kept doctor` answers seven
-checks about a machine it knows nothing about, each with its own remedy, on one bounded probe,
-spending nothing and exiting 0 whether or not Kane is installed at all. The repair fences moved into
-configuration alongside them, so a `code-break` allow set that could reach the document stating the
-claim is refused when the config loads rather than filtered when it is used.
-
 **Verified against a live Kane.** The verdict spike, recorded and committed, which chose the default
 router. The authored corpus and its recordings, so replay is free. The full-suite replay: nine
 members, eight passing from cache at 0.0000, one deliberate failure at 9.85. The closed code-break
@@ -1056,7 +993,7 @@ repository and is a separate project precisely because the Ledger's no-handler p
 verifies about itself.
 
 **This README is itself under verification, and it cost the headline figure.** Five of its lines are
-promises in the graph, cited to lines 22, 68, 89, 301 and 679 and read off disk verbatim by the same
+promises in the graph, cited to lines 22, 141, 162, 374 and 752 and read off disk verbatim by the same
 admission gate that reads the fixture's. Nothing in a promise record distinguishes them from the
 fixture's eight except the citation path. All five entered with nothing proving them yet, so proven
 coverage fell from 88 percent to 54 percent, and the Ledger published the lower number with all five
@@ -1065,7 +1002,7 @@ held the figure at 88, which is the failure mode of an untested README reproduce
 built to detect it, so a test pins the five lines and refuses a build that admits fewer.
 
 **One of those five has since been paid off, which is the only way the figure is allowed to rise.**
-Line 679 says `/badge.svg` answers a GET with SVG carrying a whole-number percentage. A test
+Line 752 says `/badge.svg` answers a GET with SVG carrying a whole-number percentage. A test
 document for it was authored against the running Ledger by a live Kane, at 14.60 credits, and it
 passed on the first run. Replaying the whole recorded suite then moved that promise from `stale` to
 `proven`, and coverage rose from 54 percent to 62 percent. The four remaining stale rows are still

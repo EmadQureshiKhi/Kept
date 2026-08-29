@@ -713,7 +713,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
 - [x] 18. Checkpoint — the page moves and the reduced-motion render is identical
   - Ensure all tests pass, ask the user if questions arise. The reduced-motion equivalence test, the widened CSS motion scan, the visual trio and the typography scan must all be green before submission work starts.
 
-- [ ] 19. Submission deliverables
+- [x] 19. Submission deliverables
   - [x] 19.1 Deploy the Ledger to Vercel
     - Project root `apps/ledger`, install `npm ci` at the monorepo root, build `next build`, **zero environment variables**; confirm the public HTTPS URL serves the committed snapshot with Kane invoked zero times
     - Commit: "chore(deploy): vercel configuration for the read-only ledger"
@@ -1025,7 +1025,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - Commit: "docs: the second target is withdrawn, and why"
     - _Requirements: 19.6, 19.7_
 
-- [ ] 27. Final checkpoint and the re-recorded submission artefacts
+- [x] 27. Final checkpoint and the re-recorded submission artefacts
   - **Read this before starting stage 22 or later.** Stages 22, 23 and 26 all change what the deployed Ledger shows: 22.1 replaces the withheld `provenCoverage` with a real figure and removes the degraded chip, 22.2 adds an amendment and moves the debt counts, 26.3 lowers `designedCoverage`. The video committed at 19.5 shows the Ledger as it was. Re-record **once**, after all of them, rather than per stage.
 
   - [x] 27.1 One clean whole-suite run, and the checkpoint 20 sign-off
@@ -1052,9 +1052,13 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - README demo link updated in place, deliberately without changing the line count: four promises are cited to README lines below it and `self-cited-parity.prop.test.ts` fails if they move
     - _Requirements: 14.3, 14.4_
 
-  - [ ] 27.4 Final checkpoint — every deliverable green and every claim cited
-    - Ensure all tests pass, ask the user if questions arise. The suite, the read-only scan, the portability scan, the fence guard, the tarball install test and the self-cited debt assertion must all be green together
-    - Re-add the git remote and push only when the user says so. The remote was removed deliberately during this stage of work
+  - [x] 27.4 Final checkpoint — every deliverable green and every claim cited
+    - **Signed off by the user. The project is complete.** Measured together on one run rather than claimed: `npm run check` green at **168 test files, 3028 passing, 4 conditionally skipped, 3032 total**, about 48 s, which is the read-only scan over 11 rules, `tsc -b` across the solution, three per-application type-check passes and the whole suite. All 37 correctness properties green. The portability scan, the fence guard, the tarball install assertion and the self-cited debt assertion all passed inside it
+    - Four sweeps outside the suite, all green at the same commit: `verify-corpus.mjs` **83/83** resolving every one of the 13 `@verifies` tags against the files on disk and the pinned fixture sha256; `verify-e2e.mjs` **97/97** against the live Ledger; `verify-try.mjs` **62/62** against the live `kept-try.vercel.app`; `build-diagrams.sh` clean with 0 collision findings
+    - Both deployments live with zero environment variables. Both packages published at `0.1.1`. The demonstration video is recorded and linked from the README's Start here section
+    - **A guard was added during this checkpoint rather than after it.** Editing the README above a cited line silently moved three promises onto the wrong claims, twice, because every check asked only whether a non-empty line existed at that number. `self-cited-parity.prop.test.ts` now asserts each promise's `citation.text` equals the line on disk, and the assertion was proven to fire by planting a line before it went in. That is the last hole this checkpoint found
+    - Pushed to `origin/main`. The remote had been removed deliberately during stage 27 and was restored for this
+    - _Requirements: 14.1 through 14.8_
 
 ## Notes
 
