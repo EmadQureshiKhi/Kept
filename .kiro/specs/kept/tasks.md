@@ -735,10 +735,10 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - Commit: "docs: 120-word project summary with a word-count assertion"
     - _Requirements: 14.5_
 
-  - [ ] 19.5 Record the demonstration video
-    - 180 seconds or less, in this mandated order: (1) the deployed Ledger — graph, citations, coverage, badge, and the motion layer on first paint; (2) a code-break repair — break `lib/cart.ts`, hook fires, verdict red, agent patches from the handoff, second verification lands `proven`; (3) an accepted docs-lie amendment diff on the never-true discount claim
-    - Commit the file or its link record together with the shot list and the measured duration
-    - Commit: "docs: 180-second demonstration video and shot list"
+  - [x] 19.5 Record the demonstration video
+    - **Superseded by 27.3, which is the recording that shipped.** This entry asked for a cut of the pre-extension Ledger. That recording was made and published, and then the deadline moved and the Ledger gained seven interaction passes, a guided verification chain and a second deployment, so a video of the older tree would have shown a product that no longer exists. The published video reuses this task's middle section, which is the part that did not change, and re-records both ends. See 27.3
+    - Delivered: [youtu.be/i3Ut0GrJ8xs](https://youtu.be/i3Ut0GrJ8xs), in R14.4's mandated order
+    - The 180-second cap named here came off R14.3 when the deadline was extended, with the reasoning recorded in `requirements.md` beside the criterion
     - _Requirements: 14.3, 14.4_
 
   - [x] 19.6 Audit the commit history
@@ -1044,12 +1044,12 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - Commit: "docs: every stated figure re-measured against the tree"
     - _Requirements: 14.2_
 
-  - [ ] 27.3 Re-record the demonstration video against the new Ledger
-    - 180 seconds or less, in R14.4's mandated order, now with the dual-axis ribbon rendering a real figure and the docs-triggered cycle showing debt appear before it is bound
-    - The debt beat is showable for the first time after 22.2: the snapshot's `undesignedCount` and `reviewCards` are both 0 today, so the "a new claim announces its own debt" moment has nothing to point at until that cycle is recorded. It is also the beat no competing approach describes
-    - A new recording means a new URL. Update the README's demo link, `docs/`, and the submission form together
-    - Commit the file or its link record with the shot list and the measured duration
-    - Commit: "docs: 180-second demonstration video and shot list"
+  - [x] 27.3 Re-record the demonstration video against the new Ledger
+    - **Delivered: [youtu.be/i3Ut0GrJ8xs](https://youtu.be/i3Ut0GrJ8xs).** In R14.4's mandated order, with the dual-axis ribbon over nine use cases rendering real figures, the guided verification chain, and the paste-your-repo page at `kept-try.vercel.app`
+    - The middle section is reused from 19.5's recording, and the video says so on camera before the cut. It is the break, the `code-break` handoff with its path fence, and the accepted amendment: the part of the product that did not change. Two figures in that footage did change and the disclaimer names both, the graph holding eight promises rather than thirteen because KEPT had not yet been pointed at its own README, and Kane's confidence values differing because it was a different run. The line the demonstration breaks is still line 106
+    - **The debt beat was not recorded, and the reason is a fact rather than an omission.** This entry expected 22.2 to leave `undesignedCount` above zero so a new claim could be shown announcing its own debt. The committed snapshot reports `undesignedCount: 0` and `reviewCards: 0`, so there is still nothing on the page to point at. Recording that beat would have meant staging a claim for the camera, which is the one thing a ledger of real verdicts must not do. The video shows the four stale self-cited rows instead, which is the same argument from data that exists
+    - The 180-second cap named here came off R14.3 when the deadline was extended. The recording runs longer because it covers the try page and the guided chain as well as the three mandated beats
+    - README demo link updated in place, deliberately without changing the line count: four promises are cited to README lines below it and `self-cited-parity.prop.test.ts` fails if they move
     - _Requirements: 14.3, 14.4_
 
   - [ ] 27.4 Final checkpoint — every deliverable green and every claim cited

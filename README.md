@@ -28,8 +28,8 @@ with warm reloads around 38 ms. Figures, method and the one 383 s cold outlier a
 The live Kane loop is a separate command with prerequisites, [documented below](#the-live-loop).
 You do not need it, or an account, to see everything the Ledger shows. **Nor to try KEPT on your own code:** [kept-try.vercel.app](https://kept-try.vercel.app) reads any public GitHub repository, runs KEPT's real admission gate over its documents, and lists the claims they state with each cited to a file and a line. It stops there, because no run happened, so nothing it shows carries a verdict.
 
-**Three-minute demo:** [youtu.be/2dUtE4bwVO0](https://youtu.be/2dUtE4bwVO0), which walks the
-deployed Ledger, a code-break repair, and an accepted documentation amendment, in that order.
+**Demo video:** [youtu.be/i3Ut0GrJ8xs](https://youtu.be/i3Ut0GrJ8xs), which walks the deployed
+Ledger, a code-break repair, an accepted documentation amendment, and the paste-your-repo page.
 
 **On npm:** [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli) is the `kept`
 command and the one to install. [`kept-core`](https://www.npmjs.com/package/kept-core) is the

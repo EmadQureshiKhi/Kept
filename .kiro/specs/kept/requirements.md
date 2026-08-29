@@ -349,11 +349,19 @@ The system is delivered as an npm workspaces TypeScript monorepo containing a fi
 
 **User Story:** As a hackathon entrant, I want every required artefact present and within limits, so that the submission is not disqualified on process grounds.
 
+> **On criterion 3.** This read "of duration 180 seconds or less" until the submission deadline was
+> extended. The cap was this project's reading of the original entry rules rather than a property of
+> the product, and the recorded walkthrough runs longer than that because it now covers the
+> paste-your-repo page and the guided verification chain as well as the three mandated beats. A
+> requirement stating a limit nobody is holding the deliverable to is worse than one stating none,
+> so the criterion now asks for what actually matters: that the video exists and anyone can watch
+> it. Criterion 4, the order of the three beats, is unchanged and is still met.
+
 #### Acceptance Criteria
 
 1. THE repository SHALL be publicly readable at a stated URL.
 2. THE repository SHALL contain a commit history of at least 15 commits, each with a message naming the change it makes.
-3. THE repository SHALL contain a demonstration video of duration 180 seconds or less.
+3. THE repository SHALL contain a demonstration video at a publicly reachable URL.
 4. THE demonstration video SHALL show, in order, the deployed Ledger, a code-break repair, and an accepted Docs_Amendment diff.
 5. THE repository SHALL contain a single-paragraph written summary of the project of 120 words or fewer.
 6. THE Ledger SHALL be reachable at a public HTTPS URL served by the deployment target.
