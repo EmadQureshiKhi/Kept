@@ -196,6 +196,24 @@ console.log('\n/reviews  and /badge.svg');
   ok('/badge.svg publishes the same figure', badge.body.includes(`${String(percent)}%`));
 }
 
+/* ── the masthead, on every route ───────────────────────────────────────────── */
+
+console.log('\nthe masthead offers the same five sections and one way out');
+{
+  /* The outbound link goes to the separate deployment that holds the paste-a-repository page. It
+     is checked on every route because the masthead is on every route, and because a link that is
+     only right on the page somebody happened to test is worse than no link. */
+  for (const path of ['/', '/coverage', '/runs', '/reviews', '/amendments']) {
+    const { body } = await page(`${LEDGER}${path}`);
+    ok(`${path} carries the five section links`, ['Promises', 'Coverage', 'Runs', 'Reviews', 'Amendments'].every((label) => body.includes(`>${label}<`)));
+    ok(`${path} carries the outbound link, marked external`, body.includes('data-external="true"') && body.includes('Try your repo'));
+    ok(
+      `${path} opens the outbound link with no referrer handle`,
+      body.includes('rel="noopener"'),
+    );
+  }
+}
+
 /* ── the write guard, at the wire ───────────────────────────────────────────── */
 
 console.log('\nthe deployed artefact cannot be written to');
