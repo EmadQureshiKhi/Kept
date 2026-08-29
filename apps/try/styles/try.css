@@ -173,12 +173,26 @@ a:hover {
   background-color: var(--ink-000);
 }
 
+/* The lockup, which is a link home to the ledger. The type rules stay because they style the
+   image's alt text for the request where the artwork does not arrive: the link keeps its name and
+   still reads as the wordmark it replaced. Same treatment as the ledger's own masthead. */
 .try-masthead__home {
+  display: flex;
+  align-items: center;
   font-size: var(--fs-md);
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-decoration-line: none;
+}
+
+/* Trimmed to its own ink, so the clear space is padding rather than a margin: a margin would move
+   the flow box and take the masthead's height with it. */
+.try-masthead__logo {
+  display: block;
+  height: 34px;
+  width: auto;
+  padding: 0 var(--s-1);
 }
 
 /* Which of the two deployments a reader is on. A word rather than a colour: this page and the
@@ -402,6 +416,84 @@ a:hover {
 .try-error__text {
   max-width: 68ch;
   margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+}
+
+/* Outlined rather than filled: the filled treatment on this page belongs to the one control that
+   starts a read, and a second solid button beside it would argue with the first for the eye. */
+.try-error__retry {
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  border: var(--line-heavy) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: transparent;
+  color: var(--text-000);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.try-error__retry:hover {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* ── while it is reading ────────────────────────────────────────────────────── */
+
+/* Same dashed edge as the failure block: both are regions a reader is meant to actually read. */
+.try-reading {
+  padding: var(--s-4) var(--s-5);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.try-reading__heading {
+  display: flex;
+  gap: var(--s-3);
+  align-items: baseline;
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+/* Tabular, so a rising count does not shift the heading beside it. */
+.try-reading__elapsed {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-200);
+}
+
+.try-reading__steps {
+  display: grid;
+  gap: var(--s-1);
+  margin: 0;
+  padding-left: var(--s-5);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+.try-reading__step {
+  min-width: 0;
+}
+
+.try-reading__slow {
+  max-width: 68ch;
+  margin: var(--s-3) 0 0;
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--text-000);
@@ -755,6 +847,10 @@ a:hover {
 @media (max-width: 56rem) {
   .try-masthead {
     padding: var(--s-3) var(--s-4);
+  }
+
+  .try-masthead__logo {
+    height: 26px;
   }
 
   .try-main {

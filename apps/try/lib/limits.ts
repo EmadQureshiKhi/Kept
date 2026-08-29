@@ -51,11 +51,53 @@ export const FETCH_CONCURRENCY = 8;
 /**
  * The whole read, end to end.
  *
- * Deliberately under a Vercel Hobby function's ten-second ceiling, so the failure a reader
- * meets is this module's sentence rather than the platform's blank timeout. A page that dies
- * without explaining itself is the one outcome worth spending a budget to avoid.
+ * Held well under the route's own `maxDuration`, so the failure a reader meets is this module's
+ * sentence rather than the platform's blank timeout. A page that dies without explaining itself is
+ * the one outcome worth spending a budget to avoid, and the gap between the two numbers is the
+ * room the handler needs to run the gate and serialise an answer after reading stops.
+ *
+ * Twenty five seconds rather than the eight it started at, measured rather than guessed. Listing a
+ * large repository's tree is the single most expensive step: `vercel/next.js` answers a 12.5 MB
+ * recursive listing in about 3.3 seconds, and the two hundred documents after it are another ten
+ * or so. At eight seconds every large repository returned a partial graph with a note explaining
+ * that it had run out of time, which was honest and useless.
  */
-export const READ_BUDGET_MS = 8_000;
+export const READ_BUDGET_MS = 25_000;
+
+/**
+ * How long any single request is given before it is abandoned and retried.
+ *
+ * A hung socket is the failure mode this exists for. Without a per-attempt timeout one
+ * unresponsive document holds the whole read until the platform kills the function, and the reader
+ * sees a page that spins and then says nothing. The number is generous enough that a slow but
+ * working transfer is not mistaken for a dead one.
+ */
+export const REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * How long the tree listing gets, which is more than anything else.
+ *
+ * It is one request and it can be tens of megabytes. Giving it the same allowance as a README
+ * would abandon exactly the repositories this page most wants to be able to read.
+ */
+export const TREE_TIMEOUT_MS = 20_000;
+
+/**
+ * How many times a request is retried before it is given up on.
+ *
+ * Two retries, so three attempts in all. Retried: a network error, a timeout, a 5xx, and a 429.
+ * Not retried: a 404, a 403 or a 451, because those are answers rather than failures and asking
+ * again produces the same one while spending another of the hour's sixty requests.
+ */
+export const MAX_ATTEMPTS = 3;
+
+/**
+ * The wait before retrying, doubling per attempt.
+ *
+ * Short, because the whole read has a budget and a reader is waiting. This is a backoff to let a
+ * blip pass, not to wait out an outage.
+ */
+export const RETRY_BACKOFF_MS = 400;
 
 /** Extensions the admission gate can read. Markdown, and nothing else. */
 export const DOCUMENT_EXTENSIONS: readonly string[] = Object.freeze(['.md', '.markdown']);
@@ -108,4 +150,11 @@ export const LIMIT_MESSAGES = {
     'GitHub truncated its own listing of this repository, which it does for very large trees, ' +
     'so some documents were never offered to be read. The graph below is what the partial ' +
     'listing held.',
+  retried: (count: number): string =>
+    `${String(count)} request${count === 1 ? '' : 's'} had to be retried before GitHub answered. ` +
+    `Nothing is missing because of it, but the read took longer than it usually does.`,
+  unreadable: (count: number): string =>
+    `${String(count)} document${count === 1 ? ' could' : 's could'} not be transferred even after ` +
+    `retrying, so any claim ${count === 1 ? 'it states is' : 'they state are'} missing from the ` +
+    `graph below.`,
 } as const;

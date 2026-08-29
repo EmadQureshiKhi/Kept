@@ -44,6 +44,17 @@ export const runtime = 'nodejs';
 /** Never cached at the route level: the cache key is the commit, and that is handled below. */
 export const dynamic = 'force-dynamic';
 
+/**
+ * Longer than the platform's default, and longer than `READ_BUDGET_MS`.
+ *
+ * Vercel gives a function ten seconds unless it is told otherwise, and reading a large
+ * repository's tree takes several of those on its own. A function killed at its ceiling returns
+ * the platform's own error page, which tells a reader nothing; the read budget is set below this
+ * number so the *page* is what runs out of time and the *page* is what explains itself. The gap
+ * between the two is the room the gate needs to run and the answer needs to serialise.
+ */
+export const maxDuration = 60;
+
 /** The shape the page renders. One type, so the client and the server cannot drift. */
 export interface GraphResponse {
   readonly ok: boolean;

@@ -34,10 +34,14 @@
 import {
   FETCH_CONCURRENCY,
   LIMIT_MESSAGES,
+  MAX_ATTEMPTS,
   MAX_FILES,
   MAX_FILE_BYTES,
   MAX_TOTAL_BYTES,
   READ_BUDGET_MS,
+  REQUEST_TIMEOUT_MS,
+  RETRY_BACKOFF_MS,
+  TREE_TIMEOUT_MS,
   isDocumentPath,
 } from './limits.js';
 import { repoSlug, type RepoRef } from './repo.js';
@@ -100,18 +104,119 @@ interface TreeEntry {
   readonly size?: unknown;
 }
 
-/** The default branch of a repository, or a failure. One API call. */
-async function readRepoMeta(ref: RepoRef): Promise<{ branch: string } | RepoReadFailure> {
-  const url = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
-  const res = await fetch(url, {
-    headers: { accept: 'application/vnd.github+json', 'user-agent': USER_AGENT },
-  });
-  if (!res.ok) {
-    return { ok: false, status: res.status, message: failureMessage(res.status, repoSlug(ref)) };
+/**
+ * `true` when asking again could plausibly get a different answer.
+ *
+ * The distinction is between a *failure* and an *answer*. A timeout, a dropped socket, a 502 from
+ * a load balancer and a 429 are failures: the request never reached a decision, so repeating it is
+ * reasonable. A 404, a 403 or a 451 is GitHub deciding, and asking a second time gets the same
+ * decision while spending another of the sixty requests this page is allowed in an hour. Retrying
+ * an answer is how a page turns one refusal into three and then reports a rate limit.
+ */
+export function isRetryableStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+/** How long to wait before attempt `attempt`, counting from one. Doubles, and never negative. */
+export function backoffFor(attempt: number): number {
+  return RETRY_BACKOFF_MS * 2 ** Math.max(0, attempt - 1);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** What one bounded, retried request produced. Never throws. */
+interface Attempted {
+  readonly response: Response | null;
+  /** The last status seen, or 0 when no attempt ever got a response at all. */
+  readonly status: number;
+  /** Attempts beyond the first. Reported to the reader, because a slow read wants explaining. */
+  readonly retries: number;
+}
+
+/**
+ * One request, with a per-attempt timeout, bounded retries and an overall deadline.
+ *
+ * Every fetch in this module goes through here, which is the point: a timeout or a retry policy
+ * that only some requests get is a policy that fails on whichever request somebody forgot.
+ *
+ * `AbortSignal.timeout` rather than a `setTimeout` and a manual controller, because the platform
+ * has the primitive and a hand-rolled one leaks a timer on the success path. Deliberately *not*
+ * combined with a caller's signal: the deadline below is a cheaper way to say the same thing and
+ * `AbortSignal.any` is newer than the Node floor this repository builds on.
+ */
+async function attempt(
+  url: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+  deadline: number,
+): Promise<Attempted> {
+  let status = 0;
+  let retries = 0;
+
+  for (let n = 1; n <= MAX_ATTEMPTS; n += 1) {
+    /* Checked before every attempt, so a retry cannot walk past the budget the reader is waiting
+       on. A read that has run out of time reports what it has rather than starting more work. */
+    if (Date.now() > deadline) break;
+    try {
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
+      status = res.status;
+      if (res.ok || !isRetryableStatus(res.status)) return { response: res, status, retries };
+      /* A retryable status still has a body, and leaving it undrained holds the socket. */
+      await res.arrayBuffer().catch(() => undefined);
+    } catch {
+      /* A timeout, a reset, a DNS failure. Indistinguishable here and treated alike: the request
+         reached no decision, so it is worth one more go. */
+      status = status === 0 ? 0 : status;
+    }
+    if (n < MAX_ATTEMPTS && Date.now() + backoffFor(n) < deadline) {
+      retries += 1;
+      await sleep(backoffFor(n));
+      continue;
+    }
+    break;
   }
-  const body = (await res.json()) as { default_branch?: unknown };
+
+  return { response: null, status, retries };
+}
+
+/** The sentence for a request that never got an answer at all, as against one that was refused. */
+function unreachableMessage(slug: string): string {
+  return (
+    `This page could not reach GitHub to read ${slug}. It tried ${String(MAX_ATTEMPTS)} times. ` +
+    `That is usually a passing network fault rather than anything about your repository, so it is ` +
+    `worth trying again. The CLI reads your working copy and needs no network at all.`
+  );
+}
+
+/** The default branch of a repository, or a failure. One API call. */
+async function readRepoMeta(
+  ref: RepoRef,
+  deadline: number,
+): Promise<{ branch: string; retries: number } | RepoReadFailure> {
+  const url = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
+  const got = await attempt(
+    url,
+    { accept: 'application/vnd.github+json', 'user-agent': USER_AGENT },
+    REQUEST_TIMEOUT_MS,
+    deadline,
+  );
+  if (got.response === null) {
+    return got.status === 0
+      ? { ok: false, status: 504, message: unreachableMessage(repoSlug(ref)) }
+      : { ok: false, status: got.status, message: failureMessage(got.status, repoSlug(ref)) };
+  }
+  if (!got.response.ok) {
+    return {
+      ok: false,
+      status: got.response.status,
+      message: failureMessage(got.response.status, repoSlug(ref)),
+    };
+  }
+  const body = (await got.response.json()) as { default_branch?: unknown };
   const branch = typeof body.default_branch === 'string' ? body.default_branch : 'main';
-  return { branch };
+  return { branch, retries: got.retries };
 }
 
 /**
@@ -124,31 +229,43 @@ async function readRepoMeta(ref: RepoRef): Promise<{ branch: string } | RepoRead
  */
 export async function readRepository(ref: RepoRef): Promise<RepoReadResult> {
   const started = Date.now();
+  const deadline = started + READ_BUDGET_MS;
   const slug = repoSlug(ref);
   const notes: string[] = [];
+  let retries = 0;
 
   let branch = ref.ref;
   if (branch === null) {
-    const meta = await readRepoMeta(ref);
+    const meta = await readRepoMeta(ref, deadline);
     if ('ok' in meta && meta.ok === false) return meta;
     branch = (meta as { branch: string }).branch;
+    retries += (meta as { retries: number }).retries;
   }
 
   const treeUrl =
     `https://api.github.com/repos/${ref.owner}/${ref.repo}/git/trees/` +
     `${encodeURIComponent(branch)}?recursive=1`;
-  const treeRes = await fetch(treeUrl, {
-    headers: { accept: 'application/vnd.github+json', 'user-agent': USER_AGENT },
-  });
-  if (!treeRes.ok) {
+  const gotTree = await attempt(
+    treeUrl,
+    { accept: 'application/vnd.github+json', 'user-agent': USER_AGENT },
+    TREE_TIMEOUT_MS,
+    deadline,
+  );
+  retries += gotTree.retries;
+  if (gotTree.response === null) {
+    return gotTree.status === 0
+      ? { ok: false, status: 504, message: unreachableMessage(slug) }
+      : { ok: false, status: gotTree.status, message: failureMessage(gotTree.status, slug) };
+  }
+  if (!gotTree.response.ok) {
     return {
       ok: false,
-      status: treeRes.status,
-      message: failureMessage(treeRes.status, slug),
+      status: gotTree.response.status,
+      message: failureMessage(gotTree.response.status, slug),
     };
   }
 
-  const tree = (await treeRes.json()) as {
+  const tree = (await gotTree.response.json()) as {
     sha?: unknown;
     truncated?: unknown;
     tree?: unknown;
@@ -176,11 +293,12 @@ export async function readRepository(ref: RepoRef): Promise<RepoReadResult> {
   let totalBytes = 0;
   let budgetSpent = false;
   let sizeCapped = false;
+  let unreadable = 0;
 
   /* Fetched in bounded batches: sequential would exceed the budget on a large tree, and
      unbounded would open a socket per document and invite GitHub to refuse them all. */
   for (let at = 0; at < selected.length; at += FETCH_CONCURRENCY) {
-    if (Date.now() - started > READ_BUDGET_MS) {
+    if (Date.now() > deadline) {
       budgetSpent = true;
       break;
     }
@@ -188,28 +306,46 @@ export async function readRepository(ref: RepoRef): Promise<RepoReadResult> {
     const fetched = await Promise.all(
       batch.map(async (entry) => {
         if (entry.size > MAX_FILE_BYTES) {
-          return { path: entry.path, text: null, tooLarge: true };
+          return { path: entry.path, text: null, tooLarge: true, retries: 0 };
         }
         const raw =
           `https://raw.githubusercontent.com/${ref.owner}/${ref.repo}/` +
           `${encodeURIComponent(branch as string)}/${entry.path.split('/').map(encodeURIComponent).join('/')}`;
+        const got = await attempt(
+          raw,
+          { 'user-agent': USER_AGENT },
+          REQUEST_TIMEOUT_MS,
+          deadline,
+        );
+        if (got.response === null || !got.response.ok) {
+          /* A single document failing to transfer is not a failed read of the repository. It is
+             counted, though, and said out loud: a claim silently missing from a graph is the
+             failure mode this whole project exists to prevent. */
+          return { path: entry.path, text: null, tooLarge: false, retries: got.retries };
+        }
         try {
-          const res = await fetch(raw, { headers: { 'user-agent': USER_AGENT } });
-          if (!res.ok) return { path: entry.path, text: null, tooLarge: false };
-          return { path: entry.path, text: await res.text(), tooLarge: false };
+          return {
+            path: entry.path,
+            text: await got.response.text(),
+            tooLarge: false,
+            retries: got.retries,
+          };
         } catch {
-          /* A single document failing to transfer is not a failed read of the repository. */
-          return { path: entry.path, text: null, tooLarge: false };
+          return { path: entry.path, text: null, tooLarge: false, retries: got.retries };
         }
       }),
     );
 
     for (const entry of fetched) {
+      retries += entry.retries;
       if (entry.tooLarge) {
         notes.push(LIMIT_MESSAGES.fileTooLarge(entry.path));
         continue;
       }
-      if (entry.text === null) continue;
+      if (entry.text === null) {
+        unreadable += 1;
+        continue;
+      }
       const bytes = Buffer.byteLength(entry.text, 'utf8');
       if (totalBytes + bytes > MAX_TOTAL_BYTES) {
         sizeCapped = true;
@@ -222,6 +358,19 @@ export async function readRepository(ref: RepoRef): Promise<RepoReadResult> {
 
   if (sizeCapped) notes.push(LIMIT_MESSAGES.tooLarge);
   if (budgetSpent) notes.push(LIMIT_MESSAGES.budgetSpent);
+  if (unreadable > 0) notes.push(LIMIT_MESSAGES.unreadable(unreadable));
+  if (retries > 0) notes.push(LIMIT_MESSAGES.retried(retries));
+
+  /**
+   * A tree that listed documents and a read that got none of them is a failure, not a graph.
+   *
+   * Without this the reader is told "no claims found, which is a real answer" when the truth is
+   * that nothing could be transferred, and those two are not the same thing at all. The first is
+   * about their repository; the second is about this page's afternoon.
+   */
+  if (files.size === 0 && offered > 0) {
+    return { ok: false, status: 504, message: unreachableMessage(slug) };
+  }
 
   return {
     ok: true,

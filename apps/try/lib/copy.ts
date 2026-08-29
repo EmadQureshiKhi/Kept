@@ -67,8 +67,8 @@ export const FIGURE_REJECTED = 'claims declined';
  * This is the sentence that keeps the page honest at the exact moment it looks like a verdict.
  */
 export const NO_VERDICT_NOTE =
-  'None of these has a verdict. A verdict comes from a terminal event in a real verification ' +
-  'run, no run happened here, and a verdict without a run would be something this page made up.';
+  'None of these has a verdict yet. A verdict comes from a terminal event in a real verification ' +
+  'run against your running application, and that is what the CLI below does.';
 
 /** When a repository states nothing KEPT recognises. */
 export const EMPTY_HEADING = 'no claims found, which is a real answer';
@@ -89,6 +89,60 @@ export const REJECTIONS_BODY =
 
 /** The heading over bounds this page hit while reading. */
 export const NOTES_HEADING = 'what this page could not read';
+
+/* ── while it is reading ─────────────────────────────────────────────────────── */
+
+/**
+ * What is happening, in the order it happens, so a wait is legible rather than blank.
+ *
+ * These are the actual steps: one API call for the default branch, one for the tree, then the
+ * documents, then the gate. The page cannot know which one it is on, because the handler answers
+ * once at the end, so they are shown as a list with the elapsed seconds beside it rather than as a
+ * fake progress bar. A bar that is not measuring anything is a lie about how far along a read is,
+ * and this page has no business telling one.
+ */
+export const READING_STEPS: readonly string[] = Object.freeze([
+  'asking GitHub for the default branch',
+  'listing the repository tree',
+  'reading the markdown documents it named',
+  'running the admission gate over them',
+]);
+
+export const READING_HEADING = 'reading the repository';
+
+/**
+ * Said under the steps once a read has gone on a while.
+ *
+ * A large repository genuinely takes twenty seconds, and a reader who is not told that will assume
+ * the page has broken and reload, which starts the whole read again.
+ */
+export const READING_SLOW =
+  'A large repository can take twenty seconds or so. The tree listing is the slow part, and it is ' +
+  'one request that can be tens of megabytes.';
+
+/** How long before the sentence above appears. */
+export const SLOW_AFTER_MS = 6_000;
+
+/** The word on the control that tries the same repository again. */
+export const RETRY = 'try again';
+
+/**
+ * When the browser gives up on the request.
+ *
+ * Above the route's own budget and below any patience a person has. Without it a lost connection
+ * leaves the page reading forever with nothing to press, which is the state that made this
+ * necessary.
+ */
+export const CLIENT_TIMEOUT_MS = 45_000;
+
+export const CLIENT_TIMEOUT_MESSAGE =
+  'This read took longer than 45 seconds and was given up on. That is usually a very large ' +
+  'repository or a slow connection rather than anything wrong with yours. Trying again often ' +
+  'works, because the tree listing is cached for an hour once it has been read once.';
+
+export const OFFLINE_MESSAGE =
+  'The request did not leave your browser. That looks like a connection problem on this end ' +
+  'rather than anything about the repository.';
 
 /* ── the whole point of the page: the CLI does the other half ────────────────── */
 

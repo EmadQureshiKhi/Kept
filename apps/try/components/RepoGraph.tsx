@@ -26,10 +26,12 @@
 
 'use client';
 
-import { useCallback, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import type { GraphResponse } from '../app/api/graph/route.js';
 import {
+  CLIENT_TIMEOUT_MESSAGE,
+  CLIENT_TIMEOUT_MS,
   EMPTY_BODY,
   EMPTY_HEADING,
   EXAMPLES,
@@ -43,9 +45,15 @@ import {
   FIGURE_TESTS,
   NOTES_HEADING,
   NO_VERDICT_NOTE,
+  OFFLINE_MESSAGE,
+  READING_HEADING,
+  READING_SLOW,
+  READING_STEPS,
   REJECTIONS_BODY,
   REJECTIONS_HEADING,
   RESULT_HEADING,
+  RETRY,
+  SLOW_AFTER_MS,
   SUBMIT,
   SUBMIT_BUSY,
 } from '../lib/copy.js';
@@ -70,27 +78,50 @@ export function RepoGraph() {
   const [value, setValue] = useState('');
   const [state, setState] = useState<State>('idle');
   const [result, setResult] = useState<GraphResponse | null>(null);
+  /** The repository the last read was for, so the retry control knows what to ask again. */
+  const [attempted, setAttempted] = useState('');
   const field = useRef<HTMLInputElement | null>(null);
 
   const read = useCallback(async (repo: string): Promise<void> => {
     setState('reading');
     setResult(null);
+    setAttempted(repo);
+    /**
+     * A ceiling on the browser's own patience.
+     *
+     * The handler has a budget and the platform has a ceiling, but neither helps if the response
+     * never arrives: a dropped connection mid-request leaves `fetch` pending indefinitely, and the
+     * page would read forever with nothing to press. This is the state that made a timeout
+     * necessary rather than tidy.
+     */
+    const timeout = AbortSignal.timeout(CLIENT_TIMEOUT_MS);
     try {
       const res = await fetch('/api/graph', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ repo }),
+        signal: timeout,
       });
-      const body = (await res.json()) as GraphResponse;
+      /* A platform error page is HTML, not JSON. Parsing it would throw and be reported as a
+         connection problem, which is the wrong sentence: the request arrived and something
+         upstream answered badly. */
+      const body = (await res.json().catch(() => null)) as GraphResponse | null;
+      if (body === null) {
+        setResult({
+          ok: false,
+          message:
+            `The server answered ${String(res.status)} without a readable body. That is this ` +
+            `page's fault rather than your repository's, and trying again is worth a go.`,
+        });
+        setState('failed');
+        return;
+      }
       setResult(body);
       setState(body.ok ? 'done' : 'failed');
     } catch {
-      /* A network failure on the reader's side, not the server's. Said plainly rather than
-         reported as a fault in the repository they asked about. */
-      setResult({
-        ok: false,
-        message: 'The request did not reach this page. Check your connection and try again.',
-      });
+      /* Two causes, distinguished because the remedies differ: the browser gave up on a read that
+         was taking too long, or the request never left at all. */
+      setResult({ ok: false, message: timeout.aborted ? CLIENT_TIMEOUT_MESSAGE : OFFLINE_MESSAGE });
       setState('failed');
     }
   }, []);
@@ -111,6 +142,10 @@ export function RepoGraph() {
     },
     [read],
   );
+
+  const retry = useCallback((): void => {
+    void read(attempted === '' ? value : attempted);
+  }, [attempted, read, value]);
 
   const busy = state === 'reading';
 
@@ -161,14 +196,61 @@ export function RepoGraph() {
         {statusSentence(state, result)}
       </p>
 
+      {busy ? <Reading /> : null}
+
       {state === 'failed' && result !== null ? (
         <div className="try-error">
           <p className="try-error__text">{result.message}</p>
+          {/* Every failure here is worth one more attempt: a rate limit refills, a 5xx passes, a
+              timeout hits a warm cache the second time. A reader should not have to re-paste. */}
+          <button className="try-error__retry" onClick={retry} type="button">
+            {RETRY}
+          </button>
         </div>
       ) : null}
 
       {state === 'done' && result !== null && result.ok ? <Result result={result} /> : null}
     </>
+  );
+}
+
+/**
+ * What the page shows while it waits.
+ *
+ * Named steps and an elapsed count, not a progress bar. The handler answers once, at the end, so
+ * the page genuinely does not know how far along a read is, and a bar that moves on a timer is a
+ * claim about progress that nothing measured. Naming the four steps does the job a bar is meant to
+ * do, which is to say that something is happening and roughly what.
+ *
+ * The elapsed seconds are the honest part. They tick, so the page is visibly alive, and they let a
+ * reader decide for themselves whether twenty seconds is too long.
+ */
+function Reading() {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const started = Date.now();
+    const timer = setInterval(() => setElapsed(Date.now() - started), 250);
+    return () => clearInterval(timer);
+  }, []);
+
+  const seconds = Math.floor(elapsed / 1000);
+
+  return (
+    <section aria-busy="true" className="try-reading">
+      <h2 className="try-reading__heading">
+        {READING_HEADING}
+        <span className="try-reading__elapsed">{`${String(seconds)}s`}</span>
+      </h2>
+      <ol className="try-reading__steps">
+        {READING_STEPS.map((step) => (
+          <li className="try-reading__step" key={step}>
+            {step}
+          </li>
+        ))}
+      </ol>
+      {elapsed > SLOW_AFTER_MS ? <p className="try-reading__slow">{READING_SLOW}</p> : null}
+    </section>
   );
 }
 

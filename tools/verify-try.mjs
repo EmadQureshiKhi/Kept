@@ -69,6 +69,33 @@ async function main() {
   check('it carries a real form', html.includes('<form'));
   check('the field is labelled', html.includes('for="kept-try-repo"'));
 
+  /* The brand, the same way the Ledger does it: the lockup as the masthead's link home, named by
+     its own alt text, and Next's file-convention icons from app/icon.png and app/apple-icon.png. */
+  check('the masthead carries the lockup', html.includes('kept-wordmark.png'));
+  check('the lockup is named by its alt text', html.includes('alt="KEPT"'));
+  check('the favicon is declared', html.includes('rel="icon"'));
+  check('and the apple touch icon', html.includes('rel="apple-touch-icon"'));
+  for (const asset of ['/brand/kept-wordmark.png', '/icon.png', '/apple-icon.png']) {
+    const res = await fetch(`${BASE}${asset}`);
+    check(`${asset} is served as an image`, res.status === 200 && String(res.headers.get('content-type')).includes('image'), `${res.status}`);
+  }
+
+  /* The sentence the user asked to lose, and the one that replaced it. Asserted by absence as well
+     as presence, because "made up" was the wording that read badly and a revert should fail here. */
+  check('the copy no longer says the page made anything up', !html.includes('made up'));
+
+  /* The wait is legible: the four steps are named in the bundle, and there is a control to try
+     again. Both are client-rendered, so what is checked here is that the strings shipped. */
+  const scripts = [...html.matchAll(/src="(\/_next\/static\/[^"]+\.js)"/g)].map((m) => m[1]);
+  check('the page ships client JavaScript', scripts.length > 0);
+  let bundled = '';
+  for (const src of scripts.slice(0, 12)) {
+    bundled += await (await fetch(`${BASE}${src}`)).text();
+  }
+  check('the reading state names the tree listing step', bundled.includes('listing the repository tree'));
+  check('a failure offers a retry control', bundled.includes('try again'));
+  check('a client-side timeout is wired', bundled.includes('45 seconds'));
+
   /* ── the handler, against this repository ─────────────────────────────────── */
 
   const self = await post('EmadQureshiKhi/Kept');
@@ -114,6 +141,34 @@ async function main() {
     'no promise carries a verdict field',
     keys === 'claim,file,id,line,testId,testPath,text',
     keys,
+  );
+
+  /* ── the three examples printed on the page ───────────────────────────────── */
+
+  /**
+   * Every example button is pressed, because one of them did not work.
+   *
+   * `vercel/next.js` was refused as not being a GitHub URL: the bare `owner/repo` form was only
+   * recognised when the paste held no dot anywhere, and a repository name is entitled to one. The
+   * first thing a curious reader pressed therefore failed. These are the buttons on the page, so
+   * they are the thing a sweep should press.
+   */
+  for (const slug of ['EmadQureshiKhi/Kept', 'vercel/next.js', 'sindresorhus/ky']) {
+    const res = await post(slug);
+    check(`the example ${slug} answers 200`, res.status === 200, `got ${res.status}`);
+    check(
+      `the example ${slug} reads at least one document`,
+      (res.body.counts?.documentsRead ?? 0) > 0,
+      JSON.stringify(res.body.message ?? res.body.counts),
+    );
+  }
+
+  /* A large repository is read rather than abandoned, and says which bound it hit. */
+  const large = await post('vercel/next.js');
+  check(
+    'a large repository reports the file cap rather than timing out',
+    (large.body.notes ?? []).some((note) => note.includes('markdown documents')),
+    JSON.stringify(large.body.notes),
   );
 
   /* ── every refusal ────────────────────────────────────────────────────────── */

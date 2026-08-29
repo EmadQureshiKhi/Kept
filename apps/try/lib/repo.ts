@@ -114,11 +114,26 @@ export function parseRepoInput(input: string): RepoParse {
     return fromSegments((ssh[2] ?? '').split('/'));
   }
 
-  /* A bare `owner/repo`, which is what somebody typing from memory produces. Recognised only
-     when it holds exactly one slash and no scheme, so a stray path is not mistaken for one. */
-  if (!trimmed.includes('://') && !trimmed.includes('.')) {
+  /**
+   * A bare `owner/repo`, which is what somebody typing from memory produces.
+   *
+   * The test is on the **owner** segment rather than on the whole string, and that distinction is
+   * the fix for a real bug: this once refused to read `vercel/next.js`, because it asked whether
+   * the paste held a dot anywhere and a repository name is perfectly entitled to one. What has to
+   * be free of a dot is the part before the slash, since that is the part that would otherwise
+   * read as a hostname.
+   *
+   * The remaining ambiguity is an owner whose own name holds a dot, which GitHub permits. `a.b/c`
+   * reads as a host here and is refused as not being github.com. That is the safer way to be
+   * wrong: refusing a legitimate paste costs a reader one more paste of the full URL, whereas
+   * guessing "owner" for something shaped like a host is how a field starts fetching addresses
+   * nobody meant it to.
+   */
+  if (!trimmed.includes('://')) {
     const bare = trimmed.split('/');
-    if (bare.length === 2) return fromSegments(bare);
+    if (bare.length === 2 && bare[0] !== undefined && !bare[0].includes('.')) {
+      return fromSegments(bare);
+    }
   }
 
   let url: URL;

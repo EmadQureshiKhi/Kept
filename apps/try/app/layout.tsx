@@ -33,8 +33,24 @@ import { FOOTER_NOTE, TAGLINE, TITLE } from '../lib/copy.js';
 
 import '../styles/try.css';
 
-/** Where the wordmark points: the ledger, which is what this page is a front door to. */
-export const LEDGER_HREF = 'https://withkept.app';
+/**
+ * Where the lockup points: the Ledger, which is what this page is a front door to.
+ *
+ * An environment override with the production host as its fallback, the same shape and for the same
+ * reason as the Ledger's own link back here. A preview of one side should be able to point at a
+ * preview of the other, and the fallback is what keeps the link working with nothing configured.
+ */
+export const LEDGER_HREF = process.env.NEXT_PUBLIC_LEDGER_URL ?? 'https://withkept.vercel.app';
+
+/**
+ * The lockup's box, the same measured numbers the Ledger's masthead uses.
+ *
+ * `Assets/Kept logo.png` trims to its own ink at 849x400, an aspect of 2.1225, and the stylesheet
+ * shows it 34px tall: 34 x 2.1225 is 72.2, so 72 by 34. Stated on the element so the row reserves
+ * its space before the file lands and nothing shifts when it does.
+ */
+const LOGO_WIDTH = 72;
+const LOGO_HEIGHT = 34;
 
 export const metadata: Metadata = {
   title: {
@@ -57,8 +73,19 @@ export default function TryLayout({ children }: { children: ReactNode }) {
         </a>
         <div className="try-shell">
           <header className="try-masthead">
+            {/* No `aria-label` on the link: an accessible name there would override the image's
+                `alt` and leave the artwork's own name unused. The alt *is* this link's name, which
+                is the same decision the Ledger's masthead makes and for the same reason. */}
             <a className="try-masthead__home" href={LEDGER_HREF}>
-              KEPT
+              <img
+                alt="KEPT"
+                className="try-masthead__logo"
+                decoding="async"
+                fetchPriority="high"
+                height={LOGO_HEIGHT}
+                src="/brand/kept-wordmark.png"
+                width={LOGO_WIDTH}
+              />
             </a>
             <span className="try-masthead__where">try</span>
             <a className="try-masthead__back" href={LEDGER_HREF}>

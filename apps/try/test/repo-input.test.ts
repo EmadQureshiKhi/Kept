@@ -65,6 +65,37 @@ describe('the shapes a reader actually pastes', () => {
     expect(ref?.ref).toBeNull();
   });
 
+  it('reads a bare owner/repo whose repository name holds a dot', () => {
+    /* A real bug this is the regression test for. The bare form used to be recognised only when the
+       whole paste held no dot, on the reasoning that a dot meant a hostname. A repository name is
+       perfectly entitled to one, so `vercel/next.js` fell through to the URL branch, was read as
+       the host `vercel`, and came back refused as not being a GitHub URL. It is one of the three
+       examples printed on the page, so the first thing a curious reader pressed did not work.
+
+       The test is on the segment before the slash now, which is the part that could be a host. */
+    for (const [input, owner, repo] of [
+      ['vercel/next.js', 'vercel', 'next.js'],
+      ['owner/some.thing.md', 'owner', 'some.thing.md'],
+      ['owner/repo.js', 'owner', 'repo.js'],
+    ] as const) {
+      const ref = refOf(input);
+      expect(ref?.owner).toBe(owner);
+      expect(ref?.repo).toBe(repo);
+    }
+  });
+
+  it('still prefers the host reading when the first segment looks like one', () => {
+    /* The remaining ambiguity, decided on purpose. An owner may hold a dot, so `a.b/c` could be a
+       bare paste, but it is shaped exactly like a host and this page fetches what it is pointed at.
+       Refusing costs a reader one more paste of the full URL; guessing "owner" for something shaped
+       like a host is how a field starts reaching addresses nobody meant. */
+    const parsed = parseRepoInput('a.b/c');
+    expect(parsed.ok).toBe(false);
+    expect(parsed.ok ? '' : parsed.error).toBe('not-a-github-url');
+    /* And the unambiguous spelling of the same thing is accepted. */
+    expect(refOf('https://github.com/a.b/c')?.owner).toBe('a.b');
+  });
+
   it('reports no branch when the paste named none', () => {
     /* `null` rather than a guessed `main`: the default branch is the repository's to state, and
        `github.ts` asks it. Guessing here would 404 on anything using `master` or `trunk`. */
