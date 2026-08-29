@@ -458,4 +458,47 @@ describe('Property 36 over the committed snapshot', () => {
       expect(promise.providers).toContain('baseline');
     }
   });
+
+  /**
+   * Every citation still points at the line it was read from.
+   *
+   * This is the guard the suite was missing, and it is missing no longer because the gap cost real
+   * time twice in one afternoon. Editing a document **above** a cited line moves that line, and
+   * nothing here noticed: the snapshot stores the line *number*, every existing check asked only
+   * whether the file had a non-empty line there, and a non-empty line is exactly what a shifted
+   * citation lands on. So the graph went on reporting thirteen resolved citations while two of them
+   * pointed at the wrong sentence and one had landed on a blank line.
+   *
+   * Both drifts came from adding prose near the top of this README: once a bullet in "Start here",
+   * once a longer `<desc>` on the architecture diagram, which `sync_readme_alt.py` writes into the
+   * README automatically. That second one is worth naming, because it means a change to a *diagram*
+   * can silently move a *promise*.
+   *
+   * The assertion is the product's own principle turned on its own snapshot: a citation a reader
+   * cannot check against the file is not a citation. `citation.text` was captured verbatim when the
+   * promise was admitted, so comparing it to the line on disk is exact, and a failure here means
+   * either the document moved under the graph or the graph needs rebuilding. The message says which
+   * line to look at rather than only that something is wrong.
+   */
+  it('reads back the exact line each promise was cited from', () => {
+    for (const promise of SNAPSHOT.promises) {
+      const lines = readFileSync(resolve(REPO_ROOT, promise.citation.file), 'utf8').split('\n');
+      const onDisk = lines[promise.citation.line - 1];
+      expect(
+        onDisk,
+        `${promise.citation.file}:${String(promise.citation.line)} does not exist any more, so ` +
+          `promise ${promise.id} cites past the end of its file`,
+      ).toBeDefined();
+      expect(
+        onDisk,
+        `${promise.citation.file}:${String(promise.citation.line)} has moved.\n` +
+          `  the snapshot recorded: ${JSON.stringify(promise.citation.text)}\n` +
+          `  the file now carries:  ${JSON.stringify(onDisk)}\n` +
+          `Something was inserted or removed above that line. Either put the line count back, or ` +
+          `re-run kept build and kept snapshot so the graph re-cites. Do not simply edit the ` +
+          `@verifies tag: the promise id is keyed on the claim, so a new line with new text is a ` +
+          `different promise and the old one silently leaves the graph.`,
+      ).toBe(promise.citation.text);
+    }
+  });
 });

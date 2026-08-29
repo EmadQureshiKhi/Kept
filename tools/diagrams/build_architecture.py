@@ -19,7 +19,11 @@ def chip_h(lines: int) -> float:
     return 51 + (lines - 1) * 15.5
 
 
-W, H = 1740, 1494
+# Band C grew by 98 when `apps/try` was added to the apps group: the band had 13px of
+# slack and a third application needs a chip. The canvas follows the band rather than the
+# band being squeezed into the canvas, because `verify.py` fails on an overlap and a
+# diagram that fits by overlapping is worse than a taller one.
+W, H = 1740, 1592
 COL = [40, 640, 1240]
 CW = 460
 INNER = CW - 32          # a chip inside a column group
@@ -30,13 +34,19 @@ def main() -> int:
     d = Diagram(
         W, H,
         "KEPT architecture",
-        "Two Kiro hooks turn a file save into a CLI run. bin/kept dispatches to the kept-cli "
-        "command surface, which calls kept-core: the Kane contract layer, the promise model, the "
-        "two providers, the verdict routers, the blast radius, the repair surfaces, the single "
-        "write guard and the handoff writer. kept-core spawns kane-cli 0.8.4 with stdout piped "
-        "and consumes its NDJSON. Working state lands under .kept/ and the committed "
-        "ledger.snapshot.json is the only seam between the CLI and the two Next.js applications, "
-        "the read-only Ledger on port 3000 and the fixture under verification on port 3100.",
+        # Kept to the same wrapped length it had before `apps/try` was named here, because
+        # `sync_readme_alt.py` writes this text into the README and three promises are cited to
+        # README line numbers below it. A longer alt text silently moves them onto the wrong
+        # claims, which `tools/verify-corpus.mjs` catches and nothing else does. The enumeration
+        # of kept-core's internals was the cheapest thing to shorten: the diagram draws them.
+        "Two Kiro hooks turn a file save into a CLI run. bin/kept dispatches to kept-cli, which "
+        "calls kept-core: the Kane contract layer, the promise model, the providers, the verdict "
+        "routers, the blast radius and the single write guard. kept-core spawns kane-cli 0.8.4 "
+        "with stdout piped and reads its NDJSON. State lands under .kept/, and the committed "
+        "ledger.snapshot.json is the only seam between the CLI and the two apps the demo boots: "
+        "the Ledger on 3000 and the fixture on 3100. A third, apps/try, deploys separately and "
+        "reads no snapshot, running the same admission gate on a pasted repository; it holds the "
+        "one POST handler the Ledger forbids.",
     )
     d.heading(
         "Architecture",
@@ -185,7 +195,7 @@ def main() -> int:
     d.edge_label(COL[1] + CW / 2, ay + ah, ["calls"], corridor=120, below=True)
 
     # ── band C — state, seam, apps ────────────────────────────────────────
-    cy, ch = 1090, 364
+    cy, ch = 1090, 462
     d.group(40, cy, 520, ch, ".kept/ — working state", "Gitignored and regenerable, except config.json.")
     d.chip(56, cy + 66, 488, chip_h(2), "config.json", [
         "The one committed file, and the one string the verdict spike may",
@@ -225,7 +235,7 @@ def main() -> int:
         "at zero; every evidence ref and edge endpoint resolves",
     ])
 
-    d.group(1280, cy, 420, ch, "apps/ — what a judge opens", "Both boot from committed data.")
+    d.group(1280, cy, 420, ch, "apps/ — what a judge opens", "Two boot from committed data. One reads a stranger's repo.")
     d.chip(1296, cy + 66, 190, chip_h(6), "apps/ledger — :3000", [
         "/           the graph",
         "/coverage   shareable",
@@ -250,6 +260,13 @@ def main() -> int:
         "Worst of three runs to the landing view: 3.6 s",
         "Ledger, 4.6 s fixture, against a 30 s ceiling",
     ])
+    # The third application, and the note above is exactly why it is a third: that no-handler
+    # claim is a promise in KEPT's own graph, so the feature moved rather than the claim.
+    d.chip(1296, cy + 366, 388, chip_h(3), "apps/try — deployed apart", [
+        "Reads a pasted public repo through the same",
+        "admission gate, and no snapshot. Holds the one",
+        "POST handler, so it ships as its own project",
+    ], mono_title=True)
 
     d.arrow([(300, by + 474), (300, cy)])
     d.edge_label(300, by + 474, ["writes"], corridor=200, below=True)

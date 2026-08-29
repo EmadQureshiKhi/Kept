@@ -1,6 +1,6 @@
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture></p>
 <p align="center"><strong>Every promise your product makes, and continuous proof it's still kept.</strong></p>
-<p align="center"><img src="https://img.shields.io/badge/npm-%40corgod%2Fkept--cli%200.1.1-CB3837" alt="@corgod/kept-cli 0.1.1 on npm"> <img src="https://img.shields.io/badge/npm-kept--core%200.1.1-CB3837" alt="kept-core 0.1.1 on npm"> <img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-37%20verified-111111" alt="37 correctness properties"> <img src="https://img.shields.io/badge/tests-3031-111111" alt="3031 tests"></p>
+<p align="center"><img src="https://img.shields.io/badge/npm-%40corgod%2Fkept--cli%200.1.1-CB3837" alt="@corgod/kept-cli 0.1.1 on npm"> <img src="https://img.shields.io/badge/npm-kept--core%200.1.1-CB3837" alt="kept-core 0.1.1 on npm"> <img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-37%20verified-111111" alt="37 correctness properties"> <img src="https://img.shields.io/badge/tests-3032-111111" alt="3032 tests"></p>
 <p align="center"><a href="#start-here">Start here</a> · <a href="#use-it-on-your-own-repository">Use it on your repo</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a></p>
 
 ---
@@ -155,7 +155,7 @@ true, and it is supposed to be red: that is the demonstration, not a bug.
 ### Level 2 — check our claims, still no account (about 36 seconds)
 
 ```bash
-npm test              # 168 files, 3031 tests, about 46 s
+npm test              # 168 files, 3032 tests, about 46 s
 npm run check         # the same suite, plus the read-only scan and three type-check passes
 ```
 
@@ -337,13 +337,13 @@ is resolved, and the resolution is the most interesting thing in this repository
 
 ## Architecture
 
-[![Two Kiro hooks turn a file save into a CLI run. bin/kept dispatches to the kept-cli command
-surface, which calls kept-core: the Kane contract layer, the promise model, the two providers,
-the verdict routers, the blast radius, the repair surfaces, the single write guard and the
-handoff writer. kept-core spawns kane-cli 0.8.4 with stdout piped and consumes its NDJSON.
-Working state lands under .kept/ and the committed ledger.snapshot.json is the only seam between
-the CLI and the two Next.js applications, the read-only Ledger on port 3000 and the fixture
-under verification on port 3100.](Assets/kept-architecture.svg)](Assets/kept-architecture.svg)
+[![Two Kiro hooks turn a file save into a CLI run. bin/kept dispatches to kept-cli, which calls
+kept-core: the Kane contract layer, the promise model, the providers, the verdict routers, the
+blast radius and the single write guard. kept-core spawns kane-cli 0.8.4 with stdout piped and
+reads its NDJSON. State lands under .kept/, and the committed ledger.snapshot.json is the only
+seam between the CLI and the two apps the demo boots: the Ledger on 3000 and the fixture on
+3100. A third, apps/try, deploys separately and reads no snapshot, running the same admission
+gate on a pasted repository; it holds the one POST handler the Ledger forbids.](Assets/kept-architecture.svg)](Assets/kept-architecture.svg)
 
 <sub>Click the diagram to open it at full size.</sub>
 
@@ -882,12 +882,12 @@ npm test          # vitest --run, never watch
 npm run check     # the read-only scan, tsc -b, both app type-checks, then the suite
 ```
 
-**168 files, 3031 tests, about 46 seconds** on a bare checkout. 3025 pass and 6 are skipped, each
+**168 files, 3032 tests, about 46 seconds** on a bare checkout. 3026 pass and 6 are skipped, each
 skip conditional on a repository state rather than switched off. Four are the assertions that held
 the README to carrying a placeholder instead of a deployed URL, and the deployment happened, so the
 opposite assertions run in their place. The other two read a real Kane evidence archive when the
 machine has one, so they run on a machine that has driven Kane and skip on a clone that has not.
-That is why a working copy here reports 3027 and 4: the figures above are a judge's, measured on a
+That is why a working copy here reports 3028 and 4: the figures above are a judge's, measured on a
 fresh clone, and the two counts differ by exactly those two tests. Nothing is red and nothing is
 pending. No Kane, no credentials, no network: every Kane behaviour under test comes from a
 committed fixture.
@@ -1015,7 +1015,7 @@ figures below are the ones a reader re-derives from the committed snapshot with 
 | Verdicts | 8 proven, 1 red on purpose, 4 stale |
 | Proven coverage | **0.615**, published rather than withheld |
 | Coverage ribbon | 6 of 6 acceptance criteria designed and proven, 1 of 9 use cases with scenarios |
-| Suite | **168 files, 3031 tests**, 3025 passing on a fresh clone, 6 conditionally skipped, about 46 s |
+| Suite | **168 files, 3032 tests**, 3026 passing on a fresh clone, 6 conditionally skipped, about 46 s |
 | Correctness properties | 37 of 37 |
 | Evidence packs | 1, holding 59 artefacts, referentially closed against git's index |
 | Runtime dependencies | 9 |
