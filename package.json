@@ -18,9 +18,12 @@
     "build:snapshot": "node bin/kept build && node bin/kept snapshot",
     "test": "vitest --run",
     "diagrams": "bash tools/build-diagrams.sh",
+    "dev:try": "next dev apps/try -p 3300",
+    "build:try": "next build apps/try",
     "typecheck:fixture": "tsc -p apps/fixture",
     "typecheck:ledger": "tsc -p apps/ledger",
-    "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && npm run typecheck:ledger && vitest --run"
+    "check": "node scripts/check-readonly.mjs && tsc -b && npm run typecheck:fixture && npm run typecheck:ledger && npm run typecheck:try && vitest --run",
+    "typecheck:try": "tsc -p apps/try"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.3",

@@ -29,7 +29,7 @@ import RootLayout, {
   FOOTER_TAGLINE,
   REPOSITORY_HREF,
 } from '../app/layout.js';
-import { SECTIONS, isCurrentSection } from '../components/Masthead.js';
+import { SECTIONS, TRY_HREF, TRY_LABEL, isCurrentSection } from '../components/Masthead.js';
 
 import {
   STYLE_EXTENSIONS,
@@ -99,21 +99,54 @@ describe('the masthead is the same on every route', () => {
     }
   });
 
-  it('offers one named link per section, in reading order', () => {
+  it('offers one named link per section, in reading order, then the one that leaves', () => {
+    /* This used to assert that the masthead's links were *exactly* SECTIONS. That was right while
+       every link in the row was a route on this deployment, and it is wrong now: the row ends with
+       a link to `apps/try`, which is a separate application on a separate deployment because it
+       holds a POST handler this one promises not to have. So the assertion splits in two. The
+       section links are still exactly SECTIONS, in order, which is the part that was ever load
+       bearing; the outbound link is asserted separately, and asserted to be last, so it cannot
+       drift into the middle of the sections or quietly become a sixth one. */
     const { container, unmount } = renderShell();
     try {
       const nav = container.querySelector('nav.masthead-nav');
       expect(nav?.getAttribute('aria-label')).toBe('Ledger sections');
-      const links = [...container.querySelectorAll<HTMLAnchorElement>('a.masthead-link')];
-      expect(links.map((link) => link.getAttribute('href'))).toEqual(
+
+      const sections = [
+        ...container.querySelectorAll<HTMLAnchorElement>('a.masthead-link:not([data-external])'),
+      ];
+      expect(sections.map((link) => link.getAttribute('href'))).toEqual(
         SECTIONS.map((section) => section.href),
       );
-      expect(links.map((link) => link.textContent)).toEqual(
+      expect(sections.map((link) => link.textContent)).toEqual(
         SECTIONS.map((section) => section.label),
       );
+
+      const links = [...container.querySelectorAll<HTMLAnchorElement>('a.masthead-link')];
+      expect(links.length, 'the row holds the sections and exactly one outbound link').toBe(
+        SECTIONS.length + 1,
+      );
+      const outbound = links[links.length - 1];
+      expect(outbound?.getAttribute('data-external')).toBe('true');
+      expect(outbound?.textContent).toBe(TRY_LABEL);
+      expect(outbound?.getAttribute('href')).toBe(TRY_HREF);
+      /* A different origin opens with no referrer window handle. No `target`, deliberately: the
+         reader's browser already gives them a new tab if they want one. */
+      expect(outbound?.getAttribute('rel')).toBe('noopener');
+      expect(outbound?.getAttribute('target')).toBeNull();
+      /* It can never be the current page here, so it must never claim to be. */
+      expect(outbound?.getAttribute('aria-current')).toBeNull();
     } finally {
       unmount();
     }
+  });
+
+  it('keeps the outbound link out of the section list', () => {
+    /* SECTIONS drives `aria-current`, and a cross-deployment URL in it would be a path
+       `isCurrentSection` can never own. Asserted on the data rather than the render because that
+       is where the mistake would be made. */
+    expect(SECTIONS.map((section) => section.href).includes(TRY_HREF)).toBe(false);
+    for (const section of SECTIONS) expect(section.href.startsWith('/')).toBe(true);
   });
 
   it('marks at most one link current, whatever the path', () => {

@@ -384,9 +384,42 @@ function isCommentLine(line: string): boolean {
  */
 const HREF_ASSIGNMENT = /href\s*=\s*\{?\s*['"`]?$/;
 
-/** A whole-line `const NAME = '<absolute url>'`, which is the only binding shape read. */
+/** A whole-line `const NAME = '<absolute url>'`. */
 const URL_CONSTANT =
   /^\s*(?:export\s+)?const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*(?::\s*[^=]+)?=\s*(['"`])(https?:\/\/[^'"`]+)\2\s*(?:as\s+const\s*)?;?\s*$/;
+
+/**
+ * A whole-line `const NAME = process.env.SOMETHING ?? '<absolute url>'`.
+ *
+ * The second binding shape, and the reason it is read is worth stating so nobody mistakes it for
+ * a hole. The masthead's one outbound link points at a *separate deployment of this project*, and
+ * a preview build has to be able to point at a preview of the other side, so the href is an
+ * environment override with the production host as its fallback.
+ *
+ * Reading this shape costs the rule nothing it was protecting. The guarantee is "this URL is
+ * linked, never fetched", and that guarantee is carried by {@link usedOnlyAsAnchorHref}, which
+ * still has to find every use of the name in an anchor's `href` and nowhere else. Only the
+ * left-hand side got another spelling. What is deliberately *not* read is the environment
+ * variable's value: it is not in the tree, so a deployment that sets it to something hostile is
+ * outside what a source scan can see, which is why the fallback is written here in full and why
+ * the name is required to be an `NEXT_PUBLIC_*` build-time constant rather than a runtime read.
+ */
+const ENV_URL_CONSTANT =
+  /^\s*(?:export\s+)?const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*(?::\s*[^=]+)?=\s*process\.env\.NEXT_PUBLIC_[A-Z0-9_]+\s*\?\?\s*(['"`])(https?:\/\/[^'"`]+)\2\s*;?\s*$/;
+
+/**
+ * The name and URL a line binds, under either shape, or `null`.
+ *
+ * One reader for both, so the declaration-skipping in {@link usedOnlyAsAnchorHref} and the
+ * position check in {@link anchorHrefOnly} cannot disagree about what a declaration is. They did
+ * not disagree while there was one shape; the moment there are two, a second `exec` call in one
+ * place and not the other is the bug waiting to happen.
+ */
+function urlBinding(line: string): { readonly name: string; readonly url: string } | null {
+  const match = URL_CONSTANT.exec(line) ?? ENV_URL_CONSTANT.exec(line);
+  if (match === null) return null;
+  return { name: match[1] ?? '', url: match[3] ?? '' };
+}
 
 /** An `import`/`export` specifier line: moving a name is not using it. */
 const NAME_MOVED = /^\s*(?:import|export)\s*[{*]/;
@@ -445,7 +478,7 @@ function usedOnlyAsAnchorHref(name: string, files: readonly ScannedFile[]): bool
       const before = file.text.slice(0, offset);
       const line = file.lines[before.split('\n').length - 1] ?? '';
       /* the declaration is where the URL is written, not a place it is used */
-      if (URL_CONSTANT.exec(line)?.[1] === name) continue;
+      if (urlBinding(line)?.name === name) continue;
       if (RENAMED.test(file.text.slice(offset + name.length))) return false;
       if (NAME_MOVED.test(line)) continue;
       if (!isAnchorHref(file.text, offset)) return false;
@@ -458,20 +491,21 @@ function usedOnlyAsAnchorHref(name: string, files: readonly ScannedFile[]): bool
 /**
  * `true` when this occurrence is a *linked* URL rather than a *fetched* one.
  *
- * Two shapes qualify and no others: the URL written straight into an anchor's
+ * Two positions qualify and no others: the URL written straight into an anchor's
  * `href`, and the URL bound to a constant every one of whose uses is an anchor's
  * `href`. The second exists because the colophon names its two addresses at module
  * scope so a render test can assert the words instead of reading them back off the
  * DOM, and a rule that only understood the inline form would push that into the
- * markup to satisfy a scan.
+ * markup to satisfy a scan. {@link urlBinding} decides what counts as that binding,
+ * and it reads two spellings of it; the *position* rule below is the same either way.
  */
 function anchorHrefOnly(origin: Origin, files: readonly ScannedFile[]): boolean {
   const file = files.find((candidate) => candidate.path === origin.path);
   if (file === undefined) return false;
   if (isAnchorHref(file.text, origin.offset)) return true;
-  const declaration = URL_CONSTANT.exec(file.lines[origin.line - 1] ?? '');
-  if (declaration === null || declaration[3] !== origin.url) return false;
-  return usedOnlyAsAnchorHref(declaration[1] ?? '', files);
+  const declaration = urlBinding(file.lines[origin.line - 1] ?? '');
+  if (declaration === null || declaration.url !== origin.url) return false;
+  return usedOnlyAsAnchorHref(declaration.name, files);
 }
 
 function offOrigin(files: readonly ScannedFile[]): Origin[] {
@@ -921,6 +955,39 @@ describe('rule 5 distinguishes a fetched URL from a linked one', () => {
       offOrigin([planted]).length,
       'a remote address no anchor uses is a host waiting for its first caller',
     ).toBe(1);
+  });
+
+  it('allows an environment-overridden href whose every use is an anchor', () => {
+    /* The masthead's one outbound link. A preview build points at a preview of the other
+       deployment, so the href is an override with the production host as its fallback, and the
+       fallback is the literal this scan reads. */
+    const planted = plant('apps/ledger/components/Masthead.tsx', [
+      "export const TRY_HREF = process.env.NEXT_PUBLIC_TRY_URL ?? 'https://kept-try.vercel.app';",
+      '<a href={TRY_HREF}>Try your repo</a>',
+    ]);
+    expect(offOrigin([planted])).toEqual([]);
+  });
+
+  it('reports the same shape the moment it is fetched rather than linked', () => {
+    /* The allowance is about position, not about the binding. An override that ends up in an
+       `img src` is a remote fetch, and the extra spelling on the left-hand side must not have
+       bought it one. */
+    const planted = plant('apps/ledger/components/Masthead.tsx', [
+      "export const TRY_HREF = process.env.NEXT_PUBLIC_TRY_URL ?? 'https://kept-try.vercel.app';",
+      '<img src={TRY_HREF} alt="" />',
+    ]);
+    expect(offOrigin([planted]).length).toBe(1);
+  });
+
+  it('reads no override that is not a build-time public constant', () => {
+    /* `process.env.SOMETHING` is read on the server at request time and is not in the tree at
+       all. Only `NEXT_PUBLIC_*` is inlined at build, so only that spelling is a value this scan
+       can claim to have seen the shape of. */
+    const planted = plant('apps/ledger/components/Masthead.tsx', [
+      "export const TRY_HREF = process.env.TRY_URL ?? 'https://kept-try.vercel.app';",
+      '<a href={TRY_HREF}>Try your repo</a>',
+    ]);
+    expect(offOrigin([planted]).length).toBe(1);
   });
 });
 

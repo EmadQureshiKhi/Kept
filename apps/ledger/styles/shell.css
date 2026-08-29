@@ -579,6 +579,34 @@ a:hover {
   color: var(--text-000);
 }
 
+/**
+ * The one nav link that leaves this deployment.
+ *
+ * `apps/try` is a separate application because it needs a `POST` handler and this one promises it
+ * has none. So this link crosses an origin, and a reader deserves to be able to tell before they
+ * follow it: it is set apart by a full ink border and a chip shape rather than by the shared 3px
+ * bottom rule the five section links use, which is reserved for saying *which section you are in*
+ * and can never be true of this one.
+ *
+ * Full ink at rest, inverting to paper on hover, both halves in the same rule as §10.4.3 requires.
+ * It is the only filled thing in the masthead because it is the only link on it a reader can *do*
+ * something with; the other five are places on a site they are already on. No hue: the verdict
+ * hues belong to verdicts, and this is navigation.
+ */
+.masthead-link--try {
+  margin-left: var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+.masthead-link--try:hover {
+  border-bottom-color: var(--text-000);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+}
+
 /* ── the page column ──────────────────────────────────────────────────────── */
 
 /* `min-height`, never `min-width`: the shell fills the viewport vertically and

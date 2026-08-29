@@ -95,6 +95,23 @@ export default defineConfig({
           include: ['apps/fixture/test/**/*.test.ts'],
         },
       },
+      {
+        /**
+         * `try` — the separately deployed page that graphs a pasted repository.
+         *
+         * Node rather than jsdom, and that is a statement about what is tested rather than a
+         * shortcut. The interesting half of that application is pure: parsing whatever somebody
+         * pasted into an owner and a repository, refusing every host but github.com, bounding what
+         * may be read, and running the real admission gate over an in-memory map of documents.
+         * None of it touches a DOM, so none of it needs one, and keeping the project in Node means
+         * these suites do not queue behind the ledger's single jsdom fork.
+         */
+        test: {
+          name: 'try',
+          environment: 'node',
+          include: ['apps/try/test/**/*.test.ts'],
+        },
+      },
     ],
   },
 });

@@ -1,0 +1,791 @@
+/**
+ * The `try` application's one stylesheet.
+ *
+ * ## The tokens are a deliberate copy
+ *
+ * The block below restates the palette, the type ramp and the spacing scale of design §10.4 and
+ * §10.7 rather than importing `apps/ledger/styles/tokens.css`. Two reasons, and neither is
+ * laziness: a relative import across two Next applications resolves for a bundler but not
+ * reliably for two type checkers and two dev servers, and extracting a package for eleven custom
+ * properties would be a package to version and publish for no gain.
+ *
+ * **The Ledger is the source of truth.** If these ever disagree, that file is right and this one
+ * is stale. The values are unchanged from it.
+ *
+ * ## What this page does not borrow
+ *
+ * No verdict hues. Not one. Every claim this page finds has no verdict, because no run produced
+ * one, so there is nothing here to be green or red about and any hue would be the page inventing a
+ * judgement it has no basis for. `--verdict-*` and `--wash-*` are therefore absent from this file
+ * entirely, which is stronger than declaring them and not using them.
+ *
+ * No shadows either. The Ledger authors depth in exactly one file and picks it by class; this page
+ * has two surfaces and draws them with a border, so there is nothing to centralise.
+ */
+
+:root {
+  /* the paper ramp: elevation reads brighter as it climbs */
+  --ink-000: #f4f2ee;
+  --ink-050: #ebe8e2;
+  --ink-100: #f7f5f1;
+  --ink-150: #fbfaf8;
+
+  /* ink, and the two muted steps below it */
+  --text-000: #0b0b0b;
+  --text-100: #2f2d2a;
+  --text-200: #5d5a55;
+
+  --hairline: rgba(11, 11, 11, 0.18);
+  --hairline-strong: rgba(11, 11, 11, 0.34);
+  --focus: #0b0b0b;
+
+  --line: 2px;
+  --line-heavy: 3px;
+  --r-card: 6px;
+  --r-chip: 4px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-16: 64px;
+
+  --fs-micro: 0.6875rem;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-display: 2.5rem;
+
+  --lh-tight: 1.2;
+  --lh-body: 1.55;
+  --lh-mono: 1.5;
+
+  --tr-display: -0.02em;
+  --tr-caps-label: 0.09em;
+  --tr-mono: -0.01em;
+
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --dur-fast: 140ms;
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+
+  --grid-cell: 28px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  background-color: var(--ink-000);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  margin: 0;
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+  /* The drawn ruling of the Ledger, at the same 28px pitch, as a background rather than a pinned
+     layer: this page is one column and does not need the layer's parallax-free trick. */
+  background-image:
+    linear-gradient(90deg, rgba(11, 11, 11, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(11, 11, 11, 0.045) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+}
+
+/* The ring is never removed. The offset is what makes it visible on the many 2px ink borders
+   below: without the gap the two would read as one thick edge. */
+:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Parked above the viewport rather than hidden, so it stays in the tab order and in the
+   accessibility tree, which is the entire point of a skip link. */
+.skip-link {
+  position: absolute;
+  z-index: 30;
+  top: var(--s-2);
+  left: var(--s-2);
+  transform: translateY(calc(-100% - var(--s-8)));
+  padding: var(--s-2) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+  color: var(--text-000);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-decoration-line: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+a {
+  color: var(--text-000);
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--line);
+  text-underline-offset: 0.18em;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+a:hover {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* ── the shell ──────────────────────────────────────────────────────────────── */
+
+.try-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.try-masthead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  align-items: center;
+  padding: var(--s-3) var(--s-6);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+  background-color: var(--ink-000);
+}
+
+.try-masthead__home {
+  font-size: var(--fs-md);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration-line: none;
+}
+
+/* Which of the two deployments a reader is on. A word rather than a colour: this page and the
+   ledger look alike on purpose, so the distinction has to be readable. */
+.try-masthead__where {
+  padding: 0 var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+}
+
+.try-masthead__back {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  text-decoration-line: none;
+  border-bottom: var(--line) solid var(--text-000);
+}
+
+.try-main {
+  width: 100%;
+  max-width: 900px;
+  flex: 1 1 auto;
+  margin: 0 auto;
+  padding: var(--s-8) var(--s-6) var(--s-16);
+}
+
+.try-page {
+  display: grid;
+  gap: var(--s-8);
+  min-width: 0;
+}
+
+/* ── the header ─────────────────────────────────────────────────────────────── */
+
+.try-header {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* The title in the ink slab the Ledger gives every page title. `inline-block` so the plane is as
+   wide as the words: block-level would run the full measure and turn a title into a black band. */
+.try-title {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  padding: var(--s-2) var(--s-4) var(--s-3);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+  font-size: clamp(var(--fs-xl), 1.3rem + 1.6vw, var(--fs-display));
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-display);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+/* The standfirst, held off the margin by a 3px ink rule, which is what pairs it with the slab. */
+.try-standfirst {
+  max-width: 68ch;
+  margin: 0;
+  padding-left: var(--s-4);
+  border-left: var(--line-heavy) solid var(--text-000);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── the form ───────────────────────────────────────────────────────────────── */
+
+/* A raised paper slab, so the instrument is visibly the instrument and the result below is the
+   record. Same device the Ledger uses for its runs filter. */
+.try-form {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-100);
+  min-width: 0;
+}
+
+.try-form__label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+.try-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* Recessed into the slab by a border and the recessed step of the ramp, rather than by an inset
+   shadow: this file authors no depth. Mono, because a repository path is an identifier. */
+.try-form__input {
+  flex: 1 1 18rem;
+  min-width: 0;
+  padding: var(--s-2) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  color: var(--text-000);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-mono);
+}
+
+.try-form__input::placeholder {
+  color: var(--text-200);
+}
+
+/* The one filled control on the page, because it is the only one that does the thing the page is
+   for. Inverting rules set both halves at once, so the word is never dark ink on dark ink. */
+.try-form__submit {
+  flex: 0 0 auto;
+  padding: var(--s-2) var(--s-5);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.try-form__submit:hover:not(:disabled) {
+  background-color: var(--ink-100);
+  color: var(--text-000);
+}
+
+.try-form__submit:disabled {
+  border-color: var(--hairline-strong);
+  background-color: var(--ink-050);
+  color: var(--text-200);
+  cursor: default;
+}
+
+.try-form__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.try-form__examples-label {
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+.try-form__example {
+  padding: 0 var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+  color: var(--text-000);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--s-5);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.try-form__example:hover:not(:disabled) {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+.try-form__example:disabled {
+  border-color: var(--hairline-strong);
+  color: var(--text-200);
+  cursor: default;
+}
+
+/* ── status and failure ─────────────────────────────────────────────────────── */
+
+/* Always in the DOM even when empty, because a live region added at the moment it has something to
+   say is a live region a screen reader may not announce. */
+.try-status {
+  min-height: var(--s-5);
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-200);
+}
+
+/* Dashed, which is what a dashed edge means throughout this system: a region a reader is meant to
+   read rather than skim. No red, because a repository that does not exist is not a verdict. */
+.try-error {
+  padding: var(--s-4);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.try-error__text {
+  max-width: 68ch;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+}
+
+/* ── the result ─────────────────────────────────────────────────────────────── */
+
+.try-result {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* Small caps over a 3px ink rule: the Ledger's section-head grammar, so a block opens rather than
+   being one more line of text on a ruled page. */
+.try-result__heading,
+.try-cli__heading {
+  margin: 0;
+  padding-bottom: var(--s-2);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: var(--s-6);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+.try-result__subject {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: baseline;
+  margin: 0;
+  min-width: 0;
+}
+
+.try-result__link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.try-result__ref {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-200);
+}
+
+.try-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-6);
+  align-items: baseline;
+  padding: var(--s-4);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+  min-width: 0;
+}
+
+.try-figure {
+  display: grid;
+  gap: 2px;
+}
+
+/* Tabular and lining, so four figures side by side form a row rather than four widths. */
+.try-figure__value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-000);
+}
+
+.try-figure__word {
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* The sentence that keeps the figures from reading as a verdict. Dashed, and immediately under
+   them, because that is where the over-reading happens. */
+.try-caveat {
+  max-width: 74ch;
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--text-200);
+  border-radius: var(--r-card);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── one document's claims ──────────────────────────────────────────────────── */
+
+.try-group {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.try-group__file {
+  margin: 0;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--hairline-strong);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}
+
+.try-group__list,
+.try-block__list {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* A ruled cell on a raised plane. The 3px left edge is transparent rather than absent so a claim
+   never shifts by three pixels, matching the Ledger's promise rows. No hue on it, ever: there is
+   no verdict here to colour it with. */
+.try-promise {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid var(--hairline);
+  border-left: var(--line-heavy) solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  min-width: 0;
+}
+
+.try-promise__cite {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  overflow-wrap: anywhere;
+}
+
+/* The claim, as read. Mono and `pre-wrap` with no trimming: these are the bytes out of the
+   reader's own file, and a page that tidied them could not be checked against it. */
+.try-promise__claim {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  color: var(--text-000);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.try-promise__test {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-200);
+  overflow-wrap: anywhere;
+}
+
+/* ── notes, rejections, and the empty state ─────────────────────────────────── */
+
+.try-block {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.try-block__heading {
+  margin: 0;
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+.try-block__body {
+  max-width: 74ch;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.try-block__item {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.try-block__code {
+  display: inline-block;
+  margin-right: var(--s-2);
+  padding: 0 var(--s-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-150);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-000);
+}
+
+/* The one dashed empty state, which means the same thing here as on the Ledger: specified, and
+   holding nothing. A repository with no claims is a legitimate state, not a failure. */
+.try-empty {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+}
+
+.try-empty__heading {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--text-000);
+}
+
+.try-empty__body {
+  max-width: 74ch;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── the command line half ──────────────────────────────────────────────────── */
+
+.try-cli {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.try-cli__body,
+.try-credentials__body {
+  max-width: 74ch;
+  margin: 0;
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+.try-steps {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  min-width: 0;
+}
+
+.try-step {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  min-width: 0;
+}
+
+/* The command as text in a `code` element, never a control. Nothing on this page runs anything on
+   the reader's machine, and a copy button would imply it might. */
+.try-step__command {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}
+
+.try-step__what {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+/* Dashed, because a surprise bill is the worst thing a tool can do to somebody and this is the
+   block that says whose account is spent. */
+.try-credentials {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+  min-width: 0;
+}
+
+.try-credentials__heading {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+.try-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.try-links__link {
+  font-size: var(--fs-sm);
+}
+
+/* ── the colophon ───────────────────────────────────────────────────────────── */
+
+.try-footer {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-6);
+  border-top: 1px solid var(--hairline);
+  background-color: var(--ink-050);
+}
+
+.try-footer__note {
+  max-width: 74ch;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}
+
+/* ── one breakpoint ───────────────────────────────────────────────────────── */
+
+@media (max-width: 56rem) {
+  .try-masthead {
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .try-main {
+    padding: var(--s-6) var(--s-4) var(--s-8);
+  }
+
+  .try-footer {
+    padding: var(--s-4);
+  }
+
+  .try-title {
+    padding: var(--s-1) var(--s-3) var(--s-2);
+  }
+
+  /* At 320px the submit would otherwise sit alone on a line beside a shrunken field. */
+  .try-form__submit {
+    flex: 1 1 100%;
+  }
+}
+
+/* ── reduced motion ───────────────────────────────────────────────────────── */
+
+/* The only motion on this page is the hover colour transitions above. Zeroed here rather than
+   left, because the setting is a request and honouring it partially is not honouring it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

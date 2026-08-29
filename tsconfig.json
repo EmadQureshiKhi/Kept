@@ -38,12 +38,20 @@
    * the token mirror and the scans have no business touching the DOM. The
    * browser-facing half — `app/**`, `components/**` and their JSX — is checked by
    * `tsc -p apps/ledger --noEmit`, which is where `jsx` and the DOM libs live.
+   *
+   * `apps/try` joins on the same terms. Its `lib/` holds the URL parser, the read
+   * bounds and the admission wiring, none of which may touch the DOM: a page that
+   * graphs a stranger's repository has to be able to prove its parsing is the same
+   * parsing the CLI does, and running it under a no-DOM `lib` is part of that.
+   * `app/**` and `components/**` are checked by `typecheck:try`.
    */
   "include": [
     "vitest.config.ts",
     "packages/*/test/**/*.ts",
     "apps/ledger/lib/**/*.ts",
-    "apps/ledger/test/**/*.ts"
+    "apps/ledger/test/**/*.ts",
+    "apps/try/lib/**/*.ts",
+    "apps/try/test/**/*.ts"
   ],
   "references": [
     { "path": "packages/kept-core" },

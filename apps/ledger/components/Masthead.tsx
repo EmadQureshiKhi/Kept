@@ -77,6 +77,30 @@ export const SECTIONS: readonly { readonly href: string; readonly label: string 
 ];
 
 /**
+ * The one link in the masthead that leaves this deployment.
+ *
+ * `apps/try` is a separate application on a separate Vercel project, and it has to be: it holds a
+ * `POST` handler that reads a repository somebody pastes, and this application states in its own
+ * README that the deployed artefact carries no non-GET handler. That statement is a promise in
+ * KEPT's own graph, cited to a line and bound to a designed test, so adding the handler here would
+ * break it. Two deployments is the cost of not weakening a claim to fit a feature.
+ *
+ * It is therefore an absolute URL rather than a route, and it is kept out of {@link SECTIONS}
+ * deliberately: those are sections of *this* site and every one of them takes an `aria-current`
+ * when the pathname matches. A cross-deployment link can never be the current page here, so
+ * putting it in that list would give `isCurrentSection` a path it can never own and invite a
+ * future reader to add a matching route.
+ *
+ * Set at build time from the environment when one is given, so a preview deployment can point at a
+ * preview of the other app, and falling back to the production host otherwise. That fallback is
+ * what keeps the link working in `npm run demo`, where no environment is set at all.
+ */
+export const TRY_HREF = process.env.NEXT_PUBLIC_TRY_URL ?? 'https://kept-try.vercel.app';
+
+/** The word on it. A verb, because it is the one thing on this masthead a reader can *do*. */
+export const TRY_LABEL = 'Try your repo';
+
+/**
  * `true` when `pathname` is the section at `href`.
  *
  * Exported so the rule can be asserted over paths a test chooses rather than only
@@ -132,6 +156,14 @@ export function Masthead() {
             {section.label}
           </a>
         ))}
+        {/* The one link that leaves this deployment. Marked with `data-external` so the stylesheet
+            can distinguish it without matching on the href, and carrying `rel` because it opens a
+            different origin. No `target`: a reader who wants a new tab has a browser that gives
+            them one, and taking the decision away is the kind of thing this site does not do
+            elsewhere. */}
+        <a className="masthead-link masthead-link--try" data-external="true" href={TRY_HREF} rel="noopener">
+          {TRY_LABEL}
+        </a>
       </nav>
     </header>
   );

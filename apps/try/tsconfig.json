@@ -1,0 +1,43 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /**
+     * The `try` application's browser-facing program, mirroring `apps/ledger/tsconfig.json`
+     * for the same reasons that file sets out.
+     *
+     * It is deliberately **not** referenced from the solution root: a Next application is
+     * non-emitting, and TypeScript refuses to make a non-emitting project a `tsc -b`
+     * reference (TS6310). So there are two consumers between them:
+     *
+     *   1. `tsc -b` from the root, whose `include` names this app's `lib` and `test` trees.
+     *      That runs under the repository's no-DOM `lib`, which is the point: the URL
+     *      parser, the bounds and the admission wiring have no business touching the DOM,
+     *      and this is what proves they do not.
+     *   2. `tsc -p apps/try --noEmit`, wired into `npm run check` as `typecheck:try`, for
+     *      the half that renders. It adds `jsx` and the DOM libs a React component needs.
+     *
+     * `app/**\/*.ts` is listed as well as `.tsx` because a route handler carries no JSX and
+     * is therefore not a `.tsx` file. Without it `app/api/graph/route.ts` would be checked
+     * by neither program, and that file is the only public contract this application has.
+     *
+     * Module resolution stays `NodeNext` to match the root, so a relative import carries
+     * its `.js` extension in both programs and neither disagrees with the other.
+     */
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "incremental": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": [
+    "lib/**/*.ts",
+    "test/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.tsx"
+  ],
+  "exclude": ["node_modules", ".next", "out"]
+}
