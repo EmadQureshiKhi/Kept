@@ -92,3 +92,30 @@ Assets/kept-three-contracts.png
 Assets/kept-verify-path.png
 Assets/kept-repair-branches.png
 Assets/kept-promise-lifecycle.png
+
+# Anything iCloud is told to leave alone.
+#
+# iCloud Drive skips any item whose name ends in `.nosync`, and this repository lives under a
+# synced Desktop. `node_modules` is roughly 437 MB across tens of thousands of small files, and
+# handing that to iCloud starved the sync of the files that matter: source files came back flagged
+# `dataless`, meaning the metadata was present and the bytes were not, so `tsc -b` blocked for
+# minutes on a read that could fail outright with `ECANCELED`.
+#
+# So dependencies are installed into `node_modules.nosync` and reached through a `node_modules`
+# symlink. Node resolves through the link and iCloud never sees the tree. Re-create both after any
+# `npm ci`, which removes the link:
+#
+#   npm ci && rm -rf node_modules && mkdir -p node_modules.nosync && ln -s node_modules.nosync node_modules
+#
+# Prefer `npm install` over `npm ci` while the link is in place: `npm install` writes through it,
+# and `npm ci` deletes it first.
+*.nosync
+*.nosync/
+
+# The symlink itself, which the `node_modules/` rule above does not catch.
+#
+# A pattern ending in a slash matches directories only, and `node_modules` is a *symlink* here, which
+# git sees as a file. So the link showed up as an untracked path and would have been committed by a
+# `git add -A`, handing every clone a dangling pointer to a directory that does not exist for them.
+# This rule names it without a slash, so it matches whichever of the two it happens to be.
+/node_modules
