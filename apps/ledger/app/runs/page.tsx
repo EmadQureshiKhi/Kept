@@ -99,7 +99,10 @@ export const metadata: Metadata = {
  */
 export const RUNS_TABLE_NOTE =
   'Newest first. One row per invocation; a run with members or diagnostics carries a ' +
-  'detail row directly beneath its own, inside the same group.';
+  'detail row directly beneath its own, inside the same group. That detail row starts ' +
+  'shut and states what it holds, so opening it is the reader\u2019s choice rather than ' +
+  'twenty runs of member paths nobody asked for. Nothing is withheld by shutting it: the ' +
+  'contents are in this page either way.';
 
 /**
  * The disclosure's accessible name.

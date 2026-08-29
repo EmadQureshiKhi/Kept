@@ -949,7 +949,7 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - **Property 34: Diagnosis is total, bounded and exits zero**
     - **Validates: Requirements 18.1, 18.2, 18.8, 18.9, 18.10**
 
-- [ ] 25. Distribution — the packages install and run outside this workspace (§22)
+- [x] 25. Distribution — the packages install and run outside this workspace (§22)
   - [x] 25.1 Correct both manifests
     - Remove `private: true` from both; set both versions to `0.1.0`; rewrite `@corgod/kept-cli`'s dependency on `kept-core` from the literal `0.0.0` to `^0.1.0`, which resolves from the registry rather than only through the workspace symlink
     - Add `repository`, `description`, `keywords`, `engines.node` at the repository's stated floor, and the repository's stated license to both
@@ -985,10 +985,15 @@ Language: TypeScript throughout (design §2.1). Test runner is `vitest --run`, n
     - Commit: "docs(packages): per-package READMEs and a publish procedure written down"
     - _Requirements: 17.11, 17.12_
 
-  - [ ] 25.6 Publish — **the last task in this stage, and deliberately manual**
+  - [x] 25.6 Publish — **the last task in this stage, and deliberately manual**
     - Run the whole gate first: `npm run check`, then 25.2 and 25.3 green, then publish core, then cli
     - Do not automate this. A publish is irreversible per version, and the one thing worse than an unpublished package is a published broken one
     - Commit: "chore(release): kept-core and @corgod/kept-cli 0.1.0"
+    - **Done, at `0.1.1` rather than `0.1.0`, and the names are not the ones this plan assumed.** `@kept/core` and `@kept/cli` were never obtainable: the package `kept` already exists on the registry at `0.24.0` under another owner, and npm refuses an organisation whose name collides with an existing package. Renamed unscoped, `kept-core` published, and **`kept-cli` was permanently refused** by npm's typosquatting filter as too similar to `jest-cli`, so the CLI took the user scope npm's own error suggested: `@corgod/kept-cli`. A user scope is exempt from the similarity check because it is namespaced. The `bin` is `kept` either way, so nothing a user types changed
+    - **`0.1.1` because `0.1.0` shipped broken documentation.** `kept-core@0.1.0`'s README told installers to `npm install kept-cli` and run `npx kept init`, neither of which resolves. Published prose describing a state the repository has left is the failure mode this project exists to catch, and npm serves the newest version's README on the package page, so a patch release is what corrects what a visitor reads. Both versions moved together as `packaging.test.ts` requires, and the committed snapshot was regenerated so `generator.kept` matches
+    - **Three things the rename could not reach, each caught by a test rather than by reading.** `check-readonly.mjs` spelled the specifier `@kept\/core`, escaped for a regex, so the rule forbidding the Ledger from importing Kane's process boundary silently matched nothing; `read-only-scan.test.ts` plants a violation and requires that rule to fire, which is what found it. `watch.test.ts` had the same escaped spelling, and later an unescaped scope slash that terminated the pattern early. `install-outside-workspace.test.ts` built its expected path as `join('node_modules', '@kept', 'core')`, three separate arguments, so the string never appeared in the file
+    - **Verified from the registry rather than from the workspace.** Both packages installed into a scratch project outside this repository and driven there: `kept init` scaffolded at zero Kane invocations, `kept build` read that project's own documents and cited them verbatim, and `kept snapshot` wrote a ledger with `provenCoverage: null` and the reason named, because that machine had no Kane store
+    - Both package READMEs now state plainly that KEPT ships no keys and reads none, with a table of what works without Kane authenticated
     - _Requirements: 17.1, 17.12_
 
 - [x] 26. Self-verification — KEPT's own README as a promise source (§23)

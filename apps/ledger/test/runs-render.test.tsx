@@ -38,7 +38,13 @@ import { SnapshotRunSchema, contractFor } from 'kept-core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DiagnosticBlock } from '../app/runs/DiagnosticBlock.js';
-import { NEWEST_LABEL, NOT_REPORTED, RUN_COLUMNS, RunRow } from '../app/runs/RunRow.js';
+import {
+  NEWEST_LABEL,
+  NOT_REPORTED,
+  RUN_COLUMNS,
+  RunRow,
+  detailSummary,
+} from '../app/runs/RunRow.js';
 import RunsPage, {
   NO_DIAGNOSTICS_DETAIL,
   RUNS_TABLE_HEADING_ID,
@@ -759,5 +765,128 @@ describe('/runs — the log is a table, and its headings sit over their columns'
     const detail = container.querySelector('.runs-table__detail-row td');
     expect(detail?.getAttribute('colspan')).toBe(String(RUN_COLUMNS.length));
     unmount();
+  });
+});
+
+/* ────────────── the detail row is shut, and shutting it hides nothing ────────────── */
+
+/**
+ * The log used to render every run's detail open, which turned twenty invocations into
+ * several screens of member paths. The detail now sits behind a native `<details>`, shut,
+ * and these are the two things that has to be true of: a shut row still says what it holds,
+ * and shutting it takes nothing out of the document.
+ *
+ * The second is the one worth a test. `<details>` is a *presentation* boundary, not a
+ * content one: the children stay in the tree when it is closed, which is why the browser's
+ * own find still matches them and why a screen reader can still reach them. A collapse
+ * implemented with `useState` and a conditional would not have that property, would need a
+ * client boundary on a `force-static` page, and would put a `<button>` in the log. So these
+ * tests also assert the absence of one.
+ */
+describe('/runs: a run\u2019s detail collapses without going missing', () => {
+  it('states the counts it holds, pluralised, and omits an axis that is empty', () => {
+    expect(detailSummary(9, 8)).toBe('9 members, 8 diagnostics');
+    expect(detailSummary(1, 1)).toBe('1 member, 1 diagnostic');
+    expect(detailSummary(2, 0)).toBe('2 members');
+    expect(detailSummary(0, 3)).toBe('3 diagnostics');
+  });
+
+  it('renders the detail shut, with the counts on the outside of it', () => {
+    const { container, unmount } = renderRow(
+      makeRun({
+        exitMeaning: 'failure',
+        exitCode: 1,
+        members: [
+          { path: 'tests/cart_discount_test.md', testId: null, status: 'failed', verdict: 'red' },
+          { path: 'tests/kept_self_claims_test.md', testId: null, status: 'passed', verdict: 'proven' },
+        ],
+        diagnostics: [makeDiagnostic('ndjson-parse', 'line 12 did not parse as JSON')],
+      }),
+    );
+    const disclosure = container.querySelector('details.run-detail-disclosure');
+    expect(disclosure, 'the detail is not behind a disclosure at all').not.toBeNull();
+    expect((disclosure as HTMLDetailsElement).open, 'the detail row renders open').toBe(false);
+
+    const summary = disclosure?.querySelector('summary');
+    expect(summary?.textContent).toBe(detailSummary(2, 1));
+    expect(summary?.textContent).toContain('2 members');
+    expect(summary?.textContent).toContain('1 diagnostic');
+    unmount();
+  });
+
+  it('keeps every member and every quoted reason in the document while shut', () => {
+    const { container, unmount } = renderRow(
+      makeRun({
+        exitMeaning: 'failure',
+        exitCode: 1,
+        members: [{ path: 'tests/cart_discount_test.md', testId: 'tc_44', status: 'broken', verdict: 'red' }],
+        diagnostics: [makeDiagnostic('ndjson-parse', 'line 12 did not parse as JSON')],
+      }),
+    );
+    const disclosure = container.querySelector('details.run-detail-disclosure');
+    expect((disclosure as HTMLDetailsElement).open).toBe(false);
+
+    /* Shut, and all of it still here: the verbatim member status, the path, the test id and
+       the diagnostic's own words. This is the whole argument for `<details>` over state. */
+    const text = disclosure?.textContent ?? '';
+    expect(text).toContain('broken');
+    expect(text).toContain('tests/cart_discount_test.md');
+    expect(text).toContain('tc_44');
+    expect(text).toContain('line 12 did not parse as JSON');
+    expect(disclosure?.querySelector('.run-detail__title')?.textContent).toBe('Members (1)');
+    unmount();
+  });
+
+  it('opens on the summary, and needs no button to do it', () => {
+    const { container, unmount } = renderRow(
+      makeRun({
+        exitMeaning: 'failure',
+        exitCode: 1,
+        members: [{ path: 'tests/cart_discount_test.md', testId: null, status: 'failed', verdict: 'red' }],
+      }),
+    );
+    const disclosure = container.querySelector('details.run-detail-disclosure');
+    const summary = disclosure?.querySelector('summary');
+    expect(summary?.tagName).toBe('SUMMARY');
+
+    act(() => {
+      fireEvent.click(summary as Element);
+    });
+    expect((disclosure as HTMLDetailsElement).open, 'clicking the summary did not open it').toBe(
+      true,
+    );
+
+    /* No control was added to the log to get this. A `<summary>` is focusable and operable
+       from the keyboard because it is a `<summary>`, so the row stays server-rendered and
+       `/runs` stays `force-static`. */
+    expect(container.querySelectorAll('button')).toHaveLength(0);
+    expect(container.querySelectorAll('input')).toHaveLength(0);
+    unmount();
+  });
+
+  it('shuts every detail row on the committed page, and leaves the runs visible', () => {
+    const withDetail = snapshot.runs.filter(
+      (run) => run.members.length > 0 || run.diagnostics.length > 0,
+    );
+    if (withDetail.length === 0) return;
+
+    const { container, unmount } = render(<RunsPage />);
+    try {
+      const disclosures = [...container.querySelectorAll('details.run-detail-disclosure')];
+      expect(disclosures).toHaveLength(withDetail.length);
+      for (const disclosure of disclosures) {
+        expect(
+          (disclosure as HTMLDetailsElement).open,
+          'a run on the committed page renders its detail open',
+        ).toBe(false);
+        /* Never a bare `show details`: a shut disclosure that does not say what it holds
+           makes a reader open all twenty to find the one that matters. */
+        expect(disclosure.querySelector('summary')?.textContent).toMatch(
+          /\d+ (member|diagnostic)/,
+        );
+      }
+    } finally {
+      unmount();
+    }
   });
 });

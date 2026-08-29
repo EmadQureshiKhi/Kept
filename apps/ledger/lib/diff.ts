@@ -165,6 +165,73 @@ function row(
   return { kind, text, beforeLine, afterLine };
 }
 
+/**
+ * One row of a side-by-side diff: the before cell, the after cell, or both.
+ *
+ * A `null` side is a row the other side does not have, which is what makes a pure deletion or a
+ * pure addition legible in two columns: the gap is the fact.
+ */
+export interface SplitDiffRow {
+  readonly before: DiffRow | null;
+  readonly after: DiffRow | null;
+}
+
+/**
+ * The same diff, paired into two columns.
+ *
+ * Derived from the unified rows rather than computed from the two texts again, which is the
+ * whole point: there is one alignment, decided once by the LCS above (or by whoever produced
+ * the patch `parseUnifiedDiff` read), and the split view is a *presentation* of it. Computing
+ * a second alignment here would let the two views of one amendment disagree about which line
+ * replaced which, and a reader who toggled between them would be shown two different claims
+ * about the same edit.
+ *
+ * The pairing rule is the standard one, and it is the only part with a decision in it. A run of
+ * consecutive deletions immediately followed by a run of additions is a *replacement*, so the
+ * two runs are zipped positionally: the first deletion sits opposite the first addition, and
+ * whichever run is longer leaves `null` cells opposite its tail. Context pairs with itself on
+ * both sides, because an unchanged line is the same line in both texts.
+ *
+ * That is what makes the split view worth having for this product specifically. The amendment
+ * on file replaces one sentence of prose with another, and read as a unified diff those two
+ * sentences are on separate lines with a marker in front of each; read side by side they are on
+ * one line and the words that changed are directly above each other.
+ */
+export function splitRows(rows: readonly DiffRow[]): readonly SplitDiffRow[] {
+  const split: SplitDiffRow[] = [];
+  let at = 0;
+
+  while (at < rows.length) {
+    const row = rows[at] as DiffRow;
+    if (row.kind === 'ctx') {
+      split.push({ before: row, after: row });
+      at += 1;
+      continue;
+    }
+
+    /* The deletions, then the additions immediately after them. Taken as two runs rather than
+       one row at a time, because "these three lines became those two" is one edit and pairing
+       it row by row would stagger it down the page. */
+    const deletions: DiffRow[] = [];
+    while (at < rows.length && (rows[at] as DiffRow).kind === 'del') {
+      deletions.push(rows[at] as DiffRow);
+      at += 1;
+    }
+    const additions: DiffRow[] = [];
+    while (at < rows.length && (rows[at] as DiffRow).kind === 'add') {
+      additions.push(rows[at] as DiffRow);
+      at += 1;
+    }
+
+    const paired = Math.max(deletions.length, additions.length);
+    for (let index = 0; index < paired; index += 1) {
+      split.push({ before: deletions[index] ?? null, after: additions[index] ?? null });
+    }
+  }
+
+  return Object.freeze(split);
+}
+
 /** How many rows of each kind a diff carries. For headings and for assertions. */
 export function diffCounts(rows: readonly DiffRow[]): Readonly<Record<DiffRowKind, number>> {
   return {

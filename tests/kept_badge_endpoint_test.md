@@ -6,7 +6,7 @@ tags: [kept, badge, self-cited]
 
 # The badge endpoint answers a GET with an SVG carrying a whole-number percentage
 
-<!-- @verifies README.md:679 the badge endpoint claim -->
+<!-- @verifies README.md:752 the badge endpoint claim -->
 
 **Cited to KEPT's own README** (design §23.1, R19.1). Line 679 is the row of the Ledger's
 route table that states what `/badge.svg` returns: GET only, `image/svg+xml`, and proven

@@ -8,6 +8,10 @@ test, and publishes the verdicts. You cannot break what was never proven to work
 npm install -g @corgod/kept-cli
 ```
 
+Works on any repository that writes down what it does. The library underneath is
+[`kept-core`](https://www.npmjs.com/package/kept-core), which you do not need to install
+separately.
+
 Commands: `init`, `build`, `verify`, `reconcile`, `evolve`, `amend`, `snapshot`, `handoff`,
 `doctor`.
 

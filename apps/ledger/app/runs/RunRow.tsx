@@ -8,6 +8,16 @@
  * message. A second row rather than a nested table, so the columns above it stay one
  * grid.
  *
+ * **The detail row is shut by default.** It used to render open, which read as a wall: the
+ * log holds twenty runs and the ones worth reading carry nine members and eight diagnostics
+ * apiece, so a reader scrolling to the run they wanted crossed several screens of member
+ * paths to get there. It is now a native `<details>` whose `<summary>` states the counts it
+ * holds, so a shut row is still an answer rather than a mystery. See `detailSummary`. This
+ * costs the page nothing it was relying on: `<details>` keeps its children in the document
+ * when shut, so every member status and every quoted refusal is still in the served HTML,
+ * still matched by the browser's own find, and still walked by a screen reader. And it needs
+ * no state, so this file stays a server component and `/runs` stays `force-static`.
+ *
  * **The `<tbody>` is the run, and that is a layout claim as much as a semantic one.**
  * Several `<tbody>` elements in one table is ordinary HTML, and grouping this way is
  * what lets `runs.css` band and highlight per *run* instead of per row: a detail row
@@ -86,6 +96,39 @@ export const NOT_REPORTED = 'not reported';
 
 /** What the first row of a newest-first log is marked with. */
 export const NEWEST_LABEL = 'newest';
+
+/**
+ * The words on the closed detail row, and why the detail is closed at all.
+ *
+ * The log holds twenty runs, and the runs that matter carry nine members and eight
+ * diagnostics each. Rendered open, that is several screens of member paths between one
+ * invocation and the next, and a reader scrolling for the run they want reads none of it.
+ * So the detail sits behind a native `<details>`, shut, and this is the line on its
+ * `<summary>`.
+ *
+ * The counts are in the summary rather than a bare `show details`, because a closed
+ * disclosure that does not say what it holds is indistinguishable from one holding nothing:
+ * a reader has to open all twenty to find out which run has the nine failing members. With
+ * the counts on the outside the wall is gone and none of the facts are, which is the only
+ * form of collapsing this page can afford.
+ *
+ * Nothing is hidden from a machine either. `<details>` keeps its children in the document
+ * whether it is open or shut, so the member statuses and the quoted refusal text are still
+ * in the served HTML, still findable by the browser's own search, and still readable by a
+ * screen reader that walks the tree.
+ *
+ * A count of zero is left out rather than spelled `0 diagnostics`, and a count of one is
+ * singular. `hasDetail` already guarantees at least one of the two is non-zero, so this
+ * never returns an empty string.
+ */
+export function detailSummary(members: number, diagnostics: number): string {
+  const parts: string[] = [];
+  if (members > 0) parts.push(`${String(members)} member${members === 1 ? '' : 's'}`);
+  if (diagnostics > 0) {
+    parts.push(`${String(diagnostics)} diagnostic${diagnostics === 1 ? '' : 's'}`);
+  }
+  return parts.join(', ');
+}
 
 /**
  * The fragment that addresses a run, and the whole of the anchor scheme.
@@ -204,28 +247,44 @@ export function RunRow({ run, newest = false }: RunRowProps) {
       {hasDetail ? (
         <tr className="runs-table__detail-row" data-detail={run.id}>
           <td className="runs-table__cell" colSpan={RUN_COLUMNS.length}>
-            <div className="run-detail surface-well">
-              {run.members.length === 0 ? null : (
-                <>
-                  <p className="run-detail__title">{`Members (${run.members.length})`}</p>
-                  <ul className="run-detail__list">
-                    {run.members.map((member) => (
-                      <MemberItem key={`${member.path}-${member.testId ?? ''}`} member={member} />
+            {/* Shut by default, and a native `<details>` rather than state: no `useState`,
+                no client boundary, no handler, and the page stays a server component that
+                exports `force-static`. The summary carries the counts so a closed row still
+                says what it holds, and the children stay in the DOM either way, so
+                collapsing costs a reader nothing but the click. */}
+            <details className="run-detail-disclosure">
+              <summary className="run-detail-disclosure__summary">
+                {detailSummary(run.members.length, run.diagnostics.length)}
+              </summary>
+              <div className="run-detail surface-well">
+                {run.members.length === 0 ? null : (
+                  <>
+                    <p className="run-detail__title">{`Members (${run.members.length})`}</p>
+                    <ul className="run-detail__list">
+                      {run.members.map((member) => (
+                        <MemberItem
+                          key={`${member.path}-${member.testId ?? ''}`}
+                          member={member}
+                        />
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {run.diagnostics.length === 0 ? null : (
+                  <>
+                    <p className="run-detail__title">
+                      {`Reasons and diagnostics (${run.diagnostics.length})`}
+                    </p>
+                    {run.diagnostics.map((diagnostic, index) => (
+                      <DiagnosticBlock
+                        diagnostic={diagnostic}
+                        key={`${diagnostic.code}-${index}`}
+                      />
                     ))}
-                  </ul>
-                </>
-              )}
-              {run.diagnostics.length === 0 ? null : (
-                <>
-                  <p className="run-detail__title">
-                    {`Reasons and diagnostics (${run.diagnostics.length})`}
-                  </p>
-                  {run.diagnostics.map((diagnostic, index) => (
-                    <DiagnosticBlock diagnostic={diagnostic} key={`${diagnostic.code}-${index}`} />
-                  ))}
-                </>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
+            </details>
           </td>
         </tr>
       ) : null}

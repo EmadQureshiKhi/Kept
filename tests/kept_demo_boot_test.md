@@ -6,7 +6,7 @@ tags: [kept, demo, self-cited]
 
 # npm run demo serves the Ledger on 3000 and the fixture on 3100
 
-<!-- @verifies README.md:68 the demo command claim -->
+<!-- @verifies README.md:141 the demo command claim -->
 
 **This promise is cited to KEPT's own README, not to the fixture's** (design §23.1, R19.1).
 Line 68 of the root `README.md` is the one line that states which two applications

@@ -567,3 +567,104 @@
     max-width: none;
   }
 }
+
+/* ── the verdict filter over the promise list ───────────────────────────────── */
+
+/**
+ * The chip row, and why it authors no colour.
+ *
+ * Each chip contains a `VerdictTag` rather than restating a verdict as a coloured pill,
+ * so the verdict-to-hue mapping stays in `verdict-tag.css` and this block declares no
+ * `--verdict-*` token at all. Strip these rules and the chips still read `red`, `stale`,
+ * `proven` in the right hues; all that is lost is the box around them.
+ *
+ * The box itself borrows `.accept-control__button` wholesale: 2px ink border, chip radius,
+ * `--ink-100` fill lifting to `--ink-150` on hover, and the same three-property transition.
+ * A reader has met that button on `/amendments`, so a pressable thing looks the same on
+ * both pages rather than being learned twice.
+ */
+.promise-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+  margin: 0 0 var(--s-3);
+  padding: 0;
+  min-width: 0;
+}
+
+.promise-filter__chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--s-2);
+  align-items: center;
+  box-sizing: border-box;
+  padding: var(--s-1) var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.promise-filter__chip:hover {
+  background-color: var(--ink-150);
+}
+
+.promise-filter__chip:focus-visible {
+  outline: var(--line-heavy) solid var(--focus);
+  outline-offset: 2px;
+}
+
+/**
+ * The pressed chip sinks rather than changing hue.
+ *
+ * `aria-current` is the state a screen reader is told, so the visual state is keyed off
+ * the same attribute instead of a second class that could drift from it. Depth and fill
+ * carry it: tinting the box would put a colour behind a verdict word, which §10.4.3
+ * forbids and `typography-discipline.test.ts` fails on.
+ */
+.promise-filter__chip[aria-current='true'] {
+  background-color: var(--ink-050);
+  transform: translateY(1px);
+}
+
+/** The word on the clear-the-filter chip. The `.label` idiom, matching every other. */
+.promise-filter__all {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/** How many promises the chip would show. A figure, so mono and tabular. */
+.promise-filter__count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+}
+
+/**
+ * What the filter did, in words, in a live region.
+ *
+ * The count above each chip says what a press *would* do; this says what the press
+ * *did*. Without it a keyboard reader presses a chip and hears nothing, and the list
+ * changing below them is not announced by anything.
+ */
+.promise-filter__status {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--text-200);
+}

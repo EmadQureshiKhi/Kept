@@ -155,6 +155,162 @@
   color: var(--verdict-proven);
 }
 
+/* ── the layout toggle: two links over the well ─────────────────────────────── */
+
+/**
+ * `unified` and `side by side`, as the bordered paper chips every other control in the system is.
+ *
+ * They are anchors carrying `?view=`, not buttons, for the reasons `DiffPane` sets out: the
+ * choice is shareable, the browser's back and forward walk it, and cmd-click still opens a tab.
+ * Which means the shell's own link treatment would apply and is deliberately overridden here:
+ * an underline on a chip reads as a word inside a box rather than as a control.
+ *
+ * The row sits above the well and is right-aligned, so it reads as an instrument belonging to
+ * the diff below it rather than as two more words at the end of the heading.
+ */
+.diff-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  justify-content: flex-end;
+  margin: 0 0 var(--s-2);
+}
+
+.diff-mode__option {
+  padding: 0 var(--s-2);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-5);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  text-decoration-line: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* The chosen layout inverts, and inverts both halves in one rule as §10.4.3 requires: ink fills
+   the chip and paper draws the word. Driven by `aria-current`, so the state a sighted reader sees
+   and the state a screen reader is told are the same attribute rather than two. */
+.diff-mode__option[aria-current='true'] {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+.diff-mode__option:not([aria-current='true']):hover {
+  background-color: var(--ink-050);
+  color: var(--text-000);
+}
+
+/* ── the split layout: two panes over one alignment ─────────────────────────── */
+
+/**
+ * Side by side, which is the reading a one-line prose amendment wants.
+ *
+ * Read unified, the sentence the README states and the sentence proposed instead are on two
+ * lines with a marker in front of each, and the reader scans across a line break to find which
+ * words moved. Read here they are on one line, and the change is where the columns stop matching.
+ *
+ * The row is two equal columns of `minmax(0, 1fr)`, and the zero minimum is what makes it safe:
+ * a long line wraps inside its own pane instead of widening the column and pushing the other one
+ * off the well. The four-column unified grid is replaced wholesale rather than extended, because
+ * each pane carries its own gutter and marker now.
+ */
+.diff-row--split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  /* No 3px left edge on the row: in a split row the two halves are different kinds, so the wash
+     belongs to each side. Kept transparent at the row's own left for alignment with the unified
+     layout, so toggling does not shift the text by three pixels. */
+  border-left-color: transparent;
+}
+
+/* The two column headings. Small caps at the bottom of the ramp, muted, so they name the panes
+   without competing with the bytes underneath them. */
+.diff-row--heading {
+  padding-bottom: 0;
+}
+
+.diff-side-heading {
+  padding-left: var(--s-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* One pane: the same gutter, marker and bytes the unified row has, in a three-column grid of its
+   own. The 3px left edge is here rather than on the row, which is what lets a deletion and an
+   addition sit on one line each wearing its own wash. */
+.diff-side {
+  display: grid;
+  grid-template-columns: 3.5ch 2ch minmax(0, 1fr);
+  gap: var(--s-2);
+  align-items: baseline;
+  min-width: 0;
+  padding-left: var(--s-2);
+  border-left: 3px solid transparent;
+}
+
+/* The marker's rule closes the pane's own margin, so each side reads as a page with a gutter
+   rather than as two numbers loose in a column. */
+.diff-side .diff-marker {
+  border-right-width: 0;
+  padding-right: 0;
+}
+
+/* A half with no line on it. The pane keeps its box so the columns stay columns, and carries no
+   `data-diff` in the markup, so neither the wash rules nor the hue rules below reach it: a gap is
+   the absence of a line rather than a third kind of change. */
+.diff-side--gap {
+  background-color: var(--ink-050);
+}
+
+/* ── the split wash: a 3px left edge per pane, in rules carrying no text ─────── */
+
+.diff-side[data-diff='del'] {
+  border-left-color: var(--wash-red);
+}
+
+.diff-side[data-diff='add'] {
+  border-left-color: var(--wash-proven);
+}
+
+/* ── the split hue: on the bytes and the marker, in rules carrying no wash ───── */
+
+.diff-side[data-diff='del'] .diff-text,
+.diff-side[data-diff='del'] .diff-marker {
+  color: var(--verdict-red);
+}
+
+.diff-side[data-diff='add'] .diff-text,
+.diff-side[data-diff='add'] .diff-marker {
+  color: var(--verdict-proven);
+}
+
+/* Below the fold of a phone, two panes of mono are two columns of about twenty characters, which
+   is not a reading of anything. So they stack, and the split layout degrades to the unified one
+   it was derived from rather than to something narrower than either (R10.8). */
+@media (max-width: 44rem) {
+  .diff-row--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The headings would stack into two orphan labels over the wrong panes, so the stacked layout
+     drops them: each pane's own marker and wash already say which side it is. */
+  .diff-row--heading {
+    display: none;
+  }
+}
+
 /* An unchanged or unrendered diff states which it is, in prose (§10.10). */
 .diff-view__note {
   max-width: 68ch;

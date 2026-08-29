@@ -7,6 +7,31 @@
  * panel beside the canvas; `?p=<id>` opens the same panel on load, so any state of this
  * page is a URL someone can send.
  *
+ * ## The path lights, and everything else recedes
+ *
+ * Thirty-five lines in one ink across four lanes, and until this existed nothing in the
+ * static picture said which of them belonged together. So pointing at a promise, arrowing to
+ * one, or having one open in the panel lights *its* path: the document it was read from, the
+ * designed test bound to it, the evidence pack sealed for it, and the edges between. Everything
+ * else drops to a quarter of its ink. `lib/graphPath.ts` decides what the path is
+ * and this file decides nothing about it: the relation is a pure function of the layout, so
+ * it is proven over arbitrary snapshots rather than over a rendered canvas.
+ *
+ * Three properties of the highlight are deliberate:
+ *
+ *   - **It is opacity and nothing else.** No node changes hue, no verdict changes colour, no
+ *     edge changes weight. Colour is the verdict channel (§10.4.3) and spending it on "is
+ *     this line relevant" would put two meanings on one signal. A dimmed `red` promise is
+ *     still red.
+ *   - **It stops at one hop.** A designed test can be bound to several promises, so walking
+ *     outwards from one would reach the others through their shared test and light most of
+ *     the graph while claiming to show one chain. The shared test is on the path; the
+ *     promises sharing it are not. See `graphPath.ts` for the argument in full.
+ *   - **It adds nothing to the accessible tree.** Every fact the highlight makes visible is
+ *     already in the panel as text and in the parallel `role="list"` as a row, so this is
+ *     reinforcement for a reader who can see the canvas and never the only way to learn a
+ *     relationship. Nothing here is announced, because nothing here is new information.
+ *
  * ## What React Flow does here, and what it does not
  *
  * It pans, it zooms, it draws the edges and it owns the viewport transform (§10.3).
@@ -160,6 +185,8 @@ import {
   resolveSelection,
   selectionFromSearch,
 } from '../lib/graphNav.js';
+import { pathOf } from '../lib/graphPath.js';
+import { walkthroughSteps } from '../lib/walkthrough.js';
 
 import { useEdgeDraw } from './EdgeDraw.js';
 import { useGraphEntrance } from './GraphEntrance.js';
@@ -167,6 +194,7 @@ import { LaneHeader, LaneNode } from './LaneNode.js';
 import { PromiseList } from './PromiseList.js';
 import { PromiseNode } from './PromiseNode.js';
 import { PromisePanel } from './PromisePanel.js';
+import { Walkthrough } from './Walkthrough.js';
 
 import '@xyflow/react/dist/base.css';
 import '../styles/promise-graph.css';
@@ -198,6 +226,31 @@ export const GRAPH_LABEL = 'promise graph';
 export const GRAPH_EMPTY =
   'This snapshot carries no promises, so there is nothing to draw. A promise appears ' +
   'here as soon as a document states a claim with a citation that resolves.';
+
+/**
+ * Classes the path highlight selects through, and the reason there are three of them.
+ *
+ * `promise-graph.css` dims a node or an edge that is not on the lit path, so it has to be
+ * able to tell three cases apart: on the path, off it, and *not a subject at all*. The
+ * third is the column headings, which are labels rather than data. Dimming the word
+ * `Documents` while a reader follows a line into that lane would take away the one thing
+ * telling them which lane they are looking at.
+ *
+ * Stated here rather than inline so the stylesheet, this file and the tests read one
+ * spelling. React Flow puts a node's `className` on its own `.react-flow__node` wrapper and
+ * an edge's on the `<g class="react-flow__edge">`, which is why the dim lands on the wrapper
+ * and never on `.promise-node` inside it: the entrance of §10.6.1 writes and then releases
+ * an inline `opacity` on that inner element, and a stylesheet rule aimed at the same
+ * property on the same element would be a second author of it.
+ */
+export const NODE_CLASS = 'graph-node';
+export const NODE_LIT_CLASS = 'graph-node--lit';
+export const NODE_HEADER_CLASS = 'graph-node--header';
+
+/** Set on the graph container while a path is lit, so the dim rules have a switch. */
+export const PATH_ATTRIBUTE = 'data-path';
+export const PATH_LIT = 'lit';
+export const PATH_IDLE = 'idle';
 
 /**
  * A promise node's data. A `type` alias rather than an `interface`, because React Flow
@@ -288,6 +341,9 @@ const HEADER_NODES: readonly Node[] = LANES.map((kind): Node => {
     type: 'laneHeader',
     position: { x: laneX(LANE_INDEX[kind]), y: LANE_HEADER_Y },
     data,
+    /* Never dimmed: a heading names its lane, and a reader following a line into a lane
+       needs the name most at the moment everything around it has gone quiet. */
+    className: `${NODE_CLASS} ${NODE_HEADER_CLASS}`,
     width: NODE_W,
     height: LANE_HEADER_H,
     draggable: false,
@@ -391,6 +447,22 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
   const [selectedId, setSelectedId] = useState<string | null>(
     resolveSelection(order, initialSelectedId ?? null),
   );
+  /** The promise a pointer is currently over, so the path lights without a click. */
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  /**
+   * Which promise the path highlight belongs to, in precedence order.
+   *
+   * A pointer beats the keyboard beats the open panel, because each of the three is a
+   * narrower statement of intent than the one after it: a reader moving a pointer over a node
+   * is asking about *that* node right now, a reader who has arrowed to a node is asking about
+   * where they are, and an open panel is the standing answer for as long as it is open. So
+   * hovering a second promise while the panel is open previews the second one and returns to
+   * the open one on the way out, which is the behaviour a reader expects from a preview.
+   */
+  const litId = hoveredId ?? focusedId ?? selectedId;
+  const path = useMemo(() => pathOf(layout, litId), [layout, litId]);
+  const lit = path.nodes.size > 0;
 
   /** The canvas, for the two orchestrations of §10.6 that read the painted graph. */
   const canvas = useRef<HTMLDivElement | null>(null);
@@ -440,6 +512,35 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     if (returnTo !== null) elements.current.get(returnTo)?.focus();
   }, [focusedId, writeSelection]);
 
+  /**
+   * The guided chain: which step is showing, or null for closed.
+   *
+   * The state is here rather than in the panel because building the chain needs the amendments and
+   * the evidence packs, which belong to the snapshot this component reads. `lib/walkthrough.ts`
+   * decides what the steps are; the panel only asks for them to be shown.
+   */
+  const [walkStep, setWalkStep] = useState<number | null>(null);
+  /* The control that opened it, so closing returns focus there rather than to the top of the
+     document (§10.8), the same contract `Escape` on a node honours. */
+  const walkOpener = useRef<HTMLElement | null>(null);
+
+  const openWalkthrough = useCallback((): void => {
+    walkOpener.current = document.activeElement as HTMLElement | null;
+    setWalkStep(0);
+  }, []);
+
+  const closeWalkthrough = useCallback((): void => {
+    setWalkStep(null);
+    walkOpener.current?.focus();
+  }, []);
+
+  /* Closed whenever the selection moves, because a chain is about one promise: leaving it open
+     across a change of subject would show step three of the previous promise's argument beside the
+     next promise's panel. */
+  useEffect(() => {
+    setWalkStep(null);
+  }, [selectedId]);
+
   /* `?p=<id>` on first paint, only when the caller did not state an initial selection.
      Read in an effect rather than on the server: the page is statically rendered from
      the committed snapshot (§10.1), so the query string is not available at build time
@@ -473,6 +574,24 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
     [focusNode, focusedId, order, select],
   );
 
+  /**
+   * Hover, read through React Flow's own node callbacks.
+   *
+   * Handled here rather than by putting `onMouseEnter` on `PromiseNode`, for two reasons.
+   * React Flow already knows which node the pointer is over and hands the node object over,
+   * so the promise id needs no second derivation; and the node components stay free of a
+   * concern that belongs to the graph rather than to a node. Only the promise lane answers:
+   * a document chip has no path of its own, and lighting one would raise the question of
+   * which of the promises citing it was meant.
+   */
+  const onNodeEnter = useCallback((_event: unknown, node: Node): void => {
+    setHoveredId(node.type === 'promise' ? node.id : null);
+  }, []);
+
+  const onNodeLeave = useCallback((): void => {
+    setHoveredId(null);
+  }, []);
+
   /* `Escape` is handled on the section rather than on the canvas, so it closes the panel
      whether focus is on a node or inside the panel's own links (§10.8). */
   const onSectionKeyDown = useCallback(
@@ -503,6 +622,9 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
           draggable: false,
           selectable: false,
           connectable: false,
+          /* On the wrapper React Flow renders, so the dim never touches the inner
+             `.promise-node` the entrance of §10.6.1 writes an inline opacity on. */
+          className: path.nodes.has(node.id) ? `${NODE_CLASS} ${NODE_LIT_CLASS}` : NODE_CLASS,
         } as const;
 
         if (node.kind === 'promise') {
@@ -520,7 +642,7 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
         return { id: node.id, type: 'lane', data, ...shape };
       }),
     ],
-    [layout.nodes, promiseCount, register, select, selectedId],
+    [layout.nodes, path, promiseCount, register, select, selectedId],
   );
 
   /**
@@ -538,12 +660,14 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
         source: edge.from,
         target: edge.to,
         type: 'default',
-        className: `graph-edge graph-edge--${edge.kind}`,
+        className: path.edges.has(edge.id)
+          ? `graph-edge graph-edge--${edge.kind} graph-edge--lit`
+          : `graph-edge graph-edge--${edge.kind}`,
         focusable: false,
         selectable: false,
         data: { kind: edge.kind },
       })),
-    [layout.edges],
+    [layout.edges, path],
   );
 
   /**
@@ -570,10 +694,20 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
       ? null
       : snapshot.evidence.find((entry) => entry.id === selected.evidencePackId) ?? null;
 
+  /* The chain for whatever is selected. Built here because it reads the amendments and the evidence
+     packs as well as the promise, and memoised on the id so opening the panel does not rebuild it
+     on every keystroke. A chain of one step is a page rather than a sequence, so the trigger is
+     withheld below rather than offering a walkthrough with nowhere to walk. */
+  const steps = useMemo(
+    () => (selectedId === null ? [] : walkthroughSteps(snapshot, selectedId)),
+    [selectedId, snapshot],
+  );
+
   return (
     <div
       className={clsx('promise-graph', className)}
       data-panel={selected === null ? 'closed' : 'open'}
+      data-path={lit ? PATH_LIT : PATH_IDLE}
       onKeyDown={onSectionKeyDown}
     >
       {/* Five children, placed by name into a two-row grid rather than wrapped in a
@@ -617,6 +751,8 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
             nodesDraggable={false}
             nodesFocusable={false}
             onKeyDown={onCanvasKeyDown}
+            onNodeMouseEnter={onNodeEnter}
+            onNodeMouseLeave={onNodeLeave}
             tabIndex={0}
             zoomOnDoubleClick={false}
           >
@@ -645,7 +781,25 @@ export function PromiseGraph({ snapshot, initialSelectedId, className }: Promise
       <PromiseList onSelect={select} promises={promises} selectedId={selectedId} />
 
       {selected === null ? null : (
-        <PromisePanel evidence={pack} onClose={close} promise={selected} />
+        <PromisePanel
+          evidence={pack}
+          onClose={close}
+          onExplain={steps.length > 1 ? openWalkthrough : undefined}
+          promise={selected}
+        />
+      )}
+
+      {/* The guided chain, over everything. Offered only when there is a chain: a promise whose
+          only step is its own claim has nothing to sequence, and `PromisePanel` renders no trigger
+          in that case because `onExplain` is undefined. */}
+      {selected === null || walkStep === null || steps.length <= 1 ? null : (
+        <Walkthrough
+          index={walkStep}
+          onClose={closeWalkthrough}
+          onIndexChange={setWalkStep}
+          promise={selected}
+          steps={steps}
+        />
       )}
     </div>
   );

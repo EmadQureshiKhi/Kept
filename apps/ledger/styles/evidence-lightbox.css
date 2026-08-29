@@ -1,0 +1,239 @@
+/**
+ * The evidence lightbox, design §10.2, §10.4.3, §10.5, §10.7, §10.10, R10.8.
+ *
+ * A sealed capture, shown over the page instead of in a tab. Geometry, type and colour only:
+ * no token is declared here, and no depth. The plate composes `.surface-raised-2` and the
+ * stage `.surface-well` in the markup, because a shadow may be declared in `styles/surfaces.css`
+ * and in no other file (§10.4.4 rule 5).
+ *
+ * ## The backdrop is ink at low alpha, and not a blur
+ *
+ * Glassmorphism is on the forbidden list of §10.4 and the palette scan rejects the property by
+ * name. So the page behind is covered by flat ink at 62%, which is also the more honest
+ * treatment: a blurred page reads as the page being *processed*, and this page is not doing
+ * anything. It is being covered.
+ *
+ * The alpha is written as a literal `rgba` of the same ink the ramp is built from rather than
+ * as a token, because there is no backdrop token to reach for and inventing one in
+ * `tokens.css` for a single overlay would widen a closed set for one use. It stays well under
+ * the palette scan's 70% saturation ceiling, being a neutral.
+ *
+ * ## Two bounds, and both of them are the viewport
+ *
+ * A per-step capture is 1280 wide and a full-page one can be several thousand pixels tall, so
+ * the plate is bounded on both axes, `min(92vw, 1100px)` across and `88vh` down, and the
+ * image is `object-fit: contain` inside whatever is left after the header and footer take
+ * their rows. That is what makes a tall capture legible rather than cropped, and it is why the
+ * stage is a grid row that takes the remaining space rather than a fixed height.
+ *
+ * At 320px the same bounds hold with the padding stepped down, the footer wraps, and nothing
+ * on the page has anything to overflow with: the backdrop is `position: fixed` and the plate
+ * never has a width of its own (R10.8).
+ *
+ * ## The chrome is the product's own vocabulary
+ *
+ * The close control and the two step controls are the bordered paper chips every other control
+ * in the system is: a `--line` ink edge on `--ink-100`, small caps, inverting to ink on hover.
+ * So nothing here is a new shape a reader has to learn. A disabled step keeps its word and
+ * loses its ink, rather than disappearing: a control that vanishes at the end of the pack
+ * moves the control beside it under the pointer that was about to click.
+ *
+ * Deliberately absent: a spinner, a zoom control, a caption describing the picture, and any
+ * motion beyond the fade the shell's own transition tokens supply. The lightbox shows a file.
+ */
+
+/* ── the backdrop ───────────────────────────────────────────────────────────── */
+
+.evidence-lightbox {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background-color: rgba(11, 11, 11, 0.62);
+}
+
+/* ── the plate ──────────────────────────────────────────────────────────────── */
+
+/* Three rows: the header names the artefact, the stage holds it, the footer steps through the
+   pack. `minmax(0, 1fr)` on the middle row is what lets the image shrink instead of pushing
+   the footer off the bottom of a short viewport. */
+.evidence-lightbox__plate {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  width: min(92vw, 1100px);
+  max-height: 88vh;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+}
+
+/* ── the header: what this artefact is ──────────────────────────────────────── */
+
+.evidence-lightbox__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* Kane's own word for the artefact's purpose, in the badge grammar of §10.11 read without
+   hue: a bordered paper chip. It is a label rather than a verdict, so it takes no colour. */
+.evidence-lightbox__kind {
+  flex: 0 0 auto;
+  padding: 0 var(--s-1);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-050);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+}
+
+/* The filename, in mono because it is an identifier (§10.7), and allowed to break anywhere:
+   a step capture's name is long, and held on one line it would set the plate's width. */
+.evidence-lightbox__name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}
+
+/* ── the three controls, one shape ──────────────────────────────────────────── */
+
+.evidence-lightbox__close,
+.evidence-lightbox__step {
+  flex: 0 0 auto;
+  padding: var(--s-1) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: var(--s-5);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.evidence-lightbox__close {
+  margin-left: auto;
+}
+
+/* Inverting on hover, and inverting both halves in the same rule, which is what §10.4.3
+   requires of an inverting rule: ink fills the chip and paper draws the word. */
+.evidence-lightbox__close:hover,
+.evidence-lightbox__step:not(:disabled):hover {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* A disabled step keeps its word and loses its ink. Not hidden, and not shrunk: the row's
+   geometry is identical at both ends of the pack, so nothing moves under a pointer. */
+.evidence-lightbox__step:disabled {
+  border-color: var(--hairline-strong);
+  background-color: var(--ink-050);
+  color: var(--text-200);
+  cursor: default;
+}
+
+/* ── the stage: the capture, on a recessed mount ────────────────────────────── */
+
+/* The well is the mount rather than decoration. A screenshot of a white page on a paper plate
+   would have no edge at all, and a reader could not tell where the artefact stopped and the
+   interface began. `min-height: 0` is what lets the grid row actually shrink. */
+.evidence-lightbox__stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-card);
+  overflow: auto;
+}
+
+/* `contain` rather than `cover`: a cropped piece of evidence is not evidence. The image is
+   bounded by its own box so a 4000px capture scales down to fit rather than scrolling the
+   plate, and a small one is not stretched up past its own resolution. */
+.evidence-lightbox__image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid var(--hairline-strong);
+}
+
+/* ── the footer: where in the pack this is, and the file itself ─────────────── */
+
+.evidence-lightbox__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: center;
+  min-width: 0;
+}
+
+/* Tabular, so `9 of 56` and `10 of 56` do not shift the controls either side of them. */
+.evidence-lightbox__counter {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-000);
+  white-space: nowrap;
+}
+
+/* The pack id, pushed to the right of the steppers: it is provenance rather than a control,
+   so it sits away from the two things a reader is clicking. */
+.evidence-lightbox__pack {
+  margin-left: auto;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-200);
+  overflow-wrap: anywhere;
+}
+
+/* Ink, underlined, inverting on hover: the document's own link treatment from `shell.css`,
+   restated only in the size, because this is a footnote rather than body copy. */
+.evidence-lightbox__file {
+  flex: 0 0 auto;
+  font-size: var(--fs-xs);
+}
+
+/* ── one breakpoint, because the plate has one shape ────────────────────────── */
+
+@media (max-width: 56rem) {
+  .evidence-lightbox {
+    padding: var(--s-3);
+  }
+
+  .evidence-lightbox__plate {
+    width: 100%;
+    max-height: 92vh;
+    padding: var(--s-3);
+  }
+
+  /* At 320px the pack id would otherwise sit alone on its own line pushed right by the auto
+     margin, which reads as a rendering fault rather than as provenance. */
+  .evidence-lightbox__pack {
+    margin-left: 0;
+  }
+}

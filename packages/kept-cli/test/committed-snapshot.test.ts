@@ -108,26 +108,47 @@ const CLAIM_LINES = [13, 14, 15, 16, 17, 18, 19, 20] as const;
 const SELF_README = 'README.md';
 
 /**
- * The five self-cited lines, sorted, each stating something **observable** rather
- * than prose (§23.1):
+ * The five self-cited claims, each stating something **observable** rather than prose
+ * (§23.1), identified by a fragment of the claim itself:
  *
- * - 22: the demo path invokes Kane zero times and spends zero credits,
- * - 68: `npm run demo` serves the Ledger on 3000 and the fixture on 3100,
- * - 89: the suite passes with no network, no credentials and no Kane,
- * - 301: the deployed artefact carries no non-GET handler and no server action,
- * - 679: `/badge.svg` answers a GET with SVG carrying a whole-number percentage.
+ * - the demo path invokes Kane zero times and spends zero credits,
+ * - `npm run demo` serves the Ledger on 3000 and the fixture on 3100,
+ * - the suite passes with no network, no credentials and no Kane,
+ * - the deployed artefact carries no non-GET handler and no server action,
+ * - `/badge.svg` answers a GET with SVG carrying a whole-number percentage.
  *
- * **This list is a floor, never a ceiling (R19.5, task 26.3).** The assertion below
- * requires every one of these five lines to still be admitted and requires the
+ * **This list is a floor, never a ceiling (R19.5, task 26.3).** The assertions below
+ * require every one of these five claims to still be admitted and require the
  * self-cited count not to fall, because the cheapest way to raise a coverage figure
  * is to stop admitting the claims nobody has proven, and that is the failure mode of
  * an untested README reproduced inside the tool built to detect it. Adding a sixth
  * self-cited claim is a one-line edit here; removing one is a test failure.
+ *
+ * ## Why these are fragments and not line numbers
+ *
+ * This was `[22, 68, 89, 301, 679]`, and the line numbers were the wrong key. A promise
+ * is identified by its file and its claim text and never by its position, which is the
+ * whole reason inserting a paragraph above a claims block moves every citation down a
+ * line without re-keying a single promise. Pinning positions here contradicted that and
+ * made the suite fail on any edit to the top of the README, which is a document that gets
+ * edited: adding a badge or a sentence to the opening turned five citations red for a
+ * reason that had nothing to do with coverage.
+ *
+ * A fragment is stable under every edit that does not change what the claim says, and it
+ * still fails loudly for the thing the floor exists to catch, a claim being dropped. The
+ * lines themselves are asserted to resolve verbatim against disk further down, which is
+ * where position is genuinely the subject.
  */
-const SELF_CITED_LINES = [22, 68, 89, 301, 679] as const;
+const SELF_CITED_CLAIMS = [
+  'Kane is invoked zero times, zero credits are spent',
+  'npm run demo          # Ledger on :3000, fixture on :3100',
+  'No network, no credentials, no Kane.',
+  'No non-GET handler, no server action',
+  '`/badge.svg` | GET only, `image/svg+xml`',
+] as const;
 
 /** Every promise in the file, however cited. */
-const TOTAL_PROMISES = CLAIM_LINES.length + SELF_CITED_LINES.length;
+const TOTAL_PROMISES = CLAIM_LINES.length + SELF_CITED_CLAIMS.length;
 
 /**
  * The designed corpus by `test_id` (§3.4). The map is fixed by the fixture
@@ -166,13 +187,25 @@ const EXPECTED_DESIGNED_TESTS: Readonly<Record<string, string>> = Object.freeze(
  * document does not enrol it as a use case. So the null asserted below is a statement
  * about the assurance graph and about nothing else.
  */
-const EXPECTED_SELF_CITED_TESTS: Readonly<Record<number, string>> = Object.freeze({
-  22: 'tests/kept_self_claims_test.md',
-  68: 'tests/kept_demo_boot_test.md',
-  89: 'tests/kept_self_claims_test.md',
-  301: 'tests/kept_self_claims_test.md',
-  679: 'tests/kept_badge_endpoint_test.md',
+const EXPECTED_SELF_CITED_TESTS: Readonly<Record<string, string>> = Object.freeze({
+  'Kane is invoked zero times, zero credits are spent': 'tests/kept_self_claims_test.md',
+  'npm run demo          # Ledger on :3000, fixture on :3100':
+    'tests/kept_demo_boot_test.md',
+  'No network, no credentials, no Kane.': 'tests/kept_self_claims_test.md',
+  'No non-GET handler, no server action': 'tests/kept_self_claims_test.md',
+  '`/badge.svg` | GET only, `image/svg+xml`': 'tests/kept_badge_endpoint_test.md',
 });
+
+/**
+ * The claim fragment a self-cited promise matches, or null when it matches none.
+ *
+ * Keyed on the claim rather than the citation line for the reason given at
+ * {@link SELF_CITED_CLAIMS}: position moves whenever the README is edited above a claim,
+ * and identity does not.
+ */
+function fragmentOf(promise: LedgerSnapshot['promises'][number]): string | null {
+  return SELF_CITED_CLAIMS.find((fragment) => promise.citation.text.includes(fragment)) ?? null;
+}
 
 /**
  * Seven of the eight **fixture** promises passed their replay. The eighth is T-7, the
@@ -216,7 +249,7 @@ const PROVEN_COUNT = FIXTURE_PROVEN_COUNT + SELF_PROVEN_COUNT;
  * product exists to prevent (§22.1, §23.2, R19.5). It has since moved to `8/13`, and
  * the only thing that moved it was a claim actually being verified.
  */
-const STALE_COUNT = SELF_CITED_LINES.length - SELF_PROVEN_COUNT;
+const STALE_COUNT = SELF_CITED_CLAIMS.length - SELF_PROVEN_COUNT;
 
 /** The README line T-7 asserts, and the only claim in the file that is a lie. */
 const DISCOUNT_CLAIM_LINE = 20;
@@ -275,7 +308,7 @@ describe('the committed snapshot — schema and provenance', () => {
     );
     expect([...byFile.keys()].sort()).toEqual([SELF_README, README]);
     expect(byFile.get(README)).toBe(CLAIM_LINES.length);
-    expect(byFile.get(SELF_README)).toBe(SELF_CITED_LINES.length);
+    expect(byFile.get(SELF_README)).toBe(SELF_CITED_CLAIMS.length);
   });
 });
 
@@ -284,7 +317,7 @@ describe('the committed snapshot, thirteen promises cited verbatim', () => {
     expect(SNAPSHOT.promises).toHaveLength(TOTAL_PROMISES);
     expect(SNAPSHOT.metrics.totalPromises).toBe(TOTAL_PROMISES);
     expect(promisesCitedTo(README)).toHaveLength(CLAIM_LINES.length);
-    expect(promisesCitedTo(SELF_README)).toHaveLength(SELF_CITED_LINES.length);
+    expect(promisesCitedTo(SELF_README)).toHaveLength(SELF_CITED_CLAIMS.length);
   });
 
   it('cites one distinct line of the fixture claims block per fixture promise', () => {
@@ -294,21 +327,36 @@ describe('the committed snapshot, thirteen promises cited verbatim', () => {
     expect(lines).toEqual([...CLAIM_LINES]);
   });
 
-  it('cites every self-cited line the repository admitted, and admits no fewer (R19.5)', () => {
-    const lines = promisesCitedTo(SELF_README)
-      .map((promise) => promise.citation.line)
-      .sort((a, b) => a - b);
-    // Equality in one direction is the floor of task 26.3: each of the five lines is
-    // still admitted. The `>=` beside it is the direction that matters, spelled out
-    // so a future reader sees which way this assertion is meant to bend.
-    expect(lines).toEqual([...SELF_CITED_LINES]);
+  it('cites every self-cited claim the repository admitted, and admits no fewer (R19.5)', () => {
+    const admitted = promisesCitedTo(SELF_README);
+    // Each of the five claims is still in the graph, matched on what it says rather than
+    // where it sits, so editing the top of the README moves citations without failing
+    // here. The `>=` beside it is the direction that matters, spelled out so a future
+    // reader sees which way this assertion is meant to bend.
+    for (const fragment of SELF_CITED_CLAIMS) {
+      expect(
+        admitted.some((promise) => promise.citation.text.includes(fragment)),
+        `no promise cites the claim containing '${fragment}'. Dropping a claim is how a ` +
+          `coverage figure is raised dishonestly, which is what R19.5 forecloses.`,
+      ).toBe(true);
+    }
+    // Every self-cited promise matches one of the five, so nothing was admitted that this
+    // list does not account for.
+    for (const promise of admitted) {
+      expect(
+        fragmentOf(promise),
+        `${SELF_README}:${promise.citation.line} is admitted and matches none of the five ` +
+          `claims this list names. Add it here deliberately or stop admitting it.`,
+      ).not.toBeNull();
+    }
+    const lines = admitted.map((promise) => promise.citation.line).sort((a, b) => a - b);
     expect(
       lines.length,
       `the repository admitted ${lines.length} claims of its own README and the floor is ` +
-        `${SELF_CITED_LINES.length}. Admitting fewer raises the coverage figure by leaving ` +
+        `${SELF_CITED_CLAIMS.length}. Admitting fewer raises the coverage figure by leaving ` +
         `out the claims nobody has proven, which is exactly what R19.5 forbids: a ledger ` +
         `that shows what it owes is the product.`,
-    ).toBeGreaterThanOrEqual(SELF_CITED_LINES.length);
+    ).toBeGreaterThanOrEqual(SELF_CITED_CLAIMS.length);
   });
 
   it('cites nothing but the two documents subject.docs names', () => {
@@ -357,7 +405,12 @@ describe('the committed snapshot, thirteen promises cited verbatim', () => {
       const designed = promise.designedTest;
       expect(designed, `Promise ${promise.id} has no designed test.`).not.toBeNull();
       if (designed === null) continue;
-      expect(designed.path).toBe(EXPECTED_SELF_CITED_TESTS[promise.citation.line]);
+      const fragment = fragmentOf(promise);
+      expect(
+        fragment,
+        `${SELF_README}:${promise.citation.line} matches none of the five claims`,
+      ).not.toBeNull();
+      expect(designed.path).toBe(EXPECTED_SELF_CITED_TESTS[fragment ?? '']);
       // `designedTest.testId` is the Kane assurance-graph id, the `T-n` the enrichment
       // provider reads off `cover gaps` (§3.4). None of these three documents is a
       // registered use case, so none has one.
@@ -521,19 +574,20 @@ describe('the committed snapshot, the honest assurance state', () => {
     expect(SNAPSHOT.metrics.redCount).toBe(CLAIM_LINES.length - FIXTURE_PROVEN_COUNT);
     // Every stale promise is self-cited, so no fixture claim quietly lost its evidence
     // while the counts still added up. Asserted as a set of files rather than a count of
-    // them, because the count now differs from `SELF_CITED_LINES.length`: one of the
+    // them, because the count now differs from `SELF_CITED_CLAIMS.length`: one of the
     // self-cited claims is proven, and that promise must not appear here.
     expect(
       SNAPSHOT.promises
         .filter((promise) => promise.verdict === 'stale')
         .map((promise) => promise.citation.file),
     ).toEqual(Array.from({ length: STALE_COUNT }, () => SELF_README));
-    // And the proven self-cited claim is the badge one, named rather than counted.
+    // And the proven self-cited claim is the badge one, named by what it says rather
+    // than by the line it sits on.
     expect(
       promisesCitedTo(SELF_README)
         .filter((promise) => promise.verdict === 'proven')
-        .map((promise) => promise.citation.line),
-    ).toEqual([679]);
+        .map((promise) => fragmentOf(promise)),
+    ).toEqual(['`/badge.svg` | GET only, `image/svg+xml`']);
 
     // Each promise is attributed to *its own* run rather than to one instant covering
     // the file, and the freshness triple names the newest of them. That held while two

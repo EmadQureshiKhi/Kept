@@ -34,11 +34,30 @@
  * verdict tag and the close control stay in the header above it, so the way out is
  * reachable from anywhere in the scroll.
  *
- * **An artefact opens in its own tab.** The links point at static files under
- * `/evidence/…` — annotated captures, per-step screenshots, failure documents — and
- * following one used to navigate the Ledger away from the graph the reader was working in.
- * Each carries `target="_blank"` with `rel="noopener noreferrer"`, a drawn mark saying so,
- * and one sentence above the list saying it in words for a reader who cannot see the mark.
+ * **A long artefact list starts shut.** The committed pack holds fifty-nine artefacts and nine
+ * of the thirteen promises point at it, so opening almost any proven promise unrolled
+ * fifty-nine rows underneath four sections of prose, and the reader scrolled past all of it to
+ * reach the sections they had not read. The list is now a native `<details>` whose summary
+ * states both counts, shut above `ARTIFACT_COLLAPSE_AT` and open below it, because collapsing a
+ * pack of two would cost a click to hide nothing. Nothing leaves the document by being shut:
+ * `<details>` keeps its children, so every artefact path is still in the served HTML and still
+ * matched by the browser's own find.
+ *
+ * **A capture opens over the panel; anything else opens in a tab.** The links point at static
+ * files under `/evidence/…`, and the pack in the committed snapshot holds fifty-six per-step
+ * screenshots, one annotated capture and two failure documents. The screenshots are where this
+ * product's argument lands, and looking at one used to cost a tab switch: the reader left the
+ * graph, looked at a JPEG alone, and came back to find their place. So a bitmap now opens in
+ * `EvidenceLightbox` over this panel, stepping through the pack with the arrow keys, and
+ * everything else keeps the tab it always had. `lib/evidenceView.ts` decides which is which
+ * from the file's own extension rather than from Kane's label for it, because a `screenshot`
+ * written as a `.yaml` would otherwise go into an `<img>`.
+ *
+ * Every link keeps its real `href`, its `target="_blank"` and its `rel="noopener noreferrer"`,
+ * and only an unmodified primary click on a bitmap is intercepted. So cmd-click still opens a
+ * tab, "copy link address" still works, and a reader with JavaScript off still gets the file.
+ * The row's own affordance is a drawn mark, and one sentence above the list says both halves in
+ * words for a reader who cannot see it.
  *
  * **It is a panel, not a dialog.** No `role="dialog"`, no focus trap, no backdrop: the
  * graph beside it stays readable and operable, focus stays on the node that opened the
@@ -59,11 +78,19 @@
 'use client';
 
 import clsx from 'clsx';
-import type { SnapshotEvidence, SnapshotPromise } from 'kept-core';
-import { useRef } from 'react';
+import type { SnapshotArtifact, SnapshotEvidence, SnapshotPromise } from 'kept-core';
+import { useCallback, useMemo, useRef, useState, type MouseEvent } from 'react';
 
 import { citationLabel, designedTestLabel } from '../lib/citation.js';
+import { isViewableArtifact, viewableArtifacts } from '../lib/evidenceView.js';
+import { isPlainClick } from '../lib/plainClick.js';
+import {
+  WALKTHROUGH_TRIGGER,
+  WALKTHROUGH_TRIGGER_KEPT,
+  walkthroughTriggerLabel,
+} from '../lib/walkthrough.js';
 
+import { EvidenceLightbox } from './EvidenceLightbox.js';
 import { usePanelStagger } from './PanelStagger.js';
 import { VerdictTag } from './VerdictTag.js';
 
@@ -98,20 +125,72 @@ export const PANEL_WORDS = {
   /**
    * Said once, above the list, rather than 37 times inside it.
    *
-   * Every artefact is a static file — an annotated screenshot, a per-step capture, a
-   * failure document — and each link carries `target="_blank"`, so opening one no longer
-   * navigates the Ledger away from the graph the reader is working in. The row's own
-   * affordance for that is geometry (`.promise-panel__artifact-away`, a drawn mark rather
-   * than a pictograph), and geometry cannot be read aloud, so the fact is stated in words
-   * here where a screen reader meets it before the list rather than after every item.
+   * Every artefact is a static file, and there are now two ways to reach one. A capture the
+   * browser can draw opens in a viewer over this panel, so the reader sees the proof without
+   * leaving the graph they are reading. Anything else, meaning a HAR, a console log or a
+   * failure document, still opens in a tab, because those are not things to put in an image. Which
+   * is which is decided by the file's own extension in `lib/evidenceView.ts` rather than by
+   * Kane's label for it.
+   *
+   * Both halves are stated because a reader who clicks two rows and gets two different
+   * behaviours needs to have been told once that there are two. The row's own affordance is
+   * geometry (`.promise-panel__artifact-away`, a drawn mark rather than a pictograph), and
+   * geometry cannot be read aloud, so the fact is in words here where a screen reader meets it
+   * before the list rather than after every item.
    */
   artifactsOpenAway:
-    'Each artefact opens in a new tab, so this page keeps its place in the graph.',
+    'A capture opens in a viewer over this panel, so the page keeps its place in the graph. ' +
+    'Anything that is not an image opens in a new tab instead.',
   close: 'close',
 } as const;
 
+/**
+ * The size at which the artefact list stops being a list and starts being a wall.
+ *
+ * The committed pack holds fifty-nine artefacts and nine of the thirteen promises point at it,
+ * so opening almost any proven promise used to unroll fifty-nine rows underneath four sections
+ * of prose. The reader scrolled past all of it to find the sections they had not read yet, and
+ * the sections were the answer.
+ *
+ * A pack of two or three is not that problem, and collapsing it would cost a click to hide
+ * nothing. So the disclosure below starts open for a short pack and shut for a long one, and
+ * the boundary is stated here as a number rather than left as a magic literal in the markup.
+ * Eight is where a list stops fitting beside the sections around it at the panel's own 440px.
+ */
+export const ARTIFACT_COLLAPSE_AT = 8;
+
+/**
+ * The words on the shut artefact list, and why they carry both counts.
+ *
+ * A closed disclosure that does not say what it holds is indistinguishable from one holding
+ * nothing, so the total is on the outside. The viewable count is there too because the two
+ * numbers answer different questions: the total is how much the run sealed, and the viewable
+ * count is how much of it a reader can look at without leaving the page. `59 artefacts, 57
+ * viewable here` says both in six words.
+ *
+ * The viewable half is left out entirely when it is zero rather than spelled `0 viewable here`,
+ * which would read as a failure. A pack of two failure documents has nothing to view and
+ * nothing has gone wrong.
+ */
+export function artifactSummary(total: number, viewable: number): string {
+  const artefacts = `${String(total)} artefact${total === 1 ? '' : 's'}`;
+  return viewable === 0 ? artefacts : `${artefacts}, ${String(viewable)} viewable here`;
+}
+
 export interface PromisePanelProps {
   readonly promise: SnapshotPromise;
+  /**
+   * Opens the guided verification chain for this promise, when the caller has one to offer.
+   *
+   * The trigger is here because this is where a reader is when the question occurs to them, and
+   * the sequence is mounted by `PromiseGraph` because building it needs the amendments and the
+   * evidence packs, which are the snapshot's and not this component's. So the panel asks and the
+   * graph answers, and neither one holds a fact the other decides.
+   *
+   * Absent means there is nothing to walk: a promise with a claim and no test, no evidence, no
+   * repair and no amendment is a one-step chain, and a sequence of one is a page.
+   */
+  readonly onExplain?: () => void;
   /**
    * The pack `promise.evidencePackId` resolves to, or `null` when the promise carries
    * no pack. Resolved by the caller against `snapshot.evidence`, so the panel never
@@ -140,7 +219,13 @@ function Fact({ term, value }: { readonly term: string; readonly value: string |
   );
 }
 
-export function PromisePanel({ promise, evidence = null, onClose, className }: PromisePanelProps) {
+export function PromisePanel({
+  promise,
+  evidence = null,
+  onClose,
+  onExplain,
+  className,
+}: PromisePanelProps) {
   const claimId = `${promise.id}-claim`;
   const designed = designedTestLabel(promise.designedTest);
   const source = promise.verdictSource;
@@ -151,6 +236,44 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
      for nothing else. */
   const panel = useRef<HTMLElement | null>(null);
   usePanelStagger(panel, promise.id);
+
+  /**
+   * The artefact viewer's state, and the whole of it: which viewable artefact is open, or
+   * `null` for none.
+   *
+   * It lives here rather than in `EvidenceLightbox` because the panel is what owns the list
+   * the viewer steps through, and a component that held its own index would need the list
+   * handed to it anyway. The index is into `viewable` rather than into `evidence.artifacts`,
+   * so stepping never lands on a HAR the viewer cannot draw.
+   */
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const viewable = useMemo<readonly SnapshotArtifact[]>(
+    () => (evidence === null ? [] : viewableArtifacts(evidence.artifacts)),
+    [evidence],
+  );
+
+  /* The link that opened the viewer, so closing it returns focus there rather than to the top
+     of the document (§10.8), which is the same contract `Escape` on the graph honours. */
+  const opener = useRef<HTMLAnchorElement | null>(null);
+
+  const openViewer = useCallback(
+    (artifact: SnapshotArtifact) => (event: MouseEvent<HTMLAnchorElement>) => {
+      /* Only a bitmap, and only a plain click. Everything else is the browser's: a cmd-click
+         opens a tab, and a HAR has no business in an `<img>`. */
+      if (!isViewableArtifact(artifact) || !isPlainClick(event)) return;
+      const at = viewable.indexOf(artifact);
+      if (at === -1) return;
+      event.preventDefault();
+      opener.current = event.currentTarget;
+      setOpenIndex(at);
+    },
+    [viewable],
+  );
+
+  const closeViewer = useCallback((): void => {
+    setOpenIndex(null);
+    opener.current?.focus();
+  }, []);
 
   return (
     <aside
@@ -182,6 +305,24 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
         <p className="promise-panel__claim" id={claimId}>
           {promise.claim}
         </p>
+
+        {/* The way into the guided chain, directly under the claim rather than at the foot of the
+            card: the question "why is this red?" occurs to a reader the moment they have read the
+            claim and seen the verdict beside it, which is here. The word is a question when the
+            promise is red and a statement when it is not, so the control never asks something
+            false about a promise that is kept. */}
+        {onExplain === undefined ? null : (
+          <p className="promise-panel__explain-row">
+            <button
+              aria-label={walkthroughTriggerLabel(promise)}
+              className="promise-panel__explain"
+              onClick={onExplain}
+              type="button"
+            >
+              {promise.verdict === 'red' ? WALKTHROUGH_TRIGGER : WALKTHROUGH_TRIGGER_KEPT}
+            </button>
+          </p>
+        )}
 
         <section className="promise-panel__section">
           <h3 className="promise-panel__heading">{PANEL_WORDS.citation}</h3>
@@ -253,7 +394,17 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
               {evidence.artifacts.length === 0 ? (
                 <p className="promise-panel__prose">{PANEL_WORDS.noArtifacts}</p>
               ) : (
-                <>
+                /* Shut for a long pack, open for a short one, and a native `<details>` either
+                   way: no state, no handler, and the children stay in the document when it is
+                   closed, so every artefact path is still in the served HTML and still matched
+                   by the browser's own find. See `ARTIFACT_COLLAPSE_AT`. */
+                <details
+                  className="promise-panel__artifacts-disclosure"
+                  open={evidence.artifacts.length <= ARTIFACT_COLLAPSE_AT}
+                >
+                  <summary className="promise-panel__artifacts-summary">
+                    {artifactSummary(evidence.artifacts.length, viewable.length)}
+                  </summary>
                   <p className="promise-panel__prose">{PANEL_WORDS.artifactsOpenAway}</p>
                   <ul className="promise-panel__artifacts">
                     {evidence.artifacts.map((artifact, index) => (
@@ -273,7 +424,9 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
                         <span className="promise-panel__artifact-link">
                           <a
                             className="promise-panel__artifact"
+                            data-viewable={isViewableArtifact(artifact) ? 'true' : undefined}
                             href={artifact.publicPath}
+                            onClick={openViewer(artifact)}
                             rel="noopener noreferrer"
                             target="_blank"
                           >
@@ -284,12 +437,25 @@ export function PromisePanel({ promise, evidence = null, onClose, className }: P
                       </li>
                     ))}
                   </ul>
-                </>
+                </details>
               )}
             </>
           )}
         </section>
       </div>
+
+      {/* Rendered last and outside the scrollport, because it covers the page rather than the
+          section it came from: a `position: fixed` plate inside `.promise-panel__body` would be
+          clipped by the scroll container the same way the `/runs` hint panel was. */}
+      {openIndex === null || evidence === null ? null : (
+        <EvidenceLightbox
+          artifacts={viewable}
+          index={openIndex}
+          onClose={closeViewer}
+          onIndexChange={setOpenIndex}
+          packId={evidence.id}
+        />
+      )}
     </aside>
   );
 }

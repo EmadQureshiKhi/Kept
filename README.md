@@ -1,7 +1,7 @@
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="Assets/kept-logo-dark.png"><img src="Assets/kept-logo-light.png" alt="KEPT" width="440"></picture></p>
 <p align="center"><strong>Every promise your product makes, and continuous proof it's still kept.</strong></p>
-<p align="center"><img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-37%20verified-111111" alt="37 correctness properties"> <img src="https://img.shields.io/badge/tests-2854-111111" alt="2854 tests"></p>
-<p align="center"><a href="#start-here">Start here</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#the-code-break-loop">Code-break loop</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#the-live-loop">Live loop</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a></p>
+<p align="center"><img src="https://img.shields.io/badge/npm-%40corgod%2Fkept--cli%200.1.1-CB3837" alt="@corgod/kept-cli 0.1.1 on npm"> <img src="https://img.shields.io/badge/npm-kept--core%200.1.1-CB3837" alt="kept-core 0.1.1 on npm"> <img src="https://img.shields.io/badge/license-MIT-111111" alt="MIT licensed"> <img src="https://img.shields.io/badge/typescript-5.9-111111" alt="TypeScript 5.9"> <img src="https://img.shields.io/badge/node-20.19%2B-111111" alt="Node 20.19 or newer"> <img src="https://img.shields.io/badge/kane--cli-0.8.4-111111" alt="Kane CLI 0.8.4"> <img src="https://img.shields.io/badge/runtime%20deps-9-111111" alt="Nine runtime dependencies"> <img src="https://img.shields.io/badge/properties-37%20verified-111111" alt="37 correctness properties"> <img src="https://img.shields.io/badge/tests-2983-111111" alt="2983 tests"></p>
+<p align="center"><a href="#start-here">Start here</a> · <a href="#use-it-on-your-own-repository">Use it on your repo</a> · <a href="#the-short-version">The short version</a> · <a href="#run-it-yourself">Run it yourself</a> · <a href="#the-idea">The idea</a> · <a href="#architecture">Architecture</a> · <a href="#the-three-contract-kane-model">Kane model</a> · <a href="#three-way-repair">Three-way repair</a> · <a href="#verification">Verification</a> · <a href="#status">Status</a></p>
 
 ---
 
@@ -15,8 +15,8 @@
 ## Start here
 
 - **Live Ledger** — [withkept.vercel.app](https://withkept.vercel.app)
-- **Or run it yourself** — `npm run demo`, then open `http://localhost:3000`
-- **Or produce your own run** — one command, [walked through below](#run-it-yourself)
+- **On your own repo:** `npm i -g @corgod/kept-cli`, then [three steps below](#use-it-on-your-own-repository)
+- **Or run this demo:** `npm run demo`, then open `http://localhost:3000`
 
 `npm run demo` is the whole judge path. It boots the Ledger and the fixture application from
 a snapshot committed in this repository: **Kane is invoked zero times, zero credits are spent,
@@ -30,6 +30,79 @@ You do not need it, or an account, to see everything the Ledger shows.
 
 **Three-minute demo:** [youtu.be/2dUtE4bwVO0](https://youtu.be/2dUtE4bwVO0), which walks the
 deployed Ledger, a code-break repair, and an accepted documentation amendment, in that order.
+
+**On npm:** [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli) is the `kept`
+command and the one to install. [`kept-core`](https://www.npmjs.com/package/kept-core) is the
+library underneath it. Both `0.1.1`, MIT.
+
+---
+
+## Use it on your own repository
+
+KEPT is not specific to the application in this repository. It is published, and it runs
+against any codebase that writes down what it does.
+
+```bash
+npm install -g @corgod/kept-cli     # https://www.npmjs.com/package/@corgod/kept-cli
+cd your-project
+kept init                           # writes .kept/config.json and one example test
+kept doctor                         # seven checks, each with its own remedy
+kept build                          # read your claims, cite them, bind the tests
+```
+
+`kept init` invokes Kane **zero times** and spends nothing. Point `subject.docs` at whatever
+states your claims, a README, a `PROMISES.md`, a docs folder, and add a `@verifies` tag naming
+the file and line:
+
+```markdown
+<!-- @verifies docs/CLAIMS.md:3 the running-total claim -->
+<!-- @covers src/basket.js -->
+```
+
+`kept build` then reads that line off disk **verbatim**, and a citation that does not resolve
+never enters the graph. There is no second code path for this repository's own claims: the
+promise record for a claim of yours is identical to one of ours, field for field, except the
+citation path, and a property test quantifies over generated repositories to keep it that way.
+
+**Verified rather than asserted.** Both packages were installed from the registry into a
+throwaway project with no relationship to this one, and driven: `kept init` scaffolded,
+`kept build` admitted that project's own claims, and `kept snapshot` wrote a ledger.
+
+### Bring your own Kane credentials
+
+**KEPT ships no keys, stores no keys and reads none of yours.** It never bundles or vendors
+`kane-cli`; it spawns whatever is on your `PATH` and parses the NDJSON that binary writes.
+Authentication, billing and credits are between you and Kane, and **Kane is what bills**.
+Nothing you install from npm here can spend anything.
+
+```bash
+npm install -g kane-cli    # however Kane distributes it for you
+kane-cli login             # your account, your credits
+kept doctor                # check 1 names the resolved binary and its version
+```
+
+**Most of the product works without Kane at all**, which is deliberate:
+
+| Command | Without Kane authenticated |
+|---|---|
+| `kept init`, `kept doctor` | work fully, zero invocations, zero credits |
+| `kept build`, `kept snapshot` | work: your claims are cited and bound. Coverage is **withheld**, never reported as zero |
+| `kept verify` | needs Kane. This is what earns verdicts and spends credits |
+| `kept reconcile`, `kept evolve` | need Kane |
+
+A graph with no verdicts still tells you what you have promised and what you owe. It just
+refuses to claim anything was proven. Authenticating Kane is what turns the owed column into
+an earned one.
+
+### What the two packages are
+
+| Package | What it is |
+|---|---|
+| [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli) | The `kept` command. Install this one. |
+| [`kept-core`](https://www.npmjs.com/package/kept-core) | The library: promise model, citation rules, the Kane NDJSON parser and its three completion contracts, the verdict router, the blast radius, the write guard, the snapshot schema. Install directly only to build your own tooling on the same model. |
+
+Both are `0.1.1`, MIT, and ship `dist` plus a README and nothing else. The command is `kept`
+either way.
 
 ---
 
@@ -82,7 +155,7 @@ true, and it is supposed to be red: that is the demonstration, not a bug.
 ### Level 2 — check our claims, still no account (about 36 seconds)
 
 ```bash
-npm test              # 160 files, 2854 tests, about 44 s
+npm test              # 165 files, 2983 tests, about 44 s
 npm run check         # the same suite, plus the read-only scan and three type-check passes
 ```
 
@@ -806,7 +879,7 @@ npm test          # vitest --run, never watch
 npm run check     # the read-only scan, tsc -b, both app type-checks, then the suite
 ```
 
-**160 files, 2854 tests, about 44 seconds** on a bare checkout. 2848 pass and 6 are skipped, each
+**165 files, 2983 tests, about 44 seconds** on a bare checkout. 2977 pass and 6 are skipped, each
 skip conditional on a repository state rather than switched off. Four are the assertions that held
 the README to carrying a placeholder instead of a deployed URL, and the deployment happened, so the
 opposite assertions run in their place. The other two read a real Kane evidence archive when the
@@ -874,11 +947,14 @@ walkers that resolve evidence packs locally are absent from the build rather tha
 it. Verified by the build going from four `Dynamic filesystem access` warnings and a 52.6 MB trace
 to zero warnings and 41.9 MB.
 
-Both packages are publishable as well: `kept-core` and `@corgod/kept-cli` at `0.1.1`, off `private`, each
-with its own README, and the published file list asserted against a real `npm pack` rather than
-against the manifest that describes it. You bring your own Kane: KEPT never bundles, installs or
+**Both packages are published**, [`kept-core`](https://www.npmjs.com/package/kept-core) and
+[`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli) at `0.1.1`, each with its own
+README, and the published file list asserted against a real `npm pack` rather than against the
+manifest that describes it. Verified by installing both from the registry into a project outside
+this workspace and driving them there. You bring your own Kane: KEPT never bundles, installs or
 vendors `kane-cli`, it spawns whatever is on `PATH`, and a missing binary is a supported state that
-exits zero. The procedure is [docs/publish.md](docs/publish.md).
+exits zero. The procedure, and why the CLI is scoped while the library is not, are in
+[docs/publish.md](docs/publish.md).
 
 Public source: <https://github.com/EmadQureshiKhi/Kept>
 
@@ -917,12 +993,13 @@ figures below are the ones a reader re-derives from the committed snapshot with 
 | Verdicts | 8 proven, 1 red on purpose, 4 stale |
 | Proven coverage | **0.615**, published rather than withheld |
 | Coverage ribbon | 6 of 6 acceptance criteria designed and proven, 1 of 9 use cases with scenarios |
-| Suite | **160 files, 2854 tests**, 2848 passing on a fresh clone, 6 conditionally skipped, about 44 s |
+| Suite | **165 files, 2983 tests**, 2977 passing on a fresh clone, 6 conditionally skipped, about 44 s |
 | Correctness properties | 37 of 37 |
 | Evidence packs | 1, holding 59 artefacts, referentially closed against git's index |
 | Runtime dependencies | 9 |
 | Commands | 10, all implemented |
 | Deployment | nine static routes, zero environment variables |
+| Published | [`kept-core`](https://www.npmjs.com/package/kept-core) and [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli), both `0.1.1` |
 
 **Built and green.** The three-contract Kane layer: contracts, the family-gated parser, coercion,
 per-family exit interpretation, evidence resolution, the zip reader for sealed packs, triage

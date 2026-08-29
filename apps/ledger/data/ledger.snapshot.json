@@ -272,7 +272,7 @@
   "degradedReasons": [],
   "diagnostics": [
     {
-      "at": "2026-08-28T20:20:47.153Z",
+      "at": "2026-08-28T21:19:03.716Z",
       "code": "enrichment-accepted",
       "file": null,
       "line": null,
@@ -280,7 +280,7 @@
       "severity": "info"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.900Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -288,7 +288,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.900Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -296,7 +296,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.900Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -304,7 +304,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.900Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -312,7 +312,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -320,7 +320,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -328,7 +328,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -336,7 +336,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -344,7 +344,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -352,7 +352,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -360,7 +360,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -368,7 +368,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -376,7 +376,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -384,7 +384,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -392,7 +392,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -400,7 +400,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -408,7 +408,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -416,7 +416,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -424,7 +424,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -432,7 +432,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-evidence-unresolved",
       "file": null,
       "line": null,
@@ -440,7 +440,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-repair-evidence-unresolved",
       "file": null,
       "line": null,
@@ -448,7 +448,7 @@
       "severity": "warn"
     },
     {
-      "at": "2026-08-28T20:20:47.329Z",
+      "at": "2026-08-28T21:19:03.901Z",
       "code": "snapshot-runs-truncated",
       "file": null,
       "line": null,
@@ -1015,7 +1015,7 @@
     "terminalEventAt": "2026-08-26T06:35:04.797Z",
     "terminalEventType": "testrun_done"
   },
-  "generatedAt": "2026-08-28T20:20:47.258Z",
+  "generatedAt": "2026-08-28T21:19:03.809Z",
   "generator": {
     "kaneCli": null,
     "kept": "0.1.1"
@@ -1062,7 +1062,7 @@
     {
       "citation": {
         "file": "README.md",
-        "line": 68,
+        "line": 141,
         "text": "npm run demo          # Ledger on :3000, fixture on :3100"
       },
       "claim": "npm run demo # Ledger on :3000, fixture on :3100",
@@ -1111,7 +1111,7 @@
     {
       "citation": {
         "file": "README.md",
-        "line": 679,
+        "line": 752,
         "text": "| `/badge.svg` | GET only, `image/svg+xml`, proven coverage as a whole-number percentage |"
       },
       "claim": "| `/badge.svg` | GET only, `image/svg+xml`, proven coverage as a whole-number percentage |",
@@ -1252,7 +1252,7 @@
     {
       "citation": {
         "file": "README.md",
-        "line": 301,
+        "line": 374,
         "text": "4. **The deployed artefact cannot spend or mutate.** No non-GET handler, no server action, no"
       },
       "claim": "**The deployed artefact cannot spend or mutate.** No non-GET handler, no server action, no",
@@ -1357,7 +1357,7 @@
     {
       "citation": {
         "file": "README.md",
-        "line": 89,
+        "line": 162,
         "text": "No network, no credentials, no Kane. Every Kane behaviour under test is replayed from a"
       },
       "claim": "No network, no credentials, no Kane. Every Kane behaviour under test is replayed from a",

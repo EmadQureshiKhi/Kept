@@ -271,6 +271,51 @@
   color: var(--text-000);
 }
 
+/* ── the way into the guided chain ──────────────────────────────────────────── */
+
+/**
+ * `why is this red?`, directly under the claim.
+ *
+ * Placed here rather than at the foot of the card because that is when the question occurs: the
+ * reader has just read the claim and seen the verdict tag beside it, and the next thing they want
+ * is the argument. At the foot it would be found by people who already knew to look.
+ *
+ * **It is the one filled control on the panel, and that is on purpose.** Every other control in
+ * this system starts as a bordered paper chip and inverts on hover; this one starts inverted. The
+ * panel carries a close button and up to fifty-nine artefact links, and the sequence behind this
+ * button is the product's whole argument, so it has to be the thing a reader's eye lands on rather
+ * than the twelfth chip on a card. Inverting rules set both halves in the same rule as §10.4.3
+ * requires, and no hue is spent: the verdict hues belong to the verdict, and this is a control.
+ */
+.promise-panel__explain-row {
+  margin: 0;
+}
+
+.promise-panel__explain {
+  padding: var(--s-1) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--text-000);
+  color: var(--ink-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: var(--s-5);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* Hover releases the fill rather than deepening it: the control is already at full ink, so the
+   only move left is back to paper, and a reader gets a state change either way. */
+.promise-panel__explain:hover {
+  background-color: var(--ink-100);
+  color: var(--text-000);
+}
+
 /* ── sections ───────────────────────────────────────────────────────────────── */
 
 .promise-panel__section {
@@ -410,6 +455,79 @@
   color: var(--text-000);
   white-space: pre-wrap;
   overflow-wrap: break-word;
+}
+
+/* ── the disclosure the artefact list sits behind ───────────────────────────── */
+
+/**
+ * A long pack starts shut, and this is the line that says what is behind it.
+ *
+ * The named complaint: the committed pack carries fifty-nine artefacts and nine of the
+ * thirteen promises point at it, so opening a proven promise unrolled fifty-nine rows under
+ * four sections of prose. The reader scrolled past every one of them to reach the sections
+ * they had not read yet, and the sections were the answer.
+ *
+ * A native `<details>`, the same choice `/runs` makes for a run's member breakdown and
+ * `shell.css` makes for the `?` hint, and for the same reasons: it opens with no JavaScript,
+ * the summary is focusable and operable from the keyboard, the shell's focus ring lands on it,
+ * and assistive technology announces the expanded state with no `aria` written. It also needs
+ * no state, so the panel stays as server-rendered as it was.
+ *
+ * The summary carries both counts, so shutting the list hides no fact: `59 artefacts, 57
+ * viewable here` is an answer, and `show artefacts` would be a question. The `open` attribute
+ * is decided in the markup from `ARTIFACT_COLLAPSE_AT`, because whether a list is a wall is a
+ * fact about its length rather than about its styling.
+ *
+ * No `.surface-*` class: shut, this is a line of type on the panel's own paper, and the rows
+ * below it are already a grid on that paper. A plane here would be a fourth surface inside a
+ * card that already has two.
+ */
+.promise-panel__artifacts-disclosure {
+  min-width: 0;
+}
+
+/* The same small-caps-over-a-caret idiom the run detail rows use, at the panel's own label
+   size. `list-style: none` plus the WebKit pseudo suppress both engines' default triangles, so
+   the caret below is the only one drawn. */
+.promise-panel__artifacts-summary {
+  display: flex;
+  gap: var(--s-2);
+  align-items: baseline;
+  padding: var(--s-1) 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-200);
+  list-style: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.promise-panel__artifacts-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* One shape in two states rather than two glyphs: a reader learns one caret. */
+.promise-panel__artifacts-summary::before {
+  content: '\25B8';
+  display: inline-block;
+  font-size: var(--fs-sm);
+  line-height: 1;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.promise-panel__artifacts-disclosure[open] > .promise-panel__artifacts-summary::before {
+  transform: rotate(90deg);
+}
+
+/* Full ink on hover and while open: quietest thing in the section when shut, and the label of
+   the block once a reader has committed to reading it. */
+.promise-panel__artifacts-summary:hover,
+.promise-panel__artifacts-disclosure[open] > .promise-panel__artifacts-summary {
+  color: var(--text-000);
 }
 
 /* ── evidence artefacts ─────────────────────────────────────────────────────── */

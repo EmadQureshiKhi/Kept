@@ -7,8 +7,8 @@ tags: [kept, self-cited, unbound]
 # Three claims KEPT's own README makes that no browser flow can settle
 
 <!-- @verifies README.md:22 the zero Kane invocations claim -->
-<!-- @verifies README.md:89 the no network and no credentials claim -->
-<!-- @verifies README.md:301 the read-only deployment claim -->
+<!-- @verifies README.md:162 the no network and no credentials claim -->
+<!-- @verifies README.md:374 the read-only deployment claim -->
 
 **Read this before reading the steps.** This document exists so that three claims KEPT makes
 about itself enter the promise graph. It is not a proof of any of them, and it must not be read

@@ -1,0 +1,433 @@
+/**
+ * The guided verification chain, design §8.1, §10.4.3, §10.5, §10.7, §10.10, R10.8.
+ *
+ * Geometry, type and colour only. No token is declared here and no depth is authored: the plate
+ * composes `.surface-raised-2` and the quote and stage compose `.surface-well` in the markup,
+ * because a shadow may be declared in `styles/surfaces.css` and nowhere else (§10.4.4 rule 5).
+ *
+ * ## The backdrop is flat ink, not a blur
+ *
+ * Glassmorphism is on the forbidden list of §10.4 and the palette scan rejects the property by
+ * name. Flat ink at 68% is also the more honest treatment: a blurred page reads as the page being
+ * processed, and nothing is happening to it. It is being covered.
+ *
+ * ## Four rows, and the body is the one that scrolls
+ *
+ * The head names the subject, the rail maps the argument, the body carries one step, and the foot
+ * moves. Only the body scrolls, so the way out and the map stay reachable from anywhere in a long
+ * step: the same split `promise-panel.css` makes for the same reason. `minmax(0, 1fr)` on the body
+ * row is what lets it actually shrink rather than pushing the foot off a short viewport.
+ *
+ * ## The rail is achromatic, and that is deliberate
+ *
+ * Five stops, the current one filled with ink and its word in paper. No hue anywhere on it, and
+ * specifically not the verdict red of the promise being explained: colour is the verdict channel
+ * (§10.4.3), and spending it on "you are here" would put two meanings on one signal in the exact
+ * sequence that exists to explain what the verdict means. Position and fill carry the state, and
+ * `aria-current` carries it for a reader who cannot see either.
+ *
+ * At 320px the rail wraps rather than scrolling sideways, and the stop words shorten to their
+ * numerals under the breakpoint, so five stops fit a phone without becoming a horizontal scroller
+ * inside a dialog (R10.8).
+ */
+
+/* ── the backdrop ───────────────────────────────────────────────────────────── */
+
+.walkthrough {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
+  background-color: rgba(11, 11, 11, 0.68);
+}
+
+/* ── the plate ──────────────────────────────────────────────────────────────── */
+
+/**
+ * The plate, and the spacing pass it needed.
+ *
+ * The first version set `--s-5` of padding and `--s-4` between rows, and the type ran too close to
+ * every edge: the eyebrow sat almost on the top border, the counter almost on the bottom one, and a
+ * long lede touched the right edge before it wrapped. A dialog covering the page is the one surface
+ * with no neighbours to establish its rhythm, so it has to establish its own, and it needs more room
+ * than a card sitting in a column of other cards.
+ *
+ * So the padding is `--s-6` all round, the rows are `--s-5` apart, and the body has its own inner
+ * inset on the right for the scrollbar gutter. `88vh` rather than `90vh` leaves the plate visibly
+ * inside the viewport instead of appearing to be cropped by it.
+ */
+.walkthrough__plate {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--s-5);
+  width: min(94vw, 880px);
+  max-height: 88vh;
+  padding: var(--s-6);
+  border-radius: var(--r-card);
+}
+
+/* ── the head: what is being explained, and about what ─────────────────────── */
+
+.walkthrough__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* Small caps at the bottom of the ramp: an eyebrow says what kind of thing this is before the
+   subject says which one. */
+.walkthrough__eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* The promise id, in mono because it is an identifier (§10.7). */
+.walkthrough__subject {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}
+
+.walkthrough__close,
+.walkthrough__step-control {
+  flex: 0 0 auto;
+  padding: var(--s-1) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-000);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: var(--s-5);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.walkthrough__close {
+  margin-left: auto;
+}
+
+/* Inverting on hover, both halves in one rule, as §10.4.3 requires of an inverting rule. */
+.walkthrough__close:hover,
+.walkthrough__step-control:not(:disabled):hover {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+/* A control at the end of the sequence keeps its word and loses its ink, rather than vanishing
+   and moving the control beside it. */
+.walkthrough__step-control:disabled {
+  border-color: var(--hairline-strong);
+  background-color: var(--ink-050);
+  color: var(--text-200);
+  cursor: default;
+}
+
+/* ── the rail: five stops, one filled ──────────────────────────────────────── */
+
+.walkthrough__rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: stretch;
+  padding-bottom: var(--s-4);
+  border-bottom: var(--line-heavy) solid var(--text-000);
+}
+
+.walkthrough__stop {
+  display: inline-flex;
+  gap: var(--s-2);
+  align-items: baseline;
+  padding: var(--s-1) var(--s-3);
+  border: var(--line) solid var(--text-000);
+  border-radius: var(--r-chip);
+  background-color: var(--ink-100);
+  color: var(--text-200);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* The numeral, tabular so the stops stay the same width at every step. */
+.walkthrough__stop-index {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The current stop, inverted. No hue: the verdict hues belong to the verdict, and this sequence
+   exists to explain one, so borrowing its colour for "you are here" would be two meanings on one
+   signal (§10.4.3). */
+.walkthrough__stop[aria-current='true'] {
+  background-color: var(--text-000);
+  color: var(--ink-000);
+}
+
+.walkthrough__stop:not([aria-current='true']):hover {
+  background-color: var(--ink-050);
+  color: var(--text-000);
+}
+
+/* ── the body: one step ────────────────────────────────────────────────────── */
+
+/* `padding-right` is the scrollbar's gutter: without it a step long enough to scroll puts its own
+   text under the scrollbar, and `scrollbar-gutter: stable` would reserve the channel on every step
+   including the ones that do not scroll. `--s-4` between blocks rather than `--s-3`, because the
+   heading, the argument, the facts, the bytes and the caveat are five different kinds of thing and
+   at the tighter gap they read as one column of text. */
+.walkthrough__body {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  min-height: 0;
+  min-width: 0;
+  padding-right: var(--s-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.walkthrough__heading {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-heading);
+  text-transform: uppercase;
+  color: var(--text-000);
+}
+
+/* The sentence that says what the step is for. This is the argument, so it is set as body copy at
+   a reading measure rather than as a caption. */
+.walkthrough__lede {
+  max-width: 68ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--text-100);
+}
+
+/* ── the facts: term over value, in a wrapping row of cells ────────────────── */
+
+/* A row of small cells rather than a two-column list, because a step carries between one and six
+   facts and a `dl` grid with one row reads as a broken table. `min-width: 0` on the cell is what
+   lets a long value wrap inside it instead of widening the row. */
+.walkthrough__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+  min-width: 0;
+}
+
+.walkthrough__fact {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.walkthrough__term {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: var(--tr-caps-label);
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+.walkthrough__value {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-000);
+  overflow-wrap: anywhere;
+}
+
+/* ── the quote: bytes, in the one recessed surface ─────────────────────────── */
+
+.walkthrough__quote-block {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.walkthrough__quote-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+/* `pre-wrap` with no trimming: leading space, trailing space and inner runs are what the file and
+   the tool produced, and a sequence that tidied them could not be checked against either. */
+.walkthrough__quote {
+  margin: 0;
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--text-000);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* ── the capture ───────────────────────────────────────────────────────────── */
+
+/* The well is the mount: a screenshot of a white page on a paper plate would have no edge, and a
+   reader could not tell where the artefact stopped and the interface began. */
+.walkthrough__stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: var(--s-2);
+  border-radius: var(--r-card);
+}
+
+/* Bounded, and `contain` rather than `cover`: a cropped piece of evidence is not evidence. */
+.walkthrough__image {
+  max-width: 100%;
+  max-height: 44vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid var(--hairline-strong);
+}
+
+/* ── the caveat: the one dashed block in this dialog (§10.10) ──────────────── */
+
+/* Dashed, because that is what a dashed edge means everywhere else in this system: a region a
+   reader is meant to notice and read rather than skim. It exists because the snapshot holds a
+   code-break verdict and an older documentation amendment about the same line, and read back to
+   back with no dates that looks like the tool arguing with itself. */
+.walkthrough__caveat {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: var(--line-heavy) dashed var(--text-000);
+  border-radius: var(--r-card);
+  background-color: var(--ink-050);
+  min-width: 0;
+}
+
+.walkthrough__caveat-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-200);
+}
+
+.walkthrough__caveat-text {
+  max-width: 68ch;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-000);
+}
+
+/* ── the way out to a step's own surface ───────────────────────────────────── */
+
+.walkthrough__out {
+  margin: 0;
+}
+
+/* Ink, underlined, inverting on hover: the document's own link treatment from `shell.css`,
+   restated only in the size. */
+.walkthrough__link {
+  font-size: var(--fs-sm);
+}
+
+/* ── the foot: where in the chain this is ──────────────────────────────────── */
+
+.walkthrough__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+/* Tabular, so `2 of 5` and `3 of 5` do not shift the controls either side of them. */
+.walkthrough__counter {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-200);
+  white-space: nowrap;
+}
+
+/* ── one breakpoint ───────────────────────────────────────────────────────── */
+
+@media (max-width: 56rem) {
+  .walkthrough {
+    padding: var(--s-3);
+  }
+
+  .walkthrough__plate {
+    width: 100%;
+    max-height: 92vh;
+    padding: var(--s-4);
+    gap: var(--s-4);
+  }
+
+  /* The gutter goes on a phone: there is no room to spend on a channel, and a narrow scrollbar
+     overlays rather than reserving space on this platform anyway. */
+  .walkthrough__body {
+    padding-right: 0;
+  }
+
+  /* Five words plus five numerals do not fit a 320px row, and a horizontal scroller inside a
+     dialog is a scroller nobody finds. The numerals stay, because position in the chain is the
+     part the rail exists to carry, and the current step's word is in the heading below it. */
+  .walkthrough__stop-word {
+    display: none;
+  }
+
+  .walkthrough__image {
+    max-height: 36vh;
+  }
+}

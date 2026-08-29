@@ -49,9 +49,19 @@ import { diffLines } from '../lib/diff.js';
 import { SELECTION_PARAM } from '../lib/graphNav.js';
 
 import { AcceptControl } from './AcceptControl.js';
-import { DiffView } from './DiffView.js';
+import { DiffPane } from './DiffPane.js';
 
 import '../styles/amendments.css';
+
+/**
+ * The route this card lives on, which is also the route its diff toggle links to.
+ *
+ * Stated here rather than read from the browser because the page is prerendered: there is no
+ * `window` at build time, and an anchor with an empty `href` in the served HTML is not a link.
+ * The card already knows about routes, since it links each promise id to `/?p=<id>`, so naming
+ * its own is consistent rather than a new kind of knowledge.
+ */
+export const AMENDMENTS_PATH = '/amendments';
 
 /** Every heading and sentence the card says. Tests assert the words, not the shape. */
 export const AMENDMENT_WORDS = {
@@ -170,8 +180,14 @@ export function AmendmentCard({ amendment, className }: AmendmentCardProps) {
 
       <section className="amendment-card__section">
         <h3 className="amendment-card__heading">{AMENDMENT_WORDS.diff}</h3>
-        <DiffView
+        {/* `DiffPane` is the route's second client boundary, and it holds only the choice of
+            layout: unified or side by side, read from `?view=` so the choice is shareable and
+            every card on the page agrees. The rows are computed here on the server and cross
+            the boundary as plain data, so nothing about the contract package is chunked for the
+            browser, and the pane writes nothing (R8.4). */}
+        <DiffPane
           label={`Proposed replacement for ${amendment.citation.file} line ${amendment.citation.line}`}
+          path={AMENDMENTS_PATH}
           rows={rows}
         />
       </section>

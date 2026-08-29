@@ -682,6 +682,69 @@
   color: var(--text-200);
 }
 
+/* ── the disclosure that holds a run's detail ───────────────────────────────── */
+
+/* The detail row starts shut, so the log reads as twenty invocations rather than several
+   screens of member paths with invocations buried in them. It is a native
+   `<details>`/`<summary>`, the same choice `.hint` makes in `shell.css` and for the same
+   reasons: it opens with no JavaScript, the summary is focusable and operable from the
+   keyboard, the shell's focus ring lands on it, and assistive technology announces the
+   expanded state without a line of `aria`. It also needs no state, which is what lets the
+   row stay server-rendered on a `force-static` page.
+
+   No `.surface-*` class here. The disclosure is not a plane of its own: shut, it is a line
+   of type on the detail cell's paper, and open, the well inside it is the only recess. Two
+   nested recesses would read as a rendering fault. */
+.run-detail-disclosure {
+  min-width: 0;
+}
+
+/* A caret authored in the content rather than left to the engine, because the two engines
+   draw different triangles at different sizes and this one has to sit on a baseline beside
+   small caps. `list-style: none` plus the WebKit pseudo suppress both defaults, matching
+   `.hint__summary`. */
+.run-detail-disclosure__summary {
+  display: flex;
+  gap: var(--s-2);
+  align-items: baseline;
+  padding: var(--s-2) 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  line-height: var(--s-4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-200);
+  list-style: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.run-detail-disclosure__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The caret is `::before` so it leads the words, and it rotates rather than swapping glyph:
+   one shape in two states is one thing a reader learns, and a glyph swap is two. */
+.run-detail-disclosure__summary::before {
+  content: '\25B8';
+  display: inline-block;
+  font-size: var(--fs-sm);
+  line-height: 1;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.run-detail-disclosure[open] > .run-detail-disclosure__summary::before {
+  transform: rotate(90deg);
+}
+
+/* Full ink on hover and while open: the summary is the quietest thing in the row when it is
+   shut, and the loudest label in it once a reader has committed to reading the detail. */
+.run-detail-disclosure__summary:hover,
+.run-detail-disclosure[open] > .run-detail-disclosure__summary {
+  color: var(--text-000);
+}
+
 /* ── the detail block under a run: members, reasons, diagnostics ────────────── */
 
 .run-detail {

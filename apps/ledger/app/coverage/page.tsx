@@ -44,7 +44,7 @@ import { renderFreshness } from '../../lib/relativeTime.js';
 import { snapshot } from '../../lib/snapshot.js';
 
 import { CoverageRibbon } from './CoverageRibbon.js';
-import { PromiseRow } from './PromiseRow.js';
+import { PromiseFilter } from './PromiseFilter.js';
 
 import '../../styles/coverage.css';
 
@@ -174,18 +174,16 @@ export default function CoveragePage() {
             <p className="promise-list__empty-detail">{NO_PROMISES_DETAIL}</p>
           </div>
         ) : (
-          /* One solid container around the whole list. The rows carried no fill of their
-             own, so the shell's 28px ruling showed through every claim and every
-             identifier — see the note over `.promise-list-frame` in `coverage.css`. One
-             frame rather than a card per row: this is one list a reader scans, not eight
-             unrelated cards. */
-          <div className="promise-list-frame surface-raised">
-            <ul className="promise-list">
-              {promises.map((promise) => (
-                <PromiseRow key={promise.id} promise={promise} />
-              ))}
-            </ul>
-          </div>
+          /* `PromiseFilter` owns the chip row and the frame around the list. It reads the
+             selected verdict from the query string, so the page stays `force-static`: the
+             whole list ships in this HTML, a chip is a link rather than a control, and
+             following one narrows what is shown without touching a server.
+
+             The prerendered HTML cannot know the query string, so it lists every promise
+             and the filter narrows it on mount. That is also the graceful degradation: with
+             JavaScript disabled a reader keeps every promise, because the filter is an
+             accelerator over data already on the page rather than the only way to see it. */
+          <PromiseFilter promises={promises} />
         )}
       </section>
     </div>

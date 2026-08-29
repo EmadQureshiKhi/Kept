@@ -206,6 +206,66 @@
   stroke-width: 2.5;
 }
 
+/* ── the path highlight: one promise's chain, lit; the rest, receded ─────────── */
+
+/**
+ * The named complaint: the canvas draws thirty-five lines in one ink across four lanes and
+ * nothing in the picture says which of them belong together. Pointing at a promise, arrowing
+ * to one, or opening one in the panel now lights its own chain: the document it was read
+ * from, the designed test bound to it, the evidence sealed for it. Everything else drops
+ * back. `lib/graphPath.ts` decides what the chain is; these four rules are the whole of how
+ * it looks.
+ *
+ * **It is opacity, and only opacity.** Not a hue, not a stroke weight, not a border. Colour
+ * is the verdict channel (§10.4.3) and the `designed` edge already spends weight on being the
+ * path a verdict travels, so both of those signals are taken: spending either again on "is
+ * this line relevant" would put two meanings on one channel and make a dimmed `red` promise
+ * ambiguous. A receded node keeps its verdict hue, its word and its numeral, at a quarter of
+ * the ink.
+ *
+ * `opacity` is also the one property this can be built out of at no frame cost: it is
+ * compositor-only, which is why §10.6.4's closed allowlist has it, and the transition below
+ * is the same `--dur-fast` and `--ease-out` every hover in the product uses. Under
+ * `prefers-reduced-motion` the insurance block in `shell.css` zeroes the duration and the
+ * highlight becomes instant rather than absent, which is the right degradation: the
+ * information is the dimming, not the fade into it.
+ *
+ * **The switch is on the container.** `data-path="lit"` is set only while some promise is
+ * under attention, so at rest not one of these rules matches and the canvas is exactly the
+ * canvas it was before this existed. That is what keeps the resting graph byte-identical for
+ * the motion equivalence tests, and it is why the dim is authored as an override on an idle
+ * default rather than as a `--lit` opacity applied to everything.
+ *
+ * **The dim lands on React Flow's own wrapper, never on `.promise-node` inside it.** The
+ * entrance of §10.6.1 writes an inline `opacity` on that inner element and releases it when
+ * it lands; a stylesheet rule on the same property of the same element would be a second
+ * author of it, and inline wins, so the dim would silently stop working for as long as the
+ * entrance was in flight. Two elements, one property each.
+ */
+.promise-graph[data-path='lit'] .react-flow__node.graph-node {
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+/* Everything that is not on the path and is not a column heading. A heading names its lane,
+   and a reader following a line into a lane needs that name most at the moment the rest of
+   the lane has gone quiet. */
+.promise-graph[data-path='lit']
+  .react-flow__node.graph-node:not(.graph-node--lit):not(.graph-node--header) {
+  opacity: 0.26;
+}
+
+/* The lines recede further than the nodes, and that difference is the point. A line carries
+   no words, so a faint one reads as texture and stops competing; a faint node still has to be
+   legible enough that a reader can see it is a promise they are not currently asking about. */
+.promise-graph[data-path='lit'] .graph-edge {
+  transition: opacity var(--dur-fast) var(--ease-out);
+  opacity: 0.12;
+}
+
+.promise-graph[data-path='lit'] .graph-edge--lit {
+  opacity: 1;
+}
+
 /* ── handles: visible endpoints, and nothing a reader wires up ──────────────── */
 
 /* Drawn, the way the reference draws them, so it is clear where a line leaves a node

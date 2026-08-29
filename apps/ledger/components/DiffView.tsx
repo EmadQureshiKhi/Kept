@@ -13,6 +13,27 @@
  * that. A component that took two texts would have forced `/reviews` either to fake a
  * before/after pair or to grow a second renderer.
  *
+ * ## Two layouts over one alignment
+ *
+ * `mode` picks unified or split, and unified is the default so every existing caller is
+ * unchanged. The split layout is the reading a one-line prose amendment actually wants: read
+ * unified, the sentence the README states and the sentence proposed instead sit on two lines
+ * with a marker in front of each, and the reader scans across a line break to find which words
+ * moved; read side by side they are on one line and the change is where the columns stop
+ * matching.
+ *
+ * **Both layouts render the same alignment.** `splitRows` pairs the rows this component was
+ * handed rather than diffing the two texts again, so toggling cannot change which line is
+ * reported as replacing which. Two views of one amendment that disagreed on that would be two
+ * different claims about one edit, and the reader would have no way to tell which was the
+ * ledger's.
+ *
+ * The wash-and-hue split survives into the split layout, on the element that has to carry it:
+ * `data-diff` moves from the row to each `.diff-side`, because in a split row the two halves are
+ * different kinds and one row attribute could only describe one of them. An empty half carries
+ * no `data-diff` at all, so no wash rule and no hue rule reaches it: a gap is the absence of a
+ * line, not a third kind of change.
+ *
  * Three decisions the markup encodes rather than the stylesheet:
  *
  * 1. **The wash is on the row and the hue is on the text, and they are different
@@ -42,7 +63,14 @@
 
 import clsx from 'clsx';
 
-import { DIFF_KIND_WORDS, DIFF_MARKERS, type DiffRow } from '../lib/diff.js';
+import {
+  DIFF_KIND_WORDS,
+  DIFF_MARKERS,
+  splitRows,
+  type DiffRow,
+  type SplitDiffRow,
+} from '../lib/diff.js';
+import { DEFAULT_DIFF_MODE, type DiffMode } from '../lib/diffMode.js';
 
 import '../styles/diff.css';
 
@@ -58,6 +86,33 @@ export const DIFF_WORDS = {
     'is what was recorded; nothing was applied either way.',
 } as const;
 
+/** The two column headings the split layout needs, so a reader knows which side is which. */
+export const SPLIT_HEADINGS = { before: 'written now', after: 'proposed' } as const;
+
+/**
+ * What an empty half of a split row is called.
+ *
+ * A gap opposite a deletion means the after text has no line there, which is the fact the layout
+ * is showing. It carries no `data-diff`, so no wash and no hue rule reaches it, and it says the
+ * word in its accessible name rather than being a silent blank.
+ */
+export const SPLIT_GAP_WORD = 'no line';
+
+/**
+ * The accessible name of one split row.
+ *
+ * A split row is two facts at once and a screen reader gets them in one string, because the two
+ * halves only mean something together: `removed line 20, added line 20` is a replacement, and
+ * `removed line 20, no line` is a deletion with nothing put in its place.
+ */
+export function splitRowLabel(row: SplitDiffRow): string {
+  const side = (cell: DiffRow | null): string =>
+    cell === null
+      ? SPLIT_GAP_WORD
+      : `${DIFF_KIND_WORDS[cell.kind]} line ${String(cell.beforeLine ?? cell.afterLine ?? 0)}`;
+  return `${side(row.before)}, ${side(row.after)}`;
+}
+
 export interface DiffViewProps {
   readonly rows: readonly DiffRow[];
   /**
@@ -66,7 +121,34 @@ export interface DiffViewProps {
    * it.
    */
   readonly label: string;
+  /**
+   * How the rows are laid out. Unified by default, so `/reviews` and every existing caller are
+   * unchanged and the layout a reader gets without asking is the one they already had.
+   */
+  readonly mode?: DiffMode;
   readonly className?: string;
+}
+
+/** One half of a split row: the gutter, the marker and the bytes, or a stated gap. */
+function SplitSide({ cell }: { readonly cell: DiffRow | null }) {
+  if (cell === null) {
+    /* No `data-diff`, so no wash rule and no hue rule can reach this element: a gap is the
+       absence of a line rather than a third kind of change. */
+    return (
+      <span className="diff-side diff-side--gap" role="cell">
+        <span className="diff-gutter" />
+        <span className="diff-marker" />
+        <span className="diff-text" />
+      </span>
+    );
+  }
+  return (
+    <span className="diff-side" data-diff={cell.kind} role="cell">
+      <span className="diff-gutter">{cell.beforeLine ?? cell.afterLine ?? ''}</span>
+      <span className="diff-marker">{DIFF_MARKERS[cell.kind]}</span>
+      <span className="diff-text">{cell.text}</span>
+    </span>
+  );
 }
 
 /** One row: before gutter, after gutter, marker, bytes. */
@@ -94,16 +176,50 @@ function Row({ row }: { readonly row: DiffRow }) {
   );
 }
 
-export function DiffView({ rows, label, className }: DiffViewProps) {
+export function DiffView({ rows, label, mode = DEFAULT_DIFF_MODE, className }: DiffViewProps) {
   const changed = rows.some((row) => row.kind !== 'ctx');
   const empty = rows.length === 0 || rows.every((row) => row.text.length === 0);
+  /* Derived from the rows that were handed in, never from the two texts again: there is one
+     alignment and the split layout is a presentation of it, so the two views of one amendment
+     cannot disagree about which line replaced which. See `splitRows` in `lib/diff.ts`. */
+  const split = mode === 'split' ? splitRows(rows) : null;
 
   return (
-    <div aria-label={label} className={clsx('diff-view', 'surface-well', className)} role="table">
-      {changed ? (
+    <div
+      aria-label={label}
+      className={clsx('diff-view', 'surface-well', className)}
+      data-mode={mode}
+      role="table"
+    >
+      {!changed ? (
+        <p className="diff-view__note">{empty ? DIFF_WORDS.absent : DIFF_WORDS.unchanged}</p>
+      ) : split === null ? (
         rows.map((row, index) => <Row key={`${index}:${row.kind}`} row={row} />)
       ) : (
-        <p className="diff-view__note">{empty ? DIFF_WORDS.absent : DIFF_WORDS.unchanged}</p>
+        <>
+          {/* The headings name the columns, because two panes of mono with no labels leave a
+              reader to infer which side is the file and which is the proposal. Row-scoped
+              headers rather than a caption: they belong to the grid. */}
+          <div className="diff-row diff-row--split diff-row--heading" role="row">
+            <span className="diff-side-heading" role="columnheader">
+              {SPLIT_HEADINGS.before}
+            </span>
+            <span className="diff-side-heading" role="columnheader">
+              {SPLIT_HEADINGS.after}
+            </span>
+          </div>
+          {split.map((row, index) => (
+            <div
+              aria-label={splitRowLabel(row)}
+              className="diff-row diff-row--split"
+              key={`${index}:${row.before?.kind ?? 'gap'}:${row.after?.kind ?? 'gap'}`}
+              role="row"
+            >
+              <SplitSide cell={row.before} />
+              <SplitSide cell={row.after} />
+            </div>
+          ))}
+        </>
       )}
     </div>
   );
