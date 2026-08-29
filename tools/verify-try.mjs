@@ -23,6 +23,22 @@ const BASE = process.env.TRY_BASE ?? 'http://localhost:3300';
 
 let passed = 0;
 const failures = [];
+/**
+ * Checks that could not run because GitHub is rate limiting this address.
+ *
+ * Counted apart from failures, and the distinction is not bookkeeping. This sweep reads real
+ * repositories, so running it a few times in an hour spends the sixty API requests an
+ * unauthenticated caller is allowed. Reporting that as five failed checks would train whoever runs
+ * it to shrug at a red sweep, and a red result that does not mean anything is worse than no result.
+ *
+ * The page answering a rate limit with the right sentence is itself correct behaviour, and it is
+ * asserted below. What cannot be asserted while the budget is spent is everything downstream of a
+ * successful read, so those are reported as unavailable and the exit code stays clean.
+ */
+let unavailable = 0;
+
+/** The sentence `github.ts` returns for a 403 or a 429, matched on its distinctive phrase. */
+const RATE_LIMITED = 'rate limiting this page';
 
 function check(what, condition, detail = '') {
   if (condition) {
@@ -30,6 +46,23 @@ function check(what, condition, detail = '') {
     return;
   }
   failures.push(detail === '' ? what : `${what}\n    ${detail}`);
+}
+
+/** `true` when a response is GitHub declining to serve any more requests this hour. */
+function isRateLimited(body) {
+  return typeof body?.message === 'string' && body.message.includes(RATE_LIMITED);
+}
+
+/**
+ * A check that needs a successful read, and is reported unavailable rather than failed when the
+ * hour's budget is gone.
+ */
+function checkRead(what, body, condition, detail = '') {
+  if (isRateLimited(body)) {
+    unavailable += 1;
+    return;
+  }
+  check(what, condition, detail);
 }
 
 async function post(repo) {
@@ -99,27 +132,41 @@ async function main() {
   /* ── the handler, against this repository ─────────────────────────────────── */
 
   const self = await post('EmadQureshiKhi/Kept');
-  check('reading this repository answers 200', self.status === 200, `got ${self.status}`);
-  check('and answers ok', self.body.ok === true, JSON.stringify(self.body).slice(0, 200));
+  if (isRateLimited(self.body)) {
+    /* The one thing worth asserting while the budget is spent: the refusal is a sentence a reader
+       can act on, and it names the limit rather than blaming their repository. */
+    check('a rate limit is reported as a rate limit', self.status === 502);
+    check('and says the budget refills', self.body.message.includes('refills'));
+    check('and points at the CLI, which has no such limit', self.body.message.includes('CLI'));
+  }
+  checkRead('reading this repository answers 200', self.body, self.status === 200, `got ${self.status}`);
+  checkRead('and answers ok', self.body, self.body.ok === true, JSON.stringify(self.body).slice(0, 200));
 
   const counts = self.body.counts ?? {};
-  check(
+  checkRead(
     'it finds the thirteen claims the CLI finds',
+    self.body,
     counts.promises === 13,
     `found ${String(counts.promises)}; the local snapshot has 13`,
   );
-  check('it refuses none of them', counts.rejected === 0, `refused ${String(counts.rejected)}`);
-  check('it reports a sha', typeof self.body.repo?.sha === 'string' && self.body.repo.sha.length === 40);
+  checkRead('it refuses none of them', self.body, counts.rejected === 0, `refused ${String(counts.rejected)}`);
+  checkRead(
+    'it reports a sha',
+    self.body,
+    typeof self.body.repo?.sha === 'string' && self.body.repo.sha.length === 40,
+  );
 
   const groups = self.body.groups ?? [];
-  check(
+  checkRead(
     'the claims sit in the two documents that state them',
+    self.body,
     JSON.stringify(groups.map((group) => group.file)) ===
       JSON.stringify(['README.md', 'apps/fixture/README.md']),
     JSON.stringify(groups.map((group) => group.file)),
   );
-  check(
+  checkRead(
     'five in the root README and eight in the fixture',
+    self.body,
     JSON.stringify(groups.map((group) => group.promises.length)) === JSON.stringify([5, 8]),
     JSON.stringify(groups.map((group) => group.promises.length)),
   );
@@ -128,17 +175,19 @@ async function main() {
      resolves the same way here as it does on a working copy. */
   const fixture = groups.find((group) => group.file === 'apps/fixture/README.md');
   const discount = (fixture?.promises ?? []).find((promise) => promise.line === 20);
-  check('the discount claim is cited to apps/fixture/README.md:20', discount !== undefined);
-  check(
+  checkRead('the discount claim is cited to apps/fixture/README.md:20', self.body, discount !== undefined);
+  checkRead(
     'and bound to tests/cart_discount_test.md T-7',
+    self.body,
     discount?.testPath === 'tests/cart_discount_test.md' && discount?.testId === 'T-7',
     `${String(discount?.testPath)} ${String(discount?.testId)}`,
   );
 
   /* No verdict on the wire either, not even a null one. */
   const keys = Object.keys(discount ?? {}).sort().join(',');
-  check(
+  checkRead(
     'no promise carries a verdict field',
+    self.body,
     keys === 'claim,file,id,line,testId,testPath,text',
     keys,
   );
@@ -153,22 +202,27 @@ async function main() {
    * first thing a curious reader pressed therefore failed. These are the buttons on the page, so
    * they are the thing a sweep should press.
    */
+  let large = null;
   for (const slug of ['EmadQureshiKhi/Kept', 'vercel/next.js', 'sindresorhus/ky']) {
     const res = await post(slug);
-    check(`the example ${slug} answers 200`, res.status === 200, `got ${res.status}`);
-    check(
+    if (slug === 'vercel/next.js') large = res;
+    checkRead(`the example ${slug} answers 200`, res.body, res.status === 200, `got ${res.status}`);
+    checkRead(
       `the example ${slug} reads at least one document`,
+      res.body,
       (res.body.counts?.documentsRead ?? 0) > 0,
       JSON.stringify(res.body.message ?? res.body.counts),
     );
   }
 
-  /* A large repository is read rather than abandoned, and says which bound it hit. */
-  const large = await post('vercel/next.js');
-  check(
+  /* A large repository is read rather than abandoned, and says which bound it hit. The response
+     from the loop above is reused rather than asking again: every read spends two of the sixty API
+     requests an hour, and a sweep that exhausts the budget it is testing is a poor sweep. */
+  checkRead(
     'a large repository reports the file cap rather than timing out',
-    (large.body.notes ?? []).some((note) => note.includes('markdown documents')),
-    JSON.stringify(large.body.notes),
+    large?.body ?? {},
+    (large?.body.notes ?? []).some((note) => note.includes('markdown documents')),
+    JSON.stringify(large?.body.notes),
   );
 
   /* ── every refusal ────────────────────────────────────────────────────────── */
@@ -205,15 +259,21 @@ async function main() {
    * outright above, which is the case the normaliser never sees.
    */
   const climbed = await post('https://github.com/owner/../../etc/passwd');
-  check(
+  checkRead(
     'a URL with climbing segments resolves inside github.com and 404s',
+    climbed.body,
     climbed.status === 404,
     `got ${climbed.status}`,
   );
 
   const missing = await post('EmadQureshiKhi/this-repository-does-not-exist-9f2a');
-  check('a repository that does not exist answers 404', missing.status === 404, `got ${missing.status}`);
-  check('and says so in words', typeof missing.body.message === 'string');
+  checkRead(
+    'a repository that does not exist answers 404',
+    missing.body,
+    missing.status === 404,
+    `got ${missing.status}`,
+  );
+  checkRead('and says so in words', missing.body, typeof missing.body.message === 'string');
 
   /* A GET explains the endpoint rather than 405-ing at a curious reader. */
   const get = await fetch(`${BASE}/api/graph`);
@@ -224,6 +284,14 @@ async function main() {
   /* ── report ───────────────────────────────────────────────────────────────── */
 
   console.log(`try sweep: ${String(passed)}/${String(passed + failures.length)} against ${BASE}`);
+  if (unavailable > 0) {
+    console.log(
+      `\n  ${String(unavailable)} checks could not run: GitHub is rate limiting this address. ` +
+        `Reading a repository spends two of the sixty API requests an hour an unauthenticated\n` +
+        `  caller gets, and this sweep reads five. The budget refills within the hour. The page ` +
+        `reporting the limit correctly is asserted above and passed.`,
+    );
+  }
   if (failures.length > 0) {
     console.log('');
     for (const failure of failures) console.log(`  FAIL  ${failure}`);

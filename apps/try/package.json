@@ -1,0 +1,13 @@
+{
+  "name": "@kept/try",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Paste a public repository and see the promises its documentation makes.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3300",
+    "build": "next build",
+    "start": "next start -p 3300",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

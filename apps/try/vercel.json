@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd ../.. && npm ci --no-audit --no-fund",
+  "buildCommand": "cd ../.. && npx tsc -b packages/kept-core && npx next build apps/try",
+  "outputDirectory": ".next"
+}

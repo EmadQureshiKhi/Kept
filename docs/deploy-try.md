@@ -17,36 +17,82 @@ Two projects also separate what they can be trusted with. The Ledger holds a com
 and reaches nothing. The try page reaches `github.com` and nowhere else, holds no credential and
 stores nothing.
 
+## The build is configured in a file, not in the dashboard
+
+`apps/try/vercel.json` holds it:
+
+```json
+{
+  "framework": "nextjs",
+  "installCommand": "cd ../.. && npm ci --no-audit --no-fund",
+  "buildCommand": "cd ../.. && npx tsc -b packages/kept-core && npx next build apps/try",
+  "outputDirectory": ".next"
+}
+```
+
+There are **two** `vercel.json` files in this repository and that is deliberate. The one at the
+root configures the Ledger and is live; this one configures the try page. Vercel reads the file
+from a project's Root Directory, so the way to give two applications in one repository two
+different builds is to give them two Root Directories and a config file each. Editing the root
+file to serve both would mean one project building the other's output.
+
+Three things in it are load-bearing.
+
+**`cd ../..` in both commands.** Root Directory is `apps/try`, so commands start there, and both
+the lockfile and every dependency live at the workspace root. `apps/try/package.json` declares no
+dependencies of its own on purpose: it exists so Vercel has a manifest to detect a Next application
+by, and the root manifest stays the one place a version is pinned. This needs **Include source
+files outside of the Root Directory** left enabled, which is Vercel's default.
+
+**`tsc -b packages/kept-core` before `next build`.** Not a type-check for its own sake. `apps/try`
+imports `kept-core`, which is consumed from its built output, so the build has to happen before
+Next resolves the import. Without it the deploy fails with `Cannot find module 'kept-core'`.
+
+**`outputDirectory` is `.next`, relative to the Root Directory.** `next build apps/try` writes to
+`apps/try/.next`, which is `.next` as seen from `apps/try`. Writing the full path here would look
+for `apps/try/apps/try/.next`.
+
 ## Vercel settings
 
-Create a second project against the same Git repository.
+Create a second project against the same Git repository. Only one setting has to be changed from
+the defaults.
 
 | Setting | Value |
 |---|---|
-| Framework preset | Next.js |
-| Root Directory | leave at the repository root |
-| Build Command | `npx tsc -b packages/kept-core && npx next build apps/try` |
-| Output Directory | `apps/try/.next` |
-| Install Command | `npm ci` |
+| Project Name | `kept-try` |
+| Framework preset | Next.js, detected |
+| **Root Directory** | **`apps/try`** |
+| Build Command | from `vercel.json`, leave the dashboard field empty |
+| Output Directory | from `vercel.json`, leave the dashboard field empty |
+| Install Command | from `vercel.json`, leave the dashboard field empty |
 | Node version | 20.x or later |
 
-Root Directory stays at the repository root on purpose. `apps/try` imports `kept-core`, which is
-a workspace package, so the install has to happen where the workspaces are declared. Setting Root
-Directory to `apps/try` would give Vercel a directory with no `package.json` and no lockfile.
+A value typed into the dashboard overrides `vercel.json`, so leaving those three fields empty is
+what keeps the configuration in the repository where it is reviewable.
 
-The `tsc -b` in the build command is not a type-check for its own sake: `kept-core` is consumed
-from its built output, so the build has to happen before Next resolves the import.
+### Why the project name matters
 
-### Project name
-
-Name the project `kept-try`, which gives `kept-try.vercel.app`. That exact host is the fallback
-written into `apps/ledger/components/Masthead.tsx`, so a matching name means the Ledger's link
-works with no environment variable set anywhere. If you name it something else, set
-`NEXT_PUBLIC_TRY_URL` on the **Ledger** project to the new URL and redeploy the Ledger.
+`kept-try` gives `kept-try.vercel.app`, and that exact host is the fallback compiled into
+`apps/ledger/components/Masthead.tsx`. A matching name means the Ledger's link works with no
+environment variable set anywhere. If you name it something else, set `NEXT_PUBLIC_TRY_URL` on the
+**Ledger** project to the new URL and redeploy the Ledger.
 
 `NEXT_PUBLIC_TRY_URL` is a build-time constant, not a runtime read. It is inlined when the Ledger
-is built, which is what lets `judge-path.test.ts` read the fallback out of the source and prove
-the URL is only ever an anchor's `href` and never something the page fetches.
+is built, which is what lets `judge-path.test.ts` read the fallback out of the source and prove the
+URL is only ever an anchor's `href` and never something the page fetches.
+
+## Type errors do not fail the deploy, and that is not a loosening
+
+`apps/try/next.config.mjs` sets `typescript.ignoreBuildErrors`, the same as the Ledger's config and
+for the same reason. `npm run check` is the gate: the read-only scan, `tsc -b` over the solution,
+three per-application type-check passes and the whole suite, all before a commit. What the flag
+removes is a second, weaker copy of that check running on a build host, where `npm ci` can resolve
+a transitive `@types` package to a different patch than the tree it was written against and Next
+regenerates `.next/types` per build. A mismatch there fails a deploy for a reason no local command
+reproduces.
+
+There is deliberately no `eslint` block. Next 16 rejects the key outright, and there is no ESLint
+configuration in this repository for it to have suppressed.
 
 ## Environment variables
 
