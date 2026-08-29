@@ -179,11 +179,26 @@ a:hover {
 .try-masthead__home {
   display: flex;
   align-items: center;
+  padding: var(--s-1) var(--s-2);
   font-size: var(--fs-md);
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-decoration-line: none;
+}
+
+/**
+ * A paper tint on hover, not the global ink inversion.
+ *
+ * The generic `a:hover` above fills an anchor with ink and reverses its text, which is right for a
+ * run of type and wrong the moment the anchor holds a picture: the lockup is drawn in ink, so
+ * inverting behind it printed the logo on itself and the whole thing went black. This is the rule
+ * `apps/ledger/styles/shell.css` already uses on `.masthead-home`, restated here for the same
+ * reason, so the two mastheads answer a pointer the same way.
+ */
+.try-masthead__home:hover {
+  background-color: var(--ink-050);
+  color: var(--text-000);
 }
 
 /* Trimmed to its own ink, so the clear space is padding rather than a margin: a margin would move

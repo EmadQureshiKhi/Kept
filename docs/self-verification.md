@@ -51,10 +51,21 @@ Five lines of the root `README.md`, chosen because each states something
 | Line | The claim | What checks it today |
 |---|---|---|
 | 22 | the demo path invokes Kane zero times and spends zero credits | `packages/kept-core/test/demo-script.test.ts` |
-| 68 | `npm run demo` serves the Ledger on 3000 and the fixture on 3100 | `packages/kept-core/test/judge-path.test.ts`, and the demo script itself |
-| 89 | the suite passes with no network, no credentials and no Kane | every run of `npm run check` on a bare checkout |
-| 301 | the deployed artefact carries no non-GET handler and no server action | `apps/ledger/test/read-only-scan.test.ts` |
-| 679 | `/badge.svg` answers a GET with SVG carrying a whole-number percentage | `apps/ledger/test/badge.test.ts`, and since the authoring run below, a real Kane flow against the running Ledger |
+| 141 | `npm run demo` serves the Ledger on 3000 and the fixture on 3100 | `packages/kept-core/test/judge-path.test.ts`, and the demo script itself |
+| 162 | the suite passes with no network, no credentials and no Kane | every run of `npm run check` on a bare checkout |
+| 374 | the deployed artefact carries no non-GET handler and no server action | `apps/ledger/test/read-only-scan.test.ts` |
+| 752 | `/badge.svg` answers a GET with SVG carrying a whole-number percentage | `apps/ledger/test/badge.test.ts`, and since the authoring run below, a real Kane flow against the running Ledger |
+
+These are line numbers, so they move when the README is edited above them, and the numbers
+above were stale until this revision. `node tools/verify-corpus.mjs` resolves all thirteen
+`@verifies` tags against the files on disk and prints the line each one lands on, which is the
+cheap way to catch a drift like that before it reaches a reader. The promise **id** does not
+move: it is derived from the citation's file and the normalised claim, never the line.
+
+Line 374 is the one the second deployment had to respect. It states that the deployed artefact
+carries no non-GET handler, so the paste-a-repository page could not live in `apps/ledger` and
+became its own Vercel project instead. A promise this repository verifies about itself decided
+an architecture, which is the whole argument of the product happening to its own author.
 
 The right-hand column is why these five and not five others: something already checks
 each of them, so admitting them cost no credits at all. **It is not the same thing as
@@ -62,9 +73,9 @@ a designed test**, and the graph does not pretend otherwise. A designed test in
 KEPT's sense is a `*_test.md` Kane document, and none of those files is one. The three
 corpus documents that carry the tags say so in their own prose:
 
-- `tests/kept_demo_boot_test.md` (line 68),
-- `tests/kept_badge_endpoint_test.md` (line 679),
-- `tests/kept_self_claims_test.md` (lines 22, 89 and 301, the three no browser flow
+- `tests/kept_demo_boot_test.md` (line 141),
+- `tests/kept_badge_endpoint_test.md` (line 752),
+- `tests/kept_self_claims_test.md` (lines 22, 162 and 374, the three no browser flow
   can settle).
 
 For a long time none of the three had a recording under `tests/output-*`, so Kane's

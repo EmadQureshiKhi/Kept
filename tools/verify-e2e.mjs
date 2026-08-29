@@ -207,9 +207,13 @@ console.log('\nthe masthead offers the same five sections and one way out');
     const { body } = await page(`${LEDGER}${path}`);
     ok(`${path} carries the five section links`, ['Promises', 'Coverage', 'Runs', 'Reviews', 'Amendments'].every((label) => body.includes(`>${label}<`)));
     ok(`${path} carries the outbound link, marked external`, body.includes('data-external="true"') && body.includes('Try your repo'));
+    /* A new tab, so the reader keeps the promise they were reading: this site holds the open panel
+       and the verdict filter in the URL, and a navigation away loses that place. Both rel tokens
+       are the pair a new tab wants. */
+    ok(`${path} opens the outbound link in a new tab`, body.includes('target="_blank"'));
     ok(
-      `${path} opens the outbound link with no referrer handle`,
-      body.includes('rel="noopener"'),
+      `${path} denies it a handle back and withholds the referrer`,
+      body.includes('rel="noopener noreferrer"'),
     );
   }
 }

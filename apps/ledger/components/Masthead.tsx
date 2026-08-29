@@ -157,11 +157,23 @@ export function Masthead() {
           </a>
         ))}
         {/* The one link that leaves this deployment. Marked with `data-external` so the stylesheet
-            can distinguish it without matching on the href, and carrying `rel` because it opens a
-            different origin. No `target`: a reader who wants a new tab has a browser that gives
-            them one, and taking the decision away is the kind of thing this site does not do
-            elsewhere. */}
-        <a className="masthead-link masthead-link--try" data-external="true" href={TRY_HREF} rel="noopener">
+            can distinguish it without matching on the href.
+
+            It opens a new tab, which is a reversal worth stating. The argument against was that a
+            reader who wants one has a browser that gives them one, and that is generally right.
+            It is wrong here: this is a *different deployment*, and a reader who follows it has
+            usually been reading a promise on this page and wants to come back to it. A document
+            navigation would lose that place, and the Ledger carries state in the URL for the
+            filters and the open panel, so coming back means the browser's back button and a
+            re-render rather than the page they left. `rel` gains `noreferrer` alongside `noopener`
+            because a new tab is the case both were written for. */}
+        <a
+          className="masthead-link masthead-link--try"
+          data-external="true"
+          href={TRY_HREF}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
           {TRY_LABEL}
         </a>
       </nav>

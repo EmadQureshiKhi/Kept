@@ -24,6 +24,19 @@ could leak and nothing to authenticate against.
 Every one of those settings is committed in `vercel.json` at the repository root, so the
 dashboard is not the source of truth for any of them.
 
+**There is a second Vercel project from this repository**, and the root `vercel.json` is the
+Ledger's alone. `apps/try` serves [kept-try.vercel.app](https://kept-try.vercel.app), which
+reads a pasted public repository and therefore needs the `POST` handler this deployment
+promises not to have. It uses Root Directory `apps/try` and its own `apps/try/vercel.json`,
+because Vercel reads that file from a project's Root Directory: two Root Directories and a
+config file each is how one repository gets two different builds. Nothing about this
+deployment changes, which is the whole reason the split exists. See
+[deploy-try.md](deploy-try.md).
+
+The only seam between them is one link in each masthead. The Ledger's is an absolute URL in an
+anchor `href` and nothing else, which `judge-path.test.ts` proves by reading the source, so
+R13.3 still holds: this page reaches nothing beyond localhost while it is open.
+
 ## The one unusual thing, and why it is not a mistake
 
 **The project root is the monorepo root. It is deliberately not `apps/ledger`.**

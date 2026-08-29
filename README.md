@@ -26,7 +26,7 @@ with warm reloads around 38 ms. Figures, method and the one 383 s cold outlier a
 [docs/judge-path.md](docs/judge-path.md).
 
 The live Kane loop is a separate command with prerequisites, [documented below](#the-live-loop).
-You do not need it, or an account, to see everything the Ledger shows.
+You do not need it, or an account, to see everything the Ledger shows. **Nor to try KEPT on your own code:** [kept-try.vercel.app](https://kept-try.vercel.app) reads any public GitHub repository, runs KEPT's real admission gate over its documents, and lists the claims they state with each cited to a file and a line. It stops there, because no run happened, so nothing it shows carries a verdict.
 
 **Three-minute demo:** [youtu.be/2dUtE4bwVO0](https://youtu.be/2dUtE4bwVO0), which walks the
 deployed Ledger, a code-break repair, and an accepted documentation amendment, in that order.
@@ -929,9 +929,28 @@ referential integrity, stated against git's own index rather than against the fi
 
 ## Deployment
 
-Live at **<https://withkept.vercel.app>**, on Vercel, with **zero environment variables**, because
-the build reads a committed file. There is no API to key, no database to address and no Kane to
-authenticate.
+Two Vercel projects from this one repository, both with **zero environment variables**.
+
+| Deployment | What | Why separate |
+|---|---|---|
+| [withkept.vercel.app](https://withkept.vercel.app) | the Ledger, nine static routes | it promises no non-GET handler |
+| [kept-try.vercel.app](https://kept-try.vercel.app) | paste a repository, see its claims | it needs one |
+
+The split is the point rather than an accident of tooling. The Ledger states in this README, on a
+line cited by a promise in KEPT's own graph and enforced by `scripts/check-readonly.mjs` over eleven
+rules, that the deployed artefact holds no non-GET handler. The try page needs a `POST`. Adding it to
+the Ledger would break a proven promise, so it got its own directory, its own build and its own
+project: `apps/try`, Root Directory `apps/try`, configured by `apps/try/vercel.json`. Two deployments
+is the cost of not weakening a claim to fit a feature. The settings are in
+[docs/deploy-try.md](docs/deploy-try.md).
+
+The try page invokes Kane **zero times** and holds no GitHub token, so it spends nobody's credits
+and has nothing to leak. It reads markdown over HTTP inside a 25 second budget with bounded retries,
+and every promise it returns is `undesigned`, because no run produced a verdict and inventing one is
+the overstatement this project exists to refuse.
+
+The Ledger is live with zero environment variables because the build reads a committed file. There
+is no API to key, no database to address and no Kane to authenticate.
 
 Two things about the shape look wrong and are load-bearing, both explained in
 [docs/deploy-ledger.md](docs/deploy-ledger.md):
@@ -1001,7 +1020,7 @@ figures below are the ones a reader re-derives from the committed snapshot with 
 | Evidence packs | 1, holding 59 artefacts, referentially closed against git's index |
 | Runtime dependencies | 9 |
 | Commands | 10, all implemented |
-| Deployment | nine static routes, zero environment variables |
+| Deployment | two projects: the Ledger's nine static routes, and the try page's one route plus one handler. Zero environment variables on both |
 | Published | [`kept-core`](https://www.npmjs.com/package/kept-core) and [`@corgod/kept-cli`](https://www.npmjs.com/package/@corgod/kept-cli), both `0.1.1` |
 
 **Built and green.** The three-contract Kane layer: contracts, the family-gated parser, coercion,
@@ -1029,9 +1048,12 @@ loop, with both terminal events and the intervening patch committed. A live
 `maintain reconcile --plan` with a genuinely resolved source id. The headless bootstrap, both
 commands, with the two refusals a headless caller meets recorded verbatim.
 
-**Deployed.** [withkept.vercel.app](https://withkept.vercel.app), zero environment variables. All
-nine routes answer, every one marked static, and `/` returns `x-nextjs-prerender: 1` with no session
-cookie and no protection interstitial, so a reader reaches every figure with no account.
+**Deployed, twice.** [withkept.vercel.app](https://withkept.vercel.app), zero environment variables.
+All nine routes answer, every one marked static, and `/` returns `x-nextjs-prerender: 1` with no
+session cookie and no protection interstitial, so a reader reaches every figure with no account. And
+[kept-try.vercel.app](https://kept-try.vercel.app), which runs the admission gate over any public
+repository and is a separate project precisely because the Ledger's no-handler promise is one KEPT
+verifies about itself.
 
 **This README is itself under verification, and it cost the headline figure.** Five of its lines are
 promises in the graph, cited to lines 22, 68, 89, 301 and 679 and read off disk verbatim by the same

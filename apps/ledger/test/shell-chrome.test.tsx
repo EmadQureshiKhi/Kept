@@ -130,10 +130,20 @@ describe('the masthead is the same on every route', () => {
       expect(outbound?.getAttribute('data-external')).toBe('true');
       expect(outbound?.textContent).toBe(TRY_LABEL);
       expect(outbound?.getAttribute('href')).toBe(TRY_HREF);
-      /* A different origin opens with no referrer window handle. No `target`, deliberately: the
-         reader's browser already gives them a new tab if they want one. */
-      expect(outbound?.getAttribute('rel')).toBe('noopener');
-      expect(outbound?.getAttribute('target')).toBeNull();
+      /* This used to assert `target` was null, on the reasoning that a reader who wants a new tab
+         has a browser that gives them one. That was wrong for this particular link. It leaves for a
+         different deployment, and a reader following it has usually been reading a promise here and
+         wants to come back to it: this site keeps the open panel and the verdict filter in the URL,
+         so a document navigation away and back means the back button and a re-render rather than
+         the page they left. So it opens a tab, and `noreferrer` joins `noopener` because a new tab
+         is the case both attributes were written for. */
+      expect(outbound?.getAttribute('target')).toBe('_blank');
+      expect(outbound?.getAttribute('rel')).toBe('noopener noreferrer');
+      /* Both halves of `rel` matter and neither is decoration: `noopener` denies the new tab a
+         handle back onto this window, `noreferrer` withholds the address it came from. */
+      for (const token of ['noopener', 'noreferrer']) {
+        expect(outbound?.getAttribute('rel')?.split(' ')).toContain(token);
+      }
       /* It can never be the current page here, so it must never claim to be. */
       expect(outbound?.getAttribute('aria-current')).toBeNull();
     } finally {
